@@ -1,0 +1,292 @@
+{
+  "settings": {
+    "name": "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ",
+    "vision": "ក្លាយជាសាលាគំរូឈានមុខគេក្នុងការផ្តល់សេវាអប់រំ និងបណ្តុះបណ្តាលធនធានមនុស្សប្រកបដោយសក្តានុពល។",
+    "mission": "ដើម្បីសម្រេចបាននូវចក្ខុវិស័យគ្រឹះស្ថានអប់រំបង្រៀន បានកំណត់បេសកកម្មចម្បងចំនួន៤គឺ៖ - អភិវឌ្ឍសមត្ថភាពគ្រូបង្រៀនឱ្យមានគុណសម្បទាពេញលេញឆ្លើយតបបរិវត្តកម្មឌីជីថល - លើកកម្ពស់ការស្រាវជ្រាវអប់រំ និងបច្ចេកវិទ្យាឌីជីថលដើម្បីបង្កើនគុណភាពការបង្រៀន និង រៀន - ផ្តល់សេវាដល់សហគមន៍ ដើម្បីចូលរួមចំណែកក្នុងការអភិវឌ្ឍសមត្ថភាពគ្រូបង្រៀន - ត្រូវពិនិត្យ តាមដាន វាយតម្លៃ និងគាំទ្រក្នុងការអភិវឌ្ឍចំណេះដឹងបច្ចេកវិទ្យាឌីជីថល",
+    "values": "វិន័យ គុណធម៌ សាមគ្គីភាព និងការទទួលខុសត្រូវខ្ពស់ក្នុងសង្គម។",
+    "historyP1": "សាលារៀនរបស់យើងត្រូវបានបង្កើតឡើងនៅក្នុងឆ្នាំ ១៩៩០ ដោយមានគោលបំណងចម្បងក្នុងការបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិត។ ឆ្លងកាត់រយៈពេលជាង ៣០ ឆ្នាំ សាលាបានអភិវឌ្ឍខ្លួនពីអគារឈើប្រក់ក្បឿង មកជាអគារបេតុងទំនើបដែលបំពាក់ដោយសម្ភារៈសិក្សាគ្រប់គ្រាន់។",
+    "historyP2": "បច្ចុប្បន្ន សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ មានគរុសិស្ស/គរុនិស្សិតជាង ២០០០ នាក់ និងលោកគ្រូអ្នកគ្រូជាង ១០០ នាក់ ដែលកំពុងបំពេញបេសកកម្មបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិតសម្រាប់ប្រទេសជាតិ។",
+    "historyImage": "https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link",
+    "mapUrl": "https://maps.app.goo.gl/e9iEnTB2JdNTMY1f6"
+  },
+  "adminProfile": {
+    "name": "Admin",
+    "avatar": ""
+  },
+  "adminPassword": "611431022",
+  "visitorCount": 142,
+  "news": [
+    {
+      "id": "1",
+      "title": "ពិធីបើកវគ្គបំប៉នសមត្ថភាពគ្រូបង្រៀន",
+      "image": "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800",
+      "date": "15/08/2026",
+      "content": "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ បានរៀបចំពិធីបើកវគ្គបំប៉នសមត្ថភាពគ្រូបង្រៀនលើការប្រើប្រាស់បច្ចេកវិទ្យាឌីជីថលក្នុងការបង្រៀន និងរៀន។"
+    },
+    {
+      "id": "2",
+      "title": "សកម្មភាពកីឡា និងសិល្បៈរបស់គរុសិស្ស",
+      "image": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800",
+      "date": "10/08/2026",
+      "content": "ការប្រកួតកីឡាមិត្តភាព និងសម្តែងសិល្បៈដើម្បីអបអរសាទរទិវាគ្រូបង្រៀន។"
+    }
+  ],
+  "books": [
+    {
+      "code": "BK-006",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1xHu7fWNcv0yUBo-2pJthY_t6_qHlFC7u/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/13p83BXLc-HracC_IV_Uw5IqO0Do9AEuY/view?usp=share_link",
+      "id": "1787025609016"
+    },
+    {
+      "code": "BK-001",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "ភាសាខ្មែរ",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1eY7vxnlEIvM5JMjk8Rl_-n0ku_8h2ch8/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1GQ1pA5FuouCRMPSqVoCzWKjwk5_yPENw/view?usp=share_link",
+      "id": "1787013436699"
+    },
+    {
+      "id": "6",
+      "code": "BK-006",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1HwkeFSz9tnteJxrpDQfPg5gwT9o0qu9r/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1Q0iglgD4a_Lf-OP2fvQ894y22PEU5Fj-/view?usp=share_link"
+    },
+    {
+      "id": "7",
+      "code": "BK-007",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "រូបវិទ្យា ថ្នាក់ទី៧",
+      "grade": "ថ្នាក់ទី៧",
+      "author": "ក្រសួងអប់រំ យុវជន និងកីឡា",
+      "link": "#",
+      "cover": "https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400"
+    },
+    {
+      "id": "8",
+      "code": "BK-008",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គីមីវិទ្យា ថ្នាក់ទី៨",
+      "grade": "ថ្នាក់ទី៨",
+      "author": "ក្រសួងអប់រំ យុវជន និងកីឡា",
+      "link": "#",
+      "cover": "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=400"
+    },
+    {
+      "id": "9",
+      "code": "BK-009",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "ជីវវិទ្យា ថ្នាក់ទី៩",
+      "grade": "ថ្នាក់ទី៩",
+      "author": "ក្រសួងអប់រំ យុវជន និងកីឡា",
+      "link": "#",
+      "cover": "https://images.unsplash.com/photo-1532153975070-2e9ab71f1b14?w=400"
+    },
+    {
+      "id": "10",
+      "code": "BK-010",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គណិតវិទ្យា ថ្នាក់ទី១០",
+      "grade": "ថ្នាក់ទី១០",
+      "author": "ក្រសួងអប់រំ យុវជន និងកីឡា",
+      "link": "#",
+      "cover": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400"
+    },
+    {
+      "id": "11",
+      "code": "BK-011",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "អក្សរសាស្ត្រខ្មែរ ថ្នាក់ទី១១",
+      "grade": "ថ្នាក់ទី១១",
+      "author": "ក្រសួងអប់រំ យុវជន និងកីឡា",
+      "link": "#",
+      "cover": "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400"
+    },
+    {
+      "id": "12",
+      "code": "BK-012",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "ប្រវត្តិវិទ្យា ថ្នាក់ទី១២",
+      "grade": "ថ្នាក់ទី១២",
+      "author": "ក្រសួងអប់រំ យុវជន និងកីឡា",
+      "link": "#",
+      "cover": "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=400"
+    }
+  ],
+  "structure": [
+    {
+      "id": "1",
+      "name": "លោក អេង សុខា",
+      "role": "នាយកសាលា",
+      "level": "director",
+      "department": "គណៈគ្រប់គ្រង",
+      "photo": "https://drive.google.com/file/d/1yQZ_zUp_WZ5sa8IMvr6I6NiRUzmNY42t/view?usp=share_link",
+      "order": 1
+    },
+    {
+      "id": "2",
+      "name": "លោក ហាង និមល",
+      "role": "នាយករង (រដ្ឋបាល)",
+      "level": "deputy",
+      "department": "រដ្ឋបាល",
+      "photo": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400",
+      "order": 2
+    },
+    {
+      "id": "3",
+      "name": "លោក នាយករង គ",
+      "role": "នាយករង (រដ្ឋបាល)",
+      "level": "deputy",
+      "department": "រដ្ឋបាល",
+      "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
+      "order": 3
+    },
+    {
+      "id": "4",
+      "name": "លោកស្រី នាយករង ឃ",
+      "role": "នាយករង (វិន័យ)",
+      "level": "deputy",
+      "department": "វិន័យ",
+      "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400",
+      "order": 4
+    },
+    {
+      "name": "លោក ស្វាយ ពិសិដ្ឋ",
+      "role": "គ្រូឧទ្ទេស",
+      "level": "member",
+      "department": "គណិតវិទ្យា",
+      "photo": "https://drive.google.com/file/d/1yQZ_zUp_WZ5sa8IMvr6I6NiRUzmNY42t/view?usp=share_link",
+      "order": 3,
+      "id": "1787013962575"
+    },
+    {
+      "name": "លោក គាត សុមុនី",
+      "role": "គ្រូឧទ្ទេស",
+      "level": "member",
+      "department": "សីលធម៍",
+      "photo": "https://drive.google.com/file/d/1yQZ_zUp_WZ5sa8IMvr6I6NiRUzmNY42t/view?usp=share_link",
+      "order": 3,
+      "id": "1787014010950"
+    }
+  ],
+  "team": [
+    {
+      "id": "1",
+      "name": "លោក អេង សុខា",
+      "role": "នាយកសាលា",
+      "photo": "https://drive.google.com/file/d/1yQZ_zUp_WZ5sa8IMvr6I6NiRUzmNY42t/view?usp=share_link",
+      "description": "បរិញ្ញាបត្រជាន់ខ្ពស់ គ្រប់គ្រងអប់រំ"
+    },
+    {
+      "id": "2",
+      "name": "លោក ហ៊ាង និមល",
+      "role": "នាយករង រដ្ឋបាល",
+      "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400",
+      "description": "បរិញ្ញាបត្រជាន់ខ្ពស់"
+    }
+  ],
+  "gallery": [
+    {
+      "id": "1",
+      "title": "ទិវាគ្រូបង្រៀន",
+      "image": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800"
+    },
+    {
+      "id": "2",
+      "title": "ពិធីចែកសញ្ញាបត្រ",
+      "image": "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800"
+    },
+    {
+      "id": "3",
+      "title": "សកម្មភាពសិស្ស",
+      "image": "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800"
+    }
+  ],
+  "videos": [
+    {
+      "id": "1",
+      "subject": "MoEYS",
+      "title": "ការណែនាំ និង របៀបប្រើប្រាស់ «MoEYS E-Learning» | Instruction and How to use",
+      "teacher": "MoEYs",
+      "link": "https://youtu.be/-cdJBVo3P88?si=x6ONaZRhz1pFOnJ2"
+    },
+    {
+      "id": "2",
+      "subject": "ការអភិវឌ្ឍ",
+      "title": "គ្រូបង្រៀនជាសរសរស្ដម្ភនៃការអភិវឌ្ឍ",
+      "teacher": "គរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=L_LUpnjgPso"
+    },
+    {
+      "id": "3",
+      "subject": "គណិតវិទ្យា",
+      "title": "របៀបប្រើប្រាស់កញ្ចប់សម្ភារៈគណិតវិទ្យា",
+      "teacher": "គរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=3JZ_D3ELwOQ"
+    },
+    {
+      "id": "4",
+      "subject": "ការអប់រំ",
+      "title": "ការដាក់ឱ្យអនុវត្តសាលារៀនគំរូតាមគ្រឹះស្ថានសិក្សាសាធារណៈ",
+      "teacher": "MoEYs",
+      "link": "https://www.youtube.com/watch?v=2Vv-BfVoq4g"
+    },
+    {
+      "id": "5",
+      "subject": "សកម្មភាពសាលា",
+      "title": "សកម្មភាពបណ្តុះបណ្តាលគរុសិស្ស-គរុនិស្សិត",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"
+    }
+  ],
+  "messages": [
+    {
+      "id": "MSG-1787122833136",
+      "sender": "យូសុះ ស៊ីលាល",
+      "name": "យូសុះ ស៊ីលាល",
+      "contact": "0987654321",
+      "subject": " ",
+      "message": "វេបសាយស្អាត នឹងមានសោភណ្ឌភាព",
+      "date": "19/08/2026 14:00",
+      "status": "read",
+      "fromVisitor": true,
+      "createdAt": "2026-08-19T07:00:33.136Z"
+    }
+  ],
+  "slides": [
+    {
+      "id": "1",
+      "title": "លក្ខណៈពិសេសរបស់សាលាយើង",
+      "image": "https://images.unsplash.com/photo-1577896851231-70ef18881754?w=1920&h=600&fit=crop",
+      "target": ""
+    },
+    {
+      "id": "2",
+      "title": "សកម្មភាពការធ្វើការស្វ័យសិក្សាក្នុងបណ្ណាល័យរបស់គរុសិស្ស",
+      "image": "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920&h=600&fit=crop",
+      "target": ""
+    },
+    {
+      "id": "3",
+      "title": "សកម្មភាពគរុសិស្សស្រាវជ្រាវបច្ចេកវិទ្យាព័ត៌មានវិទ្យា",
+      "image": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920&h=600&fit=crop",
+      "target": ""
+    },
+    {
+      "id": "4",
+      "title": "សកម្មភាពគរុសិស្សកំពុងស្តាប់ការណែនាំពីគណៈគ្រប់គ្រង",
+      "image": "https://images.unsplash.com/photo-1577896851231-70ef18881754?w=1920&h=600&fit=crop",
+      "target": ""
+    }
+  ]
+}
