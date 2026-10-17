@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ | Official Website</title>
     
-    <!-- Google Fonts: Hanuman for Khmer, Inter for English -->
+    <!-- Google Fonts: Kantumruy Pro & Noto Sans Khmer & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;600;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300..700;1,300..700&family=Noto+Sans+Khmer:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -51,8 +51,9 @@
     --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
     
     /* Typography */
-    --font-kh: 'Noto Sans Khmer', sans-serif;
-    --font-en: 'Inter', sans-serif;
+    --font-kh: 'Kantumruy Pro', 'Noto Sans Khmer', sans-serif;
+    --font-en: 'Inter', 'Kantumruy Pro', sans-serif;
+    --font-main: 'Kantumruy Pro', 'Noto Sans Khmer', 'Inter', system-ui, -apple-system, sans-serif;
     
     /* Transitions */
     --transition-fast: 0.15s ease-in-out;
@@ -61,6 +62,7 @@
     /* Header Heights */
     --topbar-height: 44px;
     --navbar-height: 84px;
+    --header-total-height: calc(var(--topbar-height) + var(--navbar-height));
 }
 
 /* Dark Mode Variables (Sleek Slate) */
@@ -88,17 +90,41 @@ body.dark-mode {
 /* ==========================================================================
    Global Reset & Base Styles
    ========================================================================== */
-* {
+*, ::before, ::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+body, button, input, select, textarea, a, span, div, p, h1, h2, h3, h4, h5, h6, label, table, th, td {
+    font-family: 'Kantumruy Pro', 'Noto Sans Khmer', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Preserve FontAwesome Icon Font Family */
+i.fa, i.fas, i.far, i.fal, i.fad, i.fab,
+.fa, .fas, .far, .fal, .fad, .fab,
+[class^="fa-"], [class*=" fa-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
+    font-style: normal !important;
+}
+i.fab, .fab {
+    font-family: "Font Awesome 6 Brands" !important;
+}
+
+html, body {
+    width: 100%;
+    max-width: 100vw;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    position: relative;
+}
+
 body {
-    font-family: var(--font-en);
     background-color: var(--bg-main);
     color: var(--text-main);
     line-height: 1.6;
+    padding-top: var(--header-total-height);
     transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
@@ -154,17 +180,24 @@ img {
 }
 
 /* ==========================================================================
-   Top Bar
+   Header & Fixed Navigation Wrapper (Stays fixed at top, will not scroll away)
    ========================================================================== */
+.site-header-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
 .top-bar {
     background: var(--gradient-primary);
     color: var(--text-inverse);
     height: var(--topbar-height);
     font-size: 0.85rem;
-    position: -webkit-sticky;
-    position: sticky;
-    top: 0;
-    z-index: 102;
+    position: relative;
+    z-index: 1002;
 }
 
 .top-bar-container {
@@ -240,10 +273,8 @@ img {
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
     height: var(--navbar-height);
-    position: -webkit-sticky;
-    position: sticky;
-    top: var(--topbar-height);
-    z-index: 101;
+    position: relative;
+    z-index: 1001;
     transition: var(--transition-normal);
 }
 
@@ -295,7 +326,8 @@ body.dark-mode .light-logo {
 
 .nav-link {
     padding: 10px 16px;
-    font-weight: 600;
+    font-size: 1.05rem;
+    font-weight: 700;
     border-radius: 8px;
     position: relative;
     overflow: hidden;
@@ -414,15 +446,16 @@ body.dark-mode .light-logo {
 
 .loader-overlay {
     position: fixed;
-    top: var(--navbar-height);
+    top: var(--header-total-height);
     left: 0;
     width: 100%;
-    height: calc(100vh - var(--navbar-height));
+    height: calc(100vh - var(--header-total-height));
     background: var(--bg-main);
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 50;
+    pointer-events: none;
 }
 
 .spinner {
@@ -680,27 +713,61 @@ body.dark-mode .footer {
 /* ==========================================================================
    Responsive Design
    ========================================================================== */
-@media (max-width: 768px) {
-    .top-bar { display: none; } /* Hide top bar on mobile */
+@media (max-width: 1024px) {
+    :root {
+        --topbar-height: 38px;
+        --navbar-height: 70px;
+    }
+    .top-bar {
+        height: auto;
+        padding: 6px 0;
+    }
+    .top-bar-container {
+        padding: 0 12px;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+    .top-bar-left {
+        font-size: 0.75rem;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .top-bar-right {
+        gap: 8px;
+    }
+    .lang-switch .lang-btn {
+        padding: 2px 8px;
+        font-size: 0.72rem;
+    }
     
-    .mobile-menu-btn { display: block; }
+    .mobile-menu-btn { display: block; font-size: 1.6rem; }
     
     .nav-links {
         position: fixed;
-        top: var(--navbar-height);
+        top: var(--header-total-height);
         left: -100%;
         width: 100%;
-        height: calc(100vh - var(--navbar-height));
+        height: calc(100vh - var(--header-total-height));
         background: var(--bg-surface);
         flex-direction: column;
         align-items: flex-start;
-        padding: 20px;
+        padding: 25px 30px;
         transition: left var(--transition-normal);
         overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
     
     .nav-links.active {
         left: 0;
+    }
+
+    .nav-link {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        padding: 14px 20px !important;
+        width: 100%;
+        border-bottom: 1px solid rgba(128,128,128,0.1);
     }
     
     .dropdown-menu {
@@ -712,7 +779,15 @@ body.dark-mode .footer {
         border: none;
         background: transparent;
         display: none;
-        padding-left: 20px;
+        padding-left: 25px;
+        width: 100%;
+    }
+
+    .dropdown-menu a {
+        font-size: 1.15rem !important;
+        font-weight: 600 !important;
+        padding: 12px 18px !important;
+        width: 100%;
     }
     
     .dropdown.active .dropdown-menu {
@@ -723,11 +798,18 @@ body.dark-mode .footer {
         margin-left: 0;
         padding-left: 0;
         border-left: none;
-        margin-top: 20px;
-        padding-top: 20px;
+        margin-top: 25px;
+        padding-top: 25px;
         border-top: 1px solid rgba(128,128,128,0.2);
         width: 100%;
-        justify-content: center;
+        justify-content: flex-start;
+        gap: 15px;
+    }
+
+    .nav-social-links .social-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 1.2rem;
     }
 }
 
@@ -753,9 +835,8 @@ body.dark-mode .footer {
     position: relative;
     width: 100%;
     max-width: 1920px;
-    height: 600px;
-    aspect-ratio: 1920 / 600;
-    max-height: 600px;
+    height: clamp(380px, 31.25vw, 600px);
+    min-height: 350px;
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.25);
@@ -799,23 +880,23 @@ body.dark-mode .footer {
     100% { opacity: 0; transform: scale(1.01); }
 }
 
-@media (max-width: 1400px) {
+@media (max-width: 1024px) {
     .hero-slider-wrapper {
-        height: auto;
-        aspect-ratio: 1920 / 600;
+        height: clamp(320px, 40vw, 520px);
+        min-height: 300px;
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
     .hero-section { padding: 8px 0; }
     .hero-container { padding: 0 8px; }
     .hero-slider-wrapper {
-        aspect-ratio: 1920 / 600;
-        min-height: 140px;
-        border-radius: 10px;
+        height: clamp(200px, 48vw, 340px);
+        min-height: 200px;
+        border-radius: 12px;
     }
     .hero-slider, .hero-slider .slide, .hero-slider .slide img {
-        border-radius: 10px;
+        border-radius: 12px;
     }
 }
 
@@ -873,6 +954,321 @@ body.dark-mode .footer {
     color: var(--text-muted);
     text-align: left;
     line-height: 1.8;
+}
+
+/* ==========================================================================
+   Home Brief History Section
+   ========================================================================== */
+.home-history-section {
+    padding: 75px 0;
+    background: var(--bg-main);
+    border-top: 1px solid var(--border);
+}
+
+.home-history-card {
+    background: var(--bg-surface);
+    border-radius: 20px;
+    padding: 35px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.home-history-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 40px;
+    align-items: center;
+}
+
+@media (max-width: 992px) {
+    .home-history-grid {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+}
+
+.home-history-img-wrap {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--border);
+    background: #0f172a;
+    height: 350px;
+}
+
+.home-history-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.home-history-img-wrap:hover img {
+    transform: scale(1.04);
+}
+
+.home-history-badge {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    background: rgba(15, 23, 42, 0.85);
+    color: #fbbf24;
+    padding: 8px 16px;
+    border-radius: 25px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.home-history-thumbs-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.history-thumb-item {
+    height: 85px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    background: #0f172a;
+}
+
+.history-thumb-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease, opacity 0.3s ease;
+}
+
+.history-thumb-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+    border-color: var(--primary);
+}
+
+.history-thumb-item:hover img {
+    transform: scale(1.08);
+}
+
+.history-thumb-item.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+}
+
+@media (max-width: 576px) {
+    .home-history-thumbs-row {
+        gap: 8px;
+    }
+    .history-thumb-item {
+        height: 70px;
+        border-radius: 8px;
+    }
+}
+
+.home-history-text-col {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.home-history-subtitle {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1.4;
+    margin-bottom: 2px;
+}
+
+.home-history-p {
+    color: var(--text-main);
+    font-size: 1.05rem;
+    line-height: 1.85;
+    margin: 0;
+}
+
+.home-history-highlights {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 5px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--border);
+}
+
+.history-stat-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(37, 99, 235, 0.06);
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    flex: 1;
+    min-width: 180px;
+}
+
+.history-stat-badge i {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.history-stat-badge strong {
+    display: block;
+    font-size: 1.15rem;
+    color: var(--text-main);
+}
+
+.history-stat-badge span {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+/* Home Photo / Gallery Section */
+.home-photo-section {
+    padding: 70px 0;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+}
+
+.home-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+}
+
+.home-photo-card {
+    background: var(--bg-surface);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.home-photo-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+.home-photo-img-wrap {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+    background: #0f172a;
+}
+
+.home-photo-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+    display: block;
+}
+
+.home-photo-card:hover .home-photo-img-wrap img {
+    transform: scale(1.08);
+}
+
+.home-photo-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.home-photo-card:hover .home-photo-overlay {
+    opacity: 1;
+}
+
+.home-photo-zoom-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+}
+
+.home-photo-card:hover .home-photo-zoom-btn {
+    transform: scale(1);
+}
+
+.home-photo-body {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.home-photo-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.home-photo-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-view-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: 20px;
+    transition: all var(--transition-fast);
+}
+
+.btn-view-all:hover {
+    background: var(--primary);
+    color: #ffffff;
+    transform: translateX(4px);
 }
 
 /* News Section */
@@ -954,6 +1350,568 @@ body.dark-mode .footer {
     transform: translateX(5px);
 }
 
+/* Home Library Section Styling */
+.home-library-section {
+    padding: 80px 0;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+}
+
+.library-container-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+@media (max-width: 992px) {
+    .library-container-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.main-book-card {
+    background: var(--bg-main);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    padding: 30px;
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-normal);
+}
+
+@media (max-width: 768px) {
+    .main-book-card {
+        flex-direction: column;
+        padding: 20px;
+        gap: 20px;
+        text-align: center;
+    }
+}
+
+.main-book-cover-wrap {
+    width: 220px;
+    min-width: 200px;
+    height: 310px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+    background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(16,185,129,0.15));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.main-book-cover-wrap:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+}
+
+.main-book-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.main-book-cover-placeholder {
+    font-size: 3.5rem;
+    color: var(--primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.main-book-cover-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    gap: 8px;
+    backdrop-filter: blur(2px);
+}
+
+.main-book-cover-wrap:hover .main-book-cover-overlay {
+    opacity: 1;
+}
+
+.main-book-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.main-book-badge-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 768px) {
+    .main-book-badge-row {
+        justify-content: center;
+    }
+}
+
+.main-book-badge {
+    background: var(--primary);
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.main-book-badge.secondary {
+    background: var(--secondary);
+}
+
+.main-book-title {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.4;
+    margin-bottom: 14px;
+}
+
+.main-book-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 22px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.main-book-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .main-book-meta-item {
+        justify-content: center;
+    }
+}
+
+.main-book-meta-item i {
+    color: var(--primary);
+    width: 18px;
+    text-align: center;
+}
+
+.main-book-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .main-book-actions {
+        justify-content: center;
+    }
+}
+
+.home-library-more-link {
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.home-library-more-link:hover {
+    color: var(--primary-light);
+    transform: translateX(4px);
+}
+
+.book-playlist {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 450px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.book-thumb-card {
+    display: flex;
+    gap: 15px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--bg-main);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    border: 1px solid var(--border);
+    align-items: center;
+}
+
+.book-thumb-card:hover, .book-thumb-card.active {
+    background: var(--bg-surface);
+    border-color: var(--primary);
+    transform: translateX(5px);
+    box-shadow: var(--shadow-md);
+}
+
+.book-thumb-img-wrap {
+    width: 65px;
+    height: 85px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(16,185,129,0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+}
+
+.book-thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.book-thumb-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.book-thumb-info h4 {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    margin-bottom: 5px;
+    line-height: 1.3;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.book-thumb-info span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Video Section Styling */
+.video-section {
+    padding: 80px 0;
+    background: var(--bg-main);
+    border-top: 1px solid var(--border);
+}
+
+.video-container-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+@media (max-width: 992px) {
+    .video-container-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.main-video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    background: #000;
+}
+
+.main-video-wrapper iframe, 
+.main-video-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 16px;
+}
+
+.video-playlist {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 450px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.video-thumb-card {
+    display: flex;
+    gap: 15px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--bg-main);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    border: 1px solid var(--border);
+}
+
+.video-thumb-card:hover, .video-thumb-card.active {
+    background: var(--bg-surface);
+    border-color: var(--primary);
+    transform: translateX(5px);
+    box-shadow: var(--shadow-md);
+}
+
+.video-thumb-img {
+    width: 120px;
+    height: 70px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.video-thumb-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.video-thumb-info h4 {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    margin-bottom: 5px;
+    line-height: 1.3;
+}
+
+.video-thumb-info span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Partner Schools Section (សាលាដៃគូ)
+   ========================================================================== */
+.partners-section {
+    padding: 75px 0 85px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+.partners-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.05) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.partners-header {
+    text-align: center;
+    max-width: 750px;
+    margin: 0 auto 45px;
+}
+
+.partners-subtitle {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    line-height: 1.7;
+}
+
+.partners-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+@media (max-width: 1100px) {
+    .partners-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .partners-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .partners-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.partner-card {
+    background: var(--bg-main);
+    border-radius: 16px;
+    padding: 24px 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.partner-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.partner-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-light);
+    background: var(--bg-surface);
+}
+
+.partner-card:hover::before {
+    opacity: 1;
+}
+
+.partner-icon-wrap {
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+    background: var(--gradient-primary);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.7rem;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 16px rgba(26, 86, 219, 0.2);
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.partner-logo-wrap {
+    height: 72px;
+    min-height: 72px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+.partner-logo-wrap img {
+    max-height: 72px;
+    max-width: 120px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 0 !important;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+    transition: transform 0.35s ease;
+}
+
+.partner-card:hover .partner-icon-wrap {
+    transform: scale(1.06) translateY(-2px);
+    box-shadow: 0 10px 22px rgba(26, 86, 219, 0.3);
+}
+
+.partner-card:hover .partner-logo-wrap img {
+    transform: scale(1.08);
+}
+
+.partner-tag {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.partner-name {
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.45;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.partner-name-en {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.partner-location {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    width: 100%;
+    justify-content: center;
+}
+
 /* Page Header (Used across subpages) */
 .page-header {
     background: var(--gradient-primary);
@@ -993,19 +1951,24 @@ body.dark-mode .footer {
     margin-bottom: 80px;
 }
 
-/* History */
+/* History Section - Enhanced Large Image Presentation */
 .history-content {
     display: flex;
-    flex-wrap: wrap;
     gap: 40px;
     align-items: center;
 }
 
+@media (max-width: 992px) {
+    .history-content {
+        flex-direction: column;
+    }
+}
+
 .history-text {
     flex: 1;
-    min-width: 300px;
+    min-width: 280px;
     font-size: 1.1rem;
-    line-height: 1.8;
+    line-height: 1.9;
 }
 
 .history-text p {
@@ -1013,8 +1976,31 @@ body.dark-mode .footer {
 }
 
 .history-image {
-    flex: 1;
-    min-width: 300px;
+    flex: 1.4;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    position: relative;
+    background: var(--bg-surface);
+}
+
+.history-image img {
+    width: 100%;
+    height: auto;
+    min-height: 380px;
+    max-height: 580px;
+    object-fit: cover;
+    display: block;
+    border-radius: 20px;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+}
+
+.history-image:hover img {
+    transform: scale(1.03);
 }
 
 /* Org Chart Hierarchy Styling */
@@ -1034,56 +2020,149 @@ body.dark-mode .footer {
     max-width: 100%;
 }
 
-.org-node {
-    display: inline-block;
-    padding: 16px 28px;
-    border-radius: 12px;
-    border: 2px solid var(--primary);
+/* Premium Organization Chart Styling */
+.org-chart {
+    padding: 60px 30px;
+    text-align: center;
     background: var(--bg-surface);
+    border-radius: 24px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    position: relative;
+}
+
+.org-tree-wrapper {
+    display: inline-block;
+    min-width: 340px;
+    max-width: 100%;
+    padding: 10px 0;
+}
+
+.org-node {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 22px 24px;
+    border-radius: 20px;
+    background: var(--bg-surface);
+    border: 1.5px solid var(--border);
     min-width: 220px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    max-width: 260px;
+    position: relative;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .org-node:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 35px -10px rgba(37, 99, 235, 0.25);
+    border-color: var(--primary);
+    z-index: 10;
 }
 
+/* Director Card (Top Level) */
 .org-node.director {
-    background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
-    border: none;
+    background: linear-gradient(145deg, #1e40af 0%, #3b82f6 100%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     color: #ffffff;
-    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+    box-shadow: 0 15px 35px -5px rgba(30, 64, 175, 0.45);
+    min-width: 250px;
+}
+
+.org-node.director:hover {
+    box-shadow: 0 22px 45px -5px rgba(37, 99, 235, 0.6);
+}
+
+.org-node.director .node-role-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    backdrop-filter: blur(8px);
 }
 
 .org-node.director .node-title {
     color: #ffffff;
-    font-size: 1.15rem;
+    font-size: 1.1rem;
+    font-weight: 800;
 }
 
 .org-node.director .node-name {
-    color: #ffffff;
-    opacity: 0.95;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.05rem;
+    font-weight: 600;
 }
 
+.org-node.director .node-dept {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+}
+
+/* Deputy Card (Second Level) */
 .org-node.deputy {
     background: var(--bg-surface);
-    border: 2px solid var(--primary);
+    border: 1.5px solid rgba(59, 130, 246, 0.3);
     color: var(--text-main);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 body.dark-mode .org-node.deputy {
     background: #1e293b;
-    border-color: #3b82f6;
+    border-color: rgba(96, 165, 250, 0.3);
     color: #f8fafc;
+}
+
+/* Node Elements Styling */
+.node-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+    letter-spacing: 0.02em;
+}
+
+body.dark-mode .org-node.deputy .node-role-badge {
+    background: rgba(96, 165, 250, 0.15);
+    color: #60a5fa;
+}
+
+/* Avatar Styling */
+.node-avatar-wrap {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    margin-bottom: 12px;
+    position: relative;
+    padding: 3px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.org-node.director .node-avatar-wrap {
+    width: 76px;
+    height: 76px;
+    background: linear-gradient(135deg, #ffffff, #fbbf24);
+}
+
+.node-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--bg-surface);
+    display: block;
 }
 
 .node-title {
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 1rem;
     color: var(--primary);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+    line-height: 1.3;
 }
 
 body.dark-mode .org-node.deputy .node-title {
@@ -1091,31 +2170,50 @@ body.dark-mode .org-node.deputy .node-title {
 }
 
 .node-name {
-    font-size: 0.95rem;
-    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 6px;
 }
 
 body.dark-mode .org-node.deputy .node-name {
-    color: #cbd5e1;
+    color: #f1f5f9;
 }
 
+.node-dept {
+    font-size: 0.78rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: var(--bg-main);
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+body.dark-mode .org-node.deputy .node-dept {
+    background: #0f172a;
+    color: #94a3b8;
+}
+
+/* Line connectors */
 .org-line-v {
-    width: 2px;
-    height: 32px;
-    background: var(--primary);
+    width: 3px;
+    height: 36px;
+    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
     margin: 0 auto;
+    border-radius: 2px;
 }
 
 .org-line-h {
-    height: 2px;
-    background: var(--primary);
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
     margin: 0 auto;
+    border-radius: 2px;
 }
 
 .org-branches {
     display: flex;
     justify-content: center;
-    gap: 24px;
+    gap: 30px;
     flex-wrap: wrap;
 }
 
@@ -1171,6 +2269,104 @@ body.dark-mode .org-node.deputy .node-name {
 .team-edu {
     font-size: 0.85rem;
     color: var(--text-muted);
+}
+
+/* Staff Grid & Card (បុគ្គលិក) */
+.staff-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 25px;
+    margin-top: 25px;
+}
+
+.staff-card {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    padding: 30px 20px 25px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.staff-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(13, 110, 253, 0.3);
+}
+
+.staff-avatar-wrap {
+    width: 130px;
+    height: 130px;
+    margin: 0 auto 18px;
+    position: relative;
+    border-radius: 50%;
+    padding: 4px;
+    background: linear-gradient(135deg, var(--primary) 0%, #00d2ff 100%);
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.2);
+    flex-shrink: 0;
+}
+
+.staff-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+    border: 3px solid var(--bg-surface);
+    transition: transform var(--transition-normal);
+    display: block;
+}
+
+.staff-card:hover .staff-avatar {
+    transform: scale(1.04);
+}
+
+.staff-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.staff-role {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    line-height: 1.35;
+}
+
+.staff-phone-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 7px 16px;
+    background: rgba(13, 110, 253, 0.08);
+    border-radius: 20px;
+    color: var(--primary);
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+    margin-top: auto;
+}
+
+.staff-phone-wrap:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: scale(1.03);
+}
+
+.staff-phone-wrap i {
+    font-size: 0.85rem;
 }
 
 /* Library Page Styles */
@@ -1283,6 +2479,157 @@ body.dark-mode .org-node.deputy .node-name {
     font-weight: 600;
 }
 
+/* ==========================================================================
+   Library Pagination
+   ========================================================================== */
+.pagination-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    margin: 40px 0 20px 0;
+    flex-wrap: wrap;
+    user-select: none;
+    width: 100%;
+}
+
+.pagination-btn {
+    min-width: 44px;
+    height: 44px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    color: #334155;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none;
+    outline: none;
+}
+
+.pagination-btn:hover:not(:disabled):not(.active) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+}
+
+.pagination-btn.active {
+    background: #3b82f6;
+    color: #ffffff;
+    border-color: #3b82f6;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+    cursor: default;
+    transform: none;
+}
+
+.pagination-btn:disabled,
+.pagination-btn.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Bracket Nav Button (< and > with orange corner brackets & light peach tint) */
+.pagination-btn.bracket-nav {
+    position: relative;
+    background: #fff4ed;
+    color: #334155;
+    border: 1.5px solid transparent;
+    border-radius: 8px;
+    padding: 0 12px;
+}
+
+.pagination-btn.bracket-nav::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 6px;
+    border: 2px solid #ff6a3d;
+    border-right: none;
+    border-radius: 7px 0 0 7px;
+    pointer-events: none;
+}
+
+.pagination-btn.bracket-nav::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 6px;
+    border: 2px solid #ff6a3d;
+    border-left: none;
+    border-radius: 0 7px 7px 0;
+    pointer-events: none;
+}
+
+.pagination-btn.bracket-nav:hover:not(:disabled) {
+    background: #ffe8db;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(255, 106, 61, 0.15);
+}
+
+.pagination-ellipsis {
+    min-width: 32px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 1rem;
+    user-select: none;
+}
+
+/* Dark Mode Pagination */
+body.dark-mode .pagination-btn {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+body.dark-mode .pagination-btn:hover:not(:disabled):not(.active) {
+    background: #273549;
+    border-color: #475569;
+    color: #ffffff;
+}
+
+body.dark-mode .pagination-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+body.dark-mode .pagination-btn.bracket-nav {
+    background: rgba(255, 106, 61, 0.12);
+    color: #f8fafc;
+}
+
+body.dark-mode .pagination-btn.bracket-nav::before,
+body.dark-mode .pagination-btn.bracket-nav::after {
+    border-color: #ff7d54;
+}
+
+body.dark-mode .pagination-btn.bracket-nav:hover:not(:disabled) {
+    background: rgba(255, 106, 61, 0.22);
+}
+
+body.dark-mode .pagination-ellipsis {
+    color: #64748b;
+}
+
 /* Gallery & Videos (Media Grid) */
 .media-grid {
     display: grid;
@@ -1347,7 +2694,9 @@ body.dark-mode .org-node.deputy .node-name {
 
 .contact-info-section {
     flex: 1;
-    min-width: 300px;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -1398,8 +2747,10 @@ body.dark-mode .org-node.deputy .node-name {
 
 .contact-form-section {
     flex: 1;
-    min-width: 300px;
-    padding: 40px;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    padding: 24px;
     background: var(--bg-surface);
 }
 
@@ -1605,70 +2956,74 @@ body.dark-mode .org-node.deputy .node-name {
 </style>
 
 </head>
-<body class="light-mode">
-    <!-- Top Header Bar -->
-    <div class="top-bar">
-        <div class="top-bar-container">
-            <div class="top-bar-left">
-                <a href="mailto:info@ktpttc.com" class="top-link">
-                    <i class="fas fa-envelope"></i> <span data-lang="email">info@ktpttc.com</span>
-                </a>
-                <span class="divider">|</span>
-                <span class="top-text">
-                    <i class="fas fa-phone-alt"></i> <span data-lang="phone">+855 99 992 881 | +855 96 852 5956</span>
-                </span>
-            </div>
-            <div class="top-bar-right">
-                <div class="lang-switch">
-                    <button id="btn-kh" class="lang-btn active" onclick="setLanguage('kh')">🇰🇭 KH</button>
-                    <button id="btn-en" class="lang-btn" onclick="setLanguage('en')">🇬🇧 EN</button>
-                </div>
-                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Dark Mode" onclick="toggleDarkMode()">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Navigation Bar -->
-    <header class="navbar" id="navbar">
-        <div class="nav-container">
-            <a href="#" class="logo" onclick="navigateTo('home')">
-                <img src="KTPTTC1.png" alt="KTPTTC Logo" class="logo-img light-logo">
-                <img src="KTPTTC.png" alt="KTPTTC Logo" class="logo-img dark-logo">
-            </a>
-            
-            <div class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileMenu()">
-                <i class="fas fa-bars"></i>
-            </div>
-            
-            <nav class="nav-links" id="nav-links">
-                <a href="#" class="nav-link active" data-page="home" onclick="navigateTo('home')" data-lang="navHome">ទំព័រដើម</a>
-                
-                <div class="dropdown">
-                    <a href="#" class="nav-link dropdown-toggle" data-page="about" onclick="navigateTo('about')" data-lang="navAbout">
-                        អំពីសាលា <i class="fas fa-chevron-down"></i>
+<body>
+    <!-- Fixed Site Header Wrapper -->
+    <div class="site-header-wrapper">
+        <!-- Top Header Bar -->
+        <div class="top-bar">
+            <div class="top-bar-container">
+                <div class="top-bar-left">
+                    <a href="mailto:info@ktpttc.com" class="top-link">
+                        <i class="fas fa-envelope"></i> <span data-lang="email">info@ktpttc.com</span>
                     </a>
-                    <div class="dropdown-menu">
-                        <a href="#" class="dropdown-item" onclick="navigateTo('about', 'history')" data-lang="navHistory">ប្រវត្តិសាលា</a>
-                        <a href="#" class="dropdown-item" onclick="navigateTo('about', 'structure')" data-lang="navStructure">រចនាសម្ព័ន្ធ</a>
-                        <a href="#" class="dropdown-item" onclick="navigateTo('about', 'team')" data-lang="navTeam">គណៈគ្រប់គ្រង</a>
+                    <span class="divider">|</span>
+                    <span class="top-text">
+                        <i class="fas fa-phone-alt"></i> <span data-lang="phone">+855 99 992 881 | +855 96 852 5956</span>
+                    </span>
+                </div>
+                <div class="top-bar-right">
+                    <div class="lang-switch">
+                        <button id="btn-kh" class="lang-btn active" onclick="setLanguage('kh')">🇰🇭 KH</button>
+                        <button id="btn-en" class="lang-btn" onclick="setLanguage('en')">🇬🇧 EN</button>
                     </div>
+                    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Dark Mode" onclick="toggleDarkMode()">
+                        <i class="fas fa-moon"></i>
+                    </button>
                 </div>
-                
-                <a href="#" class="nav-link" data-page="library" onclick="navigateTo('library')" data-lang="navLibrary">បណ្ណាល័យ</a>
-                <a href="#" class="nav-link" data-page="images" onclick="navigateTo('images')" data-lang="navImages">រូបភាព</a>
-                <a href="#" class="nav-link" data-page="videos" onclick="navigateTo('videos')" data-lang="navVideos">វីដេអូ</a>
-                <a href="#" class="nav-link" data-page="contact" onclick="navigateTo('contact')" data-lang="navContact">ទំនាក់ទំនង</a>
-                
-                <div class="nav-social-links">
-                    <a href="https://www.facebook.com/share/1KCQ6F5YD6/?mibextid=wwXIfr" target="_blank" class="nav-social-btn"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="nav-social-btn"><i class="fab fa-telegram-plane"></i></a>
-                    <a href="https://www.youtube.com/@ktpttc" target="_blank" class="nav-social-btn"><i class="fab fa-youtube"></i></a>
-                </div>
-            </nav>
+            </div>
         </div>
-    </header>
+
+        <!-- Main Navigation Bar -->
+        <header class="navbar" id="navbar">
+            <div class="nav-container">
+                <a href="#" class="logo" onclick="navigateTo('home')">
+                    <img src="KTPTTC1.png" alt="KTPTTC Logo" class="logo-img light-logo">
+                    <img src="KTPTTC.png" alt="KTPTTC Logo" class="logo-img dark-logo">
+                </a>
+                
+                <div class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars"></i>
+                </div>
+                
+                <nav class="nav-links" id="nav-links">
+                    <a href="#" class="nav-link active" data-page="home" onclick="navigateTo('home')" data-lang="navHome">ទំព័រដើម</a>
+                    
+                    <div class="dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-page="about" onclick="navigateTo('about')" data-lang="navAbout">
+                            អំពីសាលា <i class="fas fa-chevron-down"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="#" class="dropdown-item" onclick="navigateTo('about', 'history')" data-lang="navHistory">ប្រវត្តិសាលា</a>
+                            <a href="#" class="dropdown-item" onclick="navigateTo('about', 'structure')" data-lang="navStructure">រចនាសម្ព័ន្ធ</a>
+                            <a href="#" class="dropdown-item" onclick="navigateTo('about', 'team')" data-lang="navTeam">គណៈគ្រប់គ្រង</a>
+                            <a href="#" class="dropdown-item" onclick="navigateTo('about', 'staff')" data-lang="navStaff">បុគ្គលិក</a>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="nav-link" data-page="library" onclick="navigateTo('library')" data-lang="navLibrary">បណ្ណាល័យ</a>
+                    <a href="#" class="nav-link" data-page="images" onclick="navigateTo('images')" data-lang="navImages">រូបភាព</a>
+                    <a href="#" class="nav-link" data-page="videos" onclick="navigateTo('videos')" data-lang="navVideos">វីដេអូ</a>
+                    <a href="#" class="nav-link" data-page="contact" onclick="navigateTo('contact')" data-lang="navContact">ទំនាក់ទំនង</a>
+                    
+                    <div class="nav-social-links" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <a href="https://www.facebook.com/share/1KCQ6F5YD6/?mibextid=wwXIfr" target="_blank" class="nav-social-btn"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="nav-social-btn"><i class="fab fa-telegram-plane"></i></a>
+                        <a href="https://www.youtube.com/@ktpttc" target="_blank" class="nav-social-btn"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </nav>
+            </div>
+        </header>
+    </div>
 
     <!-- Main Content Area -->
     <main id="app-content">
@@ -1687,7 +3042,9 @@ body.dark-mode .org-node.deputy .node-name {
     <div class="container hero-container">
         <div class="hero-slider-wrapper">
             <div class="hero-slider" id="public-hero-slider">
-                <!-- Slides injected by JS -->
+                <div class="slide" style="opacity: 1; animation: none; z-index: 1;">
+                    <img src="Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
             </div>
         </div>
     </div>
@@ -1720,6 +3077,81 @@ body.dark-mode .org-node.deputy .node-name {
     </div>
 </section>
 
+<!-- Home Brief History Section (Below Vision & Mission) -->
+<section class="home-history-section">
+    <div class="container">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+            <h2 class="section-title" data-lang="homeHistoryTitle" style="margin-bottom: 0;">ប្រវត្តិសង្ខេបសាលា</h2>
+            <a href="#" onclick="navigateTo('about', 'history')" class="btn-view-all">
+                <span data-lang="readMoreHistory">អានបន្ថែម</span> <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="home-history-card card">
+            <div class="home-history-grid">
+                <div class="home-history-img-col">
+                    <div class="home-history-img-wrap">
+                        <img id="home-history-img" src="https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link" data-original-src="https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link" referrerpolicy="no-referrer" alt="School History" onerror="handleImageFallback(this, 'School History')">
+                        <div class="home-history-badge">
+                            <i class="fas fa-landmark"></i> <span data-lang="establishedBadge">ស្ថាបនាឡើងក្នុងឆ្នាំ ១៩៩០</span>
+                        </div>
+                    </div>
+                    <!-- 3 Horizontal Thumbnail Images Row Below Main Image -->
+                    <div class="home-history-thumbs-row">
+                        <div class="history-thumb-item" onclick="changeHistoryMainPhoto(this, 'https://drive.google.com/file/d/1PtRTKELxABPews_T9boyDZ9giEUmksRW/view?usp=share_link')" title="ចុចដើម្បីប្តូររូបភាពធំ">
+                            <img src="https://drive.google.com/file/d/1PtRTKELxABPews_T9boyDZ9giEUmksRW/view?usp=share_link" referrerpolicy="no-referrer" alt="អគារ និងបរិវេណសាលា" onerror="handleImageFallback(this, 'Campus')">
+                        </div>
+                        <div class="history-thumb-item" onclick="changeHistoryMainPhoto(this, 'https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link')" title="ចុចដើម្បីប្តូររូបភាពធំ">
+                            <img src="https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link" referrerpolicy="no-referrer" alt="បណ្ណាល័យសិក្សាស្រាវជ្រាវ" onerror="handleImageFallback(this, 'Library')">
+                        </div>
+                        <div class="history-thumb-item" onclick="changeHistoryMainPhoto(this, 'https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link')" title="ចុចដើម្បីប្តូររូបភាពធំ">
+                            <img src="https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link" referrerpolicy="no-referrer" alt="បន្ទប់បច្ចេកវិទ្យាព័ត៌មានវិទ្យា" onerror="handleImageFallback(this, 'IT Lab')">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="home-history-text-col">
+                    <h3 class="home-history-subtitle" data-lang="homeHistorySubtitle">ដំណើរដើមទង និងការរីកចម្រើននៃសាលា</h3>
+                    <p class="home-history-p" data-lang="historyP1">សាលារៀនរបស់យើងត្រូវបានបង្កើតឡើងនៅក្នុងឆ្នាំ ១៩៩០ ដោយមានគោលបំណងចម្បងក្នុងការបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិត។ ឆ្លងកាត់រយៈពេលជាង ៣០ ឆ្នាំ សាលាបានអភិវឌ្ឍខ្លួនពីអគារឈើប្រក់ក្បឿង មកជាអគារបេតុងទំនើបដែលបំពាក់ដោយសម្ភារៈសិក្សាគ្រប់គ្រាន់។</p>
+                    <p class="home-history-p" data-lang="historyP2">បច្ចុប្បន្ន សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ មានគរុសិស្ស/គរុនិស្សិតជាង ២០០០ នាក់ និងលោកគ្រូអ្នកគ្រូជាង ១០០ នាក់ ដែលកំពុងបំពេញបេសកកម្មបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិតសម្រាប់ប្រទេសជាតិ។</p>
+                    <div class="home-history-highlights">
+                        <div class="history-stat-badge">
+                            <i class="fas fa-user-graduate"></i>
+                            <div>
+                                <strong>2,000+</strong>
+                                <span data-lang="statStudents">គរុសិស្សបានបញ្ចប់ការសិក្សា</span>
+                            </div>
+                        </div>
+                        <div class="history-stat-badge">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <div>
+                                <strong>100+</strong>
+                                <span data-lang="statTeachers">សាស្ត្រាចារ្យ និងគ្រូឧទ្ទេស</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Home Photo Gallery Section (Below Vision & Mission) -->
+<section class="home-photo-section">
+    <div class="container">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+            <h2 class="section-title" data-lang="homeGalleryTitle" style="margin-bottom: 0;">កម្រងរូបភាពសកម្មភាព</h2>
+            <a href="#" onclick="navigateTo('images')" class="btn-view-all">
+                <span data-lang="viewAll">មើលទាំងអស់</span> <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="home-photo-grid" id="home-photo-grid">
+            <div class="loading-text" data-lang="loading">កំពុងដំណើរការ...</div>
+        </div>
+    </div>
+</section>
+
 <!-- News & Events Section -->
 <section class="news-section">
     <div class="container">
@@ -1727,10 +3159,170 @@ body.dark-mode .org-node.deputy .node-name {
             <h2 class="section-title" data-lang="latestNews">ព័ត៌មាន និងព្រឹត្តិការណ៍ថ្មីៗ</h2>
         </div>
         
-        <!-- Grid will be populated by GAS fetchNews() -->
+        <!-- Grid will be populated by fetchNews() -->
         <div class="news-grid" id="news-grid">
             <!-- Loading indicator initially -->
             <div class="loading-text" data-lang="loading">កំពុងដំណើរការ...</div>
+        </div>
+        <div class="pagination-container" id="news-pagination" style="display: none; justify-content: center; margin-top: 35px;"></div>
+    </div>
+</section>
+
+<!-- Library Section -->
+<section class="home-library-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title" data-lang="libraryTitle">បណ្ណាល័យឌីជីថល</h2>
+        </div>
+        
+        <div class="library-container-grid">
+            <div class="main-book-card" id="home-main-book-card">
+                <div style="text-align: center; width: 100%; padding: 40px; color: var(--text-muted);">
+                    <div class="loading-text" data-lang="loading">កំពុងដំណើរការ...</div>
+                </div>
+            </div>
+            
+            <div class="book-playlist" id="home-book-playlist">
+                <!-- Book thumbnails populated by JS -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Video Section -->
+<section class="video-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title" data-lang="videoTitle">វីដេអូសកម្មភាព</h2>
+        </div>
+        
+        <div class="video-container-grid">
+            <div class="main-video-card">
+                <div class="main-video-wrapper">
+                    <iframe id="home-main-video-player" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="សកម្មភាពសាលា" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <h3 id="home-main-video-title" style="margin-top: 15px; font-size: 1.1rem; color: var(--text-main); font-weight: 600;">វីដេអូបង្ហាញសកម្មភាពសាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</h3>
+            </div>
+            
+            <div class="video-playlist" id="home-video-playlist">
+                <!-- Video thumbnails populated by JS -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Partner Schools Section (Below Videos) -->
+<section class="partners-section">
+    <div class="container">
+        <div class="partners-header">
+            <h2 class="section-title" data-lang="partnersTitle">សាលា និងស្ថាប័នដៃគូ</h2>
+            <p class="partners-subtitle" data-lang="partnersSubtitle">កិច្ចសហប្រតិបត្តិការ និងការផ្សារភ្ជាប់ទំនាក់ទំនងជាមួយគ្រឹះស្ថានអប់រំ និងបណ្តុះបណ្តាលគ្រូ</p>
+        </div>
+        
+        <div class="partners-grid">
+            <!-- Partner 1: MoEYS -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #1e40af, #3b82f6);">
+                    <i class="fas fa-university"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagMinistry">ក្រសួងអាណាព្យាបាល</span>
+                <h3 class="partner-name" data-lang="partner1Name">ក្រសួងអប់រំ យុវជន និងកីឡា</h3>
+                <p class="partner-name-en" data-lang="partner1En">Ministry of Education, Youth and Sport</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPhnomPenh">រាជធានីភ្នំពេញ</span>
+                </div>
+            </div>
+
+            <!-- Partner 2: PTEC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #059669, #10b981);">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagInstitute">វិទ្យាស្ថានគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner2Name">វិទ្យាស្ថានគរុកោសល្យរាជធានីភ្នំពេញ</h3>
+                <p class="partner-name-en" data-lang="partner2En">Phnom Penh Teacher Education College</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPhnomPenh">រាជធានីភ្នំពេញ</span>
+                </div>
+            </div>
+
+            <!-- Partner 3: BTEC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #d97706, #f59e0b);">
+                    <i class="fas fa-school"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagInstitute">វិទ្យាស្ថានគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner3Name">វិទ្យាស្ថានគរុកោសល្យខេត្តបាត់ដំបង</h3>
+                <p class="partner-name-en" data-lang="partner3En">Battambang Teacher Education College</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locBattambang">ខេត្តបាត់ដំបង</span>
+                </div>
+            </div>
+
+            <!-- Partner 4: Kampong Cham PTTC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #7c3aed, #8b5cf6);">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagPTTC">សាលាគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner4Name">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តកំពង់ចាម</h3>
+                <p class="partner-name-en" data-lang="partner4En">Kampong Cham PTTC</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locKampongCham">ខេត្តកំពង់ចាម</span>
+                </div>
+            </div>
+
+            <!-- Partner 5: Stung Treng PTTC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #0284c7, #38bdf8);">
+                    <i class="fas fa-book-reader"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagPTTC">សាលាគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner5Name">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តស្ទឹងត្រែង</h3>
+                <p class="partner-name-en" data-lang="partner5En">Stung Treng PTTC</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locStungTreng">ខេត្តស្ទឹងត្រែង</span>
+                </div>
+            </div>
+
+            <!-- Partner 6: Prey Veng PTTC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #e11d48, #f43f5e);">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagPTTC">សាលាគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner6Name">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តព្រៃវែង</h3>
+                <p class="partner-name-en" data-lang="partner6En">Prey Veng PTTC</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPreyVeng">ខេត្តព្រៃវែង</span>
+                </div>
+            </div>
+
+            <!-- Partner 7: RUPP -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #0f766e, #14b8a6);">
+                    <i class="fas fa-award"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagUniversity">សាកលវិទ្យាល័យ</span>
+                <h3 class="partner-name" data-lang="partner7Name">សាកលវិទ្យាល័យភូមិន្ទភ្នំពេញ</h3>
+                <p class="partner-name-en" data-lang="partner7En">Royal University of Phnom Penh (RUPP)</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPhnomPenh">រាជធានីភ្នំពេញ</span>
+                </div>
+            </div>
+
+            <!-- Partner 8: CSUK -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #b45309, #d97706);">
+                    <i class="fas fa-certificate"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagUniversity">សាកលវិទ្យាល័យ</span>
+                <h3 class="partner-name" data-lang="partner8Name">សាកលវិទ្យាល័យជាតិជាស៊ីមកំចាយមារ</h3>
+                <p class="partner-name-en" data-lang="partner8En">Chea Sim University of Kamchaymear</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPreyVeng">ខេត្តព្រៃវែង</span>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -1746,7 +3338,9 @@ body.dark-mode .org-node.deputy .node-name {
     <div class="container hero-container">
         <div class="hero-slider-wrapper">
             <div class="hero-slider" id="public-hero-slider">
-                <!-- Slides injected by JS -->
+                <div class="slide" style="opacity: 1; animation: none; z-index: 1;">
+                    <img src="Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
             </div>
         </div>
     </div>
@@ -1779,6 +3373,81 @@ body.dark-mode .org-node.deputy .node-name {
     </div>
 </section>
 
+<!-- Home Brief History Section (Below Vision & Mission) -->
+<section class="home-history-section">
+    <div class="container">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+            <h2 class="section-title" data-lang="homeHistoryTitle" style="margin-bottom: 0;">ប្រវត្តិសង្ខេបសាលា</h2>
+            <a href="#" onclick="navigateTo('about', 'history')" class="btn-view-all">
+                <span data-lang="readMoreHistory">អានបន្ថែម</span> <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="home-history-card card">
+            <div class="home-history-grid">
+                <div class="home-history-img-col">
+                    <div class="home-history-img-wrap">
+                        <img id="home-history-img" src="https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link" data-original-src="https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link" referrerpolicy="no-referrer" alt="School History" onerror="handleImageFallback(this, 'School History')">
+                        <div class="home-history-badge">
+                            <i class="fas fa-landmark"></i> <span data-lang="establishedBadge">ស្ថាបនាឡើងក្នុងឆ្នាំ ១៩៩០</span>
+                        </div>
+                    </div>
+                    <!-- 3 Horizontal Thumbnail Images Row Below Main Image -->
+                    <div class="home-history-thumbs-row">
+                        <div class="history-thumb-item" onclick="changeHistoryMainPhoto(this, 'https://drive.google.com/file/d/1PtRTKELxABPews_T9boyDZ9giEUmksRW/view?usp=share_link')" title="ចុចដើម្បីប្តូររូបភាពធំ">
+                            <img src="https://drive.google.com/file/d/1PtRTKELxABPews_T9boyDZ9giEUmksRW/view?usp=share_link" referrerpolicy="no-referrer" alt="អគារ និងបរិវេណសាលា" onerror="handleImageFallback(this, 'Campus')">
+                        </div>
+                        <div class="history-thumb-item" onclick="changeHistoryMainPhoto(this, 'https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link')" title="ចុចដើម្បីប្តូររូបភាពធំ">
+                            <img src="https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link" referrerpolicy="no-referrer" alt="បណ្ណាល័យសិក្សាស្រាវជ្រាវ" onerror="handleImageFallback(this, 'Library')">
+                        </div>
+                        <div class="history-thumb-item" onclick="changeHistoryMainPhoto(this, 'https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link')" title="ចុចដើម្បីប្តូររូបភាពធំ">
+                            <img src="https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link" referrerpolicy="no-referrer" alt="បន្ទប់បច្ចេកវិទ្យាព័ត៌មានវិទ្យា" onerror="handleImageFallback(this, 'IT Lab')">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="home-history-text-col">
+                    <h3 class="home-history-subtitle" data-lang="homeHistorySubtitle">ដំណើរដើមទង និងការរីកចម្រើននៃសាលា</h3>
+                    <p class="home-history-p" data-lang="historyP1">សាលារៀនរបស់យើងត្រូវបានបង្កើតឡើងនៅក្នុងឆ្នាំ ១៩៩០ ដោយមានគោលបំណងចម្បងក្នុងការបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិត។ ឆ្លងកាត់រយៈពេលជាង ៣០ ឆ្នាំ សាលាបានអភិវឌ្ឍខ្លួនពីអគារឈើប្រក់ក្បឿង មកជាអគារបេតុងទំនើបដែលបំពាក់ដោយសម្ភារៈសិក្សាគ្រប់គ្រាន់។</p>
+                    <p class="home-history-p" data-lang="historyP2">បច្ចុប្បន្ន សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ មានគរុសិស្ស/គរុនិស្សិតជាង ២០០០ នាក់ និងលោកគ្រូអ្នកគ្រូជាង ១០០ នាក់ ដែលកំពុងបំពេញបេសកកម្មបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិតសម្រាប់ប្រទេសជាតិ។</p>
+                    <div class="home-history-highlights">
+                        <div class="history-stat-badge">
+                            <i class="fas fa-user-graduate"></i>
+                            <div>
+                                <strong>2,000+</strong>
+                                <span data-lang="statStudents">គរុសិស្សបានបញ្ចប់ការសិក្សា</span>
+                            </div>
+                        </div>
+                        <div class="history-stat-badge">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <div>
+                                <strong>100+</strong>
+                                <span data-lang="statTeachers">សាស្ត្រាចារ្យ និងគ្រូឧទ្ទេស</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Home Photo Gallery Section (Below Vision & Mission) -->
+<section class="home-photo-section">
+    <div class="container">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+            <h2 class="section-title" data-lang="homeGalleryTitle" style="margin-bottom: 0;">កម្រងរូបភាពសកម្មភាព</h2>
+            <a href="#" onclick="navigateTo('images')" class="btn-view-all">
+                <span data-lang="viewAll">មើលទាំងអស់</span> <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="home-photo-grid" id="home-photo-grid">
+            <div class="loading-text" data-lang="loading">កំពុងដំណើរការ...</div>
+        </div>
+    </div>
+</section>
+
 <!-- News & Events Section -->
 <section class="news-section">
     <div class="container">
@@ -1786,10 +3455,170 @@ body.dark-mode .org-node.deputy .node-name {
             <h2 class="section-title" data-lang="latestNews">ព័ត៌មាន និងព្រឹត្តិការណ៍ថ្មីៗ</h2>
         </div>
         
-        <!-- Grid will be populated by GAS fetchNews() -->
+        <!-- Grid will be populated by fetchNews() -->
         <div class="news-grid" id="news-grid">
             <!-- Loading indicator initially -->
             <div class="loading-text" data-lang="loading">កំពុងដំណើរការ...</div>
+        </div>
+        <div class="pagination-container" id="news-pagination" style="display: none; justify-content: center; margin-top: 35px;"></div>
+    </div>
+</section>
+
+<!-- Library Section -->
+<section class="home-library-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title" data-lang="libraryTitle">បណ្ណាល័យឌីជីថល</h2>
+        </div>
+        
+        <div class="library-container-grid">
+            <div class="main-book-card" id="home-main-book-card">
+                <div style="text-align: center; width: 100%; padding: 40px; color: var(--text-muted);">
+                    <div class="loading-text" data-lang="loading">កំពុងដំណើរការ...</div>
+                </div>
+            </div>
+            
+            <div class="book-playlist" id="home-book-playlist">
+                <!-- Book thumbnails populated by JS -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Video Section -->
+<section class="video-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title" data-lang="videoTitle">វីដេអូសកម្មភាព</h2>
+        </div>
+        
+        <div class="video-container-grid">
+            <div class="main-video-card">
+                <div class="main-video-wrapper">
+                    <iframe id="home-main-video-player" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="សកម្មភាពសាលា" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <h3 id="home-main-video-title" style="margin-top: 15px; font-size: 1.1rem; color: var(--text-main); font-weight: 600;">វីដេអូបង្ហាញសកម្មភាពសាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</h3>
+            </div>
+            
+            <div class="video-playlist" id="home-video-playlist">
+                <!-- Video thumbnails populated by JS -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Partner Schools Section (Below Videos) -->
+<section class="partners-section">
+    <div class="container">
+        <div class="partners-header">
+            <h2 class="section-title" data-lang="partnersTitle">សាលា និងស្ថាប័នដៃគូ</h2>
+            <p class="partners-subtitle" data-lang="partnersSubtitle">កិច្ចសហប្រតិបត្តិការ និងការផ្សារភ្ជាប់ទំនាក់ទំនងជាមួយគ្រឹះស្ថានអប់រំ និងបណ្តុះបណ្តាលគ្រូ</p>
+        </div>
+        
+        <div class="partners-grid">
+            <!-- Partner 1: MoEYS -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #1e40af, #3b82f6);">
+                    <i class="fas fa-university"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagMinistry">ក្រសួងអាណាព្យាបាល</span>
+                <h3 class="partner-name" data-lang="partner1Name">ក្រសួងអប់រំ យុវជន និងកីឡា</h3>
+                <p class="partner-name-en" data-lang="partner1En">Ministry of Education, Youth and Sport</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPhnomPenh">រាជធានីភ្នំពេញ</span>
+                </div>
+            </div>
+
+            <!-- Partner 2: PTEC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #059669, #10b981);">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagInstitute">វិទ្យាស្ថានគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner2Name">វិទ្យាស្ថានគរុកោសល្យរាជធានីភ្នំពេញ</h3>
+                <p class="partner-name-en" data-lang="partner2En">Phnom Penh Teacher Education College</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPhnomPenh">រាជធានីភ្នំពេញ</span>
+                </div>
+            </div>
+
+            <!-- Partner 3: BTEC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #d97706, #f59e0b);">
+                    <i class="fas fa-school"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagInstitute">វិទ្យាស្ថានគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner3Name">វិទ្យាស្ថានគរុកោសល្យខេត្តបាត់ដំបង</h3>
+                <p class="partner-name-en" data-lang="partner3En">Battambang Teacher Education College</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locBattambang">ខេត្តបាត់ដំបង</span>
+                </div>
+            </div>
+
+            <!-- Partner 4: Kampong Cham PTTC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #7c3aed, #8b5cf6);">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagPTTC">សាលាគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner4Name">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តកំពង់ចាម</h3>
+                <p class="partner-name-en" data-lang="partner4En">Kampong Cham PTTC</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locKampongCham">ខេត្តកំពង់ចាម</span>
+                </div>
+            </div>
+
+            <!-- Partner 5: Stung Treng PTTC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #0284c7, #38bdf8);">
+                    <i class="fas fa-book-reader"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagPTTC">សាលាគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner5Name">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តស្ទឹងត្រែង</h3>
+                <p class="partner-name-en" data-lang="partner5En">Stung Treng PTTC</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locStungTreng">ខេត្តស្ទឹងត្រែង</span>
+                </div>
+            </div>
+
+            <!-- Partner 6: Prey Veng PTTC -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #e11d48, #f43f5e);">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagPTTC">សាលាគរុកោសល្យ</span>
+                <h3 class="partner-name" data-lang="partner6Name">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តព្រៃវែង</h3>
+                <p class="partner-name-en" data-lang="partner6En">Prey Veng PTTC</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPreyVeng">ខេត្តព្រៃវែង</span>
+                </div>
+            </div>
+
+            <!-- Partner 7: RUPP -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #0f766e, #14b8a6);">
+                    <i class="fas fa-award"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagUniversity">សាកលវិទ្យាល័យ</span>
+                <h3 class="partner-name" data-lang="partner7Name">សាកលវិទ្យាល័យភូមិន្ទភ្នំពេញ</h3>
+                <p class="partner-name-en" data-lang="partner7En">Royal University of Phnom Penh (RUPP)</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPhnomPenh">រាជធានីភ្នំពេញ</span>
+                </div>
+            </div>
+
+            <!-- Partner 8: CSUK -->
+            <div class="partner-card">
+                <div class="partner-icon-wrap" style="background: linear-gradient(135deg, #b45309, #d97706);">
+                    <i class="fas fa-certificate"></i>
+                </div>
+                <span class="partner-tag" data-lang="tagUniversity">សាកលវិទ្យាល័យ</span>
+                <h3 class="partner-name" data-lang="partner8Name">សាកលវិទ្យាល័យជាតិជាស៊ីមកំចាយមារ</h3>
+                <p class="partner-name-en" data-lang="partner8En">Chea Sim University of Kamchaymear</p>
+                <div class="partner-location">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span data-lang="locPreyVeng">ខេត្តព្រៃវែង</span>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -1819,8 +3648,22 @@ body.dark-mode .org-node.deputy .node-name {
                 <p data-lang="historyP1">សាលារៀនរបស់យើងត្រូវបានបង្កើតឡើងនៅក្នុងឆ្នាំ ១៩៩០ ដោយមានគោលបំណងចម្បងក្នុងការបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិត។ ឆ្លងកាត់រយៈពេលជាង ៣០ ឆ្នាំ សាលាបានអភិវឌ្ឍខ្លួនពីអគារឈើប្រក់ក្បឿង មកជាអគារបេតុងទំនើបដែលបំពាក់ដោយសម្ភារៈសិក្សាគ្រប់គ្រាន់។</p>
                 <p data-lang="historyP2">បច្ចុប្បន្ន សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ មានគរុសិស្ស/គរុនិស្សិតជាង ២០០០ នាក់ និងលោកគ្រូអ្នកគ្រូជាង ១០០ នាក់ ដែលកំពុងបំពេញបេសកកម្មបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិតសម្រាប់ប្រទេសជាតិ។</p>
             </div>
-            <div class="history-image card">
-                <img id="history-img-element" src="https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link" data-original-src="https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link" referrerpolicy="no-referrer" alt="School History" onerror="handleImageFallback(this, 'School History')">
+            <div class="history-image-col" style="flex: 1.4; min-width: 0; max-width: 100%; width: 100%;">
+                <div class="history-image card" style="margin-bottom: 14px;">
+                    <img id="history-img-element" src="https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link" data-original-src="https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link" referrerpolicy="no-referrer" alt="School History" onerror="handleImageFallback(this, 'School History')">
+                </div>
+                <!-- 3 Horizontal Thumbnail Images Row Below Main Image -->
+                <div class="home-history-thumbs-row">
+                    <div class="history-thumb-item" onclick="changeHistoryMainPhoto(this, 'https://drive.google.com/file/d/1PtRTKELxABPews_T9boyDZ9giEUmksRW/view?usp=share_link')" title="ចុចដើម្បីប្តូររូបភាពធំ">
+                        <img src="https://drive.google.com/file/d/1PtRTKELxABPews_T9boyDZ9giEUmksRW/view?usp=share_link" referrerpolicy="no-referrer" alt="អគារ និងបរិវេណសាលា" onerror="handleImageFallback(this, 'Campus')">
+                    </div>
+                    <div class="history-thumb-item" onclick="changeHistoryMainPhoto(this, 'https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link')" title="ចុចដើម្បីប្តូររូបភាពធំ">
+                        <img src="https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link" referrerpolicy="no-referrer" alt="បណ្ណាល័យសិក្សាស្រាវជ្រាវ" onerror="handleImageFallback(this, 'Library')">
+                    </div>
+                    <div class="history-thumb-item" onclick="changeHistoryMainPhoto(this, 'https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link')" title="ចុចដើម្បីប្តូររូបភាពធំ">
+                        <img src="https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link" referrerpolicy="no-referrer" alt="បន្ទប់បច្ចេកវិទ្យាព័ត៌មានវិទ្យា" onerror="handleImageFallback(this, 'IT Lab')">
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -1837,6 +3680,14 @@ body.dark-mode .org-node.deputy .node-name {
     <section id="team" class="about-section">
         <h2 class="section-title" data-lang="navTeam">គណៈគ្រប់គ្រង</h2>
         <div class="team-grid" id="team-grid">
+            <p style="text-align: center; color: var(--text-secondary); width: 100%;">កំពុងផ្ទុកទិន្នន័យ...</p>
+        </div>
+    </section>
+
+    <!-- Section: Staff (បុគ្គលិក) -->
+    <section id="staff" class="about-section" style="margin-top: 55px;">
+        <h2 class="section-title" data-lang="navStaff">បុគ្គលិក</h2>
+        <div class="staff-grid" id="staff-grid">
             <p style="text-align: center; color: var(--text-secondary); width: 100%;">កំពុងផ្ទុកទិន្នន័យ...</p>
         </div>
     </section>
@@ -1860,14 +3711,30 @@ body.dark-mode .org-node.deputy .node-name {
 <div class="container page-content">
     
     <!-- Search & Filter Area -->
-    <div class="library-controls card">
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" id="bookSearch" class="form-control" placeholder="ស្វែងរកសៀវភៅ..." onkeyup="searchBooks()" data-lang="searchBook">
+    <div class="library-controls card" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 20px; border-radius: 14px; background: var(--bg-surface); box-shadow: var(--shadow-md);">
+        <div class="search-box" style="flex: 1; min-width: 240px; position: relative;">
+            <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+            <input type="text" id="bookSearch" class="form-control" placeholder="ស្វែងរកសៀវភៅ..." onkeyup="searchBooks()" data-lang="searchBook" style="padding-left: 42px; width: 100%; border-radius: 10px;">
         </div>
-        <div class="filter-box">
-            <select id="bookCategory" class="form-control" onchange="searchBooks()">
-                <option value="" data-lang="allCats">គ្រប់ប្រភេទ</option>
+        <div class="filter-box" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+            <select id="bookGrade" class="form-control" onchange="searchBooks()" style="width: auto; min-width: 170px; border-radius: 10px; padding: 10px 14px; font-weight: 600;">
+                <option value="">📚 គ្រប់ថ្នាក់ (ទី១ - ទី១២)</option>
+                <option value="ថ្នាក់ទី១">ថ្នាក់ទី១</option>
+                <option value="ថ្នាក់ទី២">ថ្នាក់ទី២</option>
+                <option value="ថ្នាក់ទី៣">ថ្នាក់ទី៣</option>
+                <option value="ថ្នាក់ទី៤">ថ្នាក់ទី៤</option>
+                <option value="ថ្នាក់ទី៥">ថ្នាក់ទី៥</option>
+                <option value="ថ្នាក់ទី៦">ថ្នាក់ទី៦</option>
+                <option value="ថ្នាក់ទី៧">ថ្នាក់ទី៧</option>
+                <option value="ថ្នាក់ទី៨">ថ្នាក់ទី៨</option>
+                <option value="ថ្នាក់ទី៩">ថ្នាក់ទី៩</option>
+                <option value="ថ្នាក់ទី១០">ថ្នាក់ទី១០</option>
+                <option value="ថ្នាក់ទី១១">ថ្នាក់ទី១១</option>
+                <option value="ថ្នាក់ទី១២">ថ្នាក់ទី១២</option>
+                <option value="ផ្សេងៗ">ផ្សេងៗ</option>
+            </select>
+            <select id="bookCategory" class="form-control" onchange="searchBooks()" style="width: auto; min-width: 170px; border-radius: 10px; padding: 10px 14px; font-weight: 600;">
+                <option value="" data-lang="allCats">🏷️ គ្រប់ប្រភេទ</option>
                 <!-- Categories populated by JS -->
             </select>
         </div>
@@ -1878,6 +3745,9 @@ body.dark-mode .org-node.deputy .node-name {
         <!-- Loader -->
         <div class="loading-text" style="grid-column: 1/-1; text-align: center;" data-lang="loading">កំពុងដំណើរការ...</div>
     </div>
+
+    <!-- Books Pagination -->
+    <div class="pagination-container" id="books-pagination" style="display: none;"></div>
 
 </div>
     </template>
@@ -1894,9 +3764,21 @@ body.dark-mode .org-node.deputy .node-name {
         </div>
 
         <div class="container page-content">
+            <!-- Search & Filter Controls -->
+            <div class="library-controls card" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 20px; border-radius: 14px; background: var(--bg-surface); box-shadow: var(--shadow-md); margin-bottom: 30px;">
+                <div class="search-box" style="flex: 1; min-width: 240px; position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                    <input type="text" id="gallerySearch" class="form-control" placeholder="ស្វែងរកកម្រងរូបភាព..." onkeyup="searchGallery()" data-lang="searchImage" style="padding-left: 42px; width: 100%; border-radius: 10px;">
+                </div>
+            </div>
+
             <div class="media-grid" id="public-gallery-grid">
                 <!-- Gallery items injected by JS -->
+                <div class="loading-text" style="grid-column: 1/-1; text-align: center;" data-lang="loading">កំពុងដំណើរការ...</div>
             </div>
+
+            <!-- Gallery Pagination -->
+            <div class="pagination-container" id="gallery-pagination" style="display: none;"></div>
         </div>
     </template>
     
@@ -1912,9 +3794,21 @@ body.dark-mode .org-node.deputy .node-name {
         </div>
 
         <div class="container page-content">
+            <!-- Search & Filter Controls -->
+            <div class="library-controls card" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 20px; border-radius: 14px; background: var(--bg-surface); box-shadow: var(--shadow-md); margin-bottom: 30px;">
+                <div class="search-box" style="flex: 1; min-width: 240px; position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                    <input type="text" id="videoSearch" class="form-control" placeholder="ស្វែងរកវីដេអូ..." onkeyup="searchPublicVideos()" data-lang="searchVideo" style="padding-left: 42px; width: 100%; border-radius: 10px;">
+                </div>
+            </div>
+
             <div class="media-grid" id="public-videos-grid">
                 <!-- Videos injected by JS -->
+                <div class="loading-text" style="grid-column: 1/-1; text-align: center;" data-lang="loading">កំពុងដំណើរការ...</div>
             </div>
+
+            <!-- Videos Pagination -->
+            <div class="pagination-container" id="videos-pagination" style="display: none;"></div>
         </div>
     </template>
     <template id="tpl-contact">
@@ -2053,12 +3947,17 @@ body.dark-mode .org-node.deputy .node-name {
 
     <!-- Book Reader Modal -->
     <div id="bookReaderModal" class="modal-overlay" onclick="if(event.target === this) closeBookModal()">
-        <div class="modal-container">
-            <div class="modal-header">
-                <h2 id="bookModalTitle">អានសៀវភៅ</h2>
-                <button class="btn-close" onclick="closeBookModal()">&times;</button>
+        <div class="modal-container" style="max-width: 900px; width: 92%; height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 id="bookModalTitle" style="font-size: 1.1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">អានសៀវភៅ</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <a id="bookModalExternalLink" href="#" target="_blank" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem; text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-external-link-alt"></i> បើកក្នុង Tab ថ្មី
+                    </a>
+                    <button class="btn-close" onclick="closeBookModal()">&times;</button>
+                </div>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="flex: 1; padding: 0;">
                 <iframe id="bookIframe" src="" width="100%" height="100%" style="border: none; background: white;"></iframe>
             </div>
         </div>
@@ -2083,6 +3982,19 @@ body.dark-mode .org-node.deputy .node-name {
             </div>
             <div class="modal-footer news-modal-footer">
                 <button class="btn-news-close" onclick="closeNewsModal()"><i class="fas fa-times"></i> <span data-lang="closeBtn">បិទ</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div id="imagePreviewModal" class="modal-overlay" onclick="if(event.target === this) closeImagePreviewModal()">
+        <div class="modal-container" style="max-width: 850px; width: 92%; padding: 0; background: var(--bg-surface); overflow: hidden; border-radius: 14px; box-shadow: var(--shadow-lg);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border);">
+                <h3 id="imagePreviewTitle" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; color: var(--text-main);">រូបភាព</h3>
+                <button class="btn-close" onclick="closeImagePreviewModal()" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0; display: flex; align-items: center; justify-content: center; background: #0b1120;">
+                <img id="imagePreviewImg" src="" alt="Preview" style="max-width: 100%; max-height: 75vh; object-fit: contain; display: block;" referrerpolicy="no-referrer">
             </div>
         </div>
     </div>
@@ -2132,6 +4044,7 @@ function getDriveImageUrl(url) {
     url = url.trim();
     if (!url) return getPlaceholderSvg('No Image');
 
+    if (url.startsWith('data:image')) return url;
     if (url.includes('googleusercontent.com/d/')) {
         return url;
     }
@@ -2159,32 +4072,286 @@ function getDriveImageUrl(url) {
     return url;
 }
 
-function fetchGallery() {
-    let localGallery = JSON.parse(localStorage.getItem('mockGallery'));
-    if (!localGallery || localGallery.length === 0) {
-        localGallery = [
-            { title: 'ទិវាគ្រូបង្រៀន', image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800' },
-            { title: 'ពិធីចែកសញ្ញាបត្រ', image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800' },
-            { title: 'សកម្មភាពសិស្ស', image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800' }
-        ];
-    }
-    renderGallery(localGallery);
+function changeHistoryMainPhoto(thumbEl, newUrl) {
+    if (!newUrl) return;
+    const resolvedUrl = getDriveImageUrl(newUrl);
+    const mainImgs = document.querySelectorAll('#home-history-img, #history-img-element, .home-history-img-wrap img, .history-image img');
+    mainImgs.forEach(img => {
+        img.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+        img.style.opacity = '0.35';
+        img.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+            img.src = resolvedUrl;
+            img.style.opacity = '1';
+            img.style.transform = 'scale(1)';
+        }, 120);
+    });
+    
+    document.querySelectorAll('.history-thumb-item').forEach(el => el.classList.remove('active'));
+    if (thumbEl) thumbEl.classList.add('active');
 }
 
-function renderGallery(galleryArray) {
+function getDriveEmbedUrl(url) {
+    if (!url || typeof url !== 'string' || url === '#' || url === '') {
+        return 'about:blank';
+    }
+    url = url.trim();
+
+    let fileId = null;
+    const dMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (dMatch && dMatch[1] && dMatch[1] !== 'undefined') {
+        fileId = dMatch[1];
+    }
+    if (!fileId) {
+        const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
+        if (idMatch && idMatch[1] && idMatch[1] !== 'undefined') {
+            fileId = idMatch[1];
+        }
+    }
+    if (!fileId && /^[a-zA-Z0-9_-]{25,50}$/.test(url)) {
+        fileId = url;
+    }
+
+    if (fileId) {
+        return `https://drive.google.com/file/d/${fileId}/preview`;
+    }
+
+    if (url.includes('drive.google.com') && url.includes('/view')) {
+        return url.replace('/view', '/preview');
+    }
+
+    return url;
+}
+
+// Gallery Pagination & State
+const GALLERY_PER_PAGE = 9;
+let allGallery = [];
+let currentFilteredGallery = [];
+let currentGalleryPage = 1;
+
+async function fetchGallery() {
     const grid = document.getElementById('public-gallery-grid');
+    const pagination = document.getElementById('gallery-pagination');
     if (!grid) return;
+
+    grid.innerHTML = `<div class="loading-text" style="grid-column: 1/-1; text-align: center;">${t('loading')}</div>`;
+    if (pagination) {
+        pagination.innerHTML = '';
+        pagination.style.display = 'none';
+    }
+
+    try {
+        const res = await fetch('/api/gallery', { cache: 'no-store' });
+        if (res.ok) {
+            const gallery = await res.json();
+            if (Array.isArray(gallery)) {
+                allGallery = gallery;
+                currentFilteredGallery = gallery;
+                currentGalleryPage = 1;
+                renderGalleryPage(false);
+                return;
+            }
+        }
+    } catch(e) {}
+    allGallery = [];
+    currentFilteredGallery = [];
+    currentGalleryPage = 1;
+    renderGalleryPage(false);
+}
+
+function renderGalleryPage(shouldScroll = false) {
+    const grid = document.getElementById('public-gallery-grid');
+    const pagination = document.getElementById('gallery-pagination');
+    if (!grid) return;
+
     grid.innerHTML = '';
-    
-    galleryArray.forEach(img => {
+
+    if (!currentFilteredGallery || currentFilteredGallery.length === 0) {
+        grid.innerHTML = `<p style="text-align: center; color: var(--text-muted); grid-column: 1/-1; padding: 40px; font-size: 1rem;">${t('noImagesFound') || 'រកមិនឃើញរូបភាពដែលអ្នកស្វែងរកទេ។'}</p>`;
+        if (pagination) {
+            pagination.innerHTML = '';
+            pagination.style.display = 'none';
+        }
+        return;
+    }
+
+    const totalPages = Math.ceil(currentFilteredGallery.length / GALLERY_PER_PAGE);
+    if (currentGalleryPage > totalPages) currentGalleryPage = totalPages;
+    if (currentGalleryPage < 1) currentGalleryPage = 1;
+
+    const startIndex = (currentGalleryPage - 1) * GALLERY_PER_PAGE;
+    const endIndex = Math.min(startIndex + GALLERY_PER_PAGE, currentFilteredGallery.length);
+    const itemsToRender = currentFilteredGallery.slice(startIndex, endIndex);
+
+    itemsToRender.forEach(img => {
         const card = document.createElement('div');
         card.className = 'media-item';
+        const imgUrl = getDriveImageUrl(img.image);
+        const safeTitle = (img.title || '').replace(/'/g, "\\'");
+        card.setAttribute('onclick', `openImagePreviewModal('${imgUrl}', '${safeTitle}')`);
         card.innerHTML = `
-            <img src="${getDriveImageUrl(img.image)}" referrerpolicy="no-referrer" loading="lazy" alt="${img.title || 'Gallery Image'}" title="${img.title || ''}" onerror="handleImageFallback(this, 'Gallery Image')">
+            <img src="${imgUrl}" referrerpolicy="no-referrer" loading="lazy" alt="${img.title || 'Gallery Image'}" title="${img.title || ''}" onerror="handleImageFallback(this, 'Gallery Image')">
             ${img.title ? `<div class="media-caption">${img.title}</div>` : ''}
         `;
         grid.appendChild(card);
     });
+
+    if (pagination) {
+        const paginationHtml = buildPaginationHtml(currentFilteredGallery.length, currentGalleryPage, GALLERY_PER_PAGE, 'goToGalleryPage');
+        pagination.innerHTML = paginationHtml;
+        pagination.style.display = paginationHtml ? 'flex' : 'none';
+    }
+
+    if (shouldScroll) {
+        const controls = document.querySelector('.gallery-controls') || grid;
+        if (controls) {
+            const topOffset = controls.getBoundingClientRect().top + window.pageYOffset - 90;
+            window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+        }
+    }
+}
+
+function goToGalleryPage(page) {
+    const totalPages = Math.ceil(currentFilteredGallery.length / GALLERY_PER_PAGE);
+    if (page < 1 || (totalPages > 0 && page > totalPages)) return;
+    currentGalleryPage = page;
+    renderGalleryPage(true);
+}
+
+function searchGallery() {
+    const searchInput = (document.getElementById('gallerySearch')?.value || '').toLowerCase().trim();
+    currentFilteredGallery = allGallery.filter(img => {
+        const titleStr = (img.title || '').toLowerCase();
+        return !searchInput || titleStr.includes(searchInput);
+    });
+    currentGalleryPage = 1;
+    renderGalleryPage(false);
+}
+
+function openImagePreviewModal(src, title) {
+    const modal = document.getElementById('imagePreviewModal');
+    const img = document.getElementById('imagePreviewImg');
+    const titleEl = document.getElementById('imagePreviewTitle');
+    if (!modal || !img) return;
+    img.src = src;
+    if (titleEl) titleEl.innerText = title || 'រូបភាព';
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImagePreviewModal() {
+    const modal = document.getElementById('imagePreviewModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+const formatDriveUrl = getDriveImageUrl;
+
+async function fetchHomePhotos() {
+    const grid = document.getElementById('home-photo-grid');
+    if (!grid) return;
+    
+    try {
+        const res = await fetch('/api/gallery', { cache: 'no-store' });
+        if (res.ok) {
+            const gallery = await res.json();
+            if (Array.isArray(gallery) && gallery.length > 0) {
+                // Show up to 6 latest photos on Home page
+                const latestPhotos = gallery.slice(0, 6);
+                grid.innerHTML = '';
+                
+                latestPhotos.forEach(img => {
+                    const card = document.createElement('div');
+                    card.className = 'home-photo-card';
+                    const imgUrl = getDriveImageUrl(img.image);
+                    const displayTitle = img.title || (currentLang === 'kh' ? 'រូបភាពសកម្មភាព' : 'Activity Photo');
+                    
+                    card.addEventListener('click', () => {
+                        openImagePreviewModal(imgUrl, displayTitle);
+                    });
+                    
+                    const safeDisplayTitle = (displayTitle || '').replace(/"/g, '&quot;');
+                    
+                    card.innerHTML = `
+                        <div class="home-photo-img-wrap">
+                            <img src="${imgUrl}" referrerpolicy="no-referrer" loading="lazy" alt="${safeDisplayTitle}" onerror="handleImageFallback(this, 'Photo')">
+                            <div class="home-photo-overlay">
+                                <div class="home-photo-zoom-btn">
+                                    <i class="fas fa-search-plus"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="home-photo-body">
+                            ${img.date ? `<div class="home-photo-date"><i class="far fa-calendar-alt"></i> ${img.date}</div>` : ''}
+                            <div class="home-photo-title" title="${safeDisplayTitle}">${displayTitle}</div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+                return;
+            }
+        }
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">${i18n[currentLang]?.noImagesFound || 'គ្មានរូបភាពនៅឡើយទេ'}</div>`;
+    } catch (err) {
+        console.error('Error fetching home photos:', err);
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">${i18n[currentLang]?.noImagesFound || 'គ្មានរូបភាពនៅឡើយទេ'}</div>`;
+    }
+}
+
+async function fetchHomePartners() {
+    const grids = document.querySelectorAll('.partners-grid');
+    if (!grids || grids.length === 0) return;
+
+    try {
+        const res = await fetch('/api/partners', { cache: 'no-store' });
+        if (res.ok) {
+            const partners = await res.json();
+            if (Array.isArray(partners) && partners.length > 0) {
+                // Sort by order
+                partners.sort((a, b) => (parseInt(a.order, 10) || 999) - (parseInt(b.order, 10) || 999));
+
+                grids.forEach(grid => {
+                    grid.innerHTML = '';
+                    partners.forEach(item => {
+                        const isKh = (currentLang === 'kh');
+                        const displayName = (isKh ? item.name : (item.nameEn || item.name)) || '';
+                        const displaySubName = isKh ? (item.nameEn || '') : (item.name || '');
+                        const displayTag = (isKh ? item.tag : (item.tagEn || item.tag)) || (isKh ? 'ដៃគូ' : 'Partner');
+                        const displayLoc = (isKh ? item.location : (item.locationEn || item.location)) || '';
+
+                        const iconOrLogo = item.logo 
+                            ? `<div class="partner-logo-wrap"><img src="${getDriveImageUrl(item.logo)}" referrerpolicy="no-referrer" alt="${displayName}" onerror="handleImageFallback(this, 'Logo')"></div>`
+                            : `<div class="partner-icon-wrap" style="background: ${item.gradient || 'linear-gradient(135deg, #1e40af, #3b82f6)'};"><i class="${item.icon || 'fas fa-university'}"></i></div>`;
+
+                        const card = document.createElement('div');
+                        card.className = 'partner-card';
+
+                        if (item.website) {
+                            card.style.cursor = 'pointer';
+                            card.title = isKh ? `ចុចដើម្បីចូលមើល៖ ${item.website}` : `Click to visit: ${item.website}`;
+                            card.onclick = () => window.open(item.website, '_blank', 'noopener,noreferrer');
+                        }
+
+                        card.innerHTML = `
+                            ${iconOrLogo}
+                            <span class="partner-tag">${displayTag}</span>
+                            <h3 class="partner-name">${displayName}</h3>
+                            ${displaySubName ? `<p class="partner-name-en">${displaySubName}</p>` : ''}
+                            ${displayLoc ? `<div class="partner-location"><i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> <span>${displayLoc}</span></div>` : ''}
+                            ${item.website ? `<div style="margin-top: 10px; font-size: 0.8rem; color: var(--primary);"><i class="fas fa-external-link-alt"></i> ${isKh ? 'គេហទំព័រផ្លូវការ' : 'Official Website'}</div>` : ''}
+                        `;
+                        grid.appendChild(card);
+                    });
+                });
+                return;
+            }
+        }
+    } catch (err) {
+        console.error('Error fetching home partners:', err);
+    }
 }
 
 // --- State Management ---
@@ -2200,6 +4367,7 @@ const i18n = {
         navHistory: "ប្រវត្តិសាលា",
         navStructure: "រចនាសម្ព័ន្ធ",
         navTeam: "គណៈគ្រប់គ្រង",
+        navStaff: "បុគ្គលិក",
         navLibrary: "បណ្ណាល័យ",
         navImages: "រូបភាព",
         navVideos: "វីដេអូ",
@@ -2236,21 +4404,65 @@ const i18n = {
         sendMsg: "ផ្ញើសារ",
         libraryTitle: "បណ្ណាល័យឌីជីថល",
         searchBook: "ស្វែងរកសៀវភៅ...",
+        searchImage: "ស្វែងរកកម្រងរូបភាព...",
+        searchVideo: "ស្វែងរកវីដេអូ...",
         allCats: "គ្រប់ប្រភេទ",
         readBook: "អានសៀវភៅ",
         loading: "កំពុងដំណើរការ...",
+        noBooksFound: "រកមិនឃើញសៀវភៅដែលអ្នកស្វែងរកទេ។",
+        noImagesFound: "រកមិនឃើញរូបភាពដែលអ្នកស្វែងរកទេ។",
+        noVideosFound: "រកមិនឃើញវីដេអូដែលអ្នកស្វែងរកទេ។",
+        noNewsFound: "មិនទាន់មានព័ត៌មានថ្មីៗនៅឡើយទេ។",
         closeBtn: "បិទ",
         newsDetail: "ព័ត៌មានលម្អិត",
         visitorCounterLabel: "អ្នកចូលមើលវេបសាយ:",
-        visitorUnit: "នាក់"
+        visitorUnit: "នាក់",
+        videoTitle: "វីដេអូសកម្មភាព",
+        viewAllBooks: "មើលសៀវភៅទាំងអស់",
+        homeGalleryTitle: "កម្រងរូបភាពសកម្មភាព",
+        viewAll: "មើលទាំងអស់",
+        homeHistoryTitle: "ប្រវត្តិសង្ខេបសាលា",
+        homeHistorySubtitle: "ដំណើរដើមទង និងការរីកចម្រើននៃសាលា",
+        readMoreHistory: "អានបន្ថែម",
+        establishedBadge: "ស្ថាបនាឡើងក្នុងឆ្នាំ ១៩៩០",
+        statStudents: "គរុសិស្សបានបញ្ចប់ការសិក្សា",
+        statTeachers: "សាស្ត្រាចារ្យ និងគ្រូឧទ្ទេស",
+        partnersTitle: "សាលា និងស្ថាប័នដៃគូ",
+        partnersSubtitle: "កិច្ចសហប្រតិបត្តិការ និងការផ្សារភ្ជាប់ទំនាក់ទំនងជាមួយគ្រឹះស្ថានអប់រំ និងបណ្តុះបណ្តាលគ្រូ",
+        tagMinistry: "ក្រសួងអាណាព្យាបាល",
+        tagInstitute: "វិទ្យាស្ថានគរុកោសល្យ",
+        tagPTTC: "សាលាគរុកោសល្យ",
+        tagUniversity: "សាកលវិទ្យាល័យ",
+        partner1Name: "ក្រសួងអប់រំ យុវជន និងកីឡា",
+        partner1En: "Ministry of Education, Youth and Sport",
+        partner2Name: "វិទ្យាស្ថានគរុកោសល្យរាជធានីភ្នំពេញ",
+        partner2En: "Phnom Penh Teacher Education College",
+        partner3Name: "វិទ្យាស្ថានគរុកោសល្យខេត្តបាត់ដំបង",
+        partner3En: "Battambang Teacher Education College",
+        partner4Name: "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តកំពង់ចាម",
+        partner4En: "Kampong Cham PTTC",
+        partner5Name: "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តស្ទឹងត្រែង",
+        partner5En: "Stung Treng PTTC",
+        partner6Name: "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តព្រៃវែង",
+        partner6En: "Prey Veng PTTC",
+        partner7Name: "សាកលវិទ្យាល័យភូមិន្ទភ្នំពេញ",
+        partner7En: "Royal University of Phnom Penh (RUPP)",
+        partner8Name: "សាកលវិទ្យាល័យជាតិជាស៊ីមកំចាយមារ",
+        partner8En: "Chea Sim University of Kamchaymear",
+        locPhnomPenh: "រាជធានីភ្នំពេញ",
+        locBattambang: "ខេត្តបាត់ដំបង",
+        locKampongCham: "ខេត្តកំពង់ចាម",
+        locStungTreng: "ខេត្តស្ទឹងត្រែង",
+        locPreyVeng: "ខេត្តព្រៃវែង"
     },
     en: {
-        schoolName: "Model High School",
+        schoolName: "Kratié Provincial Teacher Training Center",
         navHome: "Home",
         navAbout: "About Us",
         navHistory: "History",
         navStructure: "Structure",
         navTeam: "Management",
+        navStaff: "Staff",
         navLibrary: "Library",
         navImages: "Images",
         navVideos: "Videos",
@@ -2287,13 +4499,56 @@ const i18n = {
         sendMsg: "Send Message",
         libraryTitle: "Digital Library",
         searchBook: "Search books...",
+        searchImage: "Search images...",
+        searchVideo: "Search videos...",
         allCats: "All Categories",
         readBook: "Read Book",
         loading: "Loading...",
+        noBooksFound: "No books found matching your criteria.",
+        noImagesFound: "No images found matching your criteria.",
+        noVideosFound: "No videos found matching your criteria.",
+        noNewsFound: "No news found.",
         closeBtn: "Close",
         newsDetail: "News Detail",
         visitorCounterLabel: "Website Visitors:",
-        visitorUnit: "visitors"
+        visitorUnit: "visitors",
+        videoTitle: "Activity Videos",
+        viewAllBooks: "View All Books",
+        homeGalleryTitle: "Activity Photo Gallery",
+        viewAll: "View All",
+        homeHistoryTitle: "Brief School History",
+        homeHistorySubtitle: "Origins & Development of the School",
+        readMoreHistory: "Read More",
+        establishedBadge: "Established in 1990",
+        statStudents: "Graduated Trainees",
+        statTeachers: "Professors & Instructors",
+        partnersTitle: "Partner Schools & Institutions",
+        partnersSubtitle: "Collaborations and partnerships with educational and teacher training institutions",
+        tagMinistry: "Governing Ministry",
+        tagInstitute: "Teacher Education College",
+        tagPTTC: "Teacher Training Center",
+        tagUniversity: "University",
+        partner1Name: "Ministry of Education, Youth and Sport",
+        partner1En: "MoEYS Cambodia",
+        partner2Name: "Phnom Penh Teacher Education College",
+        partner2En: "PTEC Phnom Penh",
+        partner3Name: "Battambang Teacher Education College",
+        partner3En: "BTEC Battambang",
+        partner4Name: "Kampong Cham Teacher Training Center",
+        partner4En: "Kampong Cham PTTC",
+        partner5Name: "Stung Treng Teacher Training Center",
+        partner5En: "Stung Treng PTTC",
+        partner6Name: "Prey Veng Teacher Training Center",
+        partner6En: "Prey Veng PTTC",
+        partner7Name: "Royal University of Phnom Penh",
+        partner7En: "RUPP Cambodia",
+        partner8Name: "Chea Sim University of Kamchaymear",
+        partner8En: "CSUK Cambodia",
+        locPhnomPenh: "Phnom Penh",
+        locBattambang: "Battambang Province",
+        locKampongCham: "Kampong Cham Province",
+        locStungTreng: "Stung Treng Province",
+        locPreyVeng: "Prey Veng Province"
     }
 };
 
@@ -2350,10 +4605,34 @@ function applySchoolSettings(settings) {
     if (!imgUrl || imgUrl.includes('unsplash.com')) {
         imgUrl = "https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link";
     }
-    document.querySelectorAll('#history img, .history-image img, #history-img-element').forEach(el => {
+    document.querySelectorAll('#history img, .history-image img, #history-img-element, #home-history-img, .home-history-img-wrap img').forEach(el => {
         el.removeAttribute('data-retry-count');
         el.src = getDriveImageUrl(imgUrl);
     });
+
+    const thumb1 = settings.historyThumb1 || "https://drive.google.com/file/d/1PtRTKELxABPews_T9boyDZ9giEUmksRW/view?usp=share_link";
+    const thumb2 = settings.historyThumb2 || "https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link";
+    const thumb3 = settings.historyThumb3 || "https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link";
+
+    document.querySelectorAll('.home-history-thumbs-row').forEach(row => {
+        const thumbs = row.querySelectorAll('.history-thumb-item');
+        if (thumbs[0]) {
+            thumbs[0].setAttribute('onclick', `changeHistoryMainPhoto(this, '${thumb1}')`);
+            const img = thumbs[0].querySelector('img');
+            if (img) img.src = getDriveImageUrl(thumb1);
+        }
+        if (thumbs[1]) {
+            thumbs[1].setAttribute('onclick', `changeHistoryMainPhoto(this, '${thumb2}')`);
+            const img = thumbs[1].querySelector('img');
+            if (img) img.src = getDriveImageUrl(thumb2);
+        }
+        if (thumbs[2]) {
+            thumbs[2].setAttribute('onclick', `changeHistoryMainPhoto(this, '${thumb3}')`);
+            const img = thumbs[2].querySelector('img');
+            if (img) img.src = getDriveImageUrl(thumb3);
+        }
+    });
+
     if (settings.mapUrl) {
         const mapFrame = document.querySelector('#mapIframe, .map-container iframe');
         if (mapFrame) {
@@ -2377,27 +4656,34 @@ function getMapEmbedUrl(url) {
     return 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3896.7909249767746!2d106.015513!3d12.481755!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x310d1a60338afe73%3A0x4ce2a82898a557a5!2sKratie%20Provincial%20Teacher%20Training%20College!5e0!3m2!1sen!2skh!4v1700000000000!5m2!1sen!2skh';
 }
 
-function updatePublicVisitorCount() {
+async function updatePublicVisitorCount() {
     const countEl = document.getElementById('publicVisitorCount');
     if (!countEl) return;
     try {
-        const count = parseInt(localStorage.getItem('visitorCount') || '1', 10);
-        countEl.textContent = count.toLocaleString(typeof currentLang !== 'undefined' && currentLang === 'en' ? 'en-US' : 'km-KH');
-    } catch(e) {
-        countEl.textContent = '1';
-    }
+        const isNewVisit = !sessionStorage.getItem('visited');
+        let res;
+        if (isNewVisit) {
+            sessionStorage.setItem('visited', '1');
+            res = await fetch('/api/visitor-count', { method: 'POST' });
+        } else {
+            res = await fetch('/api/visitor-count');
+        }
+        if (res.ok) {
+            const data = await res.json();
+            const count = data.visitorCount || 128;
+            localStorage.setItem('visitorCount', count);
+            countEl.textContent = count.toLocaleString(typeof currentLang !== 'undefined' && currentLang === 'en' ? 'en-US' : 'km-KH');
+            return;
+        }
+    } catch(e) {}
+    
+    // Fallback to local storage
+    const count = parseInt(localStorage.getItem('visitorCount') || '128', 10);
+    countEl.textContent = count.toLocaleString(typeof currentLang !== 'undefined' && currentLang === 'en' ? 'en-US' : 'km-KH');
 }
 
 // --- Initialization ---
-document.addEventListener('DOMContentLoaded', () => {
-    // Track visitor count (once per session, not per page refresh)
-    if (!sessionStorage.getItem('visited')) {
-        sessionStorage.setItem('visited', '1');
-        try {
-            const count = parseInt(localStorage.getItem('visitorCount') || '0', 10);
-            localStorage.setItem('visitorCount', count + 1);
-        } catch(e) {}
-    }
+document.addEventListener('DOMContentLoaded', async () => {
     updatePublicVisitorCount();
 
     // Set current year in footer
@@ -2409,13 +4695,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Language
     initLanguage();
     
-    // Fetch School Settings (local & server)
+    // Fetch School Settings from Node API
     try {
-        const storedSettings = localStorage.getItem('schoolSettings');
-        if (storedSettings) {
-            applySchoolSettings(JSON.parse(storedSettings));
+        const res = await fetch('/api/settings', { cache: 'no-store' });
+        if (res.ok) {
+            const settings = await res.json();
+            if (settings && Object.keys(settings).length > 0) {
+                applySchoolSettings(settings);
+                setLanguage(currentLang);
+            }
+        } else {
+            const storedSettings = localStorage.getItem('schoolSettings');
+            if (storedSettings) applySchoolSettings(JSON.parse(storedSettings));
         }
-    } catch(e) {}
+    } catch(e) {
+        try {
+            const storedSettings = localStorage.getItem('schoolSettings');
+            if (storedSettings) applySchoolSettings(JSON.parse(storedSettings));
+        } catch(err) {}
+    }
 
     if (typeof google !== 'undefined' && google.script) {
         google.script.run.withSuccessHandler(function(settings) {
@@ -2433,18 +4731,40 @@ document.addEventListener('DOMContentLoaded', () => {
     if(document.getElementById('news-grid')) {
         fetchNews();
     }
+    if(document.getElementById('home-photo-grid')) {
+        fetchHomePhotos();
+    }
+    fetchVideos();
+    fetchHomeBooks();
+    fetchHomePartners();
 });
 
-function fetchVideos() {
-    // Local development reading from localStorage
-    let localVideos = JSON.parse(localStorage.getItem('mockVideos'));
-    if (localVideos && localVideos.length > 0) {
-        renderVideos(localVideos);
-    } else {
-        renderVideos([
-            { subject: 'គណិតវិទ្យា', title: 'សកម្មភាពបង្រៀនគំរូ', teacher: 'លោកគ្រូ', link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }
-        ]);
-    }
+// Videos Pagination & State
+const VIDEOS_PER_PAGE = 9;
+let allVideos = [];
+let currentFilteredVideos = [];
+let currentVideosPage = 1;
+
+async function fetchVideos() {
+    try {
+        const res = await fetch('/api/videos', { cache: 'no-store' });
+        if (res.ok) {
+            const vids = await res.json();
+            if (Array.isArray(vids)) {
+                allVideos = vids;
+                currentFilteredVideos = vids;
+                currentVideosPage = 1;
+                renderVideosPage(false);
+                renderHomeVideoSection(vids);
+                return;
+            }
+        }
+    } catch(e) {}
+    allVideos = [];
+    currentFilteredVideos = [];
+    currentVideosPage = 1;
+    renderVideosPage(false);
+    renderHomeVideoSection([]);
 }
 
 function getYouTubeEmbedUrl(url) {
@@ -2458,23 +4778,262 @@ function getYouTubeEmbedUrl(url) {
     return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
 }
 
-function renderVideos(videosArray) {
+function getYouTubeVideoId(url) {
+    if (!url) return '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : '';
+}
+
+function renderVideosPage(shouldScroll = false) {
     const grid = document.getElementById('public-videos-grid');
+    const pagination = document.getElementById('videos-pagination');
     if (!grid) return;
+
     grid.innerHTML = '';
-    
-    videosArray.forEach(vid => {
+
+    if (!currentFilteredVideos || currentFilteredVideos.length === 0) {
+        grid.innerHTML = `<p style="text-align: center; color: var(--text-muted); grid-column: 1/-1; padding: 40px; font-size: 1rem;">${t('noVideosFound') || 'មិនទាន់មានវីដេអូនៅឡើយទេ។'}</p>`;
+        if (pagination) {
+            pagination.innerHTML = '';
+            pagination.style.display = 'none';
+        }
+        return;
+    }
+
+    const totalPages = Math.ceil(currentFilteredVideos.length / VIDEOS_PER_PAGE);
+    if (currentVideosPage > totalPages) currentVideosPage = totalPages;
+    if (currentVideosPage < 1) currentVideosPage = 1;
+
+    const startIndex = (currentVideosPage - 1) * VIDEOS_PER_PAGE;
+    const endIndex = Math.min(startIndex + VIDEOS_PER_PAGE, currentFilteredVideos.length);
+    const itemsToRender = currentFilteredVideos.slice(startIndex, endIndex);
+
+    itemsToRender.forEach(vid => {
         const embedUrl = getYouTubeEmbedUrl(vid.link);
         const card = document.createElement('div');
         card.className = 'media-item';
         card.innerHTML = `
             <div class="video-container">
-                <iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe>
+                <iframe src="${embedUrl}" frameborder="0" allowfullscreen loading="lazy"></iframe>
             </div>
-            <div class="media-caption">${vid.title} (${vid.subject}) - ${vid.teacher}</div>
+            <div class="media-caption">${vid.title || vid.subject || 'វីដេអូ'} ${vid.teacher ? '(' + vid.teacher + ')' : ''}</div>
         `;
         grid.appendChild(card);
     });
+
+    if (pagination) {
+        const paginationHtml = buildPaginationHtml(currentFilteredVideos.length, currentVideosPage, VIDEOS_PER_PAGE, 'goToVideosPage');
+        pagination.innerHTML = paginationHtml;
+        pagination.style.display = paginationHtml ? 'flex' : 'none';
+    }
+
+    if (shouldScroll) {
+        const controls = document.querySelector('.videos-controls') || grid;
+        if (controls) {
+            const topOffset = controls.getBoundingClientRect().top + window.pageYOffset - 90;
+            window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+        }
+    }
+}
+
+function goToVideosPage(page) {
+    const totalPages = Math.ceil(currentFilteredVideos.length / VIDEOS_PER_PAGE);
+    if (page < 1 || (totalPages > 0 && page > totalPages)) return;
+    currentVideosPage = page;
+    renderVideosPage(true);
+}
+
+function searchPublicVideos() {
+    const searchInput = (document.getElementById('videoSearch')?.value || '').toLowerCase().trim();
+    currentFilteredVideos = allVideos.filter(vid => {
+        const titleStr = (vid.title || '').toLowerCase();
+        const subStr = (vid.subject || '').toLowerCase();
+        const teacherStr = (vid.teacher || '').toLowerCase();
+        const descStr = (vid.description || '').toLowerCase();
+        return !searchInput || titleStr.includes(searchInput) || subStr.includes(searchInput) || teacherStr.includes(searchInput) || descStr.includes(searchInput);
+    });
+    currentVideosPage = 1;
+    renderVideosPage(false);
+}
+
+function renderHomeVideoSection(list) {
+    const playlist = document.getElementById('home-video-playlist');
+    const player = document.getElementById('home-main-video-player');
+    const titleEl = document.getElementById('home-main-video-title');
+
+    if (playlist) {
+        playlist.innerHTML = '';
+        if (!list || list.length === 0) {
+            if (player) player.style.display = 'none';
+            if (titleEl) titleEl.innerText = 'មិនទាន់មានវីដេអូនៅឡើយទេ';
+            playlist.innerHTML = '<p style="padding: 20px; color: var(--text-muted); text-align: center;">មិនទាន់មានវីដេអូ</p>';
+            return;
+        }
+
+        if (player) player.style.display = 'block';
+        
+        // Take latest 5 videos for home page
+        const homeVideos = list.slice(0, 5);
+        
+        // Load first video as main video
+        const firstVid = homeVideos[0];
+        if (player) player.src = getYouTubeEmbedUrl(firstVid.link);
+        if (titleEl) titleEl.innerText = firstVid.title || firstVid.subject || 'វីដេអូសកម្មភាព';
+
+        homeVideos.forEach((vid, index) => {
+            const embedUrl = getYouTubeEmbedUrl(vid.link);
+            const videoId = getYouTubeVideoId(vid.link);
+            const thumbImg = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300';
+            
+            const card = document.createElement('div');
+            card.className = `video-thumb-card ${index === 0 ? 'active' : ''}`;
+            card.onclick = function() {
+                if (player) player.src = embedUrl;
+                if (titleEl) titleEl.innerText = vid.title || vid.subject || 'វីដេអូសកម្មភាព';
+                document.querySelectorAll('#home-video-playlist .video-thumb-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+            };
+            
+            card.innerHTML = `
+                <img src="${thumbImg}" class="video-thumb-img" alt="Video Thumb" onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300'">
+                <div class="video-thumb-info">
+                    <h4>${vid.title || vid.subject || 'វីដេអូសកម្មភាព'}</h4>
+                    <span><i class="far fa-play-circle" style="color: var(--primary);"></i> ${vid.teacher || vid.subject || 'សកម្មភាពសាលា'}</span>
+                </div>
+            `;
+            playlist.appendChild(card);
+        });
+    }
+}
+
+// --- Home Library Section State & Functions ---
+let homeCurrentBook = null;
+
+async function fetchHomeBooks() {
+    const playlist = document.getElementById('home-book-playlist');
+    const mainCard = document.getElementById('home-main-book-card');
+    if (!playlist && !mainCard) return;
+
+    try {
+        if (allBooks && allBooks.length > 0) {
+            renderHomeLibrarySection(allBooks);
+            return;
+        }
+        const res = await fetch('/api/books', { cache: 'no-store' });
+        if (res.ok) {
+            const books = await res.json();
+            if (Array.isArray(books)) {
+                allBooks = books;
+                renderHomeLibrarySection(books);
+                return;
+            }
+        }
+    } catch(e) {}
+    renderHomeLibrarySection(allBooks || []);
+}
+
+function renderHomeLibrarySection(list) {
+    const playlist = document.getElementById('home-book-playlist');
+    const mainCard = document.getElementById('home-main-book-card');
+
+    if (!playlist || !mainCard) return;
+
+    playlist.innerHTML = '';
+    
+    if (!list || list.length === 0) {
+        mainCard.innerHTML = `
+            <div style="text-align: center; width: 100%; padding: 40px; color: var(--text-muted);">
+                <i class="fas fa-book-open" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+                <p>${t('noBooksFound') || 'មិនទាន់មានសៀវភៅនៅឡើយទេ'}</p>
+            </div>
+        `;
+        playlist.innerHTML = `<p style="padding: 20px; color: var(--text-muted); text-align: center;">${t('noBooksFound') || 'មិនទាន់មានសៀវភៅ'}</p>`;
+        return;
+    }
+
+    // Take latest 5 books for home page
+    const homeBooks = list.slice(0, 5);
+    
+    // Set first book as active by default
+    updateHomeMainBook(homeBooks[0]);
+
+    homeBooks.forEach((book, index) => {
+        const coverUrl = book.cover ? getDriveImageUrl(book.cover) : '';
+        const card = document.createElement('div');
+        card.className = `book-thumb-card ${index === 0 ? 'active' : ''}`;
+        card.onclick = function() {
+            updateHomeMainBook(book);
+            document.querySelectorAll('#home-book-playlist .book-thumb-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+        };
+
+        const thumbHtml = coverUrl 
+            ? `<img src="${coverUrl}" class="book-thumb-img" alt="${book.title || 'Book'}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=150';">`
+            : `<i class="fas fa-book" style="color: var(--primary); font-size: 1.5rem;"></i>`;
+
+        const gradeBadge = book.grade ? ` • ${book.grade}` : '';
+        
+        card.innerHTML = `
+            <div class="book-thumb-img-wrap">
+                ${thumbHtml}
+            </div>
+            <div class="book-thumb-info">
+                <h4>${book.title || 'សៀវភៅ'}</h4>
+                <span><i class="fas fa-book-open" style="color: var(--primary);"></i> ${book.category || 'ទូទៅ'}${gradeBadge}</span>
+                <span style="font-size: 0.75rem; margin-top: 3px; color: var(--text-muted);"><i class="fas fa-user-edit"></i> ${book.author || 'MoEYS'}</span>
+            </div>
+        `;
+        playlist.appendChild(card);
+    });
+}
+
+function updateHomeMainBook(book) {
+    const mainCard = document.getElementById('home-main-book-card');
+    if (!mainCard || !book) return;
+    homeCurrentBook = book;
+
+    const coverUrl = book.cover ? getDriveImageUrl(book.cover) : '';
+    const safeTitle = (book.title || 'សៀវភៅ').replace(/'/g, "\\'");
+    const safeLink = (book.link || '#').replace(/'/g, "\\'");
+    
+    const coverDisplayHtml = coverUrl
+        ? `<img src="${coverUrl}" class="main-book-cover-img" alt="${book.title || 'Book'}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400';">`
+        : `<div class="main-book-cover-placeholder"><i class="fas fa-book-open"></i><span style="font-size: 0.9rem; font-weight: 500;">No Cover</span></div>`;
+
+    mainCard.innerHTML = `
+        <div class="main-book-cover-wrap" onclick="openBookModal('${safeTitle}', '${safeLink}')" title="${t('readBook') || 'អានសៀវភៅ'}">
+            ${coverDisplayHtml}
+            <div class="main-book-cover-overlay">
+                <i class="fas fa-book-reader"></i> <span>${t('readBook') || 'អានសៀវភៅ'}</span>
+            </div>
+        </div>
+        <div class="main-book-info">
+            <div class="main-book-badge-row">
+                <span class="main-book-badge"><i class="fas fa-bookmark"></i> ${book.category || 'សៀវភៅ'}</span>
+                ${book.grade ? `<span class="main-book-badge secondary"><i class="fas fa-graduation-cap"></i> ${book.grade}</span>` : ''}
+            </div>
+            <h3 class="main-book-title">${book.title || 'សៀវភៅ'}</h3>
+            <div class="main-book-meta">
+                <div class="main-book-meta-item">
+                    <i class="fas fa-user-edit"></i> <span><strong>${currentLang === 'en' ? 'Author:' : 'អ្នកនិពន្ធ/រៀបរៀង:'}</strong> ${book.author || 'MoEYS'}</span>
+                </div>
+                ${book.code ? `
+                <div class="main-book-meta-item">
+                    <i class="fas fa-barcode"></i> <span><strong>${currentLang === 'en' ? 'Code:' : 'លេខកូដ:'}</strong> ${book.code}</span>
+                </div>
+                ` : ''}
+            </div>
+            <div class="main-book-actions">
+                <button class="btn btn-primary" onclick="openBookModal('${safeTitle}', '${safeLink}')">
+                    <i class="fas fa-book-reader"></i> <span>${t('readBook') || 'អានសៀវភៅ'}</span>
+                </button>
+                <button class="btn btn-outline" onclick="navigateTo('library')">
+                    <i class="fas fa-th-large"></i> <span>${t('viewAllBooks') || 'មើលសៀវភៅទាំងអស់'}</span>
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 // --- Theme Management ---
@@ -2526,8 +5085,8 @@ function setLanguage(lang) {
     document.body.classList.add(`lang-${lang}`);
     
     // Update Buttons
-    document.getElementById('btn-kh').classList.toggle('active', lang === 'kh');
-    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.querySelectorAll('.btn-kh, #btn-kh').forEach(b => b.classList.toggle('active', lang === 'kh'));
+    document.querySelectorAll('.btn-en, #btn-en').forEach(b => b.classList.toggle('active', lang === 'en'));
     
     // Translate all data-lang elements
     document.querySelectorAll('[data-lang]').forEach(el => {
@@ -2541,6 +5100,12 @@ function setLanguage(lang) {
         }
     });
     if (typeof updatePublicVisitorCount === 'function') updatePublicVisitorCount();
+    if (typeof homeCurrentBook !== 'undefined' && homeCurrentBook) {
+        updateHomeMainBook(homeCurrentBook);
+    }
+    if (typeof fetchHomePartners === 'function') {
+        fetchHomePartners();
+    }
 }
 function t(key) {
     return i18n[currentLang][key] || key;
@@ -2548,7 +5113,14 @@ function t(key) {
 
 // --- Navigation & Routing (SPA approach) ---
 function toggleMobileMenu() {
-    document.getElementById('nav-links').classList.toggle('active');
+    const navLinks = document.getElementById('nav-links');
+    if (!navLinks) return;
+    const isActive = navLinks.classList.toggle('active');
+    if (isActive) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
 }
 
 function navigateTo(page, subSection = null) {
@@ -2556,7 +5128,12 @@ function navigateTo(page, subSection = null) {
     const viewContainer = document.getElementById('view-container');
     
     // Close mobile menu if open
-    document.getElementById('nav-links').classList.remove('active');
+    const navLinks = document.getElementById('nav-links');
+    if (navLinks) navLinks.classList.remove('active');
+    
+    // Ensure body scroll is unlocked
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
     
     // Update active state on nav links
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -2567,55 +5144,71 @@ function navigateTo(page, subSection = null) {
     });
     
     // Show loader
-    loader.style.display = 'flex';
-    viewContainer.style.opacity = '0';
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.style.pointerEvents = 'auto';
+    }
+    if (viewContainer) viewContainer.style.opacity = '0';
     
     // Get template content
     const templateId = `tpl-${page}`;
     const template = document.getElementById(templateId);
     
     setTimeout(() => {
-        if (template) {
-            viewContainer.innerHTML = template.innerHTML;
-            
-            // Re-apply translations for newly injected content
-            setLanguage(currentLang);
-            
-            // Run page-specific logic
-            initPageLogic(page, subSection);
-            
-            // Hide loader and fade in
-            loader.style.display = 'none';
-            viewContainer.style.opacity = '1';
+        try {
+            if (template && viewContainer) {
+                viewContainer.innerHTML = template.innerHTML;
+                
+                // Re-apply translations for newly injected content
+                if (typeof setLanguage === 'function') setLanguage(currentLang);
+                
+                // Run page-specific logic
+                if (typeof initPageLogic === 'function') initPageLogic(page, subSection);
+            } else {
+                console.error("Template not found:", templateId);
+            }
+        } catch (err) {
+            console.error("Error loading page:", page, err);
+        } finally {
+            // Guarantee loader hides and view shows
+            if (loader) {
+                loader.style.display = 'none';
+                loader.style.pointerEvents = 'none';
+            }
+            if (viewContainer) viewContainer.style.opacity = '1';
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
             
             // Scroll to top or subsection
             if (subSection) {
                 const el = document.getElementById(subSection);
-                if(el) {
+                if (el) {
                     const y = el.getBoundingClientRect().top + window.pageYOffset - 100;
                     window.scrollTo({top: y, behavior: 'smooth'});
+                } else {
+                    window.scrollTo({top: 0, behavior: 'smooth'});
                 }
             } else {
-                window.scrollTo(0, 0);
+                window.scrollTo({top: 0, behavior: 'smooth'});
             }
-            
-        } else {
-            console.error("Template not found:", templateId);
-            loader.style.display = 'none';
-            viewContainer.style.opacity = '1';
         }
-    }, 300); // Simulate network delay for smooth transition
+    }, 150);
 }
 
 function initPageLogic(page, subSection) {
     if (page === 'home') {
         fetchSlides();
         fetchNews();
+        fetchVideos();
+        fetchHomeBooks();
+        fetchHomePhotos();
+        fetchHomePartners();
     } else if (page === 'library') {
         fetchBooks();
     } else if (page === 'about') {
         fetchStructure();
         fetchTeam();
+        fetchStaff();
     } else if (page === 'images') {
         fetchGallery();
     } else if (page === 'videos') {
@@ -2629,16 +5222,18 @@ function initPageLogic(page, subSection) {
     }
 }
 
-function fetchSlides() {
-    let localSlides = JSON.parse(localStorage.getItem('mockSlides'));
-    if (!localSlides || localSlides.length === 0) {
-        localSlides = [
-            { title: 'ស្វាគមន៍ឆ្នាំសិក្សាថ្មី', image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=1920&h=600&fit=crop', target: '' },
-            { title: 'ទិដ្ឋភាពទូទៅនៃសាលា', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920&h=600&fit=crop', target: '' },
-            { title: 'ការអប់រំប្រកបដោយគុណភាព', image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920&h=600&fit=crop', target: '' }
-        ];
-    }
-    renderSlides(localSlides);
+async function fetchSlides() {
+    try {
+        const res = await fetch('/api/slides', { cache: 'no-store' });
+        if (res.ok) {
+            const slides = await res.json();
+            if (Array.isArray(slides)) {
+                renderSlides(slides);
+                return;
+            }
+        }
+    } catch(e) {}
+    renderSlides([]);
 }
 
 function renderSlides(slidesArray) {
@@ -2646,18 +5241,32 @@ function renderSlides(slidesArray) {
     if (!sliderContainer) return;
     sliderContainer.innerHTML = '';
 
-    const totalDuration = slidesArray.length * 6; // 6 seconds per slide
+    const list = Array.isArray(slidesArray) && slidesArray.length > 0 ? slidesArray : [
+        {
+            title: "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ",
+            image: "Background.jpg",
+            target: ""
+        }
+    ];
 
-    slidesArray.forEach((slide, idx) => {
+    const isSingle = list.length === 1;
+    const totalDuration = isSingle ? 0 : list.length * 6; // 6 seconds per slide
+
+    list.forEach((slide, idx) => {
         const slideDiv = document.createElement('div');
         slideDiv.className = 'slide';
-        slideDiv.style.animationDuration = `${totalDuration}s`;
-        slideDiv.style.animationDelay = `${idx * 6}s`;
+        if (isSingle) {
+            slideDiv.style.animation = 'none';
+            slideDiv.style.opacity = '1';
+            slideDiv.style.zIndex = '1';
+        } else {
+            slideDiv.style.animationDuration = `${totalDuration}s`;
+            slideDiv.style.animationDelay = `${idx * 6}s`;
+        }
 
         const imgEl = document.createElement('img');
         imgEl.src = getDriveImageUrl(slide.image);
         imgEl.setAttribute('referrerpolicy', 'no-referrer');
-        imgEl.setAttribute('loading', 'lazy');
         imgEl.alt = slide.title || 'Slide';
         imgEl.style.width = '100%';
         imgEl.style.height = '100%';
@@ -2668,75 +5277,120 @@ function renderSlides(slidesArray) {
         imgEl.style.left = '0';
         imgEl.style.borderRadius = 'inherit';
         imgEl.onerror = function() {
-            handleImageFallback(this, slide.title || 'Slide');
+            this.onerror = null;
+            this.src = 'Background.jpg';
         };
+
+        if (slide.target) {
+            slideDiv.style.cursor = 'pointer';
+            slideDiv.onclick = () => {
+                window.open(slide.target, '_blank');
+            };
+        }
 
         slideDiv.appendChild(imgEl);
         sliderContainer.appendChild(slideDiv);
     });
 }
 
-function fetchNews() {
+const NEWS_PER_PAGE = 6;
+let allNewsData = [];
+let currentNewsPage = 1;
+
+async function fetchNews() {
     const grid = document.getElementById('news-grid');
+    const pagination = document.getElementById('news-pagination');
     if(!grid) return;
-    
     grid.innerHTML = `<div class="loading-text">${t('loading')}</div>`;
-    
-    // Call server function
-    if (typeof google !== 'undefined' && google.script) {
-        google.script.run
-            .withSuccessHandler(function(newsArray) {
-                if (newsArray && newsArray.length > 0) {
-                    renderNews(newsArray);
-                } else {
-                    grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1;">មិនមានព័ត៌មានថ្មីៗនៅពេលនេះទេ។</p>`;
-                }
-            })
-            .withFailureHandler(function(err) {
-                console.error(err);
-                grid.innerHTML = `<p style="text-align:center; color:red; grid-column: 1/-1;">មានបញ្ហាក្នុងការទាញយកទិន្នន័យ។</p>`;
-            })
-            .getNewsAndEvents();
-    } else {
-        // Local Mock
-        setTimeout(() => {
-            let mockNews = [
-                { title: 'Local Mock News 1', date: '2026-07-31', content: 'This is a mock content for local testing.', image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=800' }
-            ];
-            try {
-                const stored = localStorage.getItem('mockNews');
-                if (stored) {
-                    mockNews = JSON.parse(stored);
-                }
-            } catch(e) {}
-            renderNews(mockNews);
-        }, 500);
+    if(pagination) {
+        pagination.innerHTML = '';
+        pagination.style.display = 'none';
     }
+    
+    try {
+        const res = await fetch('/api/news', { cache: 'no-store' });
+        if (res.ok) {
+            const newsArray = await res.json();
+            if (Array.isArray(newsArray)) {
+                allNewsData = newsArray;
+                currentNewsPage = 1;
+                renderNewsPage(false);
+                return;
+            }
+        }
+    } catch(e) {}
+
+    allNewsData = [];
+    currentNewsPage = 1;
+    renderNewsPage(false);
 }
 
-let allNewsData = [];
-
 function renderNews(newsArray) {
-    allNewsData = newsArray || [];
+    allNewsData = Array.isArray(newsArray) ? newsArray : [];
+    currentNewsPage = 1;
+    renderNewsPage(false);
+}
+
+function renderNewsPage(shouldScroll = false) {
     const grid = document.getElementById('news-grid');
+    const pagination = document.getElementById('news-pagination');
     if (!grid) return;
     grid.innerHTML = '';
     
-    allNewsData.forEach((news, idx) => {
+    if (!allNewsData || allNewsData.length === 0) {
+        grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1; padding: 30px; color: var(--text-muted);">${t('noNewsFound') || 'មិនទាន់មានព័ត៌មានថ្មីៗនៅឡើយទេ។'}</p>`;
+        if (pagination) {
+            pagination.innerHTML = '';
+            pagination.style.display = 'none';
+        }
+        return;
+    }
+
+    const totalPages = Math.ceil(allNewsData.length / NEWS_PER_PAGE);
+    if (currentNewsPage > totalPages) currentNewsPage = totalPages;
+    if (currentNewsPage < 1) currentNewsPage = 1;
+
+    const startIndex = (currentNewsPage - 1) * NEWS_PER_PAGE;
+    const endIndex = Math.min(startIndex + NEWS_PER_PAGE, allNewsData.length);
+    const newsToRender = allNewsData.slice(startIndex, endIndex);
+    
+    newsToRender.forEach((news, idxOnPage) => {
+        const globalIdx = startIndex + idxOnPage;
         const card = document.createElement('div');
         card.className = 'card news-card';
         card.innerHTML = `
-            <div class="news-img" onclick="openNewsModal(${idx})" style="cursor:pointer;">
-                <img src="${getDriveImageUrl(news.image)}" referrerpolicy="no-referrer" loading="lazy" alt="${news.title}" style="width:100%; height:100%; object-fit:cover;" onerror="handleImageFallback(this, 'News')">
+            <div class="news-img" onclick="openNewsModal(${globalIdx})" style="cursor:pointer;">
+                <img src="${getDriveImageUrl(news.image)}" referrerpolicy="no-referrer" loading="lazy" alt="${news.title || 'News'}" style="width:100%; height:100%; object-fit:cover;" onerror="handleImageFallback(this, 'News')">
             </div>
             <div class="news-content">
-                <div class="news-date"><i class="far fa-calendar-alt"></i> ${news.date}</div>
-                <h3 class="news-title" onclick="openNewsModal(${idx})" style="cursor:pointer;">${news.title}</h3>
-                <a href="javascript:void(0)" onclick="openNewsModal(${idx})" class="news-readmore" data-lang="readMore">${t('readMore')} <i class="fas fa-arrow-right"></i></a>
+                <div class="news-date"><i class="far fa-calendar-alt"></i> ${news.date || ''}</div>
+                <h3 class="news-title" onclick="openNewsModal(${globalIdx})" style="cursor:pointer;">${news.title || ''}</h3>
+                <a href="javascript:void(0)" onclick="openNewsModal(${globalIdx})" class="news-readmore" data-lang="readMore">${t('readMore')} <i class="fas fa-arrow-right"></i></a>
             </div>
         `;
         grid.appendChild(card);
     });
+
+    if (pagination) {
+        const paginationHtml = buildPaginationHtml(allNewsData.length, currentNewsPage, NEWS_PER_PAGE, 'goToNewsPage');
+        pagination.innerHTML = paginationHtml;
+        pagination.style.display = paginationHtml ? 'flex' : 'none';
+    }
+
+    if (shouldScroll) {
+        const section = document.querySelector('.news-section') || grid;
+        if (section) {
+            const topOffset = section.getBoundingClientRect().top + window.pageYOffset - 80;
+            window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+        }
+    }
+}
+
+function goToNewsPage(page) {
+    const totalPages = Math.ceil(allNewsData.length / NEWS_PER_PAGE);
+    if (page < 1 || (totalPages > 0 && page > totalPages)) return;
+    currentNewsPage = page;
+    renderNewsPage(true);
 }
 
 function openNewsModal(idx) {
@@ -2770,45 +5424,43 @@ function closeNewsModal() {
     document.body.style.overflow = '';
 }
 
-// Global books variable for filtering
+// Global books variable and pagination state
+const BOOKS_PER_PAGE = 12;
 let allBooks = [];
+let currentFilteredBooks = [];
+let currentBookPage = 1;
 
-function fetchBooks() {
+async function fetchBooks() {
     const grid = document.getElementById('books-grid');
+    const pagination = document.getElementById('books-pagination');
     if(!grid) return;
     
     grid.innerHTML = `<div class="loading-text" style="grid-column: 1/-1; text-align: center;">${t('loading')}</div>`;
-    
-    if (typeof google !== 'undefined' && google.script) {
-        google.script.run
-            .withSuccessHandler(function(books) {
-                allBooks = books;
-                populateCategories(books);
-                renderBooks(books);
-            })
-            .withFailureHandler(function(err) {
-                console.error(err);
-                grid.innerHTML = `<p style="text-align:center; color:red; grid-column: 1/-1;">មានបញ្ហាក្នុងការទាញយកទិន្នន័យ។</p>`;
-            })
-            .getBooks();
-    } else {
-        // Local Mock
-        setTimeout(() => {
-            let mockBooks = [
-                { code: 'B001', title: 'ប្រវត្តិសាស្ត្រខ្មែរ', author: 'ត្រឹង ងា', category: 'ប្រវត្តិសាស្ត្រ', link: '#' },
-                { code: 'B002', title: 'គណិតវិទ្យា ថ្នាក់ទី១២', author: 'ក្រសួងអប់រំ', category: 'វិទ្យាសាស្ត្រ', link: '#' }
-            ];
-            try {
-                const stored = localStorage.getItem('mockBooks');
-                if (stored) {
-                    mockBooks = JSON.parse(stored);
-                }
-            } catch(e) {}
-            allBooks = mockBooks;
-            populateCategories(mockBooks);
-            renderBooks(mockBooks);
-        }, 500);
+    if(pagination) {
+        pagination.innerHTML = '';
+        pagination.style.display = 'none';
     }
+    
+    try {
+        const res = await fetch('/api/books', { cache: 'no-store' });
+        if (res.ok) {
+            const books = await res.json();
+            if (Array.isArray(books)) {
+                allBooks = books;
+                currentFilteredBooks = books;
+                currentBookPage = 1;
+                populateCategories(books);
+                renderBooksPage(false);
+                return;
+            }
+        }
+    } catch(e) {}
+
+    allBooks = [];
+    currentFilteredBooks = [];
+    currentBookPage = 1;
+    populateCategories([]);
+    renderBooksPage(false);
 }
 
 function populateCategories(books) {
@@ -2848,25 +5500,39 @@ function populateCategories(books) {
     });
 }
 
-function renderBooks(booksToRender) {
+function renderBooksPage(shouldScroll = false) {
     const grid = document.getElementById('books-grid');
     if(!grid) return;
     
     grid.innerHTML = '';
     
-    if(booksToRender.length === 0) {
-        grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1; padding: 40px;">រកមិនឃើញសៀវភៅដែលអ្នកស្វែងរកទេ។</p>`;
+    if(currentFilteredBooks.length === 0) {
+        grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1; padding: 40px; color: var(--text-muted); font-size: 1rem;">${t('noBooksFound') || 'រកមិនឃើញសៀវភៅដែលអ្នកស្វែងរកទេ។'}</p>`;
+        const pagination = document.getElementById('books-pagination');
+        if(pagination) {
+            pagination.innerHTML = '';
+            pagination.style.display = 'none';
+        }
         return;
     }
+
+    const totalPages = Math.ceil(currentFilteredBooks.length / BOOKS_PER_PAGE);
+    if(currentBookPage > totalPages) currentBookPage = totalPages;
+    if(currentBookPage < 1) currentBookPage = 1;
+
+    const startIndex = (currentBookPage - 1) * BOOKS_PER_PAGE;
+    const endIndex = Math.min(startIndex + BOOKS_PER_PAGE, currentFilteredBooks.length);
+    const booksToRender = currentFilteredBooks.slice(startIndex, endIndex);
     
     booksToRender.forEach(book => {
         const card = document.createElement('div');
         card.className = 'book-card';
+        const gradeBadge = book.grade ? ` • ${book.grade}` : '';
         const coverHtml = book.cover 
             ? `<img src="${getDriveImageUrl(book.cover)}" referrerpolicy="no-referrer" loading="lazy" alt="${book.title}" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; border-radius: 12px 12px 0 0; z-index:0;" onerror="handleImageFallback(this, 'Book Cover')">
-               <span class="book-category" style="z-index:1;">${book.category}</span>`
+               <span class="book-category" style="z-index:1;">${book.category}${gradeBadge}</span>`
             : `<i class="fas fa-book-open" style="z-index:0;"></i>
-               <span class="book-category" style="z-index:1;">${book.category}</span>`;
+               <span class="book-category" style="z-index:1;">${book.category}${gradeBadge}</span>`;
 
         card.innerHTML = `
             <div class="book-cover">
@@ -2874,8 +5540,8 @@ function renderBooks(booksToRender) {
             </div>
             <div class="book-info">
                 <h3 class="book-title">${book.title}</h3>
-                <p class="book-author"><i class="fas fa-user-edit"></i> ${book.author}</p>
-                <div class="book-code">Code: ${book.code}</div>
+                <p class="book-author"><i class="fas fa-user-edit"></i> ${book.author || 'MoEYS'}</p>
+                <div class="book-code">Code: ${book.code} ${book.grade ? '| ' + book.grade : ''}</div>
                 <button onclick="openBookModal('${book.title.replace(/'/g, "\\'")}', '${book.link}')" class="btn btn-outline" style="width: 100%; margin-top: 15px; padding: 8px;">
                     <i class="fas fa-book-reader"></i> ${t('readBook')}
                 </button>
@@ -2883,26 +5549,124 @@ function renderBooks(booksToRender) {
         `;
         grid.appendChild(card);
     });
+
+    const pagination = document.getElementById('books-pagination');
+    if (pagination) {
+        const paginationHtml = buildPaginationHtml(currentFilteredBooks.length, currentBookPage, BOOKS_PER_PAGE, 'goToBookPage');
+        pagination.innerHTML = paginationHtml;
+        pagination.style.display = paginationHtml ? 'flex' : 'none';
+    }
+
+    if (shouldScroll) {
+        const controls = document.querySelector('.library-controls') || grid;
+        if (controls) {
+            const topOffset = controls.getBoundingClientRect().top + window.pageYOffset - 90;
+            window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+        }
+    }
+}
+
+function buildPaginationHtml(totalItems, currentPage, pageSize, onPageChangeFnName) {
+    const totalPages = Math.ceil(totalItems / pageSize);
+    if (totalPages <= 1) return '';
+
+    let html = '';
+
+    // First page button ( << )
+    const isFirstDisabled = currentPage <= 1 ? 'disabled' : '';
+    html += `<button class="pagination-btn" ${isFirstDisabled} onclick="${onPageChangeFnName}(1)" title="First Page" aria-label="First Page">
+                <i class="fas fa-angles-left"></i>
+             </button>`;
+
+    // Prev page button ( < ) with bracket styling
+    const isPrevDisabled = currentPage <= 1 ? 'disabled' : '';
+    html += `<button class="pagination-btn bracket-nav" ${isPrevDisabled} onclick="${onPageChangeFnName}(${currentPage - 1})" title="Previous Page" aria-label="Previous Page">
+                <i class="fas fa-chevron-left" style="font-size: 0.85rem;"></i>
+             </button>`;
+
+    // Page number buttons
+    const range = getPaginationRange(currentPage, totalPages);
+    range.forEach(item => {
+        if (item === '...') {
+            html += `<span class="pagination-ellipsis">...</span>`;
+        } else {
+            const isActive = item === currentPage ? 'active' : '';
+            html += `<button class="pagination-btn ${isActive}" onclick="${onPageChangeFnName}(${item})">${item}</button>`;
+        }
+    });
+
+    // Next page button ( > ) with bracket styling
+    const isNextDisabled = currentPage >= totalPages ? 'disabled' : '';
+    html += `<button class="pagination-btn bracket-nav" ${isNextDisabled} onclick="${onPageChangeFnName}(${currentPage + 1})" title="Next Page" aria-label="Next Page">
+                <i class="fas fa-chevron-right" style="font-size: 0.85rem;"></i>
+             </button>`;
+
+    // Last page button ( >> )
+    const isLastDisabled = currentPage >= totalPages ? 'disabled' : '';
+    html += `<button class="pagination-btn" ${isLastDisabled} onclick="${onPageChangeFnName}(${totalPages})" title="Last Page" aria-label="Last Page">
+                <i class="fas fa-angles-right"></i>
+             </button>`;
+
+    return html;
+}
+
+function getPaginationRange(current, total) {
+    if (total <= 7) {
+        const pages = [];
+        for (let i = 1; i <= total; i++) pages.push(i);
+        return pages;
+    }
+
+    if (current <= 4) {
+        return [1, 2, 3, 4, 5, '...', total];
+    }
+
+    if (current >= total - 3) {
+        return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+    }
+
+    return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
+function goToBookPage(page) {
+    const totalPages = Math.ceil(currentFilteredBooks.length / BOOKS_PER_PAGE);
+    if (page < 1 || (totalPages > 0 && page > totalPages)) return;
+    currentBookPage = page;
+    renderBooksPage(true);
 }
 
 function searchBooks() {
-    const searchInput = document.getElementById('bookSearch').value.toLowerCase();
-    const catInput = document.getElementById('bookCategory').value;
+    const searchInput = (document.getElementById('bookSearch')?.value || '').toLowerCase();
+    const catInput = document.getElementById('bookCategory')?.value || '';
+    const gradeInput = document.getElementById('bookGrade')?.value || '';
     
-    const filtered = allBooks.filter(book => {
-        const matchText = book.title.toLowerCase().includes(searchInput) || 
-                          book.author.toLowerCase().includes(searchInput) ||
-                          book.code.toLowerCase().includes(searchInput);
+    currentFilteredBooks = allBooks.filter(book => {
+        const titleStr = (book.title || '').toLowerCase();
+        const authorStr = (book.author || '').toLowerCase();
+        const codeStr = (book.code || '').toLowerCase();
+        const gradeStr = (book.grade || '').trim();
+
+        const matchText = titleStr.includes(searchInput) || 
+                          authorStr.includes(searchInput) ||
+                          codeStr.includes(searchInput);
                           
         const matchCat = catInput === '' || book.category === catInput;
+
+        let matchGrade = true;
+        if (gradeInput !== '') {
+            matchGrade = gradeStr === gradeInput || 
+                         gradeStr.includes(gradeInput) ||
+                         (book.title || '').includes(gradeInput);
+        }
         
-        return matchText && matchCat;
+        return matchText && matchCat && matchGrade;
     });
     
-    renderBooks(filtered);
+    currentBookPage = 1;
+    renderBooksPage(false);
 }
 
-function handleContactSubmit(e) {
+async function handleContactSubmit(e) {
     e.preventDefault();
     
     const form = e.target;
@@ -2921,6 +5685,22 @@ function handleContactSubmit(e) {
     const originalText = btn.innerHTML;
     btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ${t('loading')}`;
     msgDiv.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        if (res.ok) {
+            msgDiv.style.display = 'block';
+            msgDiv.className = 'form-message success';
+            msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> សាររបស់អ្នកត្រូវបានផ្ញើដោយជោគជ័យ។ អរគុណ!`;
+            form.reset();
+            resetBtn();
+            return;
+        }
+    } catch(e) {}
     
     if (typeof google !== 'undefined' && google.script) {
         google.script.run
@@ -2945,14 +5725,26 @@ function handleContactSubmit(e) {
             })
             .submitContactForm(formData);
     } else {
-        // Local Mock — save message to localStorage so Admin panel receives it
-        setTimeout(() => {
+        // Send to Node.js backend server API
+        fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sender: formData.name,
+                name: formData.name,
+                contact: formData.contact,
+                subject: formData.subject,
+                message: formData.message
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
             try {
                 const now = new Date();
                 const pad = n => String(n).padStart(2, '0');
                 const formattedDate = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
                 const newMsg = {
-                    id: 'MSG-' + Date.now(),
+                    id: (data.item && data.item.id) ? data.item.id : ('MSG-' + Date.now()),
                     sender: formData.name,
                     contact: formData.contact,
                     subject: formData.subject,
@@ -2965,14 +5757,21 @@ function handleContactSubmit(e) {
                 try { stored = JSON.parse(localStorage.getItem('mockMessages') || '[]'); } catch(e) {}
                 stored.unshift(newMsg);
                 localStorage.setItem('mockMessages', JSON.stringify(stored));
-            } catch(e) { console.error('Could not save message to localStorage', e); }
+            } catch(e) {}
 
             msgDiv.style.display = 'block';
             msgDiv.className = 'form-message success';
             msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> សាររបស់អ្នកត្រូវបានផ្ញើដោយជោគជ័យ។ អរគុណ!`;
             form.reset();
             resetBtn();
-        }, 500);
+        })
+        .catch(err => {
+            console.error('API Error:', err);
+            msgDiv.style.display = 'block';
+            msgDiv.className = 'form-message error';
+            msgDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> មានបញ្ហាក្នុងការផ្ញើសារ។`;
+            resetBtn();
+        });
     }
         
     function resetBtn() {
@@ -2986,16 +5785,20 @@ function openBookModal(title, url) {
     const modal = document.getElementById('bookReaderModal');
     const iframe = document.getElementById('bookIframe');
     const titleEl = document.getElementById('bookModalTitle');
+    const extBtn = document.getElementById('bookModalExternalLink');
     
     titleEl.textContent = title;
     
-    // Auto-convert Google Drive 'view' to 'preview' for embedding
-    let embedUrl = url;
-    if (url === '#' || url === '') {
+    let embedUrl = getDriveEmbedUrl(url);
+    if (!url || url === '#' || url === '') {
         embedUrl = 'about:blank';
-        titleEl.textContent += " (No Link Provided)";
-    } else if (url.includes('drive.google.com') && url.includes('/view')) {
-        embedUrl = url.replace('/view', '/preview');
+        titleEl.textContent += " (មិនមានតំណភ្ជាប់សៀវភៅ)";
+        if (extBtn) extBtn.style.display = 'none';
+    } else {
+        if (extBtn) {
+            extBtn.style.display = 'inline-flex';
+            extBtn.href = url;
+        }
     }
     
     iframe.src = embedUrl;
@@ -3011,33 +5814,23 @@ function closeBookModal() {
     document.body.style.overflow = '';
 }
 
-function fetchTeam() {
+async function fetchTeam() {
     const grid = document.getElementById('team-grid');
     if (!grid) return;
-    
     grid.innerHTML = '<p style="text-align: center; color: var(--text-secondary); width: 100%;">កំពុងផ្ទុកទិន្នន័យ...</p>';
     
-    if (typeof google !== 'undefined' && google.script) {
-        google.script.run
-            .withSuccessHandler(renderTeam)
-            .withFailureHandler(() => { grid.innerHTML = '<p style="text-align: center; color: red; width: 100%;">មានបញ្ហាក្នុងការទាញយកទិន្នន័យ។</p>'; })
-            .getTeam();
-    } else {
-        // Mock data for local testing
-        setTimeout(() => {
-            let mockTeam = [
-                { name: 'លោក នាយក ក', role: 'នាយកសាលា', photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400', description: 'បរិញ្ញាបត្រជាន់ខ្ពស់ គ្រប់គ្រងអប់រំ', rowNum: 2 },
-                { name: 'លោកស្រី នាយករង ខ', role: 'នាយករង បច្ចេកទេស', photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400', description: 'បរិញ្ញាបត្រ គរុកោសល្យ', rowNum: 3 }
-            ];
-            try {
-                const stored = localStorage.getItem('mockTeam');
-                if (stored) {
-                    mockTeam = JSON.parse(stored);
-                }
-            } catch(e) {}
-            renderTeam(mockTeam);
-        }, 500);
-    }
+    try {
+        const res = await fetch('/api/team', { cache: 'no-store' });
+        if (res.ok) {
+            const team = await res.json();
+            if (Array.isArray(team)) {
+                renderTeam(team);
+                return;
+            }
+        }
+    } catch(e) {}
+
+    renderTeam([]);
 }
 
 function renderTeam(teamData) {
@@ -3064,45 +5857,101 @@ function renderTeam(teamData) {
 }
 
 // ===================================
+// Staff Logic (បុគ្គលិក)
+// ===================================
+async function fetchStaff() {
+    const grid = document.getElementById('staff-grid');
+    if (!grid) return;
+    grid.innerHTML = '<p style="text-align: center; color: var(--text-secondary); width: 100%;">កំពុងផ្ទុកទិន្នន័យ...</p>';
+    
+    try {
+        const res = await fetch('/api/staff', { cache: 'no-store' });
+        if (res.ok) {
+            const staff = await res.json();
+            if (Array.isArray(staff)) {
+                renderStaff(staff);
+                return;
+            }
+        }
+    } catch(e) {}
+
+    renderStaff([]);
+}
+
+function renderStaff(staffData) {
+    const grid = document.getElementById('staff-grid');
+    if (!grid) return;
+    
+    if (!staffData || staffData.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; color: var(--text-secondary); width: 100%;">មិនទាន់មានទិន្នន័យបុគ្គលិកទេ។</p>';
+        return;
+    }
+    
+    grid.innerHTML = staffData.map(member => `
+        <div class="staff-card card">
+            <div class="staff-avatar-wrap">
+                <img class="staff-avatar" src="${getDriveImageUrl(member.photo)}" referrerpolicy="no-referrer" loading="lazy" alt="${member.name || 'Staff'}" onerror="handleImageFallback(this, 'Staff')">
+            </div>
+            <h3 class="staff-name">${member.name || ''}</h3>
+            <p class="staff-role">${member.role || ''}</p>
+            ${member.phone ? `
+                <a href="tel:${member.phone.replace(/\s+/g, '')}" class="staff-phone-wrap" title="ចុចដើម្បីទូរស័ព្ទ">
+                    <i class="fas fa-phone-alt"></i>
+                    <span>${member.phone}</span>
+                </a>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+// ===================================
 // School Structure (Hierarchy) Logic
 // ===================================
-function fetchStructure() {
+async function fetchStructure() {
     const container = document.getElementById('org-chart-container');
     if (!container) return;
 
     container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); width: 100%; padding: 30px;">កំពុងផ្ទុកទិន្នន័យរចនាសម្ព័ន្ធ...</p>';
 
-    if (typeof google !== 'undefined' && google.script) {
-        google.script.run
-            .withSuccessHandler(renderStructure)
-            .withFailureHandler(() => {
-                container.innerHTML = '<p style="text-align: center; color: red; width: 100%;">មានបញ្ហាក្នុងការទាញយកទិន្នន័យរចនាសម្ព័ន្ធ។</p>';
-            })
-            .getStructureData();
-    } else {
-        setTimeout(() => {
-            let mockStructure = [
-                { id: '1', name: 'លោក នាយក ក', role: 'នាយកសាលា', level: 'director', department: 'គណៈគ្រប់គ្រង', order: 1 },
-                { id: '2', name: 'លោកស្រី នាយករង ខ', role: 'នាយករង (បច្ចេកទេស)', level: 'deputy', department: 'បច្ចេកទេស', order: 2 },
-                { id: '3', name: 'លោក នាយករង គ', role: 'នាយករង (រដ្ឋបាល)', level: 'deputy', department: 'រដ្ឋបាល', order: 3 },
-                { id: '4', name: 'លោកស្រី នាយករង ឃ', role: 'នាយករង (វិន័យ)', level: 'deputy', department: 'វិន័យ', order: 4 }
-            ];
-            try {
-                const stored = localStorage.getItem('mockStructure');
-                if (stored) {
-                    mockStructure = JSON.parse(stored);
-                }
-            } catch(e) {}
-            renderStructure(mockStructure);
-        }, 300);
-    }
+    try {
+        const res = await fetch('/api/structure', { cache: 'no-store' });
+        if (res.ok) {
+            const structure = await res.json();
+            if (Array.isArray(structure)) {
+                renderStructure(structure);
+                return;
+            }
+        }
+    } catch(e) {}
+
+    renderStructure([]);
+}
+
+function getMemberAvatarHtml(m) {
+    if (!m) return '';
+    let imgUrl = m.photo ? getDriveImageUrl(m.photo) : '';
+    const nameStr = m.name ? String(m.name) : '';
+    const isFemale = nameStr.includes('លោកស្រី') || nameStr.includes('អ្នកស្រី') || nameStr.includes('អ្នកនាង') || nameStr.includes('កញ្ញា');
+    
+    // Sleek SVG avatars fallback
+    const defaultMale = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%231e40af'/><circle cx='50' cy='38' r='20' fill='%23ffffff'/><path d='M20,85 C20,62 33,52 50,52 C67,52 80,62 80,85 Z' fill='%23ffffff'/></svg>";
+    const defaultFemale = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23db2777'/><circle cx='50' cy='38' r='20' fill='%23ffffff'/><path d='M20,85 C20,62 33,52 50,52 C67,52 80,62 80,85 Z' fill='%23ffffff'/></svg>";
+    
+    const fallbackSrc = isFemale ? defaultFemale : defaultMale;
+
+    const finalSrc = imgUrl || fallbackSrc;
+    return `
+        <div class="node-avatar-wrap">
+            <img src="${finalSrc}" class="node-avatar-img" referrerpolicy="no-referrer" loading="lazy" alt="${m.name || 'Member'}" onerror="this.onerror=null; this.src='${fallbackSrc}';">
+        </div>
+    `;
 }
 
 function renderStructure(structureData) {
     const container = document.getElementById('org-chart-container');
     if (!container) return;
 
-    if (!structureData || structureData.length === 0) {
+    if (!Array.isArray(structureData) || structureData.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); width: 100%; padding: 30px;">មិនទាន់មានទិន្នន័យរចនាសម្ព័ន្ធទេ។</p>';
         return;
     }
@@ -3110,23 +5959,27 @@ function renderStructure(structureData) {
     // Sort items by order
     const sorted = [...structureData].sort((a, b) => (Number(a.order) || 99) - (Number(b.order) || 99));
 
-    // Separate directors and deputies/others
-    const directors = sorted.filter(m => m.level === 'director' || (!m.level && m.role && m.role.includes('នាយក') && !m.role.includes('រង')));
-    const deputies = sorted.filter(m => m.level === 'deputy' || (!m.level && m.role && m.role.includes('នាយករង')));
-    const others = sorted.filter(m => !directors.includes(m) && !deputies.includes(m));
+    // Separate directors and deputies/others safely
+    const getRoleStr = (m) => (m && m.role ? String(m.role) : '');
+    const directors = sorted.filter(m => m && (m.level === 'director' || (!m.level && getRoleStr(m).includes('នាយក') && !getRoleStr(m).includes('រង'))));
+    const deputies = sorted.filter(m => m && (m.level === 'deputy' || (!m.level && getRoleStr(m).includes('នាយករង'))));
+    const others = sorted.filter(m => m && !directors.includes(m) && !deputies.includes(m));
 
-    const topMembers = directors.length > 0 ? directors : [sorted[0]];
+    const topMembers = directors.length > 0 ? directors : (sorted.length > 0 ? [sorted[0]] : []);
     const branchMembers = directors.length > 0 ? deputies : sorted.slice(1);
 
     let html = '<div class="org-tree-wrapper">';
 
-    // Top Level: Director
-    html += '<div style="display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;">';
+    // Top Level: Director(s)
+    html += '<div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">';
     topMembers.forEach(d => {
+        if (!d) return;
         html += `
             <div class="org-node director">
-                <div class="node-title">${d.role || 'នាយកសាលា'}</div>
-                <div class="node-name">${d.name}</div>
+                <div class="node-role-badge"><i class="fas fa-crown"></i> ${d.role || 'នាយកសាលា'}</div>
+                ${getMemberAvatarHtml(d)}
+                <div class="node-name">${d.name || ''}</div>
+                ${d.department ? `<div class="node-dept">${d.department}</div>` : ''}
             </div>
         `;
     });
@@ -3137,18 +5990,21 @@ function renderStructure(structureData) {
         html += '<div class="org-line-v"></div>';
 
         if (branchMembers.length > 1) {
-            const widthPercent = Math.min(85, Math.max(30, (branchMembers.length - 1) * 28));
+            const widthPercent = Math.min(88, Math.max(35, (branchMembers.length - 1) * 28));
             html += `<div class="org-line-h" style="width: ${widthPercent}%;"></div>`;
         }
 
         html += '<div class="org-branches">';
         branchMembers.forEach(dep => {
+            if (!dep) return;
             html += `
                 <div class="org-branch">
                     <div class="org-line-v"></div>
                     <div class="org-node deputy">
-                        <div class="node-title">${dep.role}</div>
-                        <div class="node-name">${dep.name}</div>
+                        <div class="node-role-badge"><i class="fas fa-user-tie"></i> ${dep.role || ''}</div>
+                        ${getMemberAvatarHtml(dep)}
+                        <div class="node-name">${dep.name || ''}</div>
+                        ${dep.department ? `<div class="node-dept">${dep.department}</div>` : ''}
                     </div>
                 </div>
             `;
@@ -3158,12 +6014,14 @@ function renderStructure(structureData) {
 
     // Other departments or staff underneath if any
     if (others.length > 0) {
-        html += '<div style="margin-top: 35px; padding-top: 20px; border-top: 1px dashed var(--border); display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">';
+        html += '<div style="margin-top: 40px; padding-top: 25px; border-top: 1px dashed var(--border); display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">';
         others.forEach(oth => {
             html += `
-                <div class="org-node" style="padding: 10px 18px; min-width: 170px; border-radius: 8px; font-size: 0.9rem;">
-                    <div style="font-weight: 700; color: var(--primary); margin-bottom: 2px;">${oth.role}</div>
-                    <div style="color: var(--text-muted); font-size: 0.85rem;">${oth.name}</div>
+                <div class="org-node deputy" style="min-width: 190px; padding: 15px;">
+                    <div class="node-role-badge"><i class="fas fa-user-shield"></i> ${oth.role}</div>
+                    ${getMemberAvatarHtml(oth)}
+                    <div class="node-name">${oth.name}</div>
+                    ${oth.department ? `<div class="node-dept">${oth.department}</div>` : ''}
                 </div>
             `;
         });

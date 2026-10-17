@@ -1,0 +1,892 @@
+{
+  "settings": {
+    "name": "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ",
+    "vision": "កសាងគ្រូបង្រៀនឱ្យមានចំណេះដឹង ជំនាញ សីលធម៌ និងមានសមត្ថភាពអនុវត្តវិជ្ជាជីវៈដើម្បីឆ្លើយតបនឹងបរិបទរីកចម្រើននៃបច្ចេកវិទ្យាស្របតាមបំណិនសតវត្សទី២១។",
+    "mission": "- អភិវឌ្ឍសមត្ថភាពគ្រូបង្រៀនឱ្យមានគុណសម្បទាពេញលេញឆ្លើយតបបរិវត្តកម្មឌីជីថល\n- លើកកម្ពស់ការស្រាវជ្រាវអប់រំ និងបច្ចេកវិទ្យាឌីជីថលដើម្បីបង្កើនគុណភាពការបង្រៀន និង\nរៀន\n- ផ្តល់សេវាដល់សហគមន៍ ដើម្បីចូលរួមចំណែកក្នុងការអភិវឌ្ឍសមត្ថភាពគ្រូបង្រៀន\n- ត្រូវពិនិត្យ តាមដាន វាយតម្លៃ  និងគាំទ្រក្នុងការអភិវឌ្ឍចំណេះដឹងបច្ចេកវិទ្យាឌីជីថល",
+    "values": "គ្រឹះស្ថានអប់រំគ្រូបង្រៀនអនុវត្តតួនាទីភារកិច្ច ដោយឈរលើគុណតម្លៃជាគន្លឹះចំនួន៥គឺ មនសិការវិជ្ជាជីវៈ ឧត្តមភាព សុចរិតភាព ភាពធន់ នវានុវត្តន៍ ។",
+    "historyP1": "សាលារៀនរបស់យើងត្រូវបានបង្កើតឡើងនៅក្នុងគោលបំណងបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិត។",
+    "historyP2": "ជាការពិតការអប់រំគ្រូបង្រៀន គឺជាកត្តាមួយដែលមិនអាចខ្វះបានឡើយសម្រាប់ការអភិវឌ្ឍប្រទេសជាតិ។ ដូច្នេះហើយបានជារាជរដ្ឋាភិបាលនៅអាណត្តិទី៧យកចិត្តទុកដាក់ ដើម្បីធានាបានថាកុមារបានចូលរៀនគ្រប់គ្នា ហើយទទួលបាន ចំណេះដឹង បំណិន និងឥរិយាបទថ្លៃថ្នូរ។ទន្ទឹមនឹងនេះដែររាជរដ្ឋាភិបាលក៏បាននឹងកំពុងខិតខំប្រឹងប្រែងធ្វើយ៉ាងណាដើម្បីសម្រេចបានចតុស្តម្ភរបស់ខ្លួនគឺរៀនរស់ជាមួយគ្នា  រៀនដើម្បីចេះដឹង  រៀនដើម្បី ចេះធ្វើ និង   រៀនដើម្បីចេះរស់។ យ៉ាងណាមិញ សម្រាប់គ្រឹះស្ថានបណ្តុះបណ្តាលគ្រូ រាជរដ្ឋភិបាលក៏បានដាក់ចេញនូវគោលការណ៍កំណែទម្រង់សាលាគរុកោសល្យមានដូចជា កម្មវិធីបណ្តុះបណ្តាល និងវិក្រឹតការ សមត្ថភាពវិជ្ជាជីវគ្រូឧទ្ទេស អភិវឌ្ឍហេដ្ឋារចនាសម្ព័ន្ធភាពជាអ្នកដឹកនាំគ្រប់គ្រង ការផ្សារភ្ជាប់ទ្រឹស្តីទៅនឹងការអនុវត្តកម្មវិធីសិក្សាគរុកោសល្យ និងការធានាគុណភាព។ ហើយដើម្បីសម្រេចបាននូវគោលការណ៍ក្រសួងអប់រំ យុវជន និងកីឡាបានដាក់ចេញនូវយុទ្ធសាស្រ្តកំណែទម្រង់ចំនួន៦ ទី១ ការអភិវឌ្ឍ និងអនុវត្តកម្មវិធីអប់រំគ្រូបង្រៀន ទី២ ការអភិវឌ្ឍសមត្ថភាពគ្រូឧទ្ទេស និងគ្រឹះស្ថានអប់រំគ្រូបង្រៀន ទី៣ ការអភិវឌ្ឍហេដ្ឋារចនាសម្ព័ន្ធ និងធនធាន ទី៤ ការផ្សារភ្ជាប់ទ្រឹស្តី ទៅនិងការអនុវត្ត ទី៥ ការពង្រឹងអភិបាលកិច្ច ទី៦ ការធានាគុណភាពគ្រឹះស្ថានអប់រំគ្រូបង្រៀន។ ដើម្បីឆ្លើយតបទៅនិងកំណែទម្រង់អប់គ្រូបង្រៀនខាងលើនេះ សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះបានត្រៀមខ្លួនជាស្រេចដើម្បីទទួលយកទៅអនុវត្ត ដោយព្យាយាមធ្វើយ៉ាងណាឱ្យ សម្រេចបានតាមចក្ខុវិស័យ បេសកកម្ម គុណតម្លៃ និងទិសដៅ ដែលបានកំណត់។ លើសពីនេះទៀត សាលានិងខិតខំអភិវឌ្ឍខ្លួនបន្ថែមទៀត ដើម្បីផលិតនូវមូលធនមនុស្ស សម្រាប់កសាងសង្គមជាតិ។\n",
+    "historyImage": "https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link",
+    "mapUrl": "https://maps.app.goo.gl/e9iEnTB2JdNTMY1f6",
+    "historyThumb1": "https://drive.google.com/file/d/1UgYN47PkN9O4MmVMnneM0kSAm57TxmCW/view?usp=sharing",
+    "historyThumb2": "https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link",
+    "historyThumb3": "https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link"
+  },
+  "adminProfile": {
+    "name": "Admin",
+    "avatar": ""
+  },
+  "adminPassword": "611431022",
+  "visitorCount": 251,
+  "news": [
+    {
+      "title": "វគ្គសិក្សា៖ ការប្រើប្រាស់បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និង AI ក្នុងការបង្រៀន",
+      "image": "https://drive.google.com/file/d/1KEYsVHVFvBG7YQZAamJHHweAn8I0tJlf/view?usp=share_link",
+      "content": "វគ្គសិក្សា៖ ការប្រើប្រាស់បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និង AI ក្នុងការបង្រៀន នឹងចាប់ផ្ដើមបើកឆាប់ៗនេះ រួសរាន់ឡើង ចុះឈ្មោះសិក្សាឱ្យទាន់ពេលវេលានាឱកាសនេះ។ ចំនួនមានកំណត់",
+      "date": "20/08/2026",
+      "id": "1787194623146"
+    }
+  ],
+  "books": [
+    {
+      "code": "BK-7266",
+      "category": "សៀវភៅណែនាំគ្រូ",
+      "title": "សៀវភៅណែនាំគ្រូ ភាសាខ្មែរ ភាគ២",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYS",
+      "link": "https://drive.google.com/file/d/120ohNI9UyemZc16K9EJDjHyt1RzegZiM/view?usp=sharing",
+      "cover": "https://drive.google.com/file/d/1G2djzbQR4oZyzwrtP9K3jZMH3fQIt9zw/view?usp=sharing",
+      "id": "1788489871043"
+    },
+    {
+      "code": "BK-8177",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «ន៤»",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1q8z4VesigYGde-TE-G9LPyoJGDDAwXDm/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1-Vpx0JxYl1O63T4VcB-QEhs8HYv5WGOk/view?usp=share_link",
+      "id": "1787210940302"
+    },
+    {
+      "code": "BK-3366",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «ន៣»",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1nwDJVIpXZD7zSsMyPyJwwT0BeFu_n8XW/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1ESE914s0Pm2hBwJBdVNymCU0l63Y6yfx/view?usp=share_link",
+      "id": "1787210870932"
+    },
+    {
+      "code": "BK-1262",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «ន២»",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1mDiWKEATqDM3o4BBry4d4ZPvO3rAzAqr/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1x-Sff-Lmug0De2BOkKvM1yTDy0yElVjY/view?usp=share_link",
+      "id": "1787210805611"
+    },
+    {
+      "code": "BK-9207",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «ន១»",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1Uql47AtmQIJMoCKiKgPKqeLaoyjqxRPi/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1C3hR_SMf4TJm1OUILzVAByhCq9UkRvnC/view?usp=share_link",
+      "id": "1787210737497"
+    },
+    {
+      "code": "BK-3863",
+      "category": "សៀវភៅណែនាំ",
+      "title": "សៀវភៅណែនាំគ្រូគណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1yG0XL6shquQ6-EqUW4PqV8K6jUJVOy59/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/18qmdejPe5NzJE4ZsWRv9eLNrRhTxq_Vf/view?usp=share_link",
+      "id": "1787210586251"
+    },
+    {
+      "code": "BK-2385",
+      "category": "សៀវភៅជំនួយ",
+      "title": "សៀវភៅជំនួយគណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1DJwb5w-t7nq1dD7nXky87RuQCOgjnSJ8/view?usp=sharing",
+      "cover": "https://drive.google.com/file/d/1CIWWD4ByrnczsXmCV5msEBXAzf66ITaw/view?usp=share_link",
+      "id": "1787210425107"
+    },
+    {
+      "code": "BK-7131",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «គ៤»",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1FJYKt1rqZeraN5s9GVHnkw6VeqIYspzg/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1383ThCNHLSTdIMCXJNczdArmfJLhYq44/view?usp=sharing",
+      "id": "1787210338533"
+    },
+    {
+      "code": "BK-4154",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «គ៣»",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1sk11Qn6hRSqv786C7n4lzrcNKFbXjaXN/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1Z4HyZj4h_AyqaE1k5a_I1F0n26_jE-Vj/view?usp=share_link",
+      "id": "1787210254084"
+    },
+    {
+      "code": "BK-6815",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «គ២»",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1oW5VWvBOf4T16BtZoRsjlfE2IDi7u_Io/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1ODtLjiyz5OGSZ6pHe1_FUb0fpgASsQfJ/view?usp=share_link",
+      "id": "1787210174612"
+    },
+    {
+      "code": "BK-9880",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «គ១»",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1-cgwb6HzUqp-y3IAl7_87O2s-6hgEexC/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1y-G-b4QD1WUoN8oNBbKnKwyHCohBv3-z/view?usp=share_link",
+      "id": "1787210091939"
+    },
+    {
+      "code": "BK-2125",
+      "category": "សៀវភៅណែនាំ",
+      "title": "សៀវភៅណែនាំគ្រូគណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1luSUCD1fa2u1bEkzS__aSShTtHKgme0H/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1PX7ePmdhMN3Ao4xSZ9w9tHFGOmyAt6gu/view?usp=share_link",
+      "id": "1787210006574"
+    },
+    {
+      "code": "BK-9296",
+      "category": "សៀវភៅជំនួយ",
+      "title": "សៀវភៅជំនួយគណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី៣",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1XMjsY0fJb2EXe3RLMmq_hKd2ir18gZVv/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1g-0ENmw2z7Pm0XoIIqmyoTjL61E-T01A/view?usp=sharing",
+      "id": "1787209904012"
+    },
+    {
+      "code": "BK-4281",
+      "category": "សៀវភៅណែនាំ",
+      "title": "សៀវភៅណែនាំគ្រូគណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី៣",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1zhVVfEAq_XphSD8sc4i0NdZnYs0ZksGP/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1gFkuaJzYEmBrgElHi7rPmMHMqd6MSta3/view?usp=share_link",
+      "id": "1787209727945"
+    },
+    {
+      "code": "BK-1543",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «ប៤»",
+      "grade": "ថ្នាក់ទី៣",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1tYrpXfN1F9Ih_P4KfsxRJF--AogeQ6ds/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1zjT7s-BUxrN4kQVXEOzYGHZtJf4wUt_9/view?usp=share_link",
+      "id": "1787209611568"
+    },
+    {
+      "code": "BK-2793",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «ប៣»",
+      "grade": "ថ្នាក់ទី៣",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1GisZMFpUR6fLCqKr8mVYnPO1wxSooxW4/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1ZeOl5hFUxGw4nRzpWEM_lN4ag6VDP2yA/view?usp=share_link",
+      "id": "1787209544252"
+    },
+    {
+      "code": "BK-4027",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «ប២»",
+      "grade": "ថ្នាក់ទី៣",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/14jWdZwwfLm1Art_sHTr4k-bALXhzQ1vi/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1KHqYGn6bAuYUCkrp-8bgiwG_xZl2j42N/view?usp=share_link",
+      "id": "1787209464674"
+    },
+    {
+      "code": "BK-3871",
+      "category": "សៀវភៅលំហាត់",
+      "title": "លំហាត់គណិតវិទ្យា «ប១»",
+      "grade": "ថ្នាក់ទី៣",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1nBfSsI1wxAJAQOJtjAcrVyUlResF2Fo5/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1llo83HURj4TLmS468To2yJaiYC0T3D0b/view?usp=share_link",
+      "id": "1787209365084"
+    },
+    {
+      "code": "BK-1703",
+      "category": "កម្មវិធីសិក្សាលម្អិត",
+      "title": "កម្មវិធីសិក្សាលម្អិតអប់រំសិល្បៈកម្រិតបឋម",
+      "grade": "",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1rxx2SvK-yVUzgcjSKpy5-8LzQWLzMIez/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1lTw6qpElOf7Idvhx9k-ugcHy2Nk7VAOz/view?usp=share_link",
+      "id": "1787209133190"
+    },
+    {
+      "code": "BK-1359",
+      "category": "កម្មវិធីសិក្សាលម្អិត",
+      "title": "កម្មវិធីសិក្សាលម្អិតសិក្សាសង្គមកម្រិតបឋម",
+      "grade": "",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1DK5iUirUHmA-ArujL0MU2q5DjqtFTYSf/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1snI610_4hmR9AcQG3V7bL4L9mzv-iRGN/view?usp=share_link",
+      "id": "1787209048998"
+    },
+    {
+      "code": "BK-9671",
+      "category": "កម្មវិធីសិក្សាលម្អិត",
+      "title": "កម្មវិធីសិក្សាលម្អិតវិទ្យាសាស្ត្រកម្រិតបឋម",
+      "grade": "",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1ZYqzsJ6wCc8QobQY5wK-gti-IZUAwhY0/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1b9doM3ONNFmCSWPVaBeeYoI7mEyegBo3/view?usp=share_link",
+      "id": "1787208952052"
+    },
+    {
+      "code": "BK-1093",
+      "category": "កម្មវិធីសិក្សាលម្អិត",
+      "title": "កម្មវិធីសិក្សាលម្អិតគណិតវិទ្យាកម្រិតបឋម",
+      "grade": "",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1FvoEcZhN4YpeprHcYjSlGnkhs53NIcTm/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1D0cYfxF_nFTsgXM2AY-hfyQX377PhOI7/view?usp=share_link",
+      "id": "1787208856939"
+    },
+    {
+      "code": "BK-5890",
+      "category": "កម្មវិធីសិក្សាលម្អិត",
+      "title": "កម្មវិធីសិក្សាលម្អិតភាសាកម្រិតបឋម",
+      "grade": "",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1brP1A9zEbTvuqrGo-9M2AKdMfcYJjmjL/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1PkbxTh1RMFRI_SaGLOZXUG-CLVd9_jq-/view?usp=share_link",
+      "id": "1787208762589"
+    },
+    {
+      "code": "BK-6013",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "អង់គ្លេស",
+      "grade": "ថ្នាក់ទី៦",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1h0rwFymuKEQcY-yvXUzGX3LiLADyvQAd/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1SvmpNQ8JZZa58ZTp6nLzUbT5CTKWSo8P/view?usp=share_link",
+      "id": "1787208579087"
+    },
+    {
+      "code": "BK-3108",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "អង់គ្លេស",
+      "grade": "ថ្នាក់ទី៥",
+      "author": "MoEys",
+      "link": "https://drive.google.com/file/d/1IjPfgjpNfHbYaeTCncLhJCP_HTPmZ0X9/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1r2JyzKzQYW0iBRlPyuu-maAuWooE-o8a/view?usp=share_link",
+      "id": "1787208517285"
+    },
+    {
+      "code": "BK-2043",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "អង់គ្លេស",
+      "grade": "ថ្នាក់ទី៤",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1OlFRVE8lJNbcVCtjkNSRaOiq8gATpONG/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1QKKKoDMBeSBAWsNVsv_tX42h-bRNoyMP/view?usp=share_link",
+      "id": "1787208442843"
+    },
+    {
+      "code": "BK-5619",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "សិក្សាសង្គម",
+      "grade": "ថ្នាក់ទី៦",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1xeyw6vaizbJtuBkH-qXs-o1kImaT1ruq/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1GiNKbKCKPwHUCkoxKf5tIKXya__Ighhk/view?usp=share_link",
+      "id": "1787208386898"
+    },
+    {
+      "code": "BK-7905",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "វិទ្យាសាស្ត្រ",
+      "grade": "ថ្នាក់ទី៦",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/15nAD50vJ-R7oujnxwv8OpbP_AqzWQpV-/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1wo5c5dC7xzCnSwYhPQadYUoHOHkzVtiN/view?usp=share_link",
+      "id": "1787208304918"
+    },
+    {
+      "code": "BK-4223",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "សិក្សាសង្គម",
+      "grade": "ថ្នាក់ទី៥",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/19h2-niMRSxJafowYyG3jfe6MuR7i9LsQ/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1CbvXMCggJn0pZt5uDWADxaNhyhsEdNUg/view?usp=share_link",
+      "id": "1787208230161"
+    },
+    {
+      "code": "BK-5205",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "វិទ្យាសាស្ត្រ",
+      "grade": "ថ្នាក់ទី៥",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/171WPVVX-HETTIVOe7VixJ225kCcdv-AI/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1Z1pKQ4ArYa8bV6Ne1Xm0xUFbS2z6rt61/view?usp=share_link",
+      "id": "1787208170240"
+    },
+    {
+      "code": "BK-3713",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "សិក្សាសង្គម",
+      "grade": "ថ្នាក់ទី៤",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1dkmoFODumRrT4N10Dez7a7KW6RLRM1Ev/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1B4HKl0EjRbQSJ3sHF2TBun0qqe4PJZpr/view?usp=share_link",
+      "id": "1787208086875"
+    },
+    {
+      "code": "BK-9368",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "វិទ្យាសាស្ត្រ",
+      "grade": "ថ្នាក់ទី៤",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1yg03BsnKIa9h7zRH1x1abweTw2iXhffo/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1XkRJEOtWqAGl3e8UxojAKGvRHQ8cf6IE/view?usp=share_link",
+      "id": "1787208017618"
+    },
+    {
+      "code": "BK-6017",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "វិទ្យាសាស្ត្រ-សិក្សាសង្គម",
+      "grade": "ថ្នាក់ទី៣",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1_jrGV3fcWBIS7fSGTibfA_vjbfJhw9XK/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/10GXuxYqOYijcV3pZwtZ6bs1BwOPxP-lC/view?usp=share_link",
+      "id": "1787207901785"
+    },
+    {
+      "code": "BK-2274",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "វិទ្យាសាស្ត្រ-សិក្សាសង្គម",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1LarCQOXgKGeqvJHqBXHfiYBEy7ZZMiGh/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1K8Wwtp1NTNCwBJXrmgMH7ah_rk1XyIFk/view?usp=share_link",
+      "id": "1787207816026"
+    },
+    {
+      "code": "BK-1938",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "វិទ្យាសាស្ត្រ-សិក្សាសង្គម",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1-v59igNpCR88hx69R6VumBKC6jAU__QX/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1cI6GcewyIvJvW5QfOe-WDkALEypKeRdA/view?usp=share_link",
+      "id": "1787207752126"
+    },
+    {
+      "code": "BK-1484",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី៦",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1qeAxOStwPfYNWrUAjWlJJSBw01d2ZALH/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1YPvd_fbXYFiNT7lTGqJt638hQeaFDB3k/view?usp=share_link",
+      "id": "1787207665677"
+    },
+    {
+      "code": "BK-5070",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី៥",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1u9QnXq3nkNk8LgP49ewgdcMa-RrdOjgP/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1CSHJ-4gME5_-MgK7xd8W3rrcrB8ouhC2/view?usp=share_link",
+      "id": "1787207594528"
+    },
+    {
+      "code": "BK-3633",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី៤",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1LET-P-wr75cnALMSsTaTkl62uN3wGnT0/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1yg03BsnKIa9h7zRH1x1abweTw2iXhffo/view?usp=share_link",
+      "id": "1787207528560"
+    },
+    {
+      "code": "BK-3128",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "ភាសាខ្មែរ",
+      "grade": "ថ្នាក់ទី៦",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1IJW011ww9sMojto0LDH8BS5gEGehwFcz/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1n8xsjuLpFjM2j7e5sWqtHNxZoSfynomq/view?usp=share_link",
+      "id": "1787207433628"
+    },
+    {
+      "code": "BK-6166",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "ភាសាខ្មែរ",
+      "grade": "ថ្នាក់ទី៥",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1cHD9fGQelCn7wvtppCCxTbyfyYZOmayq/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1QWnr7VqGHxwBScRZDipTL7u1V_49jtNm/view?usp=share_link",
+      "id": "1787207366671"
+    },
+    {
+      "code": "BK-4394",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "ភាសាខ្មែរ",
+      "grade": "ថ្នាក់ទី៤",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/11MAgpEUooUZU_GCWSUEmyZziKP0y5xfe/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1YDkH1QhpNoWPIt8sleRQgVdQIdqjXRJ7/view?usp=share_link",
+      "id": "1787207301475"
+    },
+    {
+      "code": "BK-5410",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី៣",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1XTUTD080m5rA-l7tW3YGgZGNCb2vh8fG/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1k_d7UFmjrktwQd8AxO_o6A4eI6lPBKmX/view?usp=share_link",
+      "id": "1787207221472"
+    },
+    {
+      "code": "BK-3762",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "ភាសាខ្មែរ",
+      "grade": "ថ្នាក់ទី៣",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1vZLFQVLInIGoKtKu-L5krqM3Fw0YqjPf/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1OpGijiENGATNCqNtNAvpLtLXZpIAf5n9/view?usp=share_link",
+      "id": "1787207144590"
+    },
+    {
+      "code": "BK-2294",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "ភាសាខ្មែរ",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1YGEbjd20sRYuEf-MqpkvCzBtcYhTOpbj/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1wundaACcfqNtbF2jrsuwHva6JnRecoqV/view?usp=share_link",
+      "id": "1787207083367"
+    },
+    {
+      "code": "BK-006",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1xHu7fWNcv0yUBo-2pJthY_t6_qHlFC7u/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/13p83BXLc-HracC_IV_Uw5IqO0Do9AEuY/view?usp=share_link",
+      "id": "1787025609016"
+    },
+    {
+      "code": "BK-001",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "ភាសាខ្មែរ",
+      "grade": "ថ្នាក់ទី១",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1eY7vxnlEIvM5JMjk8Rl_-n0ku_8h2ch8/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1GQ1pA5FuouCRMPSqVoCzWKjwk5_yPENw/view?usp=share_link",
+      "id": "1787013436699"
+    },
+    {
+      "id": "6",
+      "code": "BK-006",
+      "category": "សៀវភៅសិក្សាគោល",
+      "title": "គណិតវិទ្យា",
+      "grade": "ថ្នាក់ទី២",
+      "author": "MoEYs",
+      "link": "https://drive.google.com/file/d/1HwkeFSz9tnteJxrpDQfPg5gwT9o0qu9r/view?usp=share_link",
+      "cover": "https://drive.google.com/file/d/1Q0iglgD4a_Lf-OP2fvQ894y22PEU5Fj-/view?usp=share_link"
+    }
+  ],
+  "structure": [
+    {
+      "id": "1",
+      "name": "លោក អេង សុខា",
+      "role": "នាយកសាលា",
+      "level": "director",
+      "department": "គណៈគ្រប់គ្រង",
+      "photo": "https://drive.google.com/file/d/1gvUzT_lJ5U817GfH6543wQqzA3d2juj1/view?usp=share_link",
+      "order": 1
+    },
+    {
+      "id": "2",
+      "name": "លោក ហាង និមល",
+      "role": "នាយករង (រដ្ឋបាល)",
+      "level": "deputy",
+      "department": " ",
+      "photo": "https://drive.google.com/file/d/1kLIdi8MAdRgOr491uiISJcep-mRKAGUc/view?usp=share_link",
+      "order": 2
+    },
+    {
+      "id": "3",
+      "name": "លោក ផន សុផាន់ណារិទ្ធិ",
+      "role": "នាយករង (បច្ចេកទេស)",
+      "level": "deputy",
+      "department": " ",
+      "photo": "https://drive.google.com/file/d/1RYKpDV6Wl-PQInsJGcvDBOmQMoxqqHBR/view?usp=share_link",
+      "order": 2
+    },
+    {
+      "id": "4",
+      "name": "លោកស្រី នុន ចាន់ណា",
+      "role": "ប្រធានរដ្ឋបាល",
+      "level": "deputy",
+      "department": "",
+      "photo": "https://drive.google.com/file/d/1sG6lau04K9fFl_5kErWJrDqmU5z2LPdn/view?usp=share_link",
+      "order": 2
+    },
+    {
+      "name": "លោក ពៅ ភារម្យ",
+      "role": "គ្រូឧទ្ទេស",
+      "level": "department",
+      "department": "",
+      "photo": "https://drive.google.com/file/d/1eYFolFfCPkduI9PImnt4hyf5gQLeBqpf/view?usp=share_link",
+      "order": 3,
+      "id": "1787013962575"
+    },
+    {
+      "name": "លោក គាត សុមុនី",
+      "role": "រដ្ឋបាល",
+      "level": "department",
+      "department": " ",
+      "photo": "https://drive.google.com/file/d/1_11NrH8n6hOdJnHEKDgzFAtw8I3MSSK8/view?usp=share_link",
+      "order": 2,
+      "id": "1787014010950"
+    }
+  ],
+  "team": [
+    {
+      "id": "1",
+      "name": "លោក អេង សុខា",
+      "role": "នាយកសាលា",
+      "photo": "https://drive.google.com/file/d/1gvUzT_lJ5U817GfH6543wQqzA3d2juj1/view?usp=share_link",
+      "description": "បរិញ្ញាបត្រជាន់ខ្ពស់ គ្រប់គ្រងអប់រំ"
+    },
+    {
+      "id": "2",
+      "name": "លោក ហ៊ាង និមល",
+      "role": "នាយករង រដ្ឋបាល",
+      "photo": "https://drive.google.com/file/d/1kLIdi8MAdRgOr491uiISJcep-mRKAGUc/view?usp=share_link",
+      "description": "បរិញ្ញាបត្រជាន់ខ្ពស់"
+    },
+    {
+      "name": "លោក ផន សុផាន់ណារិទ្ធ",
+      "role": "នាយករង បច្ចេកទេស",
+      "description": "បរិញ្ញាបត្រជាន់ខ្ពស់",
+      "photo": "https://drive.google.com/file/d/1RYKpDV6Wl-PQInsJGcvDBOmQMoxqqHBR/view?usp=share_link",
+      "id": "1787197725878"
+    }
+  ],
+  "gallery": [
+    {
+      "id": "1",
+      "title": "លោកយាន ប៊ុនលេង ប្រធានគណ:កម្មការធានាគុណភាពផ្ទៃក្នុង ធ្វើបទបង្ហាញការប្រើប្រាស់ឌីជីថលសម្រាប់ការបង្រៀន និងរៀននៅសន្និបាតបូកសរុបការងារអប់រំ របស់មន្ទីរអប់រំខេត្តក្រចេះឆ្នាំ២០២៤-២០២៥ និងលើកទិសដៅបន្តឆ្នាំ២០២៥-២០២៦",
+      "image": "https://drive.google.com/file/d/1cVPgkzeWCDn9nReIc1X7FtamZ7MEgUgp/view?usp=share_link",
+      "date": "2026-01-27"
+    },
+    {
+      "id": "2",
+      "title": "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ ទទួលបានសាលាគរុកោសល្យគំរូ និងប្រកាសនីបត្រ ថវិកា៥លានរៀល ដោយសាការប្រឹងប្រែង គណ:គ្រប់គ្រង គ្រូឧទ្ទេស និងគរុសិស្សទាំងអស់ សូមប្តេជ្ញាចិត្តខិតខំប្រឹងប្រែងបន្តទៀត សូមជូនពរសុខភាពល្អ និងទទួលបានជោគជ័យគ្រប់ភារកិច្ច សូមអរគុណ",
+      "image": "https://drive.google.com/file/d/1yC5FPekEm_euhXnJJ5g5URvatYrYekR_/view?usp=share_link",
+      "date": "2026-02-13"
+    },
+    {
+      "id": "3",
+      "title": "ថ្ងៃព្រហស្បតិ៍ ៨រោច ខែទុតិយាសាឍ ឆ្នាំមមី អដ្ឋស័ក ពុទ្ធសករាជ ២៥៧០ ត្រូវនឹងថ្ងៃទី៦ ខែសីហា ឆ្នាំ២០២៦ សាលាគរុកោសល្យ និង វិក្រឹតការខេត្តក្រចេះ បានបើកវគ្គបំប៉នសមត្ថភាព ដល់គ្រូឧទ្ទេស និងគរុសិស្សជំនាន់ទី៤០ ស្តីពី « ការបង្រៀនសម្របតាមសមត្ថភាពសិស្ស PTOM» ដែលនឹងប្រព្រឹត្តទៅចាប់ពីថ្ងៃទី៦ ដល់ថ្ងៃទី៧ខែ សីហា ឆ្នាំ២០២៦",
+      "image": "https://drive.google.com/file/d/1bH82L9yuoQ0avMqT3cp2WGAIWy1PLvwI/view?usp=share_link",
+      "date": "2026-08-06"
+    }
+  ],
+  "videos": [
+    {
+      "title": "New Opportunity Elementary ទំព័រទី ៩",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=BBr10bc9OXQ&list=PLn-J1mHl_AwYUlXfcFQQ3VVsWSCSGi_xB&index=4",
+      "id": "1789534315709"
+    },
+    {
+      "title": "New Opportunities Elementary ទំព័រទី ៨",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=dpJTkqaSdAQ&list=PLn-J1mHl_AwYUlXfcFQQ3VVsWSCSGi_xB&index=3",
+      "id": "1789534268476"
+    },
+    {
+      "title": "New Opportunities Elementary ទំព័រទី ៧",
+      "description": "វីដេអូ",
+      "subject": "វីដេអូ",
+      "teacher": "វីដេអូ",
+      "link": "https://www.youtube.com/watch?v=uo8IAoWUncI&list=PLn-J1mHl_AwYUlXfcFQQ3VVsWSCSGi_xB&index=2",
+      "id": "1789534109138"
+    },
+    {
+      "title": "New opportunities Elementary ទំព័រទី ៦",
+      "description": "វីដេអូ",
+      "subject": "វីដេអូ",
+      "teacher": "វីដេអូ",
+      "link": "https://www.youtube.com/watch?v=iKQzs3S8WwM&list=PLn-J1mHl_AwYUlXfcFQQ3VVsWSCSGi_xB",
+      "id": "1789534072500"
+    },
+    {
+      "title": "Writing paragraph: \"The benefit of education\" សារៈប្រយោជន៍នៃការអប់រំ",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=lXS82yIskZM",
+      "id": "1789534017263"
+    },
+    {
+      "title": "មេរៀនទី១៤៖ ការអប់រំ និងការអភិវឌ្ឍបុគ្គលិកលក្ខណៈ",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=GeJ8KrUp6sg&list=PLn-J1mHl_Awb87GyDo6YVthmzu_e9VhIX&index=10",
+      "id": "1789533964621"
+    },
+    {
+      "title": "មេរៀនទី១៣៖ រចនាសម្ព័ន្ធបុគ្គលិកលក្ខណៈ (សម្បទា)",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=JOvdGQBeypU&list=PLn-J1mHl_Awb87GyDo6YVthmzu_e9VhIX&index=9",
+      "id": "1789533906092"
+    },
+    {
+      "title": "មេរៀនទី១៣៖ រចនាសម្ព័ន្ធបុគ្គលិកលក្ខណៈ (ឫកពា)",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=oGCnHFs5HZ4&list=PLn-J1mHl_Awb87GyDo6YVthmzu_e9VhIX&index=8",
+      "id": "1789533874417"
+    },
+    {
+      "title": "មេរៀនទី១៣៖ រចនាសម្ព័ន្ធបុគ្គលិកលក្ខណៈ (អត្តចរិត)",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=HrCozaSokpI&list=PLn-J1mHl_Awb87GyDo6YVthmzu_e9VhIX&index=7",
+      "id": "1789533845488"
+    },
+    {
+      "title": "មេរៀនទី៨ ៖ រូបារម្មណ៍",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=mhBG_8_K8LQ&list=PLn-J1mHl_Awb87GyDo6YVthmzu_e9VhIX&index=6",
+      "id": "1789533750262"
+    },
+    {
+      "title": "មេរៀនទី១០៖ បម្រុងប្រយ័ត្ន",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=OGsmxjT9M28&list=PLn-J1mHl_Awb87GyDo6YVthmzu_e9VhIX&index=4",
+      "id": "1789533720022"
+    },
+    {
+      "title": "មេរៀនទី១១៖ ឆន្ទៈ និងអំពើឆន្ទៈ",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=k_Sac3p92J8&list=PLn-J1mHl_Awb87GyDo6YVthmzu_e9VhIX&index=3",
+      "id": "1789533686849"
+    },
+    {
+      "title": "មេរៀនទី១២៖ ចិត្តរំភើប និងសញ្ចេតនា",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=qaz48p1epfc&list=PLn-J1mHl_Awb87GyDo6YVthmzu_e9VhIX&index=2",
+      "id": "1789533637373"
+    },
+    {
+      "title": "មេរៀនទី១៣៖ រចនាសម្ព័ន្ធបុគ្គលិកលក្ខណៈ (ទំនោរ) ",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=RZIQHacIroQ&list=PLn-J1mHl_Awb87GyDo6YVthmzu_e9VhIX",
+      "id": "1789533278040"
+    },
+    {
+      "title": "កម្មវិធីស្វ័យសិក្សា «MoEYS E-Learning»",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=zvP9my0PsdI",
+      "id": "1789530678557"
+    },
+    {
+      "title": "មេរៀនទី៩៖ ភាសា មុខវិជ្ជា ចិត្តវិទ្យា",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://youtu.be/UHHKG9vvW4s?si=Z7JZMvyEVOvDH1Tn",
+      "id": "1788513467615"
+    },
+    {
+      "title": "ការបកស្រាយមេរៀនសប្ដាហ៍ទី៦ ការរៀបចំ និងការបង្កើតតេស្ត របស់ក្រុមទី៧ គរុសិស្សថ្នាក់ ខ",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=6nOOTSQhSYs",
+      "id": "1787199307147"
+    },
+    {
+      "title": "ការតាំងពិព័រណ៍ស្នាដៃគរុសិស្សជំនាន់ទី 40 ក្នុងថ្ងៃសង្រ្កាន្ដសាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=tDRX3-MTzRU",
+      "id": "1787199185150"
+    },
+    {
+      "title": "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ រៀបចំសង្ក្រាន្តឆ្នាំថ្មី ដើម្បីអបអរសាទរបុណ្យចូលឆ្នាំខាងមុខនេះ",
+      "description": "",
+      "subject": "វីដេអូ",
+      "teacher": "សាលាគរុកោសល្យ",
+      "link": "https://www.youtube.com/watch?v=RFIJrEgK0fA",
+      "id": "1787196379986"
+    },
+    {
+      "id": "1",
+      "subject": "MoEYS",
+      "title": "ការណែនាំ និង របៀបប្រើប្រាស់ «MoEYS E-Learning» | Instruction and How to use",
+      "teacher": "MoEYs",
+      "link": "https://youtu.be/-cdJBVo3P88?si=x6ONaZRhz1pFOnJ2"
+    }
+  ],
+  "messages": [
+    {
+      "id": "MSG-1787201545164",
+      "sender": "យូសុះ ស៊ីលាល",
+      "name": "យូសុះ ស៊ីលាល",
+      "contact": "0968525956",
+      "subject": " ",
+      "message": "តេស្ត",
+      "date": "20/08/2026 04:52",
+      "status": "read",
+      "fromVisitor": true,
+      "createdAt": "2026-08-20T04:52:25.164Z"
+    },
+    {
+      "id": "MSG-1787122833136",
+      "sender": "យូសុះ ស៊ីលាល",
+      "name": "យូសុះ ស៊ីលាល",
+      "contact": "0987654321",
+      "subject": " ",
+      "message": "វេបសាយស្អាត នឹងមានសោភណ្ឌភាព",
+      "date": "19/08/2026 14:00",
+      "status": "read",
+      "fromVisitor": true,
+      "createdAt": "2026-08-19T07:00:33.136Z"
+    }
+  ],
+  "slides": [
+    {
+      "id": "1",
+      "title": "លក្ខណៈពិសេសរបស់សាលាយើង",
+      "image": "https://drive.google.com/file/d/1PtRTKELxABPews_T9boyDZ9giEUmksRW/view?usp=share_link",
+      "target": ""
+    },
+    {
+      "id": "2",
+      "title": "សកម្មភាពការធ្វើការស្វ័យសិក្សាក្នុងបណ្ណាល័យរបស់គរុសិស្ស",
+      "image": "https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link",
+      "target": ""
+    },
+    {
+      "id": "3",
+      "title": "សកម្មភាពគរុសិស្សស្រាវជ្រាវបច្ចេកវិទ្យាព័ត៌មានវិទ្យា",
+      "image": "https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link",
+      "target": ""
+    },
+    {
+      "id": "4",
+      "title": "សកម្មភាពគរុសិស្សកំពុងស្តាប់ការណែនាំពីគណៈគ្រប់គ្រង",
+      "image": "https://drive.google.com/file/d/155FTq0ChNX1X7i2jqaYgOQ-XvL38dvPc/view?usp=share_link",
+      "target": ""
+    }
+  ],
+  "partners": [
+    {
+      "id": "1",
+      "name": "ក្រសួងអប់រំ យុវជន និងកីឡា",
+      "nameEn": "Ministry of Education, Youth and Sport",
+      "tag": "MoEYs",
+      "tagEn": "MoEYs",
+      "location": "រាជធានីភ្នំពេញ",
+      "locationEn": "Phnom Penh",
+      "icon": "fas fa-university",
+      "gradient": "linear-gradient(135deg, #1e40af, #3b82f6)",
+      "website": "https://moeys.gov.kh",
+      "order": 1,
+      "logo": "https://drive.google.com/file/d/1gM51R1c4XL9JJPoywLQMCesEusazfkSs/view?usp=sharing"
+    },
+    {
+      "id": "2",
+      "name": "សាលាបឋមសិក្សាអនុវត្ត",
+      "nameEn": "Anuwat Primary School",
+      "tag": "សាលាដៃគូ",
+      "tagEn": "Partnership",
+      "location": "ក្រចេះ",
+      "locationEn": "Kratie",
+      "icon": "fas fa-handshake",
+      "gradient": "linear-gradient(135deg, #059669, #10b981)",
+      "website": "https://www.facebook.com/profile.php?id=61591074564411",
+      "order": 2,
+      "logo": "https://drive.google.com/file/d/1IommB8Pwr9se9jMLyGZZYFWXZAMY_hHq/view?usp=sharing"
+    },
+    {
+      "id": "3",
+      "name": "Jica Cambodia",
+      "nameEn": "Japan International Cooperation Agency",
+      "tag": "ដៃគូអន្តរជាតិ",
+      "tagEn": "International Partner",
+      "location": "រាជធានីភ្នំពេញ",
+      "locationEn": "Phnom Penh",
+      "icon": "fas fa-school",
+      "gradient": "linear-gradient(135deg, #d97706, #f59e0b)",
+      "website": "https://www.jica.go.jp/english/overseas/cambodia/office/index.html",
+      "order": 3,
+      "logo": "https://drive.google.com/file/d/1gAcOaKn1uNyu-xDFO3V0A1o1N0anAm6F/view?usp=sharing"
+    }
+  ],
+  "staff": [
+    {
+      "name": "លោក យូសុះ ស៊ីលាល",
+      "role": "គ្រូឧទ្ទេស",
+      "phone": "0968525956",
+      "email": "sileal.yousoh@ktpttc.com",
+      "photo": "https://drive.google.com/file/d/18vcwk_0DLSSq2vedd6XC0Na2VIDMi92O/view?usp=sharing",
+      "id": "1790651262575"
+    },
+    {
+      "name": "លោក អោ​ សាអែម",
+      "role": "គ្រូឧទ្ទេស",
+      "phone": "0885753938",
+      "email": "ao.saem@ktpttc.com",
+      "photo": "https://drive.google.com/file/d/16S2TB2GK9k-jGBfmjWmUPKoSehepBkB6/view?usp=sharing",
+      "id": "1790651559470"
+    },
+    {
+      "name": "ក. អេង ដានី",
+      "role": "គ្រូឧទ្ទេស",
+      "phone": "081696287",
+      "email": "eng.dany@ktpttc.com",
+      "photo": "https://drive.google.com/file/d/1yqGLSk43oG8w61-DMQ62cC_0A6D78yKS/view?usp=sharing",
+      "id": "1790651765186"
+    },
+    {
+      "name": "ក. ទៀង គឹមលាំង",
+      "role": "គ្រូឧទ្ទេស",
+      "phone": " ",
+      "email": "teang.kimlaeng@ktpttc.com",
+      "photo": "https://drive.google.com/file/d/1YC6dDTHAxy0Rv0xxjM6Kkp-q9hw7MJ5V/view?usp=share_link",
+      "id": "1790651989433"
+    }
+  ]
+}

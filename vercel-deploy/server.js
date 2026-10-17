@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -14,6 +15,111 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
+// Disable caching for all API routes (prevents stale data on reload)
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+  next();
+});
+
+let lastMongoError = null;
+
+// Diagnostic endpoint to check MongoDB status
+app.get('/api/db-status', async (req, res) => {
+  const uri = process.env.MONGODB_URI;
+  const collection = await getMongoCollection();
+  let counts = {};
+  try {
+    const db = await readDb();
+    counts = {
+      books: Array.isArray(db.books) ? db.books.length : 0,
+      staff: Array.isArray(db.staff) ? db.staff.length : 0,
+      team: Array.isArray(db.team) ? db.team.length : 0,
+      partners: Array.isArray(db.partners) ? db.partners.length : 0,
+      videos: Array.isArray(db.videos) ? db.videos.length : 0,
+      news: Array.isArray(db.news) ? db.news.length : 0,
+      messages: Array.isArray(db.messages) ? db.messages.length : 0,
+      slides: Array.isArray(db.slides) ? db.slides.length : 0,
+      visitorCount: db.visitorCount || 0
+    };
+  } catch (e) {}
+
+  res.json({
+    status: 'ok',
+    hasMongoUri: !!uri,
+    mongoConnected: !!collection,
+    lastMongoError: lastMongoError ? lastMongoError.message : null,
+    environment: process.env.VERCEL ? 'vercel-serverless' : 'local-node',
+    counts,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Database Backup Endpoint (Export JSON)
+app.get('/api/database/backup', async (req, res) => {
+  try {
+    const db = await readDb();
+    const backupData = { ...db };
+    delete backupData._id;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="ktpttc_backup_${dateStr}.json"`);
+    res.send(JSON.stringify(backupData, null, 2));
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'បរាជ័យក្នុងការទាញយកទិន្នន័យបម្រុង: ' + err.message });
+  }
+});
+
+// Database Restore Endpoint (Import JSON)
+app.post('/api/database/restore', async (req, res) => {
+  try {
+    const incoming = req.body && req.body.data ? req.body.data : req.body;
+    if (!incoming || typeof incoming !== 'object') {
+      return res.status(400).json({ success: false, message: 'ទិន្នន័យមិនត្រឹមត្រូវឡើយ (Invalid JSON)' });
+    }
+    const cleanData = { ...incoming };
+    delete cleanData._id;
+
+    if (!cleanData.settings && !cleanData.books && !cleanData.partners) {
+      return res.status(400).json({ success: false, message: 'ឯកសារនេះពុំមែនជាទិន្នន័យបម្រុងត្រឹមត្រូវរបស់ KTPTTC ឡើយ' });
+    }
+
+    await writeDb(cleanData);
+    res.json({ success: true, message: 'បានបញ្ចូល និងស្តារទិន្នន័យជោគជ័យ!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'បរាជ័យក្នុងការស្តារទិន្នន័យ: ' + err.message });
+  }
+});
+
+// Database Sync Endpoint (Sync MongoDB Atlas & Local JSON)
+app.post('/api/database/sync', async (req, res) => {
+  try {
+    const collection = await getMongoCollection();
+    if (!collection) {
+      return res.status(503).json({ success: false, message: 'ពុំអាចភ្ជាប់ទៅកាន់ MongoDB Atlas បានឡើយ' });
+    }
+    const doc = await collection.findOne({ _id: 'main_store' });
+    if (doc) {
+      const { _id, ...cleanData } = doc;
+      memoryDb = cleanData;
+      try {
+        const dir = path.dirname(DB_FILE);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(DB_FILE, JSON.stringify(cleanData, null, 2), 'utf8');
+      } catch (_) {}
+      res.json({ success: true, message: 'បានធ្វើសមកាលកម្មទិន្នន័យ Cloud និង Local ជោគជ័យ!' });
+    } else {
+      const localData = getLocalFileDb();
+      await writeDb(localData);
+      res.json({ success: true, message: 'បានចម្លងទិន្នន័យ Local ទៅកាន់ Cloud MongoDB ជោគជ័យ!' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុសសមកាលកម្ម: ' + err.message });
+  }
+});
+
 // Serve static files (Images, CSS, JS, etc.)
 app.use(express.static(__dirname));
 
@@ -25,40 +131,122 @@ let cachedClient = null;
 let cachedDb = null;
 let memoryDb = null;
 
+// Helper to safely remove an item by ID or fallback to index
+function removeItemByIdOrIndex(array, id) {
+  if (!Array.isArray(array)) return [];
+  const idStr = String(id).trim();
+  const indexMatch = array.findIndex(item => item && String(item.id) === idStr);
+  if (indexMatch >= 0) {
+    array.splice(indexMatch, 1);
+    return array;
+  }
+  const numericIdx = parseInt(idStr, 10);
+  if (!isNaN(numericIdx) && numericIdx >= 0 && numericIdx < array.length) {
+    array.splice(numericIdx, 1);
+    return array;
+  }
+  return array.filter(item => item && String(item.id) !== idStr);
+}
+
 // Connect to MongoDB Atlas (reusable for serverless)
 async function getMongoCollection() {
-  if (!MONGODB_URI) return null;
+  const uri = process.env.MONGODB_URI || MONGODB_URI;
+  if (!uri) {
+    lastMongoError = new Error('No MONGODB_URI environment variable provided');
+    return null;
+  }
   try {
-    if (cachedDb) {
+    if (cachedDb && cachedClient) {
       return cachedDb.collection('ktpttc_data');
     }
     if (!cachedClient) {
-      cachedClient = new MongoClient(MONGODB_URI, {
-        serverSelectionTimeoutMS: 5000,
+      cachedClient = new MongoClient(uri, {
+        serverSelectionTimeoutMS: 8000,
+        connectTimeoutMS: 10000,
+        maxPoolSize: 10
       });
       await cachedClient.connect();
       console.log('✅ Connected to MongoDB Atlas successfully!');
     }
     cachedDb = cachedClient.db('ktpttc');
+    lastMongoError = null;
     return cachedDb.collection('ktpttc_data');
   } catch (err) {
+    lastMongoError = err;
     console.error('⚠️ MongoDB Connection Notice:', err.message);
+    cachedClient = null;
+    cachedDb = null;
     return null;
   }
 }
 
 // Helper: Read local fallback db.json
 function getLocalFileDb() {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      const content = fs.readFileSync(DB_FILE, 'utf8');
-      return JSON.parse(content || '{}');
+  const possiblePaths = [
+    path.join(__dirname, 'data', 'db.json'),
+    path.join(__dirname, 'db.json'),
+    path.join(process.cwd(), 'data', 'db.json'),
+    path.join(process.cwd(), 'db.json')
+  ];
+  for (const p of possiblePaths) {
+    try {
+      if (fs.existsSync(p)) {
+        const content = fs.readFileSync(p, 'utf8');
+        if (content && content.trim()) {
+          return JSON.parse(content);
+        }
+      }
+    } catch (err) {
+      console.error('Error reading fallback DB path:', p, err.message);
     }
-  } catch (err) {
-    console.error('Error reading local DB file:', err);
   }
   return {};
 }
+
+const DEFAULT_PARTNERS = [
+  {
+    id: "1",
+    name: "ក្រសួងអប់រំ យុវជន និងកីឡា",
+    nameEn: "Ministry of Education, Youth and Sport",
+    tag: "MoEYs",
+    tagEn: "MoEYs",
+    location: "រាជធានីភ្នំពេញ",
+    locationEn: "Phnom Penh",
+    icon: "fas fa-university",
+    gradient: "linear-gradient(135deg, #1e40af, #3b82f6)",
+    website: "https://moeys.gov.kh",
+    order: 1,
+    logo: "https://drive.google.com/file/d/1gM51R1c4XL9JJPoywLQMCesEusazfkSs/view?usp=sharing"
+  },
+  {
+    id: "2",
+    name: "សាលាបឋមសិក្សាអនុវត្ត",
+    nameEn: "Anuwat Primary School",
+    tag: "សាលាដៃគូ",
+    tagEn: "Partnership",
+    location: "ក្រចេះ",
+    locationEn: "Kratie",
+    icon: "fas fa-handshake",
+    gradient: "linear-gradient(135deg, #059669, #10b981)",
+    website: "https://www.facebook.com/profile.php?id=61591074564411",
+    order: 2,
+    logo: "https://drive.google.com/file/d/1IommB8Pwr9se9jMLyGZZYFWXZAMY_hHq/view?usp=sharing"
+  },
+  {
+    id: "3",
+    name: "Jica Cambodia",
+    nameEn: "Japan International Cooperation Agency",
+    tag: "ដៃគូអន្តរជាតិ",
+    tagEn: "International Partner",
+    location: "រាជធានីភ្នំពេញ",
+    locationEn: "Phnom Penh",
+    icon: "fas fa-school",
+    gradient: "linear-gradient(135deg, #d97706, #f59e0b)",
+    website: "https://www.jica.go.jp/english/overseas/cambodia/office/index.html",
+    order: 3,
+    logo: "https://drive.google.com/file/d/1gAcOaKn1uNyu-xDFO3V0A1o1N0anAm6F/view?usp=sharing"
+  }
+];
 
 // Helper: Read DB (MongoDB priority -> Local db.json fallback)
 async function readDb() {
@@ -69,14 +257,32 @@ async function readDb() {
       if (doc) {
         const { _id, ...cleanData } = doc;
         memoryDb = cleanData;
+        if (!memoryDb.partners || !Array.isArray(memoryDb.partners) || memoryDb.partners.length === 0) {
+          const localDb = getLocalFileDb();
+          memoryDb.partners = (localDb.partners && localDb.partners.length > 0) ? localDb.partners : DEFAULT_PARTNERS;
+          const toSave = { ...memoryDb };
+          delete toSave._id;
+          await collection.replaceOne({ _id: 'main_store' }, toSave, { upsert: true });
+        }
+        // Save local cache backup so offline/fallback is always in sync
+        try {
+          const dir = path.dirname(DB_FILE);
+          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(DB_FILE, JSON.stringify(memoryDb, null, 2), 'utf8');
+        } catch (_) {}
         return memoryDb;
       } else {
         // Initial Seed: MongoDB is empty, copy existing db.json to MongoDB
         console.log('🌱 Seeding MongoDB Atlas with initial data from db.json...');
         const initialData = getLocalFileDb();
-        await collection.updateOne(
+        if (!initialData.partners || initialData.partners.length === 0) {
+          initialData.partners = DEFAULT_PARTNERS;
+        }
+        const toSeed = { ...initialData };
+        delete toSeed._id;
+        await collection.replaceOne(
           { _id: 'main_store' },
-          { $set: initialData },
+          toSeed,
           { upsert: true }
         );
         memoryDb = initialData;
@@ -84,30 +290,48 @@ async function readDb() {
       }
     } catch (err) {
       console.error('Error reading from MongoDB Atlas:', err.message);
+      lastMongoError = err;
+      cachedClient = null;
+      cachedDb = null;
     }
   }
 
   // Fallback if MongoDB is not configured or fails
-  if (memoryDb) return memoryDb;
+  if (memoryDb) {
+    if (!memoryDb.partners || memoryDb.partners.length === 0) {
+      memoryDb.partners = DEFAULT_PARTNERS;
+    }
+    return memoryDb;
+  }
   memoryDb = getLocalFileDb();
+  if (!memoryDb.partners || memoryDb.partners.length === 0) {
+    memoryDb.partners = DEFAULT_PARTNERS;
+  }
   return memoryDb;
 }
 
 // Helper: Write DB (Updates MongoDB Atlas & local file)
 async function writeDb(data) {
-  memoryDb = data;
+  const cleanData = { ...data };
+  delete cleanData._id;
+  memoryDb = cleanData;
+  let mongoSaved = false;
 
   // 1. Save to MongoDB Atlas
   const collection = await getMongoCollection();
   if (collection) {
     try {
-      await collection.updateOne(
+      await collection.replaceOne(
         { _id: 'main_store' },
-        { $set: data },
+        cleanData,
         { upsert: true }
       );
+      mongoSaved = true;
     } catch (err) {
       console.error('Error saving to MongoDB Atlas:', err.message);
+      lastMongoError = err;
+      cachedClient = null;
+      cachedDb = null;
     }
   }
 
@@ -117,7 +341,7 @@ async function writeDb(data) {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+    fs.writeFileSync(DB_FILE, JSON.stringify(cleanData, null, 2), 'utf8');
   } catch (err) {
     // Read-only filesystem is expected on serverless (Vercel)
   }
@@ -164,7 +388,7 @@ app.post('/api/news', async (req, res) => {
   if (!newItem.id) {
     newItem.id = Date.now().toString();
   }
-  const index = db.news.findIndex(item => String(item.id) === String(newItem.id));
+  const index = db.news.findIndex((item, idx) => String(item.id) === String(newItem.id) || String(idx) === String(newItem.id));
   if (index >= 0) {
     db.news[index] = { ...db.news[index], ...newItem };
   } else {
@@ -176,9 +400,8 @@ app.post('/api/news', async (req, res) => {
 
 app.delete('/api/news/:id', async (req, res) => {
   const db = await readDb();
-  const id = req.params.id;
   if (db.news) {
-    db.news = db.news.filter(item => String(item.id) !== String(id));
+    db.news = removeItemByIdOrIndex(db.news, req.params.id);
     await writeDb(db);
   }
   res.json({ success: true, news: db.news || [] });
@@ -197,7 +420,7 @@ app.post('/api/books', async (req, res) => {
   if (!newBook.id) {
     newBook.id = Date.now().toString();
   }
-  const index = db.books.findIndex(b => String(b.id) === String(newBook.id));
+  const index = db.books.findIndex((b, idx) => String(b.id) === String(newBook.id) || String(idx) === String(newBook.id));
   if (index >= 0) {
     db.books[index] = { ...db.books[index], ...newBook };
   } else {
@@ -209,9 +432,14 @@ app.post('/api/books', async (req, res) => {
 
 app.delete('/api/books/:id', async (req, res) => {
   const db = await readDb();
-  const id = req.params.id;
   if (db.books) {
-    db.books = db.books.filter(b => String(b.id) !== String(id));
+    const id = String(req.params.id).trim();
+    const codeMatch = db.books.findIndex(b => b && String(b.code) === id);
+    if (codeMatch >= 0) {
+      db.books.splice(codeMatch, 1);
+    } else {
+      db.books = removeItemByIdOrIndex(db.books, id);
+    }
     await writeDb(db);
   }
   res.json({ success: true, books: db.books || [] });
@@ -230,7 +458,7 @@ app.post('/api/structure', async (req, res) => {
   if (!member.id) {
     member.id = Date.now().toString();
   }
-  const index = db.structure.findIndex(m => String(m.id) === String(member.id));
+  const index = db.structure.findIndex((m, idx) => String(m.id) === String(member.id) || String(idx) === String(member.id));
   if (index >= 0) {
     db.structure[index] = { ...db.structure[index], ...member };
   } else {
@@ -242,9 +470,8 @@ app.post('/api/structure', async (req, res) => {
 
 app.delete('/api/structure/:id', async (req, res) => {
   const db = await readDb();
-  const id = req.params.id;
   if (db.structure) {
-    db.structure = db.structure.filter(m => String(m.id) !== String(id));
+    db.structure = removeItemByIdOrIndex(db.structure, req.params.id);
     await writeDb(db);
   }
   res.json({ success: true, structure: db.structure || [] });
@@ -261,7 +488,7 @@ app.post('/api/team', async (req, res) => {
   if (!db.team) db.team = [];
   const member = req.body;
   if (!member.id) member.id = Date.now().toString();
-  const index = db.team.findIndex(m => String(m.id) === String(member.id));
+  const index = db.team.findIndex((m, idx) => String(m.id) === String(member.id) || String(idx) === String(member.id));
   if (index >= 0) {
     db.team[index] = { ...db.team[index], ...member };
   } else {
@@ -273,12 +500,41 @@ app.post('/api/team', async (req, res) => {
 
 app.delete('/api/team/:id', async (req, res) => {
   const db = await readDb();
-  const id = req.params.id;
   if (db.team) {
-    db.team = db.team.filter(m => String(m.id) !== String(id));
+    db.team = removeItemByIdOrIndex(db.team, req.params.id);
     await writeDb(db);
   }
   res.json({ success: true, team: db.team || [] });
+});
+
+// 5.1 Staff API (បុគ្គលិក)
+app.get('/api/staff', async (req, res) => {
+  const db = await readDb();
+  res.json(db.staff || []);
+});
+
+app.post('/api/staff', async (req, res) => {
+  const db = await readDb();
+  if (!db.staff) db.staff = [];
+  const staffMember = req.body;
+  if (!staffMember.id) staffMember.id = Date.now().toString();
+  const index = db.staff.findIndex((m, idx) => String(m.id) === String(staffMember.id) || String(idx) === String(staffMember.id));
+  if (index >= 0) {
+    db.staff[index] = { ...db.staff[index], ...staffMember };
+  } else {
+    db.staff.push(staffMember);
+  }
+  await writeDb(db);
+  res.json({ success: true, staff: db.staff });
+});
+
+app.delete('/api/staff/:id', async (req, res) => {
+  const db = await readDb();
+  if (db.staff) {
+    db.staff = removeItemByIdOrIndex(db.staff, req.params.id);
+    await writeDb(db);
+  }
+  res.json({ success: true, staff: db.staff || [] });
 });
 
 // 6. Gallery API
@@ -294,7 +550,7 @@ app.post('/api/gallery', async (req, res) => {
   if (!item.id) {
     item.id = Date.now().toString();
   }
-  const index = db.gallery.findIndex(g => String(g.id) === String(item.id));
+  const index = db.gallery.findIndex((g, idx) => String(g.id) === String(item.id) || String(idx) === String(item.id));
   if (index >= 0) {
     db.gallery[index] = { ...db.gallery[index], ...item };
   } else {
@@ -306,9 +562,8 @@ app.post('/api/gallery', async (req, res) => {
 
 app.delete('/api/gallery/:id', async (req, res) => {
   const db = await readDb();
-  const id = req.params.id;
   if (db.gallery) {
-    db.gallery = db.gallery.filter(item => String(item.id) !== String(id));
+    db.gallery = removeItemByIdOrIndex(db.gallery, req.params.id);
     await writeDb(db);
   }
   res.json({ success: true, gallery: db.gallery || [] });
@@ -327,7 +582,7 @@ app.post('/api/videos', async (req, res) => {
   if (!item.id) {
     item.id = Date.now().toString();
   }
-  const index = db.videos.findIndex(v => String(v.id) === String(item.id));
+  const index = db.videos.findIndex((v, idx) => String(v.id) === String(item.id) || String(idx) === String(item.id));
   if (index >= 0) {
     db.videos[index] = { ...db.videos[index], ...item };
   } else {
@@ -339,9 +594,8 @@ app.post('/api/videos', async (req, res) => {
 
 app.delete('/api/videos/:id', async (req, res) => {
   const db = await readDb();
-  const id = req.params.id;
   if (db.videos) {
-    db.videos = db.videos.filter(item => String(item.id) !== String(id));
+    db.videos = removeItemByIdOrIndex(db.videos, req.params.id);
     await writeDb(db);
   }
   res.json({ success: true, videos: db.videos || [] });
@@ -364,7 +618,7 @@ app.post('/api/messages', async (req, res) => {
   const msgId = req.body.id;
   
   if (msgId) {
-    const index = db.messages.findIndex(m => String(m.id) === String(msgId));
+    const index = db.messages.findIndex((m, idx) => String(m.id) === String(msgId) || String(idx) === String(msgId));
     if (index >= 0) {
       db.messages[index] = {
         ...db.messages[index],
@@ -395,9 +649,9 @@ app.post('/api/messages', async (req, res) => {
 
 app.post('/api/messages/:id/read', async (req, res) => {
   const db = await readDb();
-  const targetId = req.params.id;
+  const targetId = String(req.params.id);
   if (db.messages) {
-    const msg = db.messages.find(m => String(m.id) === String(targetId));
+    const msg = db.messages.find((m, idx) => String(m.id) === targetId || String(idx) === targetId);
     if (msg) {
       msg.status = 'read';
       await writeDb(db);
@@ -408,9 +662,9 @@ app.post('/api/messages/:id/read', async (req, res) => {
 
 app.post('/api/messages/read', async (req, res) => {
   const db = await readDb();
-  const targetId = req.body.id;
+  const targetId = req.body.id ? String(req.body.id) : null;
   if (db.messages && targetId) {
-    const msg = db.messages.find(m => String(m.id) === String(targetId));
+    const msg = db.messages.find((m, idx) => String(m.id) === targetId || String(idx) === targetId);
     if (msg) {
       msg.status = 'read';
       await writeDb(db);
@@ -421,9 +675,9 @@ app.post('/api/messages/read', async (req, res) => {
 
 app.delete('/api/messages/:id', async (req, res) => {
   const db = await readDb();
-  const target = req.params.id;
+  const target = String(req.params.id);
   if (db.messages) {
-    db.messages = db.messages.filter((m, idx) => String(m.id) !== String(target) && String(idx) !== String(target));
+    db.messages = db.messages.filter((m, idx) => String(m.id) !== target && String(idx) !== target);
     await writeDb(db);
   }
   res.json({ success: true, message: 'បានលុបសារជោគជ័យ!' });
@@ -431,12 +685,12 @@ app.delete('/api/messages/:id', async (req, res) => {
 
 app.post('/api/messages/delete', async (req, res) => {
   const db = await readDb();
-  const targetId = req.body.id;
-  const targetIndex = req.body.index;
+  const targetId = req.body.id ? String(req.body.id) : null;
+  const targetIndex = req.body.index !== undefined && req.body.index !== null ? Number(req.body.index) : null;
   if (db.messages) {
     db.messages = db.messages.filter((m, idx) => {
-      if (targetId && String(m.id) === String(targetId)) return false;
-      if (targetIndex !== undefined && targetIndex !== null && idx === Number(targetIndex)) return false;
+      if (targetId && String(m.id) === targetId) return false;
+      if (targetIndex !== null && idx === targetIndex) return false;
       return true;
     });
     await writeDb(db);
@@ -477,15 +731,50 @@ app.post('/api/slides', async (req, res) => {
 
 app.delete('/api/slides/:id', async (req, res) => {
   const db = await readDb();
-  const id = req.params.id;
   if (db.slides) {
-    db.slides = db.slides.filter((s, idx) => String(s.id) !== String(id) && String(idx) !== String(id));
+    db.slides = removeItemByIdOrIndex(db.slides, req.params.id);
     await writeDb(db);
   }
   res.json({ success: true, slides: db.slides || [] });
 });
 
-// 10. Admin Profile API
+// 10. Partners API (សាលាដៃគូ)
+app.get('/api/partners', async (req, res) => {
+  const db = await readDb();
+  if (!db.partners || !Array.isArray(db.partners) || db.partners.length === 0) {
+    db.partners = DEFAULT_PARTNERS;
+    await writeDb(db);
+  }
+  res.json(db.partners || []);
+});
+
+app.post('/api/partners', async (req, res) => {
+  const db = await readDb();
+  if (!db.partners) db.partners = [];
+  const item = req.body;
+  if (!item.id) {
+    item.id = Date.now().toString();
+  }
+  const index = db.partners.findIndex((p, idx) => String(p.id) === String(item.id) || String(idx) === String(item.id));
+  if (index >= 0) {
+    db.partners[index] = { ...db.partners[index], ...item };
+  } else {
+    db.partners.push(item);
+  }
+  await writeDb(db);
+  res.json({ success: true, partners: db.partners });
+});
+
+app.delete('/api/partners/:id', async (req, res) => {
+  const db = await readDb();
+  if (db.partners) {
+    db.partners = removeItemByIdOrIndex(db.partners, req.params.id);
+    await writeDb(db);
+  }
+  res.json({ success: true, partners: db.partners || [] });
+});
+
+// 11. Admin Profile API
 app.get('/api/admin-profile', async (req, res) => {
   const db = await readDb();
   res.json(db.adminProfile || { name: 'Admin', avatar: '' });
