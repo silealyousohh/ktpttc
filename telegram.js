@@ -141,8 +141,7 @@ async function notifyNewContactMessage(msg, customSettings = {}) {
   const replyMarkup = {
     inline_keyboard: [
       [
-        { text: '🌐 គេហទំព័រ KTPTTC', url: 'https://ktpttc-edu-kh-ll8r.vercel.app' },
-        { text: '🔐 ផ្ទាំង Admin', url: 'https://ktpttc-edu-kh-ll8r.vercel.app/admin' }
+        { text: '🌐 គេហទំព័រ KTPTTC', url: 'https://ktpttc-edu-kh-ll8r.vercel.app' }
       ]
     ]
   };
@@ -202,8 +201,7 @@ async function forwardContactMessage(msg, customSettings = {}) {
   const replyMarkup = {
     inline_keyboard: [
       [
-        { text: '🌐 គេហទំព័រ KTPTTC', url: 'https://ktpttc-edu-kh-ll8r.vercel.app' },
-        { text: '🔐 ផ្ទាំងគ្រប់គ្រង Admin', url: 'https://ktpttc-edu-kh-ll8r.vercel.app/admin' }
+        { text: '🌐 គេហទំព័រ KTPTTC', url: 'https://ktpttc-edu-kh-ll8r.vercel.app' }
       ]
     ]
   };
@@ -479,7 +477,7 @@ async function handleUpdate(update, context = {}) {
       );
     });
 
-    lines.push(`💡 <i>ចូលទៅកាន់ផ្ទាំង <a href="https://ktpttc-edu-kh-ll8r.vercel.app/admin">Admin Panel</a> ដើម្បីមើលសារពេញលេញ ឬឆ្លើយតប។</i>`);
+    lines.push(`💡 <i>ដើម្បីឆ្លើយតបសារ សូមទាក់ទងត្រឡប់តាមរយៈអ៊ីមែល ឬលេខទូរស័ព្ទរបស់អ្នកផ្ញើខាងលើ។</i>`);
     await reply(lines.join('\n'));
     return { handled: true, command: '/messages' };
   }
