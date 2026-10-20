@@ -91,7 +91,7 @@ function getMainKeyboard() {
     keyboard: [
       [{ text: '📊 ស្ថានភាពប្រព័ន្ធ' }, { text: '📈 ស្ថិតិទូទៅ' }],
       [{ text: '📩 សារពីគេហទំព័រ' }, { text: '📰 ព័ត៌មានថ្មីៗ' }],
-      [{ text: '📚 សៀវភៅបណ្ណាល័យ' }, { text: '🆔 Chat ID របស់ខ្ញុំ' }]
+      [{ text: '📚 សៀវភៅបណ្ណាល័យ' }, { text: '🔔 ចុះឈ្មោះទទួលដំណឹង' }]
     ],
     resize_keyboard: true,
     is_persistent: true
@@ -101,8 +101,21 @@ function getMainKeyboard() {
 // Notify Admin when a visitor submits a contact form message
 async function notifyNewContactMessage(msg, customSettings = {}) {
   const { token, chatId, notifyOnMessage } = getTelegramConfig(customSettings);
-  if (!token || !chatId || !notifyOnMessage) {
-    return { success: false, reason: 'Telegram notifications disabled or credentials missing' };
+  if (!token || !notifyOnMessage) {
+    return { success: false, reason: 'Telegram notifications disabled or token missing' };
+  }
+
+  // Collect all recipient chat IDs (both primary chatId and auto-subscribers)
+  const recipientSet = new Set();
+  if (chatId) recipientSet.add(String(chatId).trim());
+  if (Array.isArray(customSettings.telegramSubscribers)) {
+    customSettings.telegramSubscribers.forEach(id => {
+      if (id) recipientSet.add(String(id).trim());
+    });
+  }
+
+  if (recipientSet.size === 0) {
+    return { success: false, reason: 'No Telegram recipients registered' };
   }
 
   const senderName = msg.sender || msg.name || 'អ្នកផ្ញើអនាមិក';
@@ -134,13 +147,17 @@ async function notifyNewContactMessage(msg, customSettings = {}) {
     ]
   };
 
-  try {
-    const res = await sendMessage(chatId, text, { reply_markup: replyMarkup }, token);
-    return { success: true, messageId: res.message_id };
-  } catch (err) {
-    console.error('⚠️ Failed to dispatch Telegram contact notification:', err.message);
-    return { success: false, error: err.message };
+  let sentCount = 0;
+  for (const targetId of recipientSet) {
+    try {
+      await sendMessage(targetId, text, { reply_markup: replyMarkup }, token);
+      sentCount++;
+    } catch (err) {
+      console.error(`⚠️ Failed to dispatch Telegram contact notification to ${targetId}:`, err.message);
+    }
   }
+
+  return { success: sentCount > 0, recipients: sentCount };
 }
 
 // Notify Admin on Database Events (Backup, Restore, Sync)
@@ -165,7 +182,7 @@ async function notifyDatabaseEvent(title, detail, customSettings = {}) {
 
 // Process Incoming Telegram Updates (Webhook or Long-Polling)
 async function handleUpdate(update, context = {}) {
-  const { readDb, token: tokenParam, customSettings } = context;
+  const { readDb, writeDb, token: tokenParam, customSettings } = context;
   const config = getTelegramConfig(customSettings);
   const token = tokenParam || config.token;
 
@@ -425,7 +442,63 @@ async function handleUpdate(update, context = {}) {
     return { handled: true, command: '/id' };
   }
 
-  // 8. /help or ℹ️ ជំនួយ
+  // 8. /subscribe or 🔔 ចុះឈ្មោះទទួលដំណឹង (Auto register without manual Chat ID)
+  if (textLower === '/subscribe' || rawText.includes('ចុះឈ្មោះទទួលដំណឹង')) {
+    const db = await getDbData();
+    if (!db.settings) db.settings = {};
+    if (!Array.isArray(db.settings.telegramSubscribers)) {
+      db.settings.telegramSubscribers = [];
+    }
+    const strId = String(chatId);
+    let isNew = false;
+    if (!db.settings.telegramSubscribers.includes(strId)) {
+      db.settings.telegramSubscribers.push(strId);
+      isNew = true;
+    }
+    if (!db.settings.telegramChatId) {
+      db.settings.telegramChatId = strId;
+      isNew = true;
+    }
+    if (isNew && typeof writeDb === 'function') {
+      try {
+        await writeDb(db);
+      } catch (e) {
+        console.error('Error saving subscriber to DB:', e.message);
+      }
+    }
+
+    const subText = [
+      `🔔 <b>បានចុះឈ្មោះទទួលដំណឹងដោយជោគជ័យ!</b>`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `👤 <b>គណនី៖</b> ${escapeHtml(senderName)}`,
+      `🔑 <b>Chat ID៖</b> <code>${chatId}</code>`,
+      ``,
+      `✅ ប្រព័ន្ធបានកត់ត្រាគណនីរបស់អ្នកដោយស្វ័យប្រវត្តិ។`,
+      `📲 រាល់ពេលមានអ្នកទស្សនាផ្ញើសារពីគេហទំព័រ KTPTTC សារនោះនឹងត្រូវបញ្ជូនមកកាន់ទីនេះភ្លាមៗ ដោយមិនបាច់កំណត់ ID ក្នុង Admin ឡើយ!`,
+      ``,
+      `💡 <i>ប្រសិនបើចង់ឈប់ទទួលដំណឹង សូមវាយពាក្យ /unsubscribe</i>`
+    ].join('\n');
+
+    await reply(subText);
+    return { handled: true, command: '/subscribe' };
+  }
+
+  // 9. /unsubscribe
+  if (textLower === '/unsubscribe' || rawText.includes('ឈប់ទទួលដំណឹង')) {
+    const db = await getDbData();
+    if (db.settings && Array.isArray(db.settings.telegramSubscribers)) {
+      db.settings.telegramSubscribers = db.settings.telegramSubscribers.filter(id => String(id) !== String(chatId));
+      if (typeof writeDb === 'function') {
+        try {
+          await writeDb(db);
+        } catch (_) {}
+      }
+    }
+    await reply(`🔕 <b>បានឈប់ទទួលសារជូនដំណឹងជោគជ័យ!</b>\nអ្នកអាចវាយ <code>/subscribe</code> ឡើងវិញគ្រប់ពេលវេលា។`);
+    return { handled: true, command: '/unsubscribe' };
+  }
+
+  // 10. /help or ℹ️ ជំនួយ
   if (textLower === '/help' || rawText.includes('ជំនួយ')) {
     const helpText = [
       `ℹ️ <b>ការណែនាំប្រើប្រាស់ KTPTTC Telegram Bot</b>`,

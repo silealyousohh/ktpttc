@@ -883,6 +883,7 @@ app.post('/api/telegram/webhook', async (req, res) => {
     const db = await readDb();
     const result = await telegram.handleUpdate(req.body, {
       readDb,
+      writeDb,
       customSettings: db.settings
     });
     // Always return 200 OK to Telegram so it doesn't resend
