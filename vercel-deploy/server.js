@@ -1027,13 +1027,24 @@ async function syncTelegramBotCommands(db) {
   const config = telegram.getTelegramConfig(db.settings);
   if (!config.token) return { success: false, reason: 'No token configured' };
 
-  const systemCmds = telegram.SYSTEM_COMMANDS || [];
+  const sysOverrides = (db.settings && db.settings.telegramSystemCommands) || {};
+  const activeSystemCmds = (telegram.SYSTEM_COMMANDS || [])
+    .map(sys => {
+      const override = sysOverrides[sys.command] || {};
+      return {
+        command: sys.command,
+        description: (override.description || sys.description).slice(0, 256),
+        enabled: override.enabled !== undefined ? Boolean(override.enabled) : true
+      };
+    })
+    .filter(c => c.enabled !== false);
+
   const customCmds = (db.settings && Array.isArray(db.settings.telegramCustomCommands))
     ? db.settings.telegramCustomCommands.filter(c => c.enabled !== false)
     : [];
 
   const combined = [
-    ...systemCmds,
+    ...activeSystemCmds,
     ...customCmds.map(c => ({
       command: (c.command || '').toLowerCase().replace(/^\//, '').replace(/[^a-z0-9_]/g, ''),
       description: (c.description || c.command || 'ព័ត៌មានបន្ថែម').slice(0, 256)
@@ -1084,11 +1095,91 @@ app.get('/api/telegram/commands', async (req, res) => {
       await writeDb(db);
     }
 
+    const sysOverrides = db.settings.telegramSystemCommands || {};
+    const systemCommands = (telegram.SYSTEM_COMMANDS || []).map(sys => {
+      const override = sysOverrides[sys.command] || {};
+      return {
+        command: sys.command,
+        defaultDescription: sys.description,
+        description: override.description || sys.description,
+        enabled: override.enabled !== undefined ? Boolean(override.enabled) : true,
+        isSystem: true
+      };
+    });
+
     res.json({
       success: true,
-      systemCommands: telegram.SYSTEM_COMMANDS || [],
+      systemCommands,
       customCommands: db.settings.telegramCustomCommands
     });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុស៖ ' + err.message });
+  }
+});
+
+// Update or Toggle a System Command (Enable/Disable or Update Description)
+app.post('/api/telegram/commands/system', async (req, res) => {
+  try {
+    const db = await readDb();
+    if (!db.settings) db.settings = {};
+    if (!db.settings.telegramSystemCommands) {
+      db.settings.telegramSystemCommands = {};
+    }
+
+    const { command, enabled, description } = req.body;
+    const cleanCmd = (command || '').toLowerCase().trim().replace(/^\//, '');
+    const validSys = (telegram.SYSTEM_COMMANDS || []).find(s => s.command === cleanCmd);
+    if (!validSys) {
+      return res.status(400).json({ success: false, message: `មិនមានពាក្យបញ្ជាប្រព័ន្ធ /${cleanCmd} ឡើយ` });
+    }
+
+    if (!db.settings.telegramSystemCommands[cleanCmd]) {
+      db.settings.telegramSystemCommands[cleanCmd] = {
+        enabled: true,
+        description: validSys.description
+      };
+    }
+
+    if (enabled !== undefined) {
+      db.settings.telegramSystemCommands[cleanCmd].enabled = Boolean(enabled);
+    }
+    if (description !== undefined && description.trim()) {
+      db.settings.telegramSystemCommands[cleanCmd].description = description.trim().slice(0, 256);
+    }
+
+    await writeDb(db);
+    syncTelegramBotCommands(db).catch(e => console.warn('Sync commands error:', e.message));
+
+    res.json({
+      success: true,
+      message: `បានធ្វើបច្ចុប្បន្នភាពពាក្យបញ្ជាប្រព័ន្ធ /${cleanCmd} ជោគជ័យ!`,
+      command: {
+        command: cleanCmd,
+        defaultDescription: validSys.description,
+        ...db.settings.telegramSystemCommands[cleanCmd],
+        isSystem: true
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុស៖ ' + err.message });
+  }
+});
+
+// Reset a System Command to default
+app.post('/api/telegram/commands/system/reset', async (req, res) => {
+  try {
+    const db = await readDb();
+    if (!db.settings || !db.settings.telegramSystemCommands) {
+      return res.json({ success: true, message: 'ពាក្យបញ្ជាស្ថិតក្នុងទម្រង់ដើមរួចរាល់' });
+    }
+    const { command } = req.body;
+    const cleanCmd = (command || '').toLowerCase().trim().replace(/^\//, '');
+    if (db.settings.telegramSystemCommands[cleanCmd]) {
+      delete db.settings.telegramSystemCommands[cleanCmd];
+      await writeDb(db);
+      syncTelegramBotCommands(db).catch(e => console.warn('Sync commands error:', e.message));
+    }
+    res.json({ success: true, message: `បានកំណត់ពាក្យបញ្ជា /${cleanCmd} ទៅលំនាំដើមវិញជោគជ័យ!` });
   } catch (err) {
     res.status(500).json({ success: false, message: 'កំហុស៖ ' + err.message });
   }

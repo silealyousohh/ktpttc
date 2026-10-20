@@ -359,6 +359,7 @@ async function handleUpdate(update, context = {}) {
   }
 
   // Helper to fetch DB data safely
+  // Helper to fetch DB data safely
   const getDbData = async () => {
     if (typeof readDb === 'function') {
       try {
@@ -370,9 +371,23 @@ async function handleUpdate(update, context = {}) {
     return {};
   };
 
+  // Helper to check if a system command is currently enabled by Admin
+  const isSystemCommandEnabled = (cmdName, db) => {
+    const overrides = (db && db.settings && db.settings.telegramSystemCommands) || {};
+    const override = overrides[cmdName];
+    if (override && override.enabled !== undefined) {
+      return Boolean(override.enabled);
+    }
+    return true;
+  };
+
   // 2. /status or 📊 ស្ថានភាពប្រព័ន្ធ
   if (textLower === '/status' || rawText.includes('ស្ថានភាព')) {
     const db = await getDbData();
+    if (!isSystemCommandEnabled('status', db)) {
+      await reply('⚠️ <b>ពាក្យបញ្ជា /status ត្រូវបានបិទដំណើរការបណ្តោះអាសន្នដោយ Admin។</b>');
+      return { handled: true, command: '/status', disabled: true };
+    }
     const hasMongo = Boolean(process.env.MONGODB_URI);
     const visitorCount = db.visitorCount || 0;
     const environment = process.env.VERCEL ? 'Vercel Serverless' : 'Node.js Local Server';
@@ -396,6 +411,10 @@ async function handleUpdate(update, context = {}) {
   // 3. /stats or 📈 ស្ថិតិទូទៅ
   if (textLower === '/stats' || rawText.includes('ស្ថិតិ')) {
     const db = await getDbData();
+    if (!isSystemCommandEnabled('stats', db)) {
+      await reply('⚠️ <b>ពាក្យបញ្ជា /stats ត្រូវបានបិទដំណើរការបណ្តោះអាសន្នដោយ Admin។</b>');
+      return { handled: true, command: '/stats', disabled: true };
+    }
     const books = Array.isArray(db.books) ? db.books.length : 0;
     const staff = Array.isArray(db.staff) ? db.staff.length : 0;
     const team = Array.isArray(db.team) ? db.team.length : 0;
@@ -426,6 +445,10 @@ async function handleUpdate(update, context = {}) {
   // 4. /messages or /latest or 📩 សារពីគេហទំព័រ
   if (textLower === '/messages' || textLower === '/latest' || rawText.includes('សារពីគេហទំព័រ')) {
     const db = await getDbData();
+    if (!isSystemCommandEnabled('messages', db)) {
+      await reply('⚠️ <b>ពាក្យបញ្ជា /messages ត្រូវបានបិទដំណើរការបណ្តោះអាសន្នដោយ Admin។</b>');
+      return { handled: true, command: '/messages', disabled: true };
+    }
     const messages = Array.isArray(db.messages) ? db.messages : [];
 
     if (messages.length === 0) {
@@ -464,6 +487,10 @@ async function handleUpdate(update, context = {}) {
   // 5. /news or 📰 ព័ត៌មានថ្មីៗ
   if (textLower === '/news' || rawText.includes('ព័ត៌មាន')) {
     const db = await getDbData();
+    if (!isSystemCommandEnabled('news', db)) {
+      await reply('⚠️ <b>ពាក្យបញ្ជា /news ត្រូវបានបិទដំណើរការបណ្តោះអាសន្នដោយ Admin។</b>');
+      return { handled: true, command: '/news', disabled: true };
+    }
     const newsList = Array.isArray(db.news) ? db.news : [];
 
     if (newsList.length === 0) {
@@ -495,6 +522,10 @@ async function handleUpdate(update, context = {}) {
   // 6. /books or 📚 សៀវភៅបណ្ណាល័យ
   if (textLower.startsWith('/books') || textLower.startsWith('/book') || rawText.includes('សៀវភៅ')) {
     const db = await getDbData();
+    if (!isSystemCommandEnabled('books', db)) {
+      await reply('⚠️ <b>ពាក្យបញ្ជា /books ត្រូវបានបិទដំណើរការបណ្តោះអាសន្នដោយ Admin។</b>');
+      return { handled: true, command: '/books', disabled: true };
+    }
     const books = Array.isArray(db.books) ? db.books : [];
 
     let query = '';
@@ -542,6 +573,11 @@ async function handleUpdate(update, context = {}) {
 
   // 7. /id or /chatid or 🆔 Chat ID
   if (textLower === '/id' || textLower === '/chatid' || rawText.includes('Chat ID') || rawText.includes('chat id')) {
+    const db = await getDbData();
+    if (!isSystemCommandEnabled('id', db)) {
+      await reply('⚠️ <b>ពាក្យបញ្ជា /id ត្រូវបានបិទដំណើរការបណ្តោះអាសន្នដោយ Admin។</b>');
+      return { handled: true, command: '/id', disabled: true };
+    }
     const isConfigured = String(config.chatId) === String(chatId);
     const idText = [
       `🆔 <b>ព័ត៌មានគណនី Telegram របស់អ្នក</b>`,
@@ -562,6 +598,10 @@ async function handleUpdate(update, context = {}) {
   // 8. /subscribe or 🔔 ចុះឈ្មោះទទួលដំណឹង (Auto register without manual Chat ID)
   if (textLower === '/subscribe' || rawText.includes('ចុះឈ្មោះទទួលដំណឹង')) {
     const db = await getDbData();
+    if (!isSystemCommandEnabled('subscribe', db)) {
+      await reply('⚠️ <b>ពាក្យបញ្ជា /subscribe ត្រូវបានបិទដំណើរការបណ្តោះអាសន្នដោយ Admin។</b>');
+      return { handled: true, command: '/subscribe', disabled: true };
+    }
     if (!db.settings) db.settings = {};
     if (!Array.isArray(db.settings.telegramSubscribers)) {
       db.settings.telegramSubscribers = [];
@@ -618,6 +658,41 @@ async function handleUpdate(update, context = {}) {
   // 10. /help or ℹ️ ជំនួយ
   if (textLower === '/help' || rawText.includes('ជំនួយ')) {
     const db = await getDbData();
+    if (!isSystemCommandEnabled('help', db)) {
+      await reply('⚠️ <b>ពាក្យបញ្ជា /help ត្រូវបានបិទដំណើរការបណ្តោះអាសន្នដោយ Admin។</b>');
+      return { handled: true, command: '/help', disabled: true };
+    }
+
+    const sysOverrides = (db.settings && db.settings.telegramSystemCommands) || {};
+    const defaultDescriptions = {
+      status: 'ពិនិត្យស្ថានភាពគេហទំព័រ & MongoDB',
+      stats: 'ស្ថិតិទិន្នន័យទូទៅ',
+      messages: 'មើលសារចុងក្រោយផ្ញើមកពីគេហទំព័រ',
+      news: 'ព័ត៌មាន និងសេចក្តីជូនដំណឹងថ្មីៗ',
+      books: 'បញ្ជីសៀវភៅ ឬស្វែងរក (ឧ. /books គណិត)',
+      subscribe: 'ចុះឈ្មោះទទួលដំណឹងសារស្វ័យប្រវត្តិ',
+      id: 'មើលលេខសម្គាល់ Telegram Chat ID របស់អ្នក',
+      help: 'បង្ហាញការណែនាំនេះ'
+    };
+
+    const sysCmdsHelp = [
+      { cmd: 'status', icon: '📊' },
+      { cmd: 'stats', icon: '📈' },
+      { cmd: 'messages', icon: '📩' },
+      { cmd: 'news', icon: '📰' },
+      { cmd: 'books', icon: '📚' },
+      { cmd: 'subscribe', icon: '🔔' },
+      { cmd: 'id', icon: '🆔' },
+      { cmd: 'help', icon: 'ℹ️' }
+    ];
+
+    const activeSysLines = sysCmdsHelp
+      .filter(s => isSystemCommandEnabled(s.cmd, db))
+      .map(s => {
+        const desc = (sysOverrides[s.cmd] && sysOverrides[s.cmd].description) || defaultDescriptions[s.cmd];
+        return `• ${s.icon} <b>/${s.cmd}</b> : ${escapeHtml(desc)}`;
+      });
+
     const customCmds = (db.settings && Array.isArray(db.settings.telegramCustomCommands))
       ? db.settings.telegramCustomCommands.filter(c => c.enabled !== false)
       : [];
@@ -627,14 +702,7 @@ async function handleUpdate(update, context = {}) {
       `━━━━━━━━━━━━━━━━━━━━`,
       `លោកអ្នកអាចប្រើប្រាស់បញ្ជាដូចខាងក្រោម៖`,
       ``,
-      `• 📊 <b>/status</b> : ពិនិត្យស្ថានភាពគេហទំព័រ & MongoDB`,
-      `• 📈 <b>/stats</b> : ស្ថិតិទិន្នន័យទូទៅ`,
-      `• 📩 <b>/messages</b> : មើលសារចុងក្រោយផ្ញើមកពីគេហទំព័រ`,
-      `• 📰 <b>/news</b> : ព័ត៌មាន និងសេចក្តីជូនដំណឹងថ្មីៗ`,
-      `• 📚 <b>/books</b> : បញ្ជីសៀវភៅ ឬស្វែងរក (ឧ. <code>/books គណិត</code>)`,
-      `• 🔔 <b>/subscribe</b> : ចុះឈ្មោះទទួលដំណឹងសារស្វ័យប្រវត្តិ`,
-      `• 🆔 <b>/id</b> : មើលលេខសម្គាល់ Telegram Chat ID របស់អ្នក`,
-      `• ℹ️ <b>/help</b> : បង្ហាញការណែនាំនេះ`
+      ...activeSysLines
     ];
 
     if (customCmds.length > 0) {
@@ -652,7 +720,6 @@ async function handleUpdate(update, context = {}) {
     );
 
     await reply(helpLines.join('\n'));
-    return { handled: true, command: '/help' };
   }
 
   // 11. Custom Commands created by Admin

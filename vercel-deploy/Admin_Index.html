@@ -2734,6 +2734,7 @@
             </div>
             <form id="telegramCommandForm" onsubmit="saveTelegramCommand(event)">
                 <input type="hidden" id="tgCmdOriginalName">
+                <input type="hidden" id="tgCmdIsSystem" value="false">
                 
                 <div class="form-group">
                     <label class="form-label" style="font-weight: 600;">
@@ -2743,7 +2744,7 @@
                         <span style="background:var(--bg-card); border:1px solid var(--border-color); border-right:none; padding:8px 12px; border-radius:6px 0 0 6px; font-weight:700; color:#0088cc;">/</span>
                         <input type="text" id="tgCmdNameInput" class="form-control" style="border-radius:0 6px 6px 0;" placeholder="ឧ. admission ឬ contact ឬ courses" required pattern="[a-zA-Z0-9_]{1,32}">
                     </div>
-                    <small style="color:var(--text-muted); font-size:0.75rem; display:block; margin-top:3px;">
+                    <small id="tgCmdNameHelp" style="color:var(--text-muted); font-size:0.75rem; display:block; margin-top:3px;">
                         ឧទាហរណ៍៖ បញ្ចូល <code>admission</code> នោះអ្នកប្រើប្រាស់ Telegram អាចវាយ <code>/admission</code> ដើម្បីទទួលបានចម្លើយនេះ។
                     </small>
                 </div>
@@ -2755,18 +2756,23 @@
                     <input type="text" id="tgCmdDescInput" class="form-control" placeholder="ឧ. ព័ត៌មានអំពីការចុះឈ្មោះចូលរៀន" required maxlength="250">
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="tgCmdResponseGroup">
                     <label class="form-label" style="font-weight: 600; display:flex; justify-content:space-between; align-items:center;">
                         <span><i class="fas fa-comment-dots" style="color: #0088cc; margin-right: 4px;"></i> ខ្លឹមសារសារឆ្លើយតប (Bot Response) <span style="color:var(--danger);">*</span></span>
                         <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">គាំទ្រ HTML Tags (<b>, <i>, <a>, <code>)</span>
                     </label>
-                    <textarea id="tgCmdResponseInput" class="form-control" rows="5" placeholder="បញ្ចូលខ្លឹមសារដែល Bot ត្រូវឆ្លើយតបទៅកាន់អ្នកប្រើប្រាស់..." required></textarea>
+                    <textarea id="tgCmdResponseInput" class="form-control" rows="5" placeholder="បញ្ចូលខ្លឹមសារដែល Bot ត្រូវឆ្លើយតបទៅកាន់អ្នកប្រើប្រាស់..."></textarea>
                     <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
                         <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem;" onclick="insertTgFormatTag('b')"><b>Bold</b></button>
                         <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem;" onclick="insertTgFormatTag('i')"><i>Italic</i></button>
                         <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem;" onclick="insertTgFormatTag('code')"><code>Code</code></button>
                         <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem;" onclick="insertTgLinkTag()">🔗 Link</button>
                     </div>
+                </div>
+
+                <div id="tgCmdSystemNotice" style="display:none; background:rgba(0,136,204,0.08); border:1px solid rgba(0,136,204,0.25); border-radius:8px; padding:12px; margin-bottom:15px; font-size:0.83rem; line-height:1.5;">
+                    <div style="font-weight:600; color:#0088cc; margin-bottom:4px;"><i class="fas fa-shield-alt"></i> ពាក្យបញ្ជាប្រព័ន្ធដើម (System Core Command)</div>
+                    <div style="color:var(--text-main);">ពាក្យបញ្ជានេះឆ្លើយតបស្វ័យប្រវត្តិតាមរយៈប្រព័ន្ធទិន្នន័យផ្ទាល់ (Live System Stats, News, Books, Messages... )។ អ្នកអាចកែប្រែការពិពណ៌នា និងបើក ឬបិទការប្រើប្រាស់បាន។</div>
                 </div>
 
                 <div style="background:rgba(0,136,204,0.05); border:1px solid rgba(0,136,204,0.2); border-radius:8px; padding:10px 14px; margin-bottom:15px;">
@@ -4362,9 +4368,13 @@
                                 </span>
                             </td>
                             <td style="text-align: center;">
-                                <span class="badge" style="background: ${isEnabled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; color: ${isEnabled ? '#059669' : '#dc2626'}; font-size: 0.75rem; padding: 3px 8px; border-radius: 10px; font-weight: 600;">
-                                    ${isEnabled ? 'សកម្ម (On)' : 'បិទ (Off)'}
-                                </span>
+                                <button type="button" 
+                                    onclick="toggleCustomCommandEnabled('${escapeHtml(cleanCmd)}', ${!isEnabled})"
+                                    title="ចុចដើម្បី ${isEnabled ? 'បិទ' : 'បើក'} ពាក្យបញ្ជា"
+                                    style="background: ${isEnabled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; color: ${isEnabled ? '#059669' : '#dc2626'}; border: 1px solid ${isEnabled ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                                    <i class="fas ${isEnabled ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                                    <span>${isEnabled ? 'សកម្ម (On)' : 'បិទ (Off)'}</span>
+                                </button>
                             </td>
                             <td class="action-icons" style="text-align: center;">
                                 <i class="fas fa-edit" style="color: var(--primary); cursor: pointer; margin-right: 8px;" title="កែប្រែ" onclick="editTelegramCommand('${escapeHtml(cleanCmd)}')"></i>
@@ -4375,16 +4385,22 @@
                 });
             }
 
-            // 2. Render Built-in System Commands
+            // 2. Render Built-in System Commands (Unlocked: Customizable & Toggleable)
             if (localSystemCommands && localSystemCommands.length > 0) {
                 localSystemCommands.forEach(cmd => {
                     const cleanCmd = cmd.command.replace(/^\//, '');
+                    const isEnabled = cmd.enabled !== false;
+                    const hasCustomDesc = cmd.description && cmd.defaultDescription && cmd.description !== cmd.defaultDescription;
+
                     html += `
-                        <tr style="background: rgba(0,0,0,0.015);">
+                        <tr style="${!isEnabled ? 'opacity: 0.6; background: rgba(0,0,0,0.02);' : 'background: rgba(0,0,0,0.015);'}">
                             <td>
                                 <strong style="color: var(--text-main); font-family: monospace; font-size: 0.95rem;">/${escapeHtml(cleanCmd)}</strong>
                             </td>
-                            <td>${escapeHtml(cmd.description || cleanCmd)}</td>
+                            <td>
+                                <div>${escapeHtml(cmd.description || cleanCmd)}</div>
+                                ${hasCustomDesc ? `<small style="color:var(--text-muted); font-size:0.75rem; font-style:italic;">(ដើម៖ ${escapeHtml(cmd.defaultDescription)})</small>` : ''}
+                            </td>
                             <td>
                                 <small style="color: var(--text-muted); font-style: italic;">ឆ្លើយតបស្វ័យប្រវត្តិតាមទិន្នន័យប្រព័ន្ធ Live</small>
                             </td>
@@ -4394,12 +4410,17 @@
                                 </span>
                             </td>
                             <td style="text-align: center;">
-                                <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 0.75rem; padding: 3px 8px; border-radius: 10px; font-weight: 600;">
-                                    សកម្ម (On)
-                                </span>
+                                <button type="button" 
+                                    onclick="toggleSystemCommandEnabled('${escapeHtml(cleanCmd)}', ${!isEnabled})"
+                                    title="ចុចដើម្បី ${isEnabled ? 'បិទ' : 'បើក'} ពាក្យបញ្ជាប្រព័ន្ធ"
+                                    style="background: ${isEnabled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; color: ${isEnabled ? '#059669' : '#dc2626'}; border: 1px solid ${isEnabled ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                                    <i class="fas ${isEnabled ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                                    <span>${isEnabled ? 'សកម្ម (On)' : 'បិទ (Off)'}</span>
+                                </button>
                             </td>
-                            <td style="text-align: center; color: var(--text-muted); font-size: 0.78rem;">
-                                <span>🔒 ថេរ</span>
+                            <td class="action-icons" style="text-align: center;">
+                                <i class="fas fa-edit" style="color: var(--primary); cursor: pointer; margin-right: 8px;" title="កែប្រែការពិពណ៌នា" onclick="editSystemCommand('${escapeHtml(cleanCmd)}')"></i>
+                                <i class="fas fa-undo" style="color: var(--text-muted); cursor: pointer;" title="កំណត់ទៅលំនាំដើមវិញ (Reset)" onclick="resetSystemCommand('${escapeHtml(cleanCmd)}')"></i>
                             </td>
                         </tr>
                     `;
@@ -4413,13 +4434,70 @@
             }
         }
 
+        async function toggleSystemCommandEnabled(cmdName, targetState) {
+            try {
+                const res = await fetch('/api/telegram/commands/system', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: cmdName, enabled: targetState })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    await loadTelegramCommands();
+                } else {
+                    alert('⚠️ ' + (data.message || 'បរាជ័យក្នុងការប្តូរស្ថានភាព'));
+                }
+            } catch (err) {
+                alert('⚠️ កំហុស៖ ' + err.message);
+            }
+        }
+
+        async function toggleCustomCommandEnabled(cmdName, targetState) {
+            const cmd = (localTelegramCommands || []).find(c => (c.command || '').toLowerCase() === cmdName.toLowerCase());
+            if (!cmd) return;
+            try {
+                const res = await fetch('/api/telegram/commands', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        originalCommand: cmd.command,
+                        command: cmd.command,
+                        description: cmd.description,
+                        response: cmd.response,
+                        enabled: targetState
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    await loadTelegramCommands();
+                } else {
+                    alert('⚠️ ' + (data.message || 'បរាជ័យក្នុងការប្តូរស្ថានភាព'));
+                }
+            } catch (err) {
+                alert('⚠️ កំហុស៖ ' + err.message);
+            }
+        }
+
         function openCreateTelegramCommandModal() {
             document.getElementById('modalTgCmdTitle').innerHTML = '<i class="fas fa-plus-circle" style="color:#0088cc; margin-right:8px;"></i> បង្កើតពាក្យបញ្ជាថ្មីសម្រាប់ Telegram Bot';
+            document.getElementById('tgCmdIsSystem').value = 'false';
             document.getElementById('tgCmdOriginalName').value = '';
             document.getElementById('tgCmdNameInput').value = '';
             document.getElementById('tgCmdNameInput').readOnly = false;
+            
+            const helpEl = document.getElementById('tgCmdNameHelp');
+            if (helpEl) helpEl.innerHTML = 'ឧទាហរណ៍៖ បញ្ចូល <code>admission</code> នោះអ្នកប្រើប្រាស់ Telegram អាចវាយ <code>/admission</code> ដើម្បីទទួលបានចម្លើយនេះ។';
+            
             document.getElementById('tgCmdDescInput').value = '';
+            
+            const respGroup = document.getElementById('tgCmdResponseGroup');
+            if (respGroup) respGroup.style.display = 'block';
+            document.getElementById('tgCmdResponseInput').required = true;
             document.getElementById('tgCmdResponseInput').value = '';
+            
+            const sysNotice = document.getElementById('tgCmdSystemNotice');
+            if (sysNotice) sysNotice.style.display = 'none';
+
             document.getElementById('tgCmdEnabledInput').checked = true;
             openModal('modal-telegram-command');
             document.getElementById('tgCmdNameInput').focus();
@@ -4430,15 +4508,77 @@
             if (!cmd) return;
 
             document.getElementById('modalTgCmdTitle').innerHTML = `<i class="fas fa-edit" style="color:#0088cc; margin-right:8px;"></i> កែប្រែពាក្យបញ្ជា /${escapeHtml(cmd.command)}`;
+            document.getElementById('tgCmdIsSystem').value = 'false';
             document.getElementById('tgCmdOriginalName').value = cmd.command;
             document.getElementById('tgCmdNameInput').value = cmd.command;
             document.getElementById('tgCmdNameInput').readOnly = false;
+            
+            const helpEl = document.getElementById('tgCmdNameHelp');
+            if (helpEl) helpEl.innerHTML = 'ឧទាហរណ៍៖ បញ្ចូល <code>admission</code> នោះអ្នកប្រើប្រាស់ Telegram អាចវាយ <code>/admission</code> ដើម្បីទទួលបានចម្លើយនេះ។';
+
             document.getElementById('tgCmdDescInput').value = cmd.description || '';
+            
+            const respGroup = document.getElementById('tgCmdResponseGroup');
+            if (respGroup) respGroup.style.display = 'block';
+            document.getElementById('tgCmdResponseInput').required = true;
             document.getElementById('tgCmdResponseInput').value = cmd.response || '';
+            
+            const sysNotice = document.getElementById('tgCmdSystemNotice');
+            if (sysNotice) sysNotice.style.display = 'none';
+
             document.getElementById('tgCmdEnabledInput').checked = cmd.enabled !== false;
 
             openModal('modal-telegram-command');
             document.getElementById('tgCmdDescInput').focus();
+        }
+
+        function editSystemCommand(cmdName) {
+            const cmd = (localSystemCommands || []).find(c => (c.command || '').toLowerCase() === cmdName.toLowerCase());
+            if (!cmd) return;
+
+            document.getElementById('modalTgCmdTitle').innerHTML = `<i class="fas fa-edit" style="color:#0088cc; margin-right:8px;"></i> កែប្រែពាក្យបញ្ជាប្រព័ន្ធ /${escapeHtml(cmd.command)}`;
+            document.getElementById('tgCmdIsSystem').value = 'true';
+            document.getElementById('tgCmdOriginalName').value = cmd.command;
+            document.getElementById('tgCmdNameInput').value = cmd.command;
+            document.getElementById('tgCmdNameInput').readOnly = true;
+            
+            const helpEl = document.getElementById('tgCmdNameHelp');
+            if (helpEl) helpEl.innerHTML = '<span style="color:#0088cc;"><i class="fas fa-shield-alt"></i> ពាក្យបញ្ជាប្រព័ន្ធដើម (មិនអាចប្តូរឈ្មោះពាក្យបញ្ជាបានទេ)</span>';
+            
+            document.getElementById('tgCmdDescInput').value = cmd.description || cmd.defaultDescription || '';
+            
+            const respGroup = document.getElementById('tgCmdResponseGroup');
+            if (respGroup) respGroup.style.display = 'none';
+            document.getElementById('tgCmdResponseInput').required = false;
+            
+            const sysNotice = document.getElementById('tgCmdSystemNotice');
+            if (sysNotice) sysNotice.style.display = 'block';
+
+            document.getElementById('tgCmdEnabledInput').checked = cmd.enabled !== false;
+
+            openModal('modal-telegram-command');
+            document.getElementById('tgCmdDescInput').focus();
+        }
+
+        async function resetSystemCommand(cmdName) {
+            if (!confirm(`តើអ្នកពិតជាចង់កំណត់ពាក្យបញ្ជា /${cmdName} ទៅទម្រង់ដើមរបស់ប្រព័ន្ធវិញមែនទេ?`)) return;
+
+            try {
+                const res = await fetch('/api/telegram/commands/system/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: cmdName })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert('✅ ' + data.message);
+                    await loadTelegramCommands();
+                } else {
+                    alert('⚠️ ' + (data.message || 'បរាជ័យក្នុងការកំណត់ទៅដើម'));
+                }
+            } catch (err) {
+                alert('⚠️ កំហុស៖ ' + err.message);
+            }
         }
 
         async function saveTelegramCommand(event) {
@@ -4450,6 +4590,7 @@
                 btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> កំពុងរក្សាទុក...`;
             }
 
+            const isSystem = document.getElementById('tgCmdIsSystem').value === 'true';
             const originalCommand = document.getElementById('tgCmdOriginalName').value.trim();
             const command = document.getElementById('tgCmdNameInput').value.trim();
             const description = document.getElementById('tgCmdDescInput').value.trim();
@@ -4457,11 +4598,20 @@
             const enabled = document.getElementById('tgCmdEnabledInput').checked;
 
             try {
-                const res = await fetch('/api/telegram/commands', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ originalCommand, command, description, response, enabled })
-                });
+                let res;
+                if (isSystem) {
+                    res = await fetch('/api/telegram/commands/system', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command: originalCommand || command, description, enabled })
+                    });
+                } else {
+                    res = await fetch('/api/telegram/commands', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ originalCommand, command, description, response, enabled })
+                    });
+                }
                 const data = await res.json();
                 if (res.ok && data.success) {
                     alert('✅ ' + data.message);
