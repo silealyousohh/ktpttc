@@ -1022,6 +1022,172 @@ app.post('/api/telegram/delete-webhook', async (req, res) => {
   }
 });
 
+// Helper to sync all commands with Telegram
+async function syncTelegramBotCommands(db) {
+  const config = telegram.getTelegramConfig(db.settings);
+  if (!config.token) return { success: false, reason: 'No token configured' };
+
+  const systemCmds = telegram.SYSTEM_COMMANDS || [];
+  const customCmds = (db.settings && Array.isArray(db.settings.telegramCustomCommands))
+    ? db.settings.telegramCustomCommands.filter(c => c.enabled !== false)
+    : [];
+
+  const combined = [
+    ...systemCmds,
+    ...customCmds.map(c => ({
+      command: (c.command || '').toLowerCase().replace(/^\//, '').replace(/[^a-z0-9_]/g, ''),
+      description: (c.description || c.command || 'ព័ត៌មានបន្ថែម').slice(0, 256)
+    }))
+  ];
+
+  const seen = new Set();
+  const uniqueCmds = [];
+  for (const item of combined) {
+    if (item.command && !seen.has(item.command)) {
+      seen.add(item.command);
+      uniqueCmds.push(item);
+    }
+  }
+
+  try {
+    const result = await telegram.setBotCommands(uniqueCmds, config.token);
+    return { success: true, count: uniqueCmds.length, result };
+  } catch (err) {
+    console.error('Failed to sync Telegram commands:', err.message);
+    return { success: false, reason: err.message };
+  }
+}
+
+// 14. TELEGRAM BOT CUSTOM COMMANDS MANAGEMENT ENDPOINTS
+// Get All Telegram Commands (System + Custom)
+app.get('/api/telegram/commands', async (req, res) => {
+  try {
+    const db = await readDb();
+    if (!db.settings) db.settings = {};
+    if (!Array.isArray(db.settings.telegramCustomCommands)) {
+      db.settings.telegramCustomCommands = [
+        {
+          command: 'contact',
+          description: 'ព័ត៌មានទំនាក់ទំនង និងអាសយដ្ឋានសាលា',
+          response: '📍 <b>អាសយដ្ឋាន៖</b> ផ្លូវជាតិលេខ ៧ ភូមិអូរឬស្សី២ សង្កាត់អូរឬស្សី ក្រុងក្រចេះ ខេត្តក្រចេះ\n📞 <b>ទូរស័ព្ទ៖</b> 072 971 445 / 097 555 5873\n✉️ <b>អ៊ីមែល៖</b> info@ktpttc.edu.kh\n🌐 <b>គេហទំព័រ៖</b> https://ktpttc-edu-kh-ll8r.vercel.app',
+          enabled: true,
+          updatedAt: new Date().toISOString()
+        },
+        {
+          command: 'courses',
+          description: 'វគ្គបណ្តុះបណ្តាល និងកម្មវិធីសិក្សា',
+          response: '🎓 <b>កម្មវិធីបណ្តុះបណ្តាលនៅសាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ៖</b>\n• គរុកោសល្យបឋមសិក្សា (កម្រិត ១២+២)\n• គរុកោសល្យមត្តេយ្យសិក្សា (កម្រិត ១២+២)\n• វគ្គវិក្រឹតការ និងបំប៉នសមត្ថភាពគ្រូបង្រៀនជាប្រចាំ\n\nចូលមើលព័ត៌មានលម្អិតក្នុងគេហទំព័រផ្លូវការ!',
+          enabled: true,
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      await writeDb(db);
+    }
+
+    res.json({
+      success: true,
+      systemCommands: telegram.SYSTEM_COMMANDS || [],
+      customCommands: db.settings.telegramCustomCommands
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុស៖ ' + err.message });
+  }
+});
+
+// Create or Update a Custom Telegram Command
+app.post('/api/telegram/commands', async (req, res) => {
+  try {
+    const db = await readDb();
+    if (!db.settings) db.settings = {};
+    if (!Array.isArray(db.settings.telegramCustomCommands)) {
+      db.settings.telegramCustomCommands = [];
+    }
+
+    const { command, description, response, enabled, originalCommand } = req.body;
+    if (!command || !command.trim()) {
+      return res.status(400).json({ success: false, message: 'សូមបញ្ចូលឈ្មោះពាក្យបញ្ជា (Command Name)' });
+    }
+    if (!response || !response.trim()) {
+      return res.status(400).json({ success: false, message: 'សូមបញ្ចូលខ្លឹមសារសារឆ្លើយតប (Response Content)' });
+    }
+
+    const cleanCmd = command.toLowerCase().trim().replace(/^\//, '').replace(/[^a-z0-9_]/g, '');
+    if (!cleanCmd) {
+      return res.status(400).json({ success: false, message: 'ឈ្មោះពាក្យបញ្ជាត្រូវតែជាអក្សរឡាតាំងតូច លេខ ឬសញ្ញា underscore (ឧ. contact, admission)' });
+    }
+
+    const newCmd = {
+      command: cleanCmd,
+      description: (description || cleanCmd).trim().slice(0, 256),
+      response: response.trim(),
+      enabled: enabled !== undefined ? Boolean(enabled) : true,
+      updatedAt: new Date().toISOString()
+    };
+
+    const targetLookup = (originalCommand || cleanCmd).toLowerCase().trim().replace(/^\//, '');
+    const existingIdx = db.settings.telegramCustomCommands.findIndex(c => (c.command || '').toLowerCase() === targetLookup);
+
+    if (existingIdx >= 0) {
+      db.settings.telegramCustomCommands[existingIdx] = newCmd;
+    } else {
+      db.settings.telegramCustomCommands.push(newCmd);
+    }
+
+    await writeDb(db);
+
+    // Auto-sync commands with Telegram API menu
+    syncTelegramBotCommands(db).catch(e => console.warn('Sync commands error:', e.message));
+
+    res.json({
+      success: true,
+      message: `បានរក្សាទុកពាក្យបញ្ជា /${cleanCmd} ដោយជោគជ័យ!`,
+      command: newCmd
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុស៖ ' + err.message });
+  }
+});
+
+// Delete a Custom Telegram Command
+app.delete('/api/telegram/commands/:name', async (req, res) => {
+  try {
+    const db = await readDb();
+    if (!db.settings || !Array.isArray(db.settings.telegramCustomCommands)) {
+      return res.json({ success: true, message: 'បានលុបរួចរាល់' });
+    }
+
+    const target = req.params.name.toLowerCase().trim().replace(/^\//, '');
+    db.settings.telegramCustomCommands = db.settings.telegramCustomCommands.filter(c => (c.command || '').toLowerCase() !== target);
+    await writeDb(db);
+
+    // Auto-sync with Telegram menu
+    syncTelegramBotCommands(db).catch(e => console.warn('Sync commands error:', e.message));
+
+    res.json({ success: true, message: `បានលុបពាក្យបញ្ជា /${target} ដោយជោគជ័យ!` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុស៖ ' + err.message });
+  }
+});
+
+// Sync Commands to Telegram Bot Menu API (setMyCommands)
+app.post('/api/telegram/sync-commands', async (req, res) => {
+  try {
+    const db = await readDb();
+    const result = await syncTelegramBotCommands(db);
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `បានធ្វើសមកាលកម្មពាក្យបញ្ជាចំនួន ${result.count} ទៅកាន់ Telegram Menu រួចរាល់!`,
+        count: result.count
+      });
+    } else {
+      res.status(400).json({ success: false, message: result.reason || 'បរាជ័យក្នុងការធ្វើសមកាលកម្មពាក្យបញ្ជា' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុស៖ ' + err.message });
+  }
+});
+
 // Export Express app for Serverless / Vercel
 module.exports = app;
 

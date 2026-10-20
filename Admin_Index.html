@@ -1696,6 +1696,9 @@
                                 <a href="https://t.me/ktpttc_bot" target="_blank" class="btn btn-outline" style="width: auto; color: #0088cc; border-color: rgba(0, 136, 204, 0.4); display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; font-size: 0.85rem; text-decoration: none;" title="បើកមើល bot ក្នុង Telegram">
                                     <i class="fab fa-telegram"></i> <span>បើកមើល Bot</span>
                                 </a>
+                                <button type="button" class="btn btn-outline" onclick="openTelegramCommandsView()" style="width: auto; color: #0088cc; border-color: rgba(0, 136, 204, 0.4); display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; font-size: 0.85rem;" title="បង្កើត និងគ្រប់គ្រងពាក្យបញ្ជា Telegram Bot">
+                                    <i class="fas fa-terminal"></i> <span>ពាក្យបញ្ជា Bot</span>
+                                </button>
                                 <button type="button" class="btn btn-outline" onclick="testTelegramFromMessages(this)" style="width: auto; color: #059669; border-color: rgba(5, 150, 105, 0.4); display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; font-size: 0.85rem;" title="ផ្ញើសារសាកល្បងទៅ Telegram">
                                     <i class="fas fa-bell"></i> <span>តេស្តផ្ញើសារ</span>
                                 </button>
@@ -2481,6 +2484,47 @@
                                     💡 <b>ដំណើរការលើ Vercel Cloud:</b> បន្ទាប់ពីដាក់ Deploy សូមចុចប៊ូតុង "កំណត់ Webhook" ដើម្បីឱ្យប្រព័ន្ធ Telegram បញ្ជូនសារមកកាន់គេហទំព័រដោយស្វ័យប្រវត្តិ។
                                 </div>
                             </div>
+
+                            <!-- Telegram Bot Commands Management (ការគ្រប់គ្រងពាក្យបញ្ជា Bot) -->
+                            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color);" id="section-telegram-commands">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                                    <div>
+                                        <h4 style="margin: 0; font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-terminal" style="color: #0088cc;"></i> ពាក្យបញ្ជា Telegram Bot (Bot Commands)
+                                        </h4>
+                                        <p style="margin: 3px 0 0 0; color: var(--text-muted); font-size: 0.83rem;">
+                                            បង្កើតពាក្យបញ្ជាឆ្លើយតបស្វ័យប្រវត្តិតាមការចង់បាន (ឧ. /contact, /courses, /admission) និង Sync ចូល Telegram Menu
+                                        </p>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-primary" onclick="openCreateTelegramCommandModal()" style="width: auto; background: #0088cc; border-color: #0088cc; font-size: 0.85rem; padding: 7px 14px;">
+                                            <i class="fas fa-plus"></i> បង្កើតពាក្យបញ្ជាថ្មី (Create Command)
+                                        </button>
+                                        <button type="button" class="btn btn-outline" onclick="syncTelegramCommandsToBot(this)" style="width: auto; color: #059669; border-color: #059669; font-size: 0.85rem; padding: 7px 14px;" title="ធ្វើសមកាលកម្មពាក្យបញ្ជាទៅកាន់ Telegram Menu">
+                                            <i class="fas fa-sync-alt"></i> Sync ទៅ Telegram Menu
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Table of Commands -->
+                                <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card);">
+                                    <table class="data-table" style="font-size: 0.86rem; margin-bottom: 0;">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 140px;">ពាក្យបញ្ជា (Command)</th>
+                                                <th style="width: 220px;">ការពិពណ៌នា</th>
+                                                <th>ខ្លឹមសារឆ្លើយតប (Bot Response)</th>
+                                                <th style="width: 110px; text-align: center;">ប្រភេទ</th>
+                                                <th style="width: 90px; text-align: center;">ស្ថានភាព</th>
+                                                <th style="width: 100px; text-align: center;">សកម្មភាព</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="telegram-commands-table-body">
+                                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 15px;">កំពុងផ្ទុកបញ្ជីពាក្យបញ្ជា...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- UI Settings (Mock) -->
@@ -2673,6 +2717,67 @@
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-send-message')">បោះបង់</button>
                     <button type="submit" id="btn-send-message" class="btn btn-success" style="width:auto;"><i class="fas fa-paper-plane"></i> ផ្ញើ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Create / Edit Telegram Bot Command -->
+    <div id="modal-telegram-command" class="modal">
+        <div class="modal-content modal-md">
+            <div class="modal-header">
+                <h3 id="modalTgCmdTitle"><i class="fas fa-terminal" style="color:#0088cc; margin-right:8px;"></i> បង្កើតពាក្យបញ្ជាថ្មីសម្រាប់ Telegram Bot</h3>
+                <i class="fas fa-times close-modal" onclick="closeModal('modal-telegram-command')"></i>
+            </div>
+            <form id="telegramCommandForm" onsubmit="saveTelegramCommand(event)">
+                <input type="hidden" id="tgCmdOriginalName">
+                
+                <div class="form-group">
+                    <label class="form-label" style="font-weight: 600;">
+                        <i class="fas fa-slash" style="color: #0088cc; margin-right: 4px;"></i> ឈ្មោះពាក្យបញ្ជា (Command Name - អក្សរឡាតាំងតូច គ្មានដកឃ្លា) <span style="color:var(--danger);">*</span>
+                    </label>
+                    <div style="display:flex; align-items:center;">
+                        <span style="background:var(--bg-card); border:1px solid var(--border-color); border-right:none; padding:8px 12px; border-radius:6px 0 0 6px; font-weight:700; color:#0088cc;">/</span>
+                        <input type="text" id="tgCmdNameInput" class="form-control" style="border-radius:0 6px 6px 0;" placeholder="ឧ. admission ឬ contact ឬ courses" required pattern="[a-zA-Z0-9_]{1,32}">
+                    </div>
+                    <small style="color:var(--text-muted); font-size:0.75rem; display:block; margin-top:3px;">
+                        ឧទាហរណ៍៖ បញ្ចូល <code>admission</code> នោះអ្នកប្រើប្រាស់ Telegram អាចវាយ <code>/admission</code> ដើម្បីទទួលបានចម្លើយនេះ។
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" style="font-weight: 600;">
+                        <i class="fas fa-info-circle" style="color: #0088cc; margin-right: 4px;"></i> ការពិពណ៌នាខ្លី (Description - បង្ហាញក្នុង Menu) <span style="color:var(--danger);">*</span>
+                    </label>
+                    <input type="text" id="tgCmdDescInput" class="form-control" placeholder="ឧ. ព័ត៌មានអំពីការចុះឈ្មោះចូលរៀន" required maxlength="250">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" style="font-weight: 600; display:flex; justify-content:space-between; align-items:center;">
+                        <span><i class="fas fa-comment-dots" style="color: #0088cc; margin-right: 4px;"></i> ខ្លឹមសារសារឆ្លើយតប (Bot Response) <span style="color:var(--danger);">*</span></span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">គាំទ្រ HTML Tags (<b>, <i>, <a>, <code>)</span>
+                    </label>
+                    <textarea id="tgCmdResponseInput" class="form-control" rows="5" placeholder="បញ្ចូលខ្លឹមសារដែល Bot ត្រូវឆ្លើយតបទៅកាន់អ្នកប្រើប្រាស់..." required></textarea>
+                    <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                        <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem;" onclick="insertTgFormatTag('b')"><b>Bold</b></button>
+                        <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem;" onclick="insertTgFormatTag('i')"><i>Italic</i></button>
+                        <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem;" onclick="insertTgFormatTag('code')"><code>Code</code></button>
+                        <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem;" onclick="insertTgLinkTag()">🔗 Link</button>
+                    </div>
+                </div>
+
+                <div style="background:rgba(0,136,204,0.05); border:1px solid rgba(0,136,204,0.2); border-radius:8px; padding:10px 14px; margin-bottom:15px;">
+                    <label style="display:flex; align-items:center; gap:8px; margin:0; cursor:pointer; font-weight:600; color:var(--text-main);">
+                        <input type="checkbox" id="tgCmdEnabledInput" checked style="accent-color:#0088cc; width:16px; height:16px;">
+                        <span>បើកដំណើរការ (Enable Command)</span>
+                    </label>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-telegram-command')">បោះបង់</button>
+                    <button type="submit" id="btnSaveTgCmd" class="btn btn-primary" style="background:#0088cc; border-color:#0088cc; width:auto;">
+                        <i class="fas fa-save"></i> រក្សាទុកពាក្យបញ្ជា
+                    </button>
                 </div>
             </form>
         </div>
@@ -3168,7 +3273,7 @@
             else if (viewId === 'view-partners') loadAdminPartners();
             else if (viewId === 'view-messages') { loadAdminMessages(); loadTelegramStatus(); }
             else if (viewId === 'view-reports') loadReportsCenter();
-            else if (viewId === 'view-settings') { loadSettings(); loadDatabaseStatus(); loadTelegramStatus(); }
+            else if (viewId === 'view-settings') { loadSettings(); loadDatabaseStatus(); loadTelegramStatus(); loadTelegramCommands(); }
         }
 
         function getPlaceholderSvg(text = 'No Image', width = 400, height = 250) {
@@ -4197,6 +4302,261 @@
             const guide = document.getElementById('telegramGuideAccordion');
             if (!guide) return;
             guide.style.display = guide.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // ==========================================
+        // TELEGRAM BOT COMMANDS MANAGEMENT FUNCTIONS
+        // ==========================================
+        let localTelegramCommands = [];
+        let localSystemCommands = [];
+
+        async function loadTelegramCommands() {
+            const tbody = document.getElementById('telegram-commands-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:15px;"><i class="fas fa-spinner fa-spin"></i> កំពុងទាញយកទិន្នន័យ...</td></tr>';
+
+            try {
+                const res = await fetch('/api/telegram/commands', { cache: 'no-store' });
+                const data = await res.json();
+                if (data.success) {
+                    localSystemCommands = data.systemCommands || [];
+                    localTelegramCommands = data.customCommands || [];
+                    renderTelegramCommandsTable();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger); padding:15px;">បរាជ័យក្នុងការទាញយកទិន្នន័យ</td></tr>`;
+                }
+            } catch (err) {
+                console.error('Error loading telegram commands:', err);
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger); padding:15px;">កំហុសតភ្ជាប់ប្រព័ន្ធ៖ ${err.message}</td></tr>`;
+            }
+        }
+
+        function renderTelegramCommandsTable() {
+            const tbody = document.getElementById('telegram-commands-table-body');
+            if (!tbody) return;
+
+            let html = '';
+
+            // 1. Render Custom Commands First
+            if (localTelegramCommands && localTelegramCommands.length > 0) {
+                localTelegramCommands.forEach((cmd) => {
+                    const cleanCmd = (cmd.command || '').replace(/^\//, '');
+                    const isEnabled = cmd.enabled !== false;
+                    const previewText = (cmd.response || '').replace(/<[^>]*>?/gm, '').slice(0, 70) + ((cmd.response || '').length > 70 ? '...' : '');
+
+                    html += `
+                        <tr style="${!isEnabled ? 'opacity: 0.6; background: rgba(0,0,0,0.02);' : ''}">
+                            <td>
+                                <strong style="color: #0088cc; font-family: monospace; font-size: 0.95rem;">/${escapeHtml(cleanCmd)}</strong>
+                            </td>
+                            <td>${escapeHtml(cmd.description || cleanCmd)}</td>
+                            <td>
+                                <div style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4;">${escapeHtml(previewText)}</div>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge" style="background: rgba(0, 136, 204, 0.12); color: #0088cc; font-size: 0.72rem; padding: 3px 8px; border-radius: 10px; font-weight: 600;">
+                                    <i class="fas fa-magic" style="margin-right: 3px;"></i> បង្កើតផ្ទាល់ខ្លួន
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge" style="background: ${isEnabled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; color: ${isEnabled ? '#059669' : '#dc2626'}; font-size: 0.75rem; padding: 3px 8px; border-radius: 10px; font-weight: 600;">
+                                    ${isEnabled ? 'សកម្ម (On)' : 'បិទ (Off)'}
+                                </span>
+                            </td>
+                            <td class="action-icons" style="text-align: center;">
+                                <i class="fas fa-edit" style="color: var(--primary); cursor: pointer; margin-right: 8px;" title="កែប្រែ" onclick="editTelegramCommand('${escapeHtml(cleanCmd)}')"></i>
+                                <i class="fas fa-trash" style="color: var(--danger); cursor: pointer;" title="លុប" onclick="deleteTelegramCommand('${escapeHtml(cleanCmd)}')"></i>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // 2. Render Built-in System Commands
+            if (localSystemCommands && localSystemCommands.length > 0) {
+                localSystemCommands.forEach(cmd => {
+                    const cleanCmd = cmd.command.replace(/^\//, '');
+                    html += `
+                        <tr style="background: rgba(0,0,0,0.015);">
+                            <td>
+                                <strong style="color: var(--text-main); font-family: monospace; font-size: 0.95rem;">/${escapeHtml(cleanCmd)}</strong>
+                            </td>
+                            <td>${escapeHtml(cmd.description || cleanCmd)}</td>
+                            <td>
+                                <small style="color: var(--text-muted); font-style: italic;">ឆ្លើយតបស្វ័យប្រវត្តិតាមទិន្នន័យប្រព័ន្ធ Live</small>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge" style="background: rgba(100, 116, 139, 0.12); color: var(--text-muted); font-size: 0.72rem; padding: 3px 8px; border-radius: 10px; font-weight: 600;">
+                                    <i class="fas fa-shield-alt" style="margin-right: 3px;"></i> ប្រព័ន្ធដើម
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 0.75rem; padding: 3px 8px; border-radius: 10px; font-weight: 600;">
+                                    សកម្ម (On)
+                                </span>
+                            </td>
+                            <td style="text-align: center; color: var(--text-muted); font-size: 0.78rem;">
+                                <span>🔒 ថេរ</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            if (!html) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:15px;">មិនទាន់មានពាក្យបញ្ជាឡើយ</td></tr>';
+            } else {
+                tbody.innerHTML = html;
+            }
+        }
+
+        function openCreateTelegramCommandModal() {
+            document.getElementById('modalTgCmdTitle').innerHTML = '<i class="fas fa-plus-circle" style="color:#0088cc; margin-right:8px;"></i> បង្កើតពាក្យបញ្ជាថ្មីសម្រាប់ Telegram Bot';
+            document.getElementById('tgCmdOriginalName').value = '';
+            document.getElementById('tgCmdNameInput').value = '';
+            document.getElementById('tgCmdNameInput').readOnly = false;
+            document.getElementById('tgCmdDescInput').value = '';
+            document.getElementById('tgCmdResponseInput').value = '';
+            document.getElementById('tgCmdEnabledInput').checked = true;
+            openModal('modal-telegram-command');
+            document.getElementById('tgCmdNameInput').focus();
+        }
+
+        function editTelegramCommand(cmdName) {
+            const cmd = localTelegramCommands.find(c => (c.command || '').toLowerCase() === cmdName.toLowerCase());
+            if (!cmd) return;
+
+            document.getElementById('modalTgCmdTitle').innerHTML = `<i class="fas fa-edit" style="color:#0088cc; margin-right:8px;"></i> កែប្រែពាក្យបញ្ជា /${escapeHtml(cmd.command)}`;
+            document.getElementById('tgCmdOriginalName').value = cmd.command;
+            document.getElementById('tgCmdNameInput').value = cmd.command;
+            document.getElementById('tgCmdNameInput').readOnly = false;
+            document.getElementById('tgCmdDescInput').value = cmd.description || '';
+            document.getElementById('tgCmdResponseInput').value = cmd.response || '';
+            document.getElementById('tgCmdEnabledInput').checked = cmd.enabled !== false;
+
+            openModal('modal-telegram-command');
+            document.getElementById('tgCmdDescInput').focus();
+        }
+
+        async function saveTelegramCommand(event) {
+            event.preventDefault();
+            const btn = document.getElementById('btnSaveTgCmd');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> កំពុងរក្សាទុក...`;
+            }
+
+            const originalCommand = document.getElementById('tgCmdOriginalName').value.trim();
+            const command = document.getElementById('tgCmdNameInput').value.trim();
+            const description = document.getElementById('tgCmdDescInput').value.trim();
+            const response = document.getElementById('tgCmdResponseInput').value.trim();
+            const enabled = document.getElementById('tgCmdEnabledInput').checked;
+
+            try {
+                const res = await fetch('/api/telegram/commands', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ originalCommand, command, description, response, enabled })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert('✅ ' + data.message);
+                    closeModal('modal-telegram-command');
+                    await loadTelegramCommands();
+                } else {
+                    alert('⚠️ ' + (data.message || 'បរាជ័យក្នុងការរក្សាទុកពាក្យបញ្ជា'));
+                }
+            } catch (err) {
+                alert('⚠️ កំហុស៖ ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        async function deleteTelegramCommand(cmdName) {
+            if (!confirm(`តើអ្នកពិតជាចង់លុបពាក្យបញ្ជា /${cmdName} នេះមែនទេ?`)) return;
+
+            try {
+                const res = await fetch(`/api/telegram/commands/${encodeURIComponent(cmdName)}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert('✅ ' + data.message);
+                    await loadTelegramCommands();
+                } else {
+                    alert('⚠️ ' + (data.message || 'បរាជ័យក្នុងការលុបពាក្យបញ្ជា'));
+                }
+            } catch (err) {
+                alert('⚠️ កំហុស៖ ' + err.message);
+            }
+        }
+
+        async function syncTelegramCommandsToBot(btn) {
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> កំពុង Sync...`;
+            }
+
+            try {
+                const res = await fetch('/api/telegram/sync-commands', {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert('✅ ' + data.message);
+                    await loadTelegramCommands();
+                } else {
+                    alert('⚠️ ' + (data.message || 'បរាជ័យក្នុងការធ្វើសមកាលកម្ម'));
+                }
+            } catch (err) {
+                alert('⚠️ កំហុស៖ ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        function openTelegramCommandsView() {
+            const settingsNavItem = document.querySelector('.sidebar-nav .nav-item[onclick*="view-settings"]');
+            switchView('view-settings', settingsNavItem);
+            setTimeout(() => {
+                const section = document.getElementById('section-telegram-commands');
+                if (section) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 250);
+        }
+
+        function insertTgFormatTag(tag) {
+            const textarea = document.getElementById('tgCmdResponseInput');
+            if (!textarea) return;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end) || 'អត្ថបទ';
+            const replacement = `<${tag}>${selectedText}</${tag}>`;
+            textarea.setRangeText(replacement, start, end, 'select');
+            textarea.focus();
+        }
+
+        function insertTgLinkTag() {
+            const textarea = document.getElementById('tgCmdResponseInput');
+            if (!textarea) return;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end) || 'ឈ្មោះ Link';
+            const url = prompt('បញ្ចូលតំណភ្ជាប់ URL (Link URL):', 'https://ktpttc-edu-kh-ll8r.vercel.app');
+            if (!url) return;
+            const replacement = `<a href="${url}">${selectedText}</a>`;
+            textarea.setRangeText(replacement, start, end, 'select');
+            textarea.focus();
         }
 
         function updateHistoryImgPreview(url) {

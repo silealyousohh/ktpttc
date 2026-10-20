@@ -617,7 +617,12 @@ async function handleUpdate(update, context = {}) {
 
   // 10. /help or ℹ️ ជំនួយ
   if (textLower === '/help' || rawText.includes('ជំនួយ')) {
-    const helpText = [
+    const db = await getDbData();
+    const customCmds = (db.settings && Array.isArray(db.settings.telegramCustomCommands))
+      ? db.settings.telegramCustomCommands.filter(c => c.enabled !== false)
+      : [];
+
+    const helpLines = [
       `ℹ️ <b>ការណែនាំប្រើប្រាស់ KTPTTC Telegram Bot</b>`,
       `━━━━━━━━━━━━━━━━━━━━`,
       `លោកអ្នកអាចប្រើប្រាស់បញ្ជាដូចខាងក្រោម៖`,
@@ -625,17 +630,56 @@ async function handleUpdate(update, context = {}) {
       `• 📊 <b>/status</b> : ពិនិត្យស្ថានភាពគេហទំព័រ & MongoDB`,
       `• 📈 <b>/stats</b> : ស្ថិតិទិន្នន័យទូទៅ`,
       `• 📩 <b>/messages</b> : មើលសារចុងក្រោយផ្ញើមកពីគេហទំព័រ`,
-      `• 📰 <b>/news</b> : ព័ត៌មាន និងសកម្មភាពថ្មីៗ`,
+      `• 📰 <b>/news</b> : ព័ត៌មាន និងសេចក្តីជូនដំណឹងថ្មីៗ`,
       `• 📚 <b>/books</b> : បញ្ជីសៀវភៅ ឬស្វែងរក (ឧ. <code>/books គណិត</code>)`,
+      `• 🔔 <b>/subscribe</b> : ចុះឈ្មោះទទួលដំណឹងសារស្វ័យប្រវត្តិ`,
       `• 🆔 <b>/id</b> : មើលលេខសម្គាល់ Telegram Chat ID របស់អ្នក`,
-      `• ℹ️ <b>/help</b> : បង្ហាញការណែនាំនេះ`,
+      `• ℹ️ <b>/help</b> : បង្ហាញការណែនាំនេះ`
+    ];
+
+    if (customCmds.length > 0) {
+      helpLines.push(``, `📌 <b>ពាក្យបញ្ជាបន្ថែម (Custom Commands)៖</b>`);
+      customCmds.forEach(c => {
+        const cleanCmd = (c.command || '').replace(/^\//, '');
+        helpLines.push(`• <b>/${cleanCmd}</b> : ${escapeHtml(c.description || cleanCmd)}`);
+      });
+    }
+
+    helpLines.push(
       ``,
       `🔔 <b>ប្រព័ន្ធជូនដំណឹងស្វ័យប្រវត្ត៖</b>`,
       `នៅពេលមានអ្នកចូលទស្សនាបំពេញទម្រង់ផ្ញើសារក្នុងគេហទំព័រ បូតនេះនឹងផ្ញើសារជូនដំណឹងភ្លាមៗមកកាន់ Telegram របស់អ្នក។`
-    ].join('\n');
+    );
 
-    await reply(helpText);
+    await reply(helpLines.join('\n'));
     return { handled: true, command: '/help' };
+  }
+
+  // 11. Custom Commands created by Admin
+  const dbData = await getDbData();
+  const customCommands = (dbData.settings && Array.isArray(dbData.settings.telegramCustomCommands))
+    ? dbData.settings.telegramCustomCommands
+    : [];
+
+  const cmdMatch = textLower.match(/^\/([a-z0-9_]+)/i);
+  if (cmdMatch) {
+    const cmdName = cmdMatch[1].toLowerCase();
+    const foundCmd = customCommands.find(c => 
+      (c.command || '').toLowerCase().replace(/^\//, '') === cmdName && c.enabled !== false
+    );
+    if (foundCmd) {
+      const respContent = foundCmd.response || foundCmd.reply || '(គ្មានខ្លឹមសារ)';
+      const responseText = [
+        `🤖 <b>${escapeHtml(foundCmd.description || '/' + cmdName)}</b>`,
+        `━━━━━━━━━━━━━━━━━━━━`,
+        respContent,
+        ``,
+        `🌐 <a href="https://ktpttc-edu-kh-ll8r.vercel.app">ktpttc.com</a>`
+      ].join('\n');
+
+      await reply(responseText);
+      return { handled: true, command: '/' + cmdName, custom: true };
+    }
   }
 
   // Fallback for unrecognized text
@@ -671,6 +715,30 @@ async function deleteWebhook(dropPendingUpdates = false, tokenOverride = null) {
 async function getWebhookInfo(tokenOverride = null) {
   const token = tokenOverride || getTelegramConfig().token;
   return await callTelegramApi('getWebhookInfo', {}, token);
+}
+
+// Built-in Default System Commands
+const SYSTEM_COMMANDS = [
+  { command: 'status', description: 'ស្ថានភាពប្រព័ន្ធ និងគេហទំព័រ' },
+  { command: 'stats', description: 'ស្ថិតិទូទៅនៃទិន្នន័យ' },
+  { command: 'messages', description: 'សារពីគេហទំព័រ' },
+  { command: 'news', description: 'ព័ត៌មាន និងសេចក្តីជូនដំណឹង' },
+  { command: 'books', description: 'ស្វែងរកសៀវភៅបណ្ណាល័យ' },
+  { command: 'subscribe', description: 'ចុះឈ្មោះទទួលដំណឹងស្វ័យប្រវត្តិ' },
+  { command: 'id', description: 'លេខសម្គាល់ Telegram Chat ID' },
+  { command: 'help', description: 'ការណែនាំ និងជំនួយ' }
+];
+
+// Set Bot Commands Menu in Telegram (calls setMyCommands)
+async function setBotCommands(commandsList, tokenOverride = null) {
+  const token = tokenOverride || getTelegramConfig().token;
+  return await callTelegramApi('setMyCommands', { commands: commandsList }, token);
+}
+
+// Get Bot Commands Menu from Telegram (calls getMyCommands)
+async function getBotCommands(tokenOverride = null) {
+  const token = tokenOverride || getTelegramConfig().token;
+  return await callTelegramApi('getMyCommands', {}, token);
 }
 
 // Long-Polling Runner for Local development or VPS deployment
@@ -741,6 +809,9 @@ module.exports = {
   getMe,
   sendMessage,
   getMainKeyboard,
+  SYSTEM_COMMANDS,
+  setBotCommands,
+  getBotCommands,
   notifyNewContactMessage,
   forwardContactMessage,
   broadcastMessage,
