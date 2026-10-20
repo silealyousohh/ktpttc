@@ -223,7 +223,7 @@ async function handleUpdate(update, context = {}) {
   if (textLower === '/start' || textLower.startsWith('/start ')) {
     const welcomeText = [
       `👋 <b>សួស្តី ${escapeHtml(senderName)}!</b>`,
-      `សូមស្វាគមន៍មកកាន់ប្រព័ន្ធតេឡេក្រាមបូតផ្លូវការរបស់ <b>វិទ្យាស្ថានគរុកោសល្យខេត្តក្រចេះ (KTPTTC)</b> 🇰🇭`,
+      `សូមស្វាគមន៍មកកាន់ប្រព័ន្ធតេឡេក្រាមបូតផ្លូវការរបស់ <b>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</b> 🇰🇭`,
       ``,
       `លោកអ្នកអាចប្រើប្រាស់ប៊ូតុងខាងក្រោម ឬពាក្យបញ្ជា (Commands) ទាំងនេះ៖`,
       `• 📊 <b>/status</b> - ពិនិត្យស្ថានភាពដំណើរការគេហទំព័រ និង MongoDB Atlas`,
