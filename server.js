@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const { MongoClient } = require('mongodb');
+const telegram = require('./telegram');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -644,6 +645,12 @@ app.post('/api/messages', async (req, res) => {
   };
   db.messages.unshift(msg);
   await writeDb(db);
+
+  // Send real-time notification to Telegram Bot (Async non-blocking)
+  telegram.notifyNewContactMessage(msg, db.settings).catch(err => {
+    console.error('⚠️ Telegram notification dispatch notice:', err.message);
+  });
+
   res.json({ success: true, message: 'សារត្រូវបានផ្ញើជោគជ័យ!', item: msg });
 });
 
@@ -825,6 +832,139 @@ app.post('/api/visitor-count', async (req, res) => {
   db.visitorCount = (db.visitorCount || 128) + 1;
   await writeDb(db);
   res.json({ visitorCount: db.visitorCount });
+});
+
+// ==========================================
+// 13. TELEGRAM BOT API ENDPOINTS
+// ==========================================
+
+// Get Telegram Bot & Webhook Status
+app.get('/api/telegram/status', async (req, res) => {
+  try {
+    const db = await readDb();
+    const config = telegram.getTelegramConfig(db.settings);
+    let botInfo = null;
+    let webhookInfo = null;
+    let error = null;
+
+    if (config.token) {
+      try {
+        botInfo = await telegram.getBotInfo(config.token);
+      } catch (err) {
+        error = err.message;
+      }
+
+      try {
+        webhookInfo = await telegram.getWebhookInfo(config.token);
+      } catch (_) {}
+    }
+
+    res.json({
+      configured: Boolean(config.token),
+      hasChatId: Boolean(config.chatId),
+      chatId: config.chatId || '',
+      maskedToken: config.token ? (config.token.slice(0, 7) + '...' + config.token.slice(-5)) : '',
+      bot: botInfo,
+      webhook: webhookInfo,
+      error: error,
+      settings: {
+        notifyOnMessage: config.notifyOnMessage,
+        notifyOnBackup: config.notifyOnBackup
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Telegram Webhook Handler (Incoming Updates from Telegram Server)
+app.post('/api/telegram/webhook', async (req, res) => {
+  try {
+    const db = await readDb();
+    const result = await telegram.handleUpdate(req.body, {
+      readDb,
+      customSettings: db.settings
+    });
+    // Always return 200 OK to Telegram so it doesn't resend
+    res.json({ ok: true, result });
+  } catch (err) {
+    console.error('⚠️ Telegram Webhook processing error:', err.message);
+    res.status(200).json({ ok: false, error: err.message });
+  }
+});
+
+// Send Test Message to configured Telegram Chat ID
+app.post('/api/telegram/test', async (req, res) => {
+  try {
+    const db = await readDb();
+    const incomingSettings = { ...(db.settings || {}), ...(req.body || {}) };
+    const config = telegram.getTelegramConfig(incomingSettings);
+
+    if (!config.token) {
+      return res.status(400).json({ success: false, message: 'សូមបញ្ចូល Telegram Bot Token ជាមុនសិន' });
+    }
+    if (!config.chatId) {
+      return res.status(400).json({ success: false, message: 'សូមបញ្ចូល Telegram Chat ID ជាមុនសិន (អាចវាយ /id ទៅកាន់បូតដើម្បីទទួលលេខសម្គាល់)' });
+    }
+
+    const nowStr = new Date().toLocaleString('km-KH');
+    const testText = [
+      `🎉 <b>ការសាកល្បងភ្ជាប់ប្រព័ន្ធ Telegram Bot ជោគជ័យ!</b>`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `វិទ្យាស្ថានគរុកោសល្យខេត្តក្រចេះ (KTPTTC) សូមស្វាគមន៍! 🇰🇭`,
+      ``,
+      `✅ ប្រព័ន្ធទទួលដំណឹង Telegram ត្រូវបានតភ្ជាប់ដោយជោគជ័យ។`,
+      `🔔 នៅពេលមានអ្នកចូលទស្សនាផ្ញើសារពីគេហទំព័រ សារនោះនឹងត្រូវបញ្ជូនមកកាន់ទីនេះភ្លាមៗ។`,
+      ``,
+      `🕒 <b>ពេលវេលា៖</b> <code>${nowStr}</code>`
+    ].join('\n');
+
+    await telegram.sendMessage(config.chatId, testText, {
+      reply_markup: telegram.getMainKeyboard()
+    }, config.token);
+
+    res.json({ success: true, message: 'បានផ្ញើសារសាកល្បងទៅកាន់ Telegram ដោយជោគជ័យ!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'បរាជ័យក្នុងការផ្ញើសារ៖ ' + err.message });
+  }
+});
+
+// Setup Telegram Webhook (Connects Telegram directly to this server URL)
+app.post('/api/telegram/set-webhook', async (req, res) => {
+  try {
+    const db = await readDb();
+    const config = telegram.getTelegramConfig(db.settings);
+    if (!config.token) {
+      return res.status(400).json({ success: false, message: 'សូមបញ្ចូល Telegram Bot Token ជាមុនសិន' });
+    }
+
+    let domain = (req.body && req.body.url) ? req.body.url.trim() : (req.get('host') || '');
+    if (domain && !domain.startsWith('http://') && !domain.startsWith('https://')) {
+      domain = `https://${domain}`;
+    }
+    const cleanDomain = domain.replace(/\/$/, '');
+    const webhookUrl = `${cleanDomain}/api/telegram/webhook`;
+
+    const result = await telegram.setWebhook(webhookUrl, config.token);
+    res.json({ success: true, message: 'បានកំណត់ Webhook ដោយជោគជ័យ!', webhookUrl, result });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'បរាជ័យក្នុងការកំណត់ Webhook៖ ' + err.message });
+  }
+});
+
+// Delete Webhook (Switch back to Polling mode)
+app.post('/api/telegram/delete-webhook', async (req, res) => {
+  try {
+    const db = await readDb();
+    const config = telegram.getTelegramConfig(db.settings);
+    if (!config.token) {
+      return res.status(400).json({ success: false, message: 'សូមបញ្ចូល Telegram Bot Token ជាមុនសិន' });
+    }
+    const result = await telegram.deleteWebhook(true, config.token);
+    res.json({ success: true, message: 'បានលុប Webhook ដោយជោគជ័យ! បូតរួចរាល់សម្រាប់ដំណើរការ Polling Mode។', result });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'បរាជ័យក្នុងការលុប Webhook៖ ' + err.message });
+  }
 });
 
 // Export Express app for Serverless / Vercel

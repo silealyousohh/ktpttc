@@ -2350,6 +2350,103 @@
                                 <span id="dbActionStatusMsg" style="font-size: 0.85rem; font-weight: 600; display: none;"></span>
                             </div>
                         </div>
+
+                        <!-- Telegram Bot & Real-Time Alerts Settings -->
+                        <div class="settings-card" style="margin-top: 25px; border: 1px solid rgba(0, 136, 204, 0.3); box-shadow: 0 4px 15px rgba(0, 136, 204, 0.06);">
+                            <div class="settings-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <div class="settings-icon" style="background: rgba(0, 136, 204, 0.12); color: #0088cc; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+                                        <i class="fab fa-telegram-plane"></i>
+                                    </div>
+                                    <div>
+                                        <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">ប្រព័ន្ធ Telegram Bot & ការជូនដំណឹង (Telegram Bot & Real-Time Alerts)</h3>
+                                        <p style="margin: 3px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">ទទួលដំណឹងសារទំនាក់ទំនងថ្មីៗពីគេហទំព័រភ្លាមៗ និងគ្រប់គ្រងប្រព័ន្ធតាមរយៈ Telegram Bot (@ktpttc_bot)</p>
+                                    </div>
+                                </div>
+                                <div id="telegramStatusBadge" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; background: rgba(0, 136, 204, 0.12); color: #0088cc; border: 1px solid rgba(0, 136, 204, 0.25);">
+                                    <span id="telegramStatusDot" style="width: 8px; height: 8px; border-radius: 50%; background: #0088cc; display: inline-block; box-shadow: 0 0 8px #0088cc;"></span>
+                                    <span id="telegramStatusBadgeText">Telegram: កំពុងពិនិត្យ...</span>
+                                </div>
+                            </div>
+
+                            <!-- Live Bot Information & Status Metrics -->
+                            <div style="background: var(--bg-body); border-radius: 10px; padding: 15px; margin: 18px 0; border: 1px solid var(--border-color);">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 0.85rem;">
+                                    <div><strong style="color:var(--text-main);">ឈ្មោះ Bot (Username):</strong> <span id="telegramBotUsername" style="color:#0088cc; font-weight: 700;">@ktpttc_bot</span></div>
+                                    <div><strong style="color:var(--text-main);">គោត្តនាម Bot:</strong> <span id="telegramBotFullName" style="color:var(--text-muted);">កំពុងផ្ទុក...</span></div>
+                                    <div><strong style="color:var(--text-main);">ស្ថានភាព Webhook:</strong> <span id="telegramWebhookStatus" style="color:var(--text-muted); font-family: monospace;">ពិនិត្យ...</span></div>
+                                    <div><strong style="color:var(--text-main);">Chat ID បានកំណត់:</strong> <span id="telegramConfiguredChatId" style="color:var(--text-muted); font-family: monospace;">មិនទាន់មាន</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Form Fields for Bot Token & Chat ID -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span><i class="fas fa-key" style="color: #0088cc; margin-right: 6px;"></i>Telegram Bot Token</span>
+                                        <button type="button" onclick="toggleTelegramTokenVisibility()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.8rem;">
+                                            <i id="btnEyeTelegramToken" class="fas fa-eye"></i> បង្ហាញ
+                                        </button>
+                                    </label>
+                                    <input type="password" id="settingTelegramToken" class="form-control" placeholder="ឧ. 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
+                                    <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 4px;">យក Token ពី <b>@BotFather</b> លើ Telegram ដោយប្រើពាក្យបញ្ជា <code>/newbot</code></small>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label class="form-label"><i class="fas fa-id-badge" style="color: #0088cc; margin-right: 6px;"></i>Telegram Chat ID (អ្នកទទួលសារ)</label>
+                                    <input type="text" id="settingTelegramChatId" class="form-control" placeholder="ឧ. 123456789 ឬ -100123456789">
+                                    <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 4px;">អាចផ្ញើសារ <code>/id</code> ទៅកាន់បូតរបស់អ្នកដើម្បីដឹង Chat ID ភ្លាមៗ</small>
+                                </div>
+                            </div>
+
+                            <!-- Notification Triggers Toggles -->
+                            <div style="background: rgba(0, 136, 204, 0.04); border-radius: 8px; padding: 12px 15px; margin-bottom: 18px; border: 1px dashed rgba(0, 136, 204, 0.2);">
+                                <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">ជម្រើសការជូនដំណឹងស្វ័យប្រវត្តិ (Notification Triggers)៖</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-main);">
+                                        <input type="checkbox" id="settingTelegramNotifyMsg" checked style="accent-color: #0088cc; width: 16px; height: 16px;">
+                                        <span>🔔 ផ្ញើសារជូនដំណឹងភ្លាមៗពេលមានសារថ្មីពីអ្នកទស្សនា (Contact Form)</span>
+                                    </label>
+                                    <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-main);">
+                                        <input type="checkbox" id="settingTelegramNotifyBackup" checked style="accent-color: #0088cc; width: 16px; height: 16px;">
+                                        <span>🗄️ ផ្ញើសារជូនដំណឹងពេលមានការ Backup / Restore ទិន្នន័យ</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Action Toolbar -->
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                                <button type="button" class="btn btn-primary" onclick="saveTelegramSettings()" id="btnSaveTelegram" style="background: #0088cc; border-color: #0088cc;">
+                                    <i class="fas fa-save" style="margin-right: 6px;"></i> រក្សាទុកការកំណត់ Telegram
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="testTelegramNotification()" id="btnTestTelegram" style="color: #0088cc; border-color: #0088cc;">
+                                    <i class="fas fa-paper-plane" style="margin-right: 6px;"></i> ផ្ញើសារសាកល្បង (Test Alert)
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="setupTelegramWebhook()" id="btnSetupWebhook" style="color: #059669; border-color: #059669;">
+                                    <i class="fas fa-link" style="margin-right: 6px;"></i> កំណត់ Webhook (សម្រាប់ Vercel)
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="toggleTelegramGuide()" style="color: var(--text-muted); border-color: var(--border-color);">
+                                    <i class="fas fa-question-circle" style="margin-right: 6px;"></i> ការណែនាំបង្កើត Bot
+                                </button>
+                                <span id="telegramActionStatusMsg" style="font-size: 0.85rem; font-weight: 600; display: none;"></span>
+                            </div>
+
+                            <!-- Collapsible Step-by-Step Guide -->
+                            <div id="telegramGuideAccordion" style="display: none; margin-top: 18px; padding: 15px; border-radius: 8px; background: var(--bg-body); border: 1px solid var(--border-color); font-size: 0.85rem; line-height: 1.6;">
+                                <h4 style="margin: 0 0 10px 0; color: #0088cc; font-size: 0.95rem;"><i class="fab fa-telegram" style="margin-right: 6px;"></i>របៀបបង្កើត និងភ្ជាប់ Telegram Bot ក្នុងរយៈពេល ២ នាទី៖</h4>
+                                <ol style="margin: 0; padding-left: 20px; color: var(--text-main);">
+                                    <li>បើកកម្មវិធី <b>Telegram</b> រួចស្វែងរកឈ្មោះ <a href="https://t.me/BotFather" target="_blank" style="color: #0088cc; font-weight: 700;">@BotFather</a> (មានសញ្ញាធីកខៀវ)។</li>
+                                    <li>ផ្ញើសារពាក្យបញ្ជា <code>/newbot</code> ទៅកាន់ @BotFather។</li>
+                                    <li>បញ្ចូលឈ្មោះ Bot (ឧ. <b>KTPTTC Assistant</b>) រួចបញ្ចូល Username ដែលបញ្ចប់ដោយពាក្យ <b>bot</b> (ឧ. <b>ktpttc_bot</b>)។</li>
+                                    <li>@BotFather នឹងផ្ញើ <b>HTTP API Token</b> (ឧ. <code>7234567890:ABCdef...</code>)។ សូមចម្លង Token នោះមកបិទភ្ជាប់ក្នុងប្រអប់ <b>Telegram Bot Token</b> ខាងលើ។</li>
+                                    <li>បើក Bot របស់អ្នក (ចុច Link ដែល BotFather ផ្ញើ ឬស្វែងរកឈ្មោះ Username) រួចចុច <b>Start</b> ឬផ្ញើពាក្យបញ្ជា <code>/id</code>។</li>
+                                    <li>ចម្លងលេខកូដ Chat ID ដែល Bot ឆ្លើយតបមកបិទភ្ជាប់ក្នុងប្រអប់ <b>Telegram Chat ID</b>។</li>
+                                    <li>ចុច <b>រក្សាទុកការកំណត់ Telegram</b> រួចចុច <b>ផ្ញើសារសាកល្បង (Test Alert)</b> ជាការស្រេច!</li>
+                                </ol>
+                                <div style="margin-top: 10px; padding: 8px 12px; background: rgba(5, 150, 105, 0.08); border-radius: 6px; color: #059669; font-size: 0.8rem;">
+                                    💡 <b>ដំណើរការលើ Vercel Cloud:</b> បន្ទាប់ពីដាក់ Deploy សូមចុចប៊ូតុង "កំណត់ Webhook" ដើម្បីឱ្យប្រព័ន្ធ Telegram បញ្ជូនសារមកកាន់គេហទំព័រដោយស្វ័យប្រវត្តិ។
+                                </div>
+                            </div>
+                        </div>
                         
                         <!-- UI Settings (Mock) -->
                         <div class="settings-card">
@@ -3024,7 +3121,7 @@
             else if (viewId === 'view-partners') loadAdminPartners();
             else if (viewId === 'view-messages') loadAdminMessages();
             else if (viewId === 'view-reports') loadReportsCenter();
-            else if (viewId === 'view-settings') { loadSettings(); loadDatabaseStatus(); }
+            else if (viewId === 'view-settings') { loadSettings(); loadDatabaseStatus(); loadTelegramStatus(); }
         }
 
         function getPlaceholderSvg(text = 'No Image', width = 400, height = 250) {
@@ -3450,6 +3547,11 @@
                     document.getElementById('settingHistoryThumb3').value = data.historyThumb3 || '';
                     updateHistoryThumbPreview(3, data.historyThumb3 || '');
                 }
+                if (document.getElementById('settingTelegramToken')) document.getElementById('settingTelegramToken').value = data.telegramBotToken || '';
+                if (document.getElementById('settingTelegramChatId')) document.getElementById('settingTelegramChatId').value = data.telegramChatId || '';
+                if (document.getElementById('settingTelegramNotifyMsg')) document.getElementById('settingTelegramNotifyMsg').checked = data.telegramNotifyOnMessage !== undefined ? Boolean(data.telegramNotifyOnMessage) : true;
+                if (document.getElementById('settingTelegramNotifyBackup')) document.getElementById('settingTelegramNotifyBackup').checked = data.telegramNotifyOnBackup !== undefined ? Boolean(data.telegramNotifyOnBackup) : true;
+                loadTelegramStatus();
             };
 
             applyFormValues(settings);
@@ -3758,6 +3860,252 @@
                 }
             };
             reader.readAsText(file);
+        }
+
+        // ==========================================
+        // TELEGRAM BOT MANAGEMENT FUNCTIONS
+        // ==========================================
+        async function loadTelegramStatus() {
+            try {
+                const res = await fetch('/api/telegram/status');
+                if (!res.ok) return;
+                const data = await res.json();
+                
+                const badge = document.getElementById('telegramStatusBadge');
+                const dot = document.getElementById('telegramStatusDot');
+                const badgeText = document.getElementById('telegramStatusBadgeText');
+                const usernameEl = document.getElementById('telegramBotUsername');
+                const fullNameEl = document.getElementById('telegramBotFullName');
+                const webhookEl = document.getElementById('telegramWebhookStatus');
+                const chatIdEl = document.getElementById('telegramConfiguredChatId');
+
+                if (data.configured && data.bot) {
+                    if (badge) {
+                        badge.style.background = 'rgba(16, 185, 129, 0.12)';
+                        badge.style.color = '#059669';
+                        badge.style.border = '1px solid rgba(16, 185, 129, 0.25)';
+                    }
+                    if (dot) {
+                        dot.style.background = '#10b981';
+                        dot.style.boxShadow = '0 0 8px #10b981';
+                    }
+                    if (badgeText) badgeText.innerText = `@${data.bot.username} (ភ្ជាប់ជោគជ័យ)`;
+                    if (usernameEl) {
+                        usernameEl.innerHTML = `<a href="https://t.me/${data.bot.username}" target="_blank" style="color:#0088cc; text-decoration: underline;">@${data.bot.username}</a>`;
+                    }
+                    if (fullNameEl) fullNameEl.innerText = data.bot.first_name || 'KTPTTC Bot';
+                } else if (data.configured && data.error) {
+                    if (badge) {
+                        badge.style.background = 'rgba(239, 68, 68, 0.12)';
+                        badge.style.color = '#dc2626';
+                        badge.style.border = '1px solid rgba(239, 68, 68, 0.25)';
+                    }
+                    if (dot) {
+                        dot.style.background = '#ef4444';
+                        dot.style.boxShadow = '0 0 8px #ef4444';
+                    }
+                    if (badgeText) badgeText.innerText = 'Token មិនត្រឹមត្រូវ';
+                    if (usernameEl) usernameEl.innerText = 'កំហុសផ្ទៀងផ្ទាត់ Token';
+                    if (fullNameEl) fullNameEl.innerText = data.error;
+                } else {
+                    if (badge) {
+                        badge.style.background = 'rgba(100, 116, 139, 0.12)';
+                        badge.style.color = 'var(--text-muted)';
+                        badge.style.border = '1px solid var(--border-color)';
+                    }
+                    if (dot) {
+                        dot.style.background = '#94a3b8';
+                        dot.style.boxShadow = 'none';
+                    }
+                    if (badgeText) badgeText.innerText = 'មិនទាន់កំណត់ Token';
+                    if (usernameEl) usernameEl.innerText = 'មិនទាន់កំណត់ (@ktpttc_bot)';
+                    if (fullNameEl) fullNameEl.innerText = 'មិនទាន់កំណត់';
+                }
+
+                if (webhookEl) {
+                    if (data.webhook && data.webhook.url) {
+                        webhookEl.innerText = 'Active (Webhook តភ្ជាប់រួច)';
+                        webhookEl.style.color = '#059669';
+                    } else {
+                        webhookEl.innerText = 'Inactive (ប្រើ Polling ឬមិនទាន់ Set)';
+                        webhookEl.style.color = 'var(--text-muted)';
+                    }
+                }
+
+                if (chatIdEl) {
+                    if (data.hasChatId) {
+                        chatIdEl.innerText = data.chatId;
+                        chatIdEl.style.color = '#059669';
+                        chatIdEl.style.fontWeight = 'bold';
+                    } else {
+                        chatIdEl.innerText = 'មិនទាន់កំណត់ Chat ID';
+                        chatIdEl.style.color = '#d97706';
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to load telegram status:', err.message);
+            }
+        }
+
+        async function saveTelegramSettings() {
+            const token = document.getElementById('settingTelegramToken') ? document.getElementById('settingTelegramToken').value.trim() : '';
+            const chatId = document.getElementById('settingTelegramChatId') ? document.getElementById('settingTelegramChatId').value.trim() : '';
+            const notifyMsg = document.getElementById('settingTelegramNotifyMsg') ? document.getElementById('settingTelegramNotifyMsg').checked : true;
+            const notifyBackup = document.getElementById('settingTelegramNotifyBackup') ? document.getElementById('settingTelegramNotifyBackup').checked : true;
+
+            const btn = document.getElementById('btnSaveTelegram');
+            const msg = document.getElementById('telegramActionStatusMsg');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> កំពុងរក្សាទុក...`;
+            }
+            if (msg) msg.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegramBotToken: token,
+                        telegramChatId: chatId,
+                        telegramNotifyOnMessage: notifyMsg,
+                        telegramNotifyOnBackup: notifyBackup
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    if (msg) {
+                        msg.style.display = 'inline';
+                        msg.style.color = '#059669';
+                        msg.innerHTML = `<i class="fas fa-check-circle"></i> បានរក្សាទុកការកំណត់ Telegram ជោគជ័យ!`;
+                        setTimeout(() => { msg.style.display = 'none'; }, 4000);
+                    }
+                    await loadTelegramStatus();
+                } else {
+                    throw new Error(data.message || 'បរាជ័យក្នុងការរក្សាទុក');
+                }
+            } catch (err) {
+                if (msg) {
+                    msg.style.display = 'inline';
+                    msg.style.color = '#dc2626';
+                    msg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${err.message}`;
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        async function testTelegramNotification() {
+            const token = document.getElementById('settingTelegramToken') ? document.getElementById('settingTelegramToken').value.trim() : '';
+            const chatId = document.getElementById('settingTelegramChatId') ? document.getElementById('settingTelegramChatId').value.trim() : '';
+
+            const btn = document.getElementById('btnTestTelegram');
+            const msg = document.getElementById('telegramActionStatusMsg');
+            const origHtml = btn ? btn.innerHTML : '';
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> កំពុងផ្ញើសារសាកល្បង...`;
+            }
+            if (msg) msg.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/telegram/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramBotToken: token, telegramChatId: chatId })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    if (msg) {
+                        msg.style.display = 'inline';
+                        msg.style.color = '#059669';
+                        msg.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                        setTimeout(() => { msg.style.display = 'none'; }, 5000);
+                    }
+                    await loadTelegramStatus();
+                } else {
+                    throw new Error(data.message || 'បរាជ័យក្នុងការផ្ញើសារ');
+                }
+            } catch (err) {
+                if (msg) {
+                    msg.style.display = 'inline';
+                    msg.style.color = '#dc2626';
+                    msg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${err.message}`;
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        async function setupTelegramWebhook() {
+            const btn = document.getElementById('btnSetupWebhook');
+            const msg = document.getElementById('telegramActionStatusMsg');
+            const origHtml = btn ? btn.innerHTML : '';
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> កំពុងកំណត់ Webhook...`;
+            }
+            if (msg) msg.style.display = 'none';
+
+            try {
+                const currentOrigin = window.location.origin;
+                const res = await fetch('/api/telegram/set-webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: currentOrigin })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    if (msg) {
+                        msg.style.display = 'inline';
+                        msg.style.color = '#059669';
+                        msg.innerHTML = `<i class="fas fa-check-circle"></i> Webhook បានកំណត់ទៅ ${data.webhookUrl}!`;
+                        setTimeout(() => { msg.style.display = 'none'; }, 5000);
+                    }
+                    await loadTelegramStatus();
+                } else {
+                    throw new Error(data.message || 'បរាជ័យក្នុងការកំណត់ Webhook');
+                }
+            } catch (err) {
+                if (msg) {
+                    msg.style.display = 'inline';
+                    msg.style.color = '#dc2626';
+                    msg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${err.message}`;
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        function toggleTelegramTokenVisibility() {
+            const input = document.getElementById('settingTelegramToken');
+            const icon = document.getElementById('btnEyeTelegramToken');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                if (icon) icon.className = 'fas fa-eye';
+            }
+        }
+
+        function toggleTelegramGuide() {
+            const guide = document.getElementById('telegramGuideAccordion');
+            if (!guide) return;
+            guide.style.display = guide.style.display === 'none' ? 'block' : 'none';
         }
 
         function updateHistoryImgPreview(url) {
@@ -5336,7 +5684,11 @@
                 historyImage: document.getElementById('settingHistoryImage') ? document.getElementById('settingHistoryImage').value : '',
                 historyThumb1: document.getElementById('settingHistoryThumb1') ? document.getElementById('settingHistoryThumb1').value : '',
                 historyThumb2: document.getElementById('settingHistoryThumb2') ? document.getElementById('settingHistoryThumb2').value : '',
-                historyThumb3: document.getElementById('settingHistoryThumb3') ? document.getElementById('settingHistoryThumb3').value : ''
+                historyThumb3: document.getElementById('settingHistoryThumb3') ? document.getElementById('settingHistoryThumb3').value : '',
+                telegramBotToken: document.getElementById('settingTelegramToken') ? document.getElementById('settingTelegramToken').value.trim() : '',
+                telegramChatId: document.getElementById('settingTelegramChatId') ? document.getElementById('settingTelegramChatId').value.trim() : '',
+                telegramNotifyOnMessage: document.getElementById('settingTelegramNotifyMsg') ? document.getElementById('settingTelegramNotifyMsg').checked : true,
+                telegramNotifyOnBackup: document.getElementById('settingTelegramNotifyBackup') ? document.getElementById('settingTelegramNotifyBackup').checked : true
             };
 
             const msgs = document.querySelectorAll('#save-setting-msg, #save-setting-msg-vm, #save-setting-msg-history');
