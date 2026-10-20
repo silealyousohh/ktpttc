@@ -859,6 +859,7 @@ app.get('/api/telegram/status', async (req, res) => {
       } catch (_) {}
     }
 
+    const subscribers = Array.isArray(db.settings && db.settings.telegramSubscribers) ? db.settings.telegramSubscribers : [];
     res.json({
       configured: Boolean(config.token),
       hasChatId: Boolean(config.chatId),
@@ -866,6 +867,8 @@ app.get('/api/telegram/status', async (req, res) => {
       maskedToken: config.token ? (config.token.slice(0, 7) + '...' + config.token.slice(-5)) : '',
       bot: botInfo,
       webhook: webhookInfo,
+      subscribersCount: subscribers.length,
+      subscribers: subscribers,
       error: error,
       settings: {
         notifyOnMessage: config.notifyOnMessage,
@@ -927,6 +930,57 @@ app.post('/api/telegram/test', async (req, res) => {
     res.json({ success: true, message: 'បានផ្ញើសារសាកល្បងទៅកាន់ Telegram ដោយជោគជ័យ!' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'បរាជ័យក្នុងការផ្ញើសារ៖ ' + err.message });
+  }
+});
+
+// Forward Contact Message to Telegram Bot & Subscribers
+app.post('/api/telegram/forward-message', async (req, res) => {
+  try {
+    const db = await readDb();
+    let msg = req.body.message || req.body.msg;
+    if (!msg && req.body.messageId) {
+      msg = (db.messages || []).find(m => m.id === req.body.messageId);
+    }
+    if (!msg) {
+      return res.status(400).json({ success: false, message: 'រកមិនឃើញទិន្នន័យសារដើម្បីបញ្ជូនបន្ត' });
+    }
+
+    const result = await telegram.forwardContactMessage(msg, db.settings);
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `បានបញ្ជូនសារទៅកាន់ Telegram Bot (${result.recipients} នាក់) ដោយជោគជ័យ!`,
+        count: result.recipients
+      });
+    } else {
+      res.status(400).json({ success: false, message: result.reason || 'បរាជ័យក្នុងការបញ្ជូនទៅ Telegram' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុស៖ ' + err.message });
+  }
+});
+
+// Broadcast Custom Outbound Message to Telegram Bot & Subscribers
+app.post('/api/telegram/broadcast', async (req, res) => {
+  try {
+    const db = await readDb();
+    const { subject, message, recipient } = req.body;
+    if (!message && !subject) {
+      return res.status(400).json({ success: false, message: 'សូមបញ្ចូលប្រធានបទ ឬខ្លឹមសារសារ' });
+    }
+
+    const result = await telegram.broadcastMessage({ subject, message, recipient }, db.settings);
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `បានផ្សព្វផ្សាយសារទៅកាន់ Telegram Bot (${result.recipients} នាក់) ដោយជោគជ័យ!`,
+        count: result.recipients
+      });
+    } else {
+      res.status(400).json({ success: false, message: result.reason || 'បរាជ័យក្នុងការផ្សព្វផ្សាយសារ' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុស៖ ' + err.message });
   }
 });
 

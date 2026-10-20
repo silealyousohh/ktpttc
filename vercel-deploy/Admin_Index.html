@@ -1671,6 +1671,41 @@
                             <button class="btn btn-primary" style="width: auto;" onclick="openModal('modal-send-message')"><i class="fas fa-paper-plane"></i> ផ្ញើសារថ្មី</button>
                         </div>
                     </div>
+
+                    <!-- Telegram Bot Live Alert & Integration Hub -->
+                    <div class="data-card" style="margin-bottom: 20px; border: 1px solid rgba(0, 136, 204, 0.25); background: linear-gradient(135deg, rgba(0, 136, 204, 0.07) 0%, rgba(13, 110, 253, 0.03) 100%); padding: 18px 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 136, 204, 0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 14px;">
+                                <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #0088cc 0%, #00a8ff 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3); flex-shrink: 0;">
+                                    <i class="fab fa-telegram-plane"></i>
+                                </div>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                        <h3 style="margin: 0; font-size: 1.08rem; color: var(--text-main); font-weight: 700;">ប្រព័ន្ធ Telegram Bot ទទួលដំណឹងសារ</h3>
+                                        <span id="msgTelegramStatusBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; background: rgba(0, 136, 204, 0.12); color: #0088cc; border: 1px solid rgba(0, 136, 204, 0.25);">
+                                            <span id="msgTelegramStatusDot" style="width: 8px; height: 8px; border-radius: 50%; background: #0088cc; display: inline-block;"></span>
+                                            <span id="msgTelegramStatusText">កំពុងពិនិត្យ...</span>
+                                        </span>
+                                    </div>
+                                    <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 0.85rem; line-height: 1.5;">
+                                        សារទំនាក់ទំនងថ្មីៗពីគេហទំព័រត្រូវបានបញ្ជូនស្វ័យប្រវត្តិតាមរយៈ Bot (<strong id="msgTelegramBotName" style="color:#0088cc;">@ktpttc_bot</strong>) ទៅកាន់អ្នក Subscribe ចំនួន <strong id="msgTelegramSubscribersCount" style="color:var(--primary); font-size: 0.95rem;">-</strong> នាក់។
+                                    </p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                <a href="https://t.me/ktpttc_bot" target="_blank" class="btn btn-outline" style="width: auto; color: #0088cc; border-color: rgba(0, 136, 204, 0.4); display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; font-size: 0.85rem; text-decoration: none;" title="បើកមើល bot ក្នុង Telegram">
+                                    <i class="fab fa-telegram"></i> <span>បើកមើល Bot</span>
+                                </a>
+                                <button type="button" class="btn btn-outline" onclick="testTelegramFromMessages(this)" style="width: auto; color: #059669; border-color: rgba(5, 150, 105, 0.4); display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; font-size: 0.85rem;" title="ផ្ញើសារសាកល្បងទៅ Telegram">
+                                    <i class="fas fa-bell"></i> <span>តេស្តផ្ញើសារ</span>
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="openTelegramBroadcastModal()" style="width: auto; background: #0088cc; border-color: #0088cc; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 0.85rem;" title="ផ្សព្វផ្សាយសារទៅ Telegram">
+                                    <i class="fas fa-bullhorn"></i> <span>ផ្សព្វផ្សាយសារ (Broadcast)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="data-card"><div class="table-responsive">
                         <table class="data-table">
                             <thead><tr><th>កាលបរិច្ឆេទ</th><th>ឈ្មោះ/អ្នកផ្ញើ</th><th>ប្រធានបទ</th><th>ស្ថានភាព</th><th>សកម្មភាព</th></tr></thead>
@@ -2600,9 +2635,10 @@
                     <div id="viewMsgContent" style="background:var(--bg-body); padding:15px; border-radius:8px; border:1px solid var(--border-color); white-space:pre-wrap; line-height:1.6; color:var(--text-main); font-size:0.95rem;"></div>
                 </div>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-top:20px;">
+            <div style="display:flex; justify-content:space-between; margin-top:20px; flex-wrap:wrap; gap:10px;">
                 <button type="button" class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="deleteCurrentViewedMessage()"><i class="fas fa-trash"></i> លុបសារ</button>
-                <div style="display:flex; gap:10px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button type="button" id="btnForwardModalMsg" class="btn btn-outline" style="color:#0088cc; border-color:#0088cc;" onclick="forwardCurrentViewedMessageToTelegram()"><i class="fab fa-telegram-plane"></i> បញ្ជូនទៅ Telegram</button>
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-view-message')">បិទ</button>
                     <button type="button" class="btn btn-primary" onclick="replyCurrentMessage()"><i class="fas fa-reply"></i> ឆ្លើយតប</button>
                 </div>
@@ -2623,7 +2659,18 @@
                 <input type="text" id="msgSubjectInput" class="form-control" required placeholder="ប្រធានបទនៃសារ">
                 <label class="form-label">ខ្លឹមសារសារ</label>
                 <textarea id="msgContentInput" class="form-control" rows="4" required placeholder="សរសេរខ្លឹមសារសារនៅទីនេះ..."></textarea>
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                
+                <div style="background: rgba(0, 136, 204, 0.06); border: 1px solid rgba(0, 136, 204, 0.25); border-radius: 8px; padding: 12px 14px; margin-top: 12px; margin-bottom: 5px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; font-weight: 600; color: #0088cc;">
+                        <input type="checkbox" id="msgSendToTelegram" checked style="width: 18px; height: 18px; accent-color: #0088cc;">
+                        <span><i class="fab fa-telegram-plane"></i> ផ្សព្វផ្សាយ/បញ្ជូនសារនេះទៅកាន់ Telegram Bot ផងដែរ</span>
+                    </label>
+                    <small style="color: var(--text-muted); display: block; margin-top: 4px; margin-left: 28px;">
+                        សារនេះនឹងត្រូវបញ្ជូនទៅកាន់អ្នកគ្រប់គ្រង និងអ្នក Subscribe Telegram ទាំងអស់ដោយស្វ័យប្រវត្តិ។
+                    </small>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
                     <button type="button" class="btn btn-outline" onclick="closeModal('modal-send-message')">បោះបង់</button>
                     <button type="submit" id="btn-send-message" class="btn btn-success" style="width:auto;"><i class="fas fa-paper-plane"></i> ផ្ញើ</button>
                 </div>
@@ -3119,7 +3166,7 @@
             else if (viewId === 'view-slides') loadAdminSlides();
             else if (viewId === 'view-gallery') loadAdminGallery();
             else if (viewId === 'view-partners') loadAdminPartners();
-            else if (viewId === 'view-messages') loadAdminMessages();
+            else if (viewId === 'view-messages') { loadAdminMessages(); loadTelegramStatus(); }
             else if (viewId === 'view-reports') loadReportsCenter();
             else if (viewId === 'view-settings') { loadSettings(); loadDatabaseStatus(); loadTelegramStatus(); }
         }
@@ -3879,6 +3926,16 @@
                 const webhookEl = document.getElementById('telegramWebhookStatus');
                 const chatIdEl = document.getElementById('telegramConfiguredChatId');
 
+                // Message Management View Telegram Elements
+                const msgBadge = document.getElementById('msgTelegramStatusBadge');
+                const msgDot = document.getElementById('msgTelegramStatusDot');
+                const msgText = document.getElementById('msgTelegramStatusText');
+                const msgBotName = document.getElementById('msgTelegramBotName');
+                const msgSubscribers = document.getElementById('msgTelegramSubscribersCount');
+
+                const subCount = data.subscribersCount !== undefined ? data.subscribersCount : (data.hasChatId ? 1 : 0);
+                if (msgSubscribers) msgSubscribers.innerText = subCount;
+
                 if (data.configured && data.bot) {
                     if (badge) {
                         badge.style.background = 'rgba(16, 185, 129, 0.12)';
@@ -3894,6 +3951,18 @@
                         usernameEl.innerHTML = `<a href="https://t.me/${data.bot.username}" target="_blank" style="color:#0088cc; text-decoration: underline;">@${data.bot.username}</a>`;
                     }
                     if (fullNameEl) fullNameEl.innerText = data.bot.first_name || 'KTPTTC Bot';
+
+                    if (msgBadge) {
+                        msgBadge.style.background = 'rgba(16, 185, 129, 0.12)';
+                        msgBadge.style.color = '#059669';
+                        msgBadge.style.border = '1px solid rgba(16, 185, 129, 0.25)';
+                    }
+                    if (msgDot) {
+                        msgDot.style.background = '#10b981';
+                        msgDot.style.boxShadow = '0 0 8px #10b981';
+                    }
+                    if (msgText) msgText.innerText = 'Online / ភ្ជាប់ជោគជ័យ';
+                    if (msgBotName) msgBotName.innerText = `@${data.bot.username}`;
                 } else if (data.configured && data.error) {
                     if (badge) {
                         badge.style.background = 'rgba(239, 68, 68, 0.12)';
@@ -3907,6 +3976,17 @@
                     if (badgeText) badgeText.innerText = 'Token មិនត្រឹមត្រូវ';
                     if (usernameEl) usernameEl.innerText = 'កំហុសផ្ទៀងផ្ទាត់ Token';
                     if (fullNameEl) fullNameEl.innerText = data.error;
+
+                    if (msgBadge) {
+                        msgBadge.style.background = 'rgba(239, 68, 68, 0.12)';
+                        msgBadge.style.color = '#dc2626';
+                        msgBadge.style.border = '1px solid rgba(239, 68, 68, 0.25)';
+                    }
+                    if (msgDot) {
+                        msgDot.style.background = '#ef4444';
+                        msgDot.style.boxShadow = 'none';
+                    }
+                    if (msgText) msgText.innerText = 'Token មិនត្រឹមត្រូវ';
                 } else {
                     if (badge) {
                         badge.style.background = 'rgba(100, 116, 139, 0.12)';
@@ -3920,6 +4000,17 @@
                     if (badgeText) badgeText.innerText = 'មិនទាន់កំណត់ Token';
                     if (usernameEl) usernameEl.innerText = 'មិនទាន់កំណត់ (@ktpttc_bot)';
                     if (fullNameEl) fullNameEl.innerText = 'មិនទាន់កំណត់';
+
+                    if (msgBadge) {
+                        msgBadge.style.background = 'rgba(100, 116, 139, 0.12)';
+                        msgBadge.style.color = 'var(--text-muted)';
+                        msgBadge.style.border = '1px solid var(--border-color)';
+                    }
+                    if (msgDot) {
+                        msgDot.style.background = '#94a3b8';
+                        msgDot.style.boxShadow = 'none';
+                    }
+                    if (msgText) msgText.innerText = 'មិនទាន់កំណត់';
                 }
 
                 if (webhookEl) {
@@ -5937,6 +6028,7 @@
                         }
                     </td>
                     <td class="action-icons">
+                        <i class="fab fa-telegram-plane" style="color:#0088cc; font-size:1.15rem; cursor:pointer;" title="បញ្ជូនសារនេះទៅកាន់ Telegram Bot" onclick="forwardAdminMessageToTelegram(${idx})"></i>
                         <i class="fas fa-eye" style="color:var(--primary);" title="អានសារ" onclick="viewAdminMessage(${idx})"></i>
                         <i class="fas fa-trash" style="color:var(--danger);" title="លុប" onclick="deleteAdminMessage(${idx})"></i>
                     </td>
@@ -6060,15 +6152,121 @@
             }
         }
 
-        function deleteAdminMessage(idx) {
-            if (confirm('តើអ្នកពិតជាចង់លុបសារនេះមែនទេ?')) {
-                localMockMessages.splice(idx, 1);
-                saveLocalMockMessages();
-                loadAdminMessages();
+        async function forwardAdminMessageToTelegram(idx) {
+            const msg = localMockMessages[idx];
+            if (!msg) return;
+            const sender = msg.sender || msg.name || 'អ្នកផ្ញើ';
+            if (!confirm(`តើលោកអ្នកពិតជាចង់បញ្ជូនសារពី "${sender}" ទៅកាន់ Telegram Bot ដែរឬទេ?`)) return;
+
+            try {
+                const res = await fetch('/api/telegram/forward-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert('✅ ' + data.message);
+                } else {
+                    alert('⚠️ ' + (data.message || 'បរាជ័យក្នុងការបញ្ជូនសារទៅ Telegram'));
+                }
+            } catch (err) {
+                alert('⚠️ កំហុសតភ្ជាប់ប្រព័ន្ធ៖ ' + err.message);
             }
         }
 
-        function sendAdminMessage(event) {
+        async function forwardCurrentViewedMessageToTelegram() {
+            if (currentlyViewedMessageIndex < 0) return;
+            const msg = localMockMessages[currentlyViewedMessageIndex];
+            if (!msg) return;
+
+            const btn = document.getElementById('btnForwardModalMsg');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> កំពុងបញ្ជូន...`;
+            }
+
+            try {
+                const res = await fetch('/api/telegram/forward-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    if (btn) {
+                        btn.style.borderColor = '#059669';
+                        btn.style.color = '#059669';
+                        btn.innerHTML = `<i class="fas fa-check-circle"></i> បានបញ្ជូនរួចរាល់!`;
+                        setTimeout(() => {
+                            btn.innerHTML = origHtml;
+                            btn.disabled = false;
+                            btn.style.borderColor = '#0088cc';
+                            btn.style.color = '#0088cc';
+                        }, 3000);
+                    }
+                } else {
+                    alert('⚠️ ' + (data.message || 'បរាជ័យក្នុងការបញ្ជូនសារទៅ Telegram'));
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                }
+            } catch (err) {
+                alert('⚠️ កំហុស៖ ' + err.message);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        async function testTelegramFromMessages(btn) {
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> កំពុងផ្ញើ...`;
+            }
+
+            try {
+                const res = await fetch('/api/telegram/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert('✅ បានផ្ញើសារសាកល្បងទៅកាន់ Telegram Bot រួចរាល់!');
+                    await loadTelegramStatus();
+                } else {
+                    alert('⚠️ ' + (data.message || 'បរាជ័យក្នុងការផ្ញើសារសាកល្បង'));
+                }
+            } catch (err) {
+                alert('⚠️ កំហុស៖ ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        function openTelegramBroadcastModal() {
+            openModal('modal-send-message');
+            const recipientInput = document.getElementById('msgRecipientInput');
+            const subjectInput = document.getElementById('msgSubjectInput');
+            const telegramCheckbox = document.getElementById('msgSendToTelegram');
+
+            if (recipientInput) recipientInput.value = 'អ្នកតាមដាន Telegram ទាំងអស់ (Subscribers)';
+            if (subjectInput) {
+                subjectInput.value = 'សេចក្តីជូនដំណឹងពីរដ្ឋបាលសាលា';
+                subjectInput.focus();
+            }
+            if (telegramCheckbox) telegramCheckbox.checked = true;
+        }
+
+        async function sendAdminMessage(event) {
             event.preventDefault();
             const btn = document.getElementById('btn-send-message');
             const originalText = btn.innerHTML;
@@ -6078,6 +6276,7 @@
             const recipient = document.getElementById('msgRecipientInput').value;
             const subject = document.getElementById('msgSubjectInput').value;
             const content = document.getElementById('msgContentInput').value;
+            const sendToTelegram = document.getElementById('msgSendToTelegram') ? document.getElementById('msgSendToTelegram').checked : false;
 
             const today = new Date();
             const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth()+1).padStart(2, '0')}/${today.getFullYear()}`;
@@ -6093,16 +6292,36 @@
                 isOutbound: true
             };
 
-            setTimeout(() => {
-                localMockMessages.unshift(newOutMsg);
-                saveLocalMockMessages();
-                alert("សារត្រូវបានផ្ញើដោយជោគជ័យ! (Message sent successfully!)");
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                closeModal('modal-send-message');
-                document.getElementById('sendMessageForm').reset();
-                loadAdminMessages();
-            }, 500);
+            let telegramSuccessNotice = '';
+            if (sendToTelegram) {
+                try {
+                    const tgRes = await fetch('/api/telegram/broadcast', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            recipient: recipient,
+                            subject: subject,
+                            message: content,
+                            date: dateStr
+                        })
+                    });
+                    const tgData = await tgRes.json();
+                    if (tgRes.ok && tgData.success) {
+                        telegramSuccessNotice = ` និងបានផ្សព្វផ្សាយទៅ Telegram (${tgData.count || ''} នាក់)`;
+                    }
+                } catch (e) {
+                    console.warn('Telegram broadcast error:', e);
+                }
+            }
+
+            localMockMessages.unshift(newOutMsg);
+            saveLocalMockMessages();
+            alert(`សារត្រូវបានផ្ញើ${telegramSuccessNotice}ដោយជោគជ័យ!`);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            closeModal('modal-send-message');
+            document.getElementById('sendMessageForm').reset();
+            loadAdminMessages();
         }
 
         window.onload = function() {

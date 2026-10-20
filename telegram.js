@@ -160,6 +160,123 @@ async function notifyNewContactMessage(msg, customSettings = {}) {
   return { success: sentCount > 0, recipients: sentCount };
 }
 
+// Forward a specific visitor contact message to Telegram
+async function forwardContactMessage(msg, customSettings = {}) {
+  const { token, chatId } = getTelegramConfig(customSettings);
+  if (!token) {
+    return { success: false, reason: 'Telegram token missing' };
+  }
+
+  const recipientSet = new Set();
+  if (chatId) recipientSet.add(String(chatId).trim());
+  if (Array.isArray(customSettings.telegramSubscribers)) {
+    customSettings.telegramSubscribers.forEach(id => {
+      if (id) recipientSet.add(String(id).trim());
+    });
+  }
+
+  if (recipientSet.size === 0) {
+    return { success: false, reason: 'មិនទាន់មានអ្នកទទួលសារ Telegram (សូមចុះឈ្មោះ /subscribe លើ Bot ជាមុន)' };
+  }
+
+  const senderName = msg.sender || msg.name || 'អ្នកផ្ញើអនាមិក';
+  const contact = msg.contact || msg.email || msg.phone || 'មិនមាន';
+  const subject = msg.subject || 'មតិយោបល់ / ទំនាក់ទំនង';
+  const messageBody = msg.message || '(គ្មានខ្លឹមសារ)';
+  const dateStr = msg.date || new Date().toLocaleString('km-KH');
+  const idStr = msg.id || 'N/A';
+
+  const text = [
+    `📨 <b>ការបញ្ជូនបន្តសារទំនាក់ទំនង (Forwarded from Admin)</b>`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `👤 <b>អ្នកផ្ញើដើម៖</b> ${escapeHtml(senderName)}`,
+    `📞 <b>ទំនាក់ទំនង៖</b> ${escapeHtml(contact)}`,
+    `📌 <b>ប្រធានបទ៖</b> ${escapeHtml(subject)}`,
+    `💬 <b>ខ្លឹមសារ៖</b>`,
+    `<i>"${escapeHtml(messageBody)}"</i>`,
+    ``,
+    `🕒 <b>កាលបរិច្ឆេទ៖</b> ${escapeHtml(dateStr)}`,
+    `🆔 <b>លេខសម្គាល់៖</b> <code>${escapeHtml(idStr)}</code>`
+  ].join('\n');
+
+  const replyMarkup = {
+    inline_keyboard: [
+      [
+        { text: '🌐 គេហទំព័រ KTPTTC', url: 'https://ktpttc-edu-kh-ll8r.vercel.app' },
+        { text: '🔐 ផ្ទាំងគ្រប់គ្រង Admin', url: 'https://ktpttc-edu-kh-ll8r.vercel.app/admin' }
+      ]
+    ]
+  };
+
+  let sentCount = 0;
+  for (const targetId of recipientSet) {
+    try {
+      await sendMessage(targetId, text, { reply_markup: replyMarkup }, token);
+      sentCount++;
+    } catch (err) {
+      console.error(`⚠️ Failed to forward message to ${targetId}:`, err.message);
+    }
+  }
+
+  return { success: sentCount > 0, recipients: sentCount };
+}
+
+// Broadcast custom announcement or outbound message to Telegram Admin & Subscribers
+async function broadcastMessage(data = {}, customSettings = {}) {
+  const { token, chatId } = getTelegramConfig(customSettings);
+  if (!token) {
+    return { success: false, reason: 'Telegram token missing' };
+  }
+
+  const recipientSet = new Set();
+  if (chatId) recipientSet.add(String(chatId).trim());
+  if (Array.isArray(customSettings.telegramSubscribers)) {
+    customSettings.telegramSubscribers.forEach(id => {
+      if (id) recipientSet.add(String(id).trim());
+    });
+  }
+
+  if (recipientSet.size === 0) {
+    return { success: false, reason: 'មិនទាន់មានអ្នកទទួលសារ Telegram (សូមចុះឈ្មោះ /subscribe លើ Bot ជាមុន)' };
+  }
+
+  const subject = data.subject || 'សេចក្តីជូនដំណឹងពីរដ្ឋបាល';
+  const recipient = data.recipient || 'សមាជិកទាំងអស់';
+  const messageBody = data.message || data.content || '(គ្មានខ្លឹមសារ)';
+  const dateStr = data.date || new Date().toLocaleString('km-KH');
+
+  const text = [
+    `📢 <b>សារជូនដំណឹងពីរដ្ឋបាលសាលា (KTPTTC Broadcast)</b>`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `📌 <b>ប្រធានបទ៖</b> ${escapeHtml(subject)}`,
+    `🎯 <b>អ្នកទទួល៖</b> ${escapeHtml(recipient)}`,
+    `💬 <b>ខ្លឹមសារ៖</b>`,
+    `<i>"${escapeHtml(messageBody)}"</i>`,
+    ``,
+    `🕒 <b>កាលបរិច្ឆេទ៖</b> ${escapeHtml(dateStr)}`
+  ].join('\n');
+
+  const replyMarkup = {
+    inline_keyboard: [
+      [
+        { text: '🌐 គេហទំព័រ KTPTTC', url: 'https://ktpttc-edu-kh-ll8r.vercel.app' }
+      ]
+    ]
+  };
+
+  let sentCount = 0;
+  for (const targetId of recipientSet) {
+    try {
+      await sendMessage(targetId, text, { reply_markup: replyMarkup }, token);
+      sentCount++;
+    } catch (err) {
+      console.error(`⚠️ Failed to broadcast to ${targetId}:`, err.message);
+    }
+  }
+
+  return { success: sentCount > 0, recipients: sentCount };
+}
+
 // Notify Admin on Database Events (Backup, Restore, Sync)
 async function notifyDatabaseEvent(title, detail, customSettings = {}) {
   const { token, chatId, notifyOnBackup } = getTelegramConfig(customSettings);
@@ -625,6 +742,8 @@ module.exports = {
   sendMessage,
   getMainKeyboard,
   notifyNewContactMessage,
+  forwardContactMessage,
+  broadcastMessage,
   notifyDatabaseEvent,
   handleUpdate,
   setWebhook,
