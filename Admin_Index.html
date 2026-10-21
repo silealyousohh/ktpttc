@@ -6869,6 +6869,7 @@
                 loadDashboardStats();
                 loadSettings();
                 loadAdminProfile();
+                loadAdminMessages();
                 populateCategoryDropdowns();
                 updateMessageBadges();
                 if (typeof setupChartFilterListeners === 'function') setupChartFilterListeners();
@@ -8037,38 +8038,39 @@
                     tableHtml = `<div style="text-align:center; padding:30px; color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">ពុំមានកំណត់ត្រាសារទំនាក់ទំនងតាមលក្ខខណ្ឌឡើយ</div>`;
                 } else {
                     tableHtml = `
-                        <table class="report-print-table">
+                        <table class="report-print-table" style="table-layout: fixed; width: 100%;">
                             <thead>
                                 <tr>
-                                    <th style="width: 38px; text-align: center;">ល.រ</th>
-                                    <th style="width: 105px;">កាលបរិច្ឆេទ</th>
-                                    <th style="width: 140px;">អ្នកផ្ញើ / ប្រភព</th>
-                                    <th style="width: 120px;">ទំនាក់ទំនង</th>
-                                    <th style="width: 130px;">ប្រធានបទ</th>
+                                    <th style="width: 32px; text-align: center;">ល.រ</th>
+                                    <th style="width: 95px;">កាលបរិច្ឆេទ</th>
+                                    <th style="width: 110px;">អ្នកផ្ញើ / ប្រភព</th>
+                                    <th style="width: 95px;">ទំនាក់ទំនង</th>
+                                    <th style="width: 105px;">ប្រធានបទ</th>
                                     <th>ខ្លឹមសារសារ</th>
-                                    <th style="width: 85px; text-align: center;">ស្ថានភាព</th>
+                                    <th style="width: 78px; text-align: center;">ស្ថានភាព</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${data.map((m, idx) => {
                                     const contact = m.contact || m.phone || m.email || '-';
                                     const isUnread = m.status === 'unread';
+                                    const subjectText = (m.subject && m.subject.trim()) ? m.subject.trim() : 'គ្មានប្រធានបទ';
                                     return `
                                     <tr style="${isUnread ? 'background: rgba(239, 68, 68, 0.03);' : ''}">
                                         <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
-                                        <td style="font-size:0.8rem; color:#475569; white-space:nowrap;">${escapeHtml(m.date || '-')}</td>
+                                        <td style="font-size:0.78rem; color:#475569; white-space:nowrap;">${escapeHtml(m.date || '-')}</td>
                                         <td>
-                                            <div style="font-weight: 700; color:#0f172a;">${escapeHtml(m.sender || m.name || 'អ្នកផ្ញើអនាមិក')}</div>
-                                            ${m.fromVisitor ? '<span style="display:inline-block; font-size:0.7rem; color:#1d4ed8; background:#eff6ff; padding:1px 5px; border-radius:4px; font-weight:600; margin-top:2px;">🌐 ពីអ្នកចូលមើល</span>' : ''}
+                                            <div style="font-weight: 700; color:#0f172a; word-break: break-word;">${escapeHtml(m.sender || m.name || 'អ្នកផ្ញើអនាមិក')}</div>
+                                            ${m.fromVisitor ? '<span style="display:inline-block; font-size:0.68rem; color:#1d4ed8; background:#eff6ff; padding:1px 4px; border-radius:4px; font-weight:600; margin-top:2px; white-space:nowrap;">🌐 ពីអ្នកចូលមើល</span>' : ''}
                                         </td>
-                                        <td style="font-size:0.82rem; font-family:monospace; color:#1e40af;">${escapeHtml(contact)}</td>
-                                        <td style="font-weight: 600; font-size:0.84rem;">${escapeHtml(m.subject || 'គ្មានប្រធានបទ')}</td>
-                                        <td style="font-size:0.82rem; color:#334155; line-height: 1.45;">
+                                        <td style="font-size:0.8rem; font-family:monospace; color:#1e40af; word-break: break-word;">${escapeHtml(contact)}</td>
+                                        <td style="font-weight: 600; font-size:0.82rem; word-break: break-word;">${escapeHtml(subjectText)}</td>
+                                        <td style="font-size:0.82rem; color:#334155; line-height: 1.45; word-break: break-word;">
                                             <div>${escapeHtml(m.message || m.content || '(គ្មានខ្លឹមសារ)')}</div>
-                                            ${m.id ? `<div style="font-size:0.7rem; color:#94a3b8; margin-top:3px; font-family:monospace;">ID: ${escapeHtml(m.id)}</div>` : ''}
+                                            ${m.id ? `<div style="font-size:0.68rem; color:#94a3b8; margin-top:3px; font-family:monospace;">ID: ${escapeHtml(m.id)}</div>` : ''}
                                         </td>
-                                        <td style="text-align: center;">
-                                            <span style="display:inline-block; padding:3px 7px; border-radius:10px; font-size:0.72rem; font-weight:700; background: ${isUnread ? '#fee2e2' : '#dcfce7'}; color: ${isUnread ? '#b91c1c' : '#15803d'};">
+                                        <td style="text-align: center; white-space: nowrap;">
+                                            <span style="display:inline-block; padding:3px 7px; border-radius:10px; font-size:0.72rem; font-weight:700; white-space:nowrap; background: ${isUnread ? '#fee2e2' : '#dcfce7'}; color: ${isUnread ? '#b91c1c' : '#15803d'};">
                                                 ${isUnread ? 'មិនទាន់អាន' : 'បានអាន'}
                                             </span>
                                         </td>
@@ -8490,7 +8492,7 @@
         }
 
         async function downloadReportPdfA4(module, catFilter = 'ALL', gradeFilter = 'ALL', author = 'រដ្ឋបាល / បណ្ណារក្ស', btnElement = null) {
-            const dateStr = new Date().toISOString().slice(0,10);
+            const dateStr = new Date().toISOString().slice(0, 10);
             const moduleNameMap = {
                 'library': 'សៀវភៅបណ្ណាល័យ',
                 'team': 'គណៈគ្រប់គ្រង_បុគ្គលិក',
@@ -8503,7 +8505,7 @@
             let originalBtnHtml = '';
             if (btnElement) {
                 originalBtnHtml = btnElement.innerHTML;
-                btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>កំពុងបង្កើត PDF...</span>';
+                btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>កំពុងទាញយក PDF...</span>';
                 btnElement.disabled = true;
             }
 
@@ -8512,164 +8514,119 @@
                     await document.fonts.ready;
                 }
 
-                // Create a clean standalone rendering wrapper with standard A4 width
-                const wrapper = document.createElement('div');
-                wrapper.id = 'temp-pdf-render-wrapper';
-                wrapper.style.position = 'fixed';
-                wrapper.style.left = '0';
-                wrapper.style.top = '0';
-                wrapper.style.width = '794px';
-                wrapper.style.minHeight = '1123px';
-                wrapper.style.padding = '0';
-                wrapper.style.margin = '0';
-                wrapper.style.background = '#ffffff';
-                wrapper.style.color = '#0f172a';
-                wrapper.style.zIndex = '999999';
-                wrapper.style.overflow = 'visible';
-
-                const fullReportHtml = generateReportFullHtml(module, catFilter, gradeFilter, author);
-                wrapper.innerHTML = `
-                    <style>
-                        * { box-sizing: border-box; }
-                        .font-moul, .report-org-title, .report-school-title, .chbap, .slogan, .report-main-title {
-                            font-family: 'Khmer OS Muol Light', 'Khmer OS Moul Light', 'Khmer OS Muol', 'Khmer OS Moul', 'Moul', serif !important;
-                        }
-                        .report-preview-sheet {
-                            background: #ffffff !important;
-                            width: 794px !important;
-                            max-width: 794px !important;
-                            padding: 8mm 10mm !important;
-                            color: #0f172a !important;
-                            font-family: 'Kantumruy Pro', 'Siemreap', sans-serif !important;
-                            font-size: 13px !important;
-                            line-height: 1.5 !important;
-                            box-shadow: none !important;
-                            border: none !important;
-                            transform: none !important;
-                        }
-                        .report-official-header {
-                            display: flex !important;
-                            justify-content: space-between !important;
-                            align-items: flex-start !important;
-                            border-bottom: 2px solid #0f172a !important;
-                            padding-bottom: 12px !important;
-                            margin-bottom: 16px !important;
-                        }
-                        .report-header-left { text-align: left !important; }
-                        .report-header-right { text-align: center !important; }
-                        .report-sub-date { font-size: 0.88rem; color: #475569; margin-top: 4px; font-style: italic; }
-                        .report-meta-box {
-                            display: flex !important;
-                            justify-content: space-between !important;
-                            background: #f8fafc !important;
-                            border: 1px solid #cbd5e1 !important;
-                            padding: 8px 14px !important;
-                            border-radius: 6px !important;
-                            font-size: 0.85rem !important;
-                            margin-bottom: 16px !important;
-                        }
-                        .report-summary-chips {
-                            display: flex !important;
-                            flex-wrap: wrap !important;
-                            gap: 8px !important;
-                            margin-bottom: 16px !important;
-                        }
-                        .report-summary-chip {
-                            background: #f1f5f9 !important;
-                            border: 1px solid #cbd5e1 !important;
-                            padding: 4px 10px !important;
-                            border-radius: 6px !important;
-                            font-size: 0.82rem !important;
-                            font-weight: 600 !important;
-                        }
-                        .report-print-table {
-                            width: 100% !important;
-                            border-collapse: collapse !important;
-                            margin-bottom: 20px !important;
-                            font-size: 0.82rem !important;
-                        }
-                        .report-print-table th, .report-print-table td {
-                            border: 1px solid #94a3b8 !important;
-                            padding: 6px 10px !important;
-                            text-align: left !important;
-                            vertical-align: middle !important;
-                        }
-                        .report-print-table th {
-                            background-color: #f1f5f9 !important;
-                            font-weight: 700 !important;
-                            color: #0f172a !important;
-                        }
-                        .report-signature-section {
-                            display: flex !important;
-                            justify-content: space-between !important;
-                            margin-top: 30px !important;
-                            padding: 0 20px !important;
-                            page-break-inside: avoid !important;
-                            break-inside: avoid !important;
-                        }
-                        .report-sig-block { text-align: center !important; min-width: 200px !important; }
-                        .report-sig-space { height: 65px !important; }
-                        .print-avoid-break, tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-                        .a4-badge, .no-print { display: none !important; }
-                    </style>
-                    ${fullReportHtml}
-                `;
+                // Check if sheet is already rendered in the open modal or in-page container
+                let sheet = null;
+                const modalSheet = document.querySelector('#modal-report-sheet-container .report-preview-sheet');
+                const inPageSheet = document.querySelector('#in-page-report-sheet-container .report-preview-sheet');
                 
-                const badge = wrapper.querySelector('.a4-badge');
-                if (badge) badge.remove();
+                const modal = document.getElementById('modal-print-report');
+                const isModalOpen = modal && modal.style.display !== 'none';
+                
+                if (isModalOpen && modalSheet) {
+                    sheet = modalSheet;
+                } else if (inPageSheet && inPageSheet.offsetParent !== null) {
+                    sheet = inPageSheet;
+                }
 
-                document.body.appendChild(wrapper);
+                let tempContainer = null;
+                let origTransform = '';
+                let origBoxShadow = '';
+                let origMargin = '';
+                let badge = null;
 
-                // Wait for layout rendering and fonts
-                await new Promise(r => setTimeout(r, 150));
+                if (sheet) {
+                    origTransform = sheet.style.transform;
+                    origBoxShadow = sheet.style.boxShadow;
+                    origMargin = sheet.style.margin;
+                    badge = sheet.querySelector('.a4-badge');
+                    if (badge) badge.style.display = 'none';
+
+                    sheet.style.transform = 'none';
+                    sheet.style.boxShadow = 'none';
+                    sheet.style.margin = '0 auto';
+                } else {
+                    // Create standalone container with real layout flow
+                    tempContainer = document.createElement('div');
+                    tempContainer.id = 'temp-pdf-render-wrapper';
+                    tempContainer.style.position = 'absolute';
+                    tempContainer.style.left = '0';
+                    tempContainer.style.top = '0';
+                    tempContainer.style.width = '794px';
+                    tempContainer.style.background = '#ffffff';
+                    tempContainer.style.color = '#0f172a';
+                    tempContainer.style.zIndex = '999999';
+                    tempContainer.innerHTML = generateReportFullHtml(module, catFilter, gradeFilter, author);
+                    
+                    badge = tempContainer.querySelector('.a4-badge');
+                    if (badge) badge.remove();
+                    
+                    const innerSheet = tempContainer.querySelector('.report-preview-sheet');
+                    if (innerSheet) {
+                        innerSheet.style.transform = 'none';
+                        innerSheet.style.boxShadow = 'none';
+                        innerSheet.style.margin = '0 auto';
+                    }
+                    document.body.appendChild(tempContainer);
+                    sheet = innerSheet || tempContainer;
+                }
+
+                // Micro pause to ensure styles have applied
+                await new Promise(r => setTimeout(r, 80));
 
                 if (typeof html2pdf !== 'undefined') {
                     const opt = {
-                        margin: [8, 8, 10, 8], // mm
+                        margin: [6, 6, 6, 6], // mm
                         filename: docTitle,
                         image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { 
-                            scale: 2, 
-                            useCORS: true, 
+                        html2canvas: {
+                            scale: 2,
+                            useCORS: true,
                             logging: false,
-                            backgroundColor: '#ffffff',
-                            letterRendering: true,
-                            windowWidth: 1024,
-                            x: 0,
-                            y: 0,
-                            scrollX: 0,
-                            scrollY: 0
+                            letterRendering: false,
+                            backgroundColor: '#ffffff'
                         },
                         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                     };
 
-                    await html2pdf().set(opt).from(wrapper).save();
-                    try { wrapper.remove(); } catch(e){}
+                    await html2pdf().set(opt).from(sheet).save();
 
+                    if (btnElement) {
+                        btnElement.innerHTML = '<i class="fas fa-check"></i> <span>បានទាញយក PDF!</span>';
+                        setTimeout(() => {
+                            if (btnElement) {
+                                btnElement.innerHTML = originalBtnHtml;
+                                btnElement.disabled = false;
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    // Fallback to iframe/native print
+                    printHtmlContent(generateReportFullHtml(module, catFilter, gradeFilter, author), docTitle.replace('.pdf', ''));
                     if (btnElement) {
                         btnElement.innerHTML = originalBtnHtml;
                         btnElement.disabled = false;
                     }
-                    return;
                 }
 
-                // Fallback to print engine if html2pdf is unavailable
-                try { wrapper.remove(); } catch(e){}
-                printHtmlContent(fullReportHtml, docTitle.replace('.pdf', ''));
-            } catch (err) {
-                console.error('PDF Generation Error:', err);
-                const fullReportHtml = generateReportFullHtml(module, catFilter, gradeFilter, author);
-                printHtmlContent(fullReportHtml, docTitle.replace('.pdf', ''));
-            } finally {
-                const existing = document.getElementById('temp-pdf-render-wrapper');
-                if (existing) {
-                    try { existing.remove(); } catch(e){}
+                // Restore
+                if (tempContainer) {
+                    try { tempContainer.remove(); } catch(e){}
+                } else if (sheet) {
+                    sheet.style.transform = origTransform;
+                    sheet.style.boxShadow = origBoxShadow;
+                    sheet.style.margin = origMargin;
+                    if (badge) badge.style.display = '';
                 }
+
+            } catch (err) {
+                console.error('PDF Download Error:', err);
                 if (btnElement) {
                     btnElement.innerHTML = originalBtnHtml;
                     btnElement.disabled = false;
                 }
+                alert('មានបញ្ហាក្នុងការទាញយក PDF ផ្ទាល់ ប្រព័ន្ធនឹងបើកផ្ទាំង Print ដើម្បីរក្សាទុកជា PDF៖ ' + err.message);
+                printHtmlContent(generateReportFullHtml(module, catFilter, gradeFilter, author), docTitle.replace('.pdf', ''));
             }
         }
 
