@@ -1666,7 +1666,7 @@
                         <div class="page-title"><h1>គ្រប់គ្រងការផ្ញើសារ</h1><p>បញ្ជីសារទំនាក់ទំនង និងការផ្ញើសារចេញ</p></div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap;">
                             <button class="btn btn-outline" style="width: auto; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px;" onclick="openPrintPreview('messages')" title="មើលគំរូ និងបោះពុម្ពបញ្ជីសារ A4">
-                                <i class="fas fa-print" style="color: var(--primary);"></i> <span>មើលគំរូបោះពុម្ព (Print Preview)</span>
+                                <i class="fas fa-print" style="color: var(--primary);"></i> <span>មើលគំរូពុម្ព (Print Preview)</span>
                             </button>
                             <button class="btn btn-primary" style="width: auto;" onclick="openModal('modal-send-message')"><i class="fas fa-paper-plane"></i> ផ្ញើសារថ្មី</button>
                         </div>
@@ -3150,6 +3150,15 @@
                         <option value="១២+២">១២+២ (គរុកោសល្យ)</option>
                         <option value="១២+៤">១២+៤ (គរុសិស្ស)</option>
                         <option value="បរិញ្ញាបត្រ+១">បរិញ្ញាបត្រ+១</option>
+                    </select>
+                </div>
+                <div id="modalMessageStatusGroup" style="display:none;">
+                    <label class="form-label" style="font-size: 0.82rem; font-weight:600;">ស្ថានភាពសារ</label>
+                    <select id="modalReportMessageStatus" class="form-control" style="margin-bottom:0;" onchange="renderModalReportPreview()">
+                        <option value="ALL">គ្រប់សារទាំងអស់ (All Messages)</option>
+                        <option value="unread">សារមិនទាន់អាន (Unread)</option>
+                        <option value="read">សារបានអាន (Read)</option>
+                        <option value="visitor">សារពីអ្នកចូលមើល (From Visitor)</option>
                     </select>
                 </div>
                 <div>
@@ -7651,7 +7660,7 @@
             if (input && input.value && input.value.trim()) {
                 return input.value.trim();
             }
-            return 'វិទ្យាស្ថានគរុកោសល្យភូមិភាគកំពង់ចាម';
+            return 'សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ';
         }
 
         function getReportCategoryList() {
@@ -7719,9 +7728,19 @@
             const module = document.getElementById('modalReportModule')?.value || 'library';
             const catGroup = document.getElementById('modalCategoryGroup');
             const gradeGroup = document.getElementById('modalGradeGroup');
+            const msgStatusGroup = document.getElementById('modalMessageStatusGroup');
             
             if (catGroup) catGroup.style.display = (module === 'library') ? 'block' : 'none';
             if (gradeGroup) gradeGroup.style.display = (module === 'library') ? 'block' : 'none';
+            if (msgStatusGroup) msgStatusGroup.style.display = (module === 'messages') ? 'block' : 'none';
+
+            const authorInput = document.getElementById('modalReportAuthor');
+            if (authorInput) {
+                if (module === 'messages') authorInput.value = 'រដ្ឋបាល / គ្រប់គ្រងសារ';
+                else if (module === 'library') authorInput.value = 'បណ្ណារក្ស';
+                else if (module === 'team') authorInput.value = 'រដ្ឋបាល / បុគ្គលិក';
+                else authorInput.value = 'រដ្ឋបាលសាលា';
+            }
 
             renderModalReportPreview();
         }
@@ -7741,6 +7760,14 @@
 
             const gradeSelect = document.getElementById('modalReportGrade');
             if (gradeSelect && gradeFilter) gradeSelect.value = gradeFilter;
+
+            const authorInput = document.getElementById('modalReportAuthor');
+            if (authorInput) {
+                if (module === 'messages') authorInput.value = 'រដ្ឋបាល / គ្រប់គ្រងសារ';
+                else if (module === 'library') authorInput.value = 'បណ្ណារក្ស';
+                else if (module === 'team') authorInput.value = 'រដ្ឋបាល / បុគ្គលិក';
+                else authorInput.value = 'រដ្ឋបាលសាលា';
+            }
 
             onModalReportModuleChange();
             openModal('modal-print-report');
@@ -7772,7 +7799,16 @@
             } else if (module === 'partners') {
                 return Array.isArray(localMockPartners) ? [...localMockPartners] : [];
             } else if (module === 'messages') {
-                return Array.isArray(localMockMessages) ? [...localMockMessages] : [];
+                let msgs = Array.isArray(localMockMessages) ? [...localMockMessages] : [];
+                const statusFilter = document.getElementById('modalReportMessageStatus')?.value || 'ALL';
+                if (statusFilter === 'unread') {
+                    msgs = msgs.filter(m => m.status === 'unread');
+                } else if (statusFilter === 'read') {
+                    msgs = msgs.filter(m => m.status !== 'unread');
+                } else if (statusFilter === 'visitor') {
+                    msgs = msgs.filter(m => m.fromVisitor);
+                }
+                return msgs;
             } else if (module === 'summary') {
                 return {
                     books: Array.isArray(localMockBooks) ? localMockBooks.length : 0,
@@ -7967,7 +8003,7 @@
                                         <td style="font-weight: 700;">${escapeHtml(p.name || '-')}</td>
                                         <td style="color:#475569;">${escapeHtml(p.nameEn || '-')}</td>
                                         <td><span style="display:inline-block; padding:2px 6px; background:#f1f5f9; border-radius:4px; font-size:0.8rem;">${escapeHtml(p.tagKh || p.tag || '-')}</span></td>
-                                        <td>${escapeHtml(p.provinceKh || p.province || 'កំពង់ចាម')}</td>
+                                        <td>${escapeHtml(p.provinceKh || p.province || 'ក្រចេះ')}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -7978,39 +8014,62 @@
                 titleKh = 'របាយការណ៍កំណត់ត្រាសារទំនាក់ទំនង និងសំណូមពរ';
                 titleEn = 'COMMUNICATION & INQUIRY MESSAGES REPORT';
 
+                const totalMsgs = data.length;
+                const unreadCount = data.filter(m => m.status === 'unread').length;
+                const readCount = totalMsgs - unreadCount;
+                const visitorCount = data.filter(m => m.fromVisitor).length;
+
                 summaryChipsHtml = `
                     <div class="report-summary-chips">
-                        <div class="report-summary-chip">✉️ សារសរុប៖ <strong>${data.length} សារ</strong></div>
+                        <div class="report-summary-chip">✉️ សារសរុប៖ <strong>${totalMsgs} សារ</strong></div>
+                        <div class="report-summary-chip" style="background: #fee2e2; color: #b91c1c;">🔴 មិនទាន់អាន៖ <strong>${unreadCount} សារ</strong></div>
+                        <div class="report-summary-chip" style="background: #dcfce7; color: #15803d;">🟢 បានអានរួច៖ <strong>${readCount} សារ</strong></div>
+                        <div class="report-summary-chip" style="background: #dbeafe; color: #1d4ed8;">🌐 ពីអ្នកចូលមើល៖ <strong>${visitorCount} សារ</strong></div>
                     </div>
                 `;
 
                 if (data.length === 0) {
-                    tableHtml = `<div style="text-align:center; padding:30px; color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">ពុំមានកំណត់ត្រាសារទំនាក់ទំនងឡើយ</div>`;
+                    tableHtml = `<div style="text-align:center; padding:30px; color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">ពុំមានកំណត់ត្រាសារទំនាក់ទំនងតាមលក្ខខណ្ឌឡើយ</div>`;
                 } else {
                     tableHtml = `
                         <table class="report-print-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 45px;">ល.រ</th>
-                                    <th style="width: 100px;">កាលបរិច្ឆេទ</th>
-                                    <th style="width: 130px;">ឈ្មោះអ្នកផ្ញើ</th>
-                                    <th style="width: 150px;">ទំនាក់ទំនង</th>
-                                    <th>ប្រធានបទ / ខ្លឹមសារ</th>
+                                    <th style="width: 38px; text-align: center;">ល.រ</th>
+                                    <th style="width: 105px;">កាលបរិច្ឆេទ</th>
+                                    <th style="width: 140px;">អ្នកផ្ញើ / ប្រភព</th>
+                                    <th style="width: 120px;">ទំនាក់ទំនង</th>
+                                    <th style="width: 130px;">ប្រធានបទ</th>
+                                    <th>ខ្លឹមសារសារ</th>
+                                    <th style="width: 85px; text-align: center;">ស្ថានភាព</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.map((m, idx) => `
-                                    <tr>
+                                ${data.map((m, idx) => {
+                                    const contact = m.contact || m.phone || m.email || '-';
+                                    const isUnread = m.status === 'unread';
+                                    return `
+                                    <tr style="${isUnread ? 'background: rgba(239, 68, 68, 0.03);' : ''}">
                                         <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
-                                        <td style="font-size:0.82rem; color:#475569;">${escapeHtml(m.date || '-')}</td>
-                                        <td style="font-weight: 700;">${escapeHtml(m.sender || m.name || '-')}</td>
-                                        <td style="font-size:0.82rem;">${escapeHtml(m.email || m.phone || '-')}</td>
+                                        <td style="font-size:0.8rem; color:#475569; white-space:nowrap;">${escapeHtml(m.date || '-')}</td>
                                         <td>
-                                            <div style="font-weight:600;">${escapeHtml(m.subject || 'គ្មានប្រធានបទ')}</div>
-                                            <div style="font-size:0.82rem; color:#64748b; margin-top:2px;">${escapeHtml((m.message || '').substring(0, 80))}${m.message && m.message.length > 80 ? '...' : ''}</div>
+                                            <div style="font-weight: 700; color:#0f172a;">${escapeHtml(m.sender || m.name || 'អ្នកផ្ញើអនាមិក')}</div>
+                                            ${m.fromVisitor ? '<span style="display:inline-block; font-size:0.7rem; color:#1d4ed8; background:#eff6ff; padding:1px 5px; border-radius:4px; font-weight:600; margin-top:2px;">🌐 ពីអ្នកចូលមើល</span>' : ''}
+                                        </td>
+                                        <td style="font-size:0.82rem; font-family:monospace; color:#1e40af;">${escapeHtml(contact)}</td>
+                                        <td style="font-weight: 600; font-size:0.84rem;">${escapeHtml(m.subject || 'គ្មានប្រធានបទ')}</td>
+                                        <td style="font-size:0.82rem; color:#334155; line-height: 1.45;">
+                                            <div>${escapeHtml(m.message || m.content || '(គ្មានខ្លឹមសារ)')}</div>
+                                            ${m.id ? `<div style="font-size:0.7rem; color:#94a3b8; margin-top:3px; font-family:monospace;">ID: ${escapeHtml(m.id)}</div>` : ''}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span style="display:inline-block; padding:3px 7px; border-radius:10px; font-size:0.72rem; font-weight:700; background: ${isUnread ? '#fee2e2' : '#dcfce7'}; color: ${isUnread ? '#b91c1c' : '#15803d'};">
+                                                ${isUnread ? 'មិនទាន់អាន' : 'បានអាន'}
+                                            </span>
                                         </td>
                                     </tr>
-                                `).join('')}
+                                    `;
+                                }).join('')}
                             </tbody>
                         </table>
                     `;
@@ -8122,10 +8181,10 @@
                             <div style="border-top: 1px dashed #94a3b8; width: 180px; margin: 0 auto; padding-top: 4px; font-weight: 600; color: #475569;">( ហត្ថលេខា និងត្រា )</div>
                         </div>
                         <div class="report-sig-block">
-                            <div>${khmerDate}</div>
+                            <div>ក្រចេះ, ${khmerDate}</div>
                             <div style="font-weight: 700; margin-top: 5px; color: #0f172a;">អ្នករៀបចំរបាយការណ៍</div>
                             <div class="report-sig-space"></div>
-                            <div style="border-top: 1px dashed #94a3b8; width: 180px; margin: 0 auto; padding-top: 4px; font-weight: 600; color: #0f172a;">${escapeHtml(authorName || 'រដ្ឋបាល / បណ្ណារក្ស')}</div>
+                            <div style="border-top: 1px dashed #94a3b8; width: 180px; margin: 0 auto; padding-top: 4px; font-weight: 600; color: #0f172a;">${escapeHtml(authorName || 'រដ្ឋបាល')}</div>
                         </div>
                     </div>` : ''}
                 </div>
@@ -8669,16 +8728,16 @@
                     csvRows.push(row.join(','));
                 });
             } else if (module === 'messages') {
-                csvRows.push(['No', 'Date', 'Sender', 'Email', 'Phone', 'Subject', 'Message'].join(','));
+                csvRows.push(['No', 'Date', 'Sender', 'Contact', 'Subject', 'Status', 'Message'].join(','));
                 data.forEach((m, idx) => {
                     const row = [
                         idx + 1,
                         `"${(m.date || '').replace(/"/g, '""')}"`,
                         `"${(m.sender || m.name || '').replace(/"/g, '""')}"`,
-                        `"${(m.email || '').replace(/"/g, '""')}"`,
-                        `"${(m.phone || '').replace(/"/g, '""')}"`,
+                        `"${(m.contact || m.phone || m.email || '').replace(/"/g, '""')}"`,
                         `"${(m.subject || '').replace(/"/g, '""')}"`,
-                        `"${(m.message || '').replace(/"/g, '""')}"`
+                        `"${(m.status === 'unread' ? 'Unread' : 'Read')}"`,
+                        `"${(m.message || m.content || '').replace(/"/g, '""')}"`
                     ];
                     csvRows.push(row.join(','));
                 });
