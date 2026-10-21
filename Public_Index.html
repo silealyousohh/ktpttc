@@ -131,6 +131,45 @@ body {
 body.lang-kh {
     font-family: var(--font-kh), var(--font-en);
 }
+body.lang-en {
+    font-family: var(--font-en), var(--font-kh);
+}
+
+.mobile-lang-switch {
+    display: none;
+    width: 100%;
+    margin-top: 18px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+    gap: 10px;
+}
+@media (max-width: 1024px) {
+    .mobile-lang-switch {
+        display: flex;
+    }
+    .mobile-lang-switch .lang-btn {
+        flex: 1;
+        padding: 9px 12px;
+        font-size: 0.85rem;
+        text-align: center;
+        border-radius: 8px;
+        background: var(--bg-surface);
+        color: var(--text-main);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-weight: 600;
+        transition: var(--transition-fast);
+    }
+    .mobile-lang-switch .lang-btn.active {
+        background: var(--primary);
+        color: #ffffff;
+        border-color: var(--primary);
+    }
+}
 
 a {
     text-decoration: none;
@@ -2999,8 +3038,8 @@ body.dark-mode .pagination-ellipsis {
                     <a href="#" class="nav-link active" data-page="home" onclick="navigateTo('home')" data-lang="navHome">ទំព័រដើម</a>
                     
                     <div class="dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-page="about" onclick="navigateTo('about')" data-lang="navAbout">
-                            អំពីសាលា <i class="fas fa-chevron-down"></i>
+                        <a href="#" class="nav-link dropdown-toggle" data-page="about" onclick="navigateTo('about')">
+                            <span data-lang="navAbout">អំពីសាលា</span> <i class="fas fa-chevron-down"></i>
                         </a>
                         <div class="dropdown-menu">
                             <a href="#" class="dropdown-item" onclick="navigateTo('about', 'history')" data-lang="navHistory">ប្រវត្តិសាលា</a>
@@ -3019,6 +3058,11 @@ body.dark-mode .pagination-ellipsis {
                         <a href="https://www.facebook.com/share/1KCQ6F5YD6/?mibextid=wwXIfr" target="_blank" class="nav-social-btn"><i class="fab fa-facebook-f"></i></a>
                         <a href="https://t.me/ktpttc_bot" target="_blank" id="navTelegramLink" title="KTPTTC Telegram Bot" class="nav-social-btn"><i class="fab fa-telegram-plane"></i></a>
                         <a href="https://www.youtube.com/@ktpttc" target="_blank" class="nav-social-btn"><i class="fab fa-youtube"></i></a>
+                    </div>
+                    
+                    <div class="mobile-lang-switch">
+                        <button class="lang-btn btn-kh active" onclick="setLanguage('kh')">🇰🇭 ខ្មែរ (KH)</button>
+                        <button class="lang-btn btn-en" onclick="setLanguage('en')">🇬🇧 English (EN)</button>
                     </div>
                 </nav>
             </div>
@@ -3672,7 +3716,7 @@ body.dark-mode .pagination-ellipsis {
     <section id="structure" class="about-section bg-light-wrap">
         <h2 class="section-title" data-lang="navStructure">រចនាសម្ព័ន្ធគ្រប់គ្រង</h2>
         <div id="org-chart-container" class="org-chart card">
-            <p style="text-align: center; color: var(--text-secondary); padding: 30px;">កំពុងផ្ទុកទិន្នន័យរចនាសម្ព័ន្ធ...</p>
+            <p style="text-align: center; color: var(--text-secondary); padding: 30px;" data-lang="loadingStructure">កំពុងផ្ទុកទិន្នន័យរចនាសម្ព័ន្ធ...</p>
         </div>
     </section>
     
@@ -3680,7 +3724,7 @@ body.dark-mode .pagination-ellipsis {
     <section id="team" class="about-section">
         <h2 class="section-title" data-lang="navTeam">គណៈគ្រប់គ្រង</h2>
         <div class="team-grid" id="team-grid">
-            <p style="text-align: center; color: var(--text-secondary); width: 100%;">កំពុងផ្ទុកទិន្នន័យ...</p>
+            <p style="text-align: center; color: var(--text-secondary); width: 100%;" data-lang="loading">កំពុងផ្ទុកទិន្នន័យ...</p>
         </div>
     </section>
 
@@ -3688,7 +3732,7 @@ body.dark-mode .pagination-ellipsis {
     <section id="staff" class="about-section" style="margin-top: 55px;">
         <h2 class="section-title" data-lang="navStaff">បុគ្គលិក</h2>
         <div class="staff-grid" id="staff-grid">
-            <p style="text-align: center; color: var(--text-secondary); width: 100%;">កំពុងផ្ទុកទិន្នន័យ...</p>
+            <p style="text-align: center; color: var(--text-secondary); width: 100%;" data-lang="loading">កំពុងផ្ទុកទិន្នន័យ...</p>
         </div>
     </section>
 
@@ -3949,10 +3993,10 @@ body.dark-mode .pagination-ellipsis {
     <div id="bookReaderModal" class="modal-overlay" onclick="if(event.target === this) closeBookModal()">
         <div class="modal-container" style="max-width: 900px; width: 92%; height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 id="bookModalTitle" style="font-size: 1.1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">អានសៀវភៅ</h2>
+                <h2 id="bookModalTitle" style="font-size: 1.1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;" data-lang="readBook">អានសៀវភៅ</h2>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <a id="bookModalExternalLink" href="#" target="_blank" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem; text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
-                        <i class="fas fa-external-link-alt"></i> បើកក្នុង Tab ថ្មី
+                        <i class="fas fa-external-link-alt"></i> <span data-lang="openInNewTab">បើកក្នុង Tab ថ្មី</span>
                     </a>
                     <button class="btn-close" onclick="closeBookModal()">&times;</button>
                 </div>
@@ -3990,7 +4034,7 @@ body.dark-mode .pagination-ellipsis {
     <div id="imagePreviewModal" class="modal-overlay" onclick="if(event.target === this) closeImagePreviewModal()">
         <div class="modal-container" style="max-width: 850px; width: 92%; padding: 0; background: var(--bg-surface); overflow: hidden; border-radius: 14px; box-shadow: var(--shadow-lg);">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border);">
-                <h3 id="imagePreviewTitle" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; color: var(--text-main);">រូបភាព</h3>
+                <h3 id="imagePreviewTitle" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; color: var(--text-main);" data-lang="navImages">រូបភាព</h3>
                 <button class="btn-close" onclick="closeImagePreviewModal()" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body" style="padding: 0; display: flex; align-items: center; justify-content: center; background: #0b1120;">
@@ -4453,7 +4497,11 @@ const i18n = {
         locBattambang: "ខេត្តបាត់ដំបង",
         locKampongCham: "ខេត្តកំពង់ចាម",
         locStungTreng: "ខេត្តស្ទឹងត្រែង",
-        locPreyVeng: "ខេត្តព្រៃវែង"
+        locPreyVeng: "ខេត្តព្រៃវែង",
+        loadingStructure: "កំពុងផ្ទុកទិន្នន័យរចនាសម្ព័ន្ធ...",
+        contactSuccess: "សាររបស់អ្នកត្រូវបានផ្ញើដោយជោគជ័យ។ អរគុណ!",
+        contactError: "មានបញ្ហាក្នុងការផ្ញើសារ។ សូមព្យាយាមម្តងទៀត!",
+        openInNewTab: "បើកក្នុង Tab ថ្មី"
     },
     en: {
         schoolName: "Kratié Provincial Teacher Training Center",
@@ -4481,13 +4529,13 @@ const i18n = {
         readMore: "Read More",
         visionMission: "Vision & Mission",
         visionTitle: "Our Vision",
-        visionDesc: "To be a leading model school in providing educational services and cultivating potential human resources.",
+        visionDesc: "To be a leading model teacher training center in providing education and cultivating human resources with high capability and excellence.",
         missionTitle: "Our Mission",
-        missionDesc: "To enhance educational quality focusing on knowledge, skills, morality, and innovation.",
+        missionDesc: "To enhance the quality of teacher training focused on pedagogic knowledge, practical teaching skills, digital technology, ethics, and innovation.",
         valuesTitle: "Core Values",
-        valuesDesc: "Discipline, morality, solidarity, and high social responsibility.",
-        historyP1: "Our school was established in 1990 with the primary goal of training teacher trainees. Over more than 30 years, the school has developed from wooden tile-roofed buildings into modern concrete facilities fully equipped with educational materials.",
-        historyP2: "Currently, Kratié Provincial Teacher Training Center accommodates over 2,000 trainees/students and more than 100 dedicated educators fulfilling the mission of training future teachers for the nation.",
+        valuesDesc: "Professional conscience, excellence, integrity, resilience, and innovation.",
+        historyP1: "Our teacher training center was established in 1990 with the primary goal of training qualified educators for primary education. Over 30 years of development, the center has grown from basic wooden structures into modern concrete facilities fully equipped with educational materials.",
+        historyP2: "Currently, Kratié Provincial Teacher Training Center trains hundreds of aspiring teacher trainees guided by dedicated teacher educators fulfilling our national educational mission.",
         addressLabel: "Address",
         phoneLabel: "Phone",
         emailLabel: "Email",
@@ -4499,7 +4547,7 @@ const i18n = {
         sendMsg: "Send Message",
         libraryTitle: "Digital Library",
         searchBook: "Search books...",
-        searchImage: "Search images...",
+        searchImage: "Search photo gallery...",
         searchVideo: "Search videos...",
         allCats: "All Categories",
         readBook: "Read Book",
@@ -4548,7 +4596,11 @@ const i18n = {
         locBattambang: "Battambang Province",
         locKampongCham: "Kampong Cham Province",
         locStungTreng: "Stung Treng Province",
-        locPreyVeng: "Prey Veng Province"
+        locPreyVeng: "Prey Veng Province",
+        loadingStructure: "Loading organizational structure...",
+        contactSuccess: "Your message has been sent successfully. Thank you!",
+        contactError: "An error occurred while sending your message. Please try again!",
+        openInNewTab: "Open in New Tab"
     }
 };
 
@@ -4562,45 +4614,26 @@ function formatFormattedText(text) {
 
 function applySchoolSettings(settings) {
     if (!settings) return;
-    if (settings.name && typeof i18n !== 'undefined') {
-        i18n.kh.schoolName = settings.name;
-        i18n.en.schoolName = settings.name;
+    if (typeof i18n !== 'undefined') {
+        if (settings.name) i18n.kh.schoolName = settings.name;
+        if (settings.nameEn) i18n.en.schoolName = settings.nameEn;
+
+        if (settings.vision) i18n.kh.visionDesc = settings.vision;
+        if (settings.visionEn) i18n.en.visionDesc = settings.visionEn;
+
+        if (settings.mission) i18n.kh.missionDesc = settings.mission;
+        if (settings.missionEn) i18n.en.missionDesc = settings.missionEn;
+
+        if (settings.values) i18n.kh.valuesDesc = settings.values;
+        if (settings.valuesEn) i18n.en.valuesDesc = settings.valuesEn;
+
+        if (settings.historyP1) i18n.kh.historyP1 = settings.historyP1;
+        if (settings.historyP1En) i18n.en.historyP1 = settings.historyP1En;
+
+        if (settings.historyP2) i18n.kh.historyP2 = settings.historyP2;
+        if (settings.historyP2En) i18n.en.historyP2 = settings.historyP2En;
     }
-    if (settings.vision) {
-        if (typeof i18n !== 'undefined') {
-            i18n.kh.visionDesc = settings.vision;
-            i18n.en.visionDesc = settings.vision;
-        }
-        document.querySelectorAll('[data-lang="visionDesc"]').forEach(el => el.innerHTML = formatFormattedText(settings.vision));
-    }
-    if (settings.mission) {
-        if (typeof i18n !== 'undefined') {
-            i18n.kh.missionDesc = settings.mission;
-            i18n.en.missionDesc = settings.mission;
-        }
-        document.querySelectorAll('[data-lang="missionDesc"]').forEach(el => el.innerHTML = formatFormattedText(settings.mission));
-    }
-    if (settings.values) {
-        if (typeof i18n !== 'undefined') {
-            i18n.kh.valuesDesc = settings.values;
-            i18n.en.valuesDesc = settings.values;
-        }
-        document.querySelectorAll('[data-lang="valuesDesc"]').forEach(el => el.innerHTML = formatFormattedText(settings.values));
-    }
-    if (settings.historyP1) {
-        if (typeof i18n !== 'undefined') {
-            i18n.kh.historyP1 = settings.historyP1;
-            i18n.en.historyP1 = settings.historyP1;
-        }
-        document.querySelectorAll('[data-lang="historyP1"]').forEach(el => el.innerHTML = formatFormattedText(settings.historyP1));
-    }
-    if (settings.historyP2) {
-        if (typeof i18n !== 'undefined') {
-            i18n.kh.historyP2 = settings.historyP2;
-            i18n.en.historyP2 = settings.historyP2;
-        }
-        document.querySelectorAll('[data-lang="historyP2"]').forEach(el => el.innerHTML = formatFormattedText(settings.historyP2));
-    }
+
     let imgUrl = settings.historyImage;
     if (!imgUrl || imgUrl.includes('unsplash.com')) {
         imgUrl = "https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link";
@@ -4634,11 +4667,15 @@ function applySchoolSettings(settings) {
     });
 
     if (settings.mapUrl) {
-        const mapFrame = document.querySelector('#mapIframe, .map-container iframe');
-        if (mapFrame) {
-            mapFrame.src = getMapEmbedUrl(settings.mapUrl);
-        }
+        const mapUrl = getMapEmbedUrl(settings.mapUrl);
+        document.querySelectorAll('#mapIframe, .map-container iframe').forEach(el => el.src = mapUrl);
     }
+    if (settings.telegramBotUsername) {
+        const botUrl = `https://t.me/${settings.telegramBotUsername.replace('@', '')}`;
+        document.querySelectorAll('#navTelegramLink, #footerTelegramLink').forEach(el => el.href = botUrl);
+    }
+
+    setLanguage(currentLang);
 }
 
 function getMapEmbedUrl(url) {
@@ -5076,22 +5113,50 @@ function initLanguage() {
     setLanguage(savedLang);
 }
 
+function updateGradeFilterLanguage(lang) {
+    const sel = document.getElementById('bookGrade');
+    if (!sel) return;
+    const curVal = sel.value;
+    const isEn = (lang === 'en');
+    const grades = [
+        { val: '', kh: '📚 គ្រប់ថ្នាក់ (ទី១ - ទី១២)', en: '📚 All Grades (Grade 1 - 12)' },
+        { val: 'ថ្នាក់ទី១', kh: 'ថ្នាក់ទី១', en: 'Grade 1' },
+        { val: 'ថ្នាក់ទី២', kh: 'ថ្នាក់ទី២', en: 'Grade 2' },
+        { val: 'ថ្នាក់ទី៣', kh: 'ថ្នាក់ទី៣', en: 'Grade 3' },
+        { val: 'ថ្នាក់ទី៤', kh: 'ថ្នាក់ទី៤', en: 'Grade 4' },
+        { val: 'ថ្នាក់ទី៥', kh: 'ថ្នាក់ទី៥', en: 'Grade 5' },
+        { val: 'ថ្នាក់ទី៦', kh: 'ថ្នាក់ទី៦', en: 'Grade 6' },
+        { val: 'ថ្នាក់ទី៧', kh: 'ថ្នាក់ទី៧', en: 'Grade 7' },
+        { val: 'ថ្នាក់ទី៨', kh: 'ថ្នាក់ទី៨', en: 'Grade 8' },
+        { val: 'ថ្នាក់ទី៩', kh: 'ថ្នាក់ទី៩', en: 'Grade 9' },
+        { val: 'ថ្នាក់ទី១០', kh: 'ថ្នាក់ទី១០', en: 'Grade 10' },
+        { val: 'ថ្នាក់ទី១១', kh: 'ថ្នាក់ទី១១', en: 'Grade 11' },
+        { val: 'ថ្នាក់ទី១២', kh: 'ថ្នាក់ទី១២', en: 'Grade 12' },
+        { val: 'ផ្សេងៗ', kh: 'ផ្សេងៗ', en: 'Other' }
+    ];
+    sel.innerHTML = grades.map(g => `<option value="${g.val}" ${g.val === curVal ? 'selected' : ''}>${isEn ? g.en : g.kh}</option>`).join('');
+}
+
 function setLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('school_lang', lang);
     
+    // Update html lang & title
+    document.documentElement.lang = (lang === 'en' ? 'en' : 'km');
+    document.title = (lang === 'en' ? 'Kratié Provincial Teacher Training Center (KTPTTC)' : 'សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ');
+
     // Update body class for fonts
-    document.body.className = document.body.className.replace(/lang-(kh|en)/, '');
+    document.body.classList.remove('lang-kh', 'lang-en');
     document.body.classList.add(`lang-${lang}`);
     
-    // Update Buttons
+    // Update Buttons in top-bar and mobile menu
     document.querySelectorAll('.btn-kh, #btn-kh').forEach(b => b.classList.toggle('active', lang === 'kh'));
     document.querySelectorAll('.btn-en, #btn-en').forEach(b => b.classList.toggle('active', lang === 'en'));
     
     // Translate all data-lang elements
     document.querySelectorAll('[data-lang]').forEach(el => {
         const key = el.getAttribute('data-lang');
-        if (i18n[lang] && i18n[lang][key]) {
+        if (i18n[lang] && i18n[lang][key] !== undefined) {
             if (el.tagName.toLowerCase() === 'input' || el.tagName.toLowerCase() === 'textarea') {
                 el.placeholder = i18n[lang][key];
             } else {
@@ -5099,16 +5164,33 @@ function setLanguage(lang) {
             }
         }
     });
+
+    // Update Grade filter options in library if present
+    updateGradeFilterLanguage(lang);
+
+    // Update visitor counter
     if (typeof updatePublicVisitorCount === 'function') updatePublicVisitorCount();
+
+    // Update Home main book & partners
     if (typeof homeCurrentBook !== 'undefined' && homeCurrentBook) {
         updateHomeMainBook(homeCurrentBook);
     }
     if (typeof fetchHomePartners === 'function') {
         fetchHomePartners();
     }
+
+    // Update read-more links if news cards are rendered
+    document.querySelectorAll('.news-readmore [data-lang="readMore"]').forEach(s => {
+        s.textContent = t('readMore');
+    });
+
+    // Update read-book buttons if library cards are rendered
+    document.querySelectorAll('#books-grid .btn-outline').forEach(btn => {
+        btn.innerHTML = `<i class="fas fa-book-reader"></i> ${t('readBook')}`;
+    });
 }
 function t(key) {
-    return i18n[currentLang][key] || key;
+    return (i18n[currentLang] && i18n[currentLang][key]) ? i18n[currentLang][key] : (i18n.kh[key] || key);
 }
 
 // --- Navigation & Routing (SPA approach) ---
@@ -5365,7 +5447,7 @@ function renderNewsPage(shouldScroll = false) {
             <div class="news-content">
                 <div class="news-date"><i class="far fa-calendar-alt"></i> ${news.date || ''}</div>
                 <h3 class="news-title" onclick="openNewsModal(${globalIdx})" style="cursor:pointer;">${news.title || ''}</h3>
-                <a href="javascript:void(0)" onclick="openNewsModal(${globalIdx})" class="news-readmore" data-lang="readMore">${t('readMore')} <i class="fas fa-arrow-right"></i></a>
+                <a href="javascript:void(0)" onclick="openNewsModal(${globalIdx})" class="news-readmore"><span data-lang="readMore">${t('readMore')}</span> <i class="fas fa-arrow-right"></i></a>
             </div>
         `;
         grid.appendChild(card);
@@ -5695,7 +5777,7 @@ async function handleContactSubmit(e) {
         if (res.ok) {
             msgDiv.style.display = 'block';
             msgDiv.className = 'form-message success';
-            msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> សាររបស់អ្នកត្រូវបានផ្ញើដោយជោគជ័យ។ អរគុណ!`;
+            msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${t('contactSuccess') || 'សាររបស់អ្នកត្រូវបានផ្ញើដោយជោគជ័យ។ អរគុណ!'}`;
             form.reset();
             resetBtn();
             return;
@@ -5708,11 +5790,11 @@ async function handleContactSubmit(e) {
                 msgDiv.style.display = 'block';
                 if (response.success) {
                     msgDiv.className = 'form-message success';
-                    msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${response.message}`;
+                    msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${response.message || t('contactSuccess')}`;
                     form.reset();
                 } else {
                     msgDiv.className = 'form-message error';
-                    msgDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${response.message}`;
+                    msgDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${response.message || t('contactError')}`;
                 }
                 resetBtn();
             })
@@ -5720,7 +5802,7 @@ async function handleContactSubmit(e) {
                 console.error(err);
                 msgDiv.style.display = 'block';
                 msgDiv.className = 'form-message error';
-                msgDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ Server។`;
+                msgDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${t('contactError') || 'មានបញ្ហាក្នុងការផ្ញើសារ។'}`;
                 resetBtn();
             })
             .submitContactForm(formData);
@@ -5761,7 +5843,7 @@ async function handleContactSubmit(e) {
 
             msgDiv.style.display = 'block';
             msgDiv.className = 'form-message success';
-            msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> សាររបស់អ្នកត្រូវបានផ្ញើដោយជោគជ័យ។ អរគុណ!`;
+            msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${t('contactSuccess') || 'សាររបស់អ្នកត្រូវបានផ្ញើដោយជោគជ័យ។ អរគុណ!'}`;
             form.reset();
             resetBtn();
         })
@@ -5769,7 +5851,7 @@ async function handleContactSubmit(e) {
             console.error('API Error:', err);
             msgDiv.style.display = 'block';
             msgDiv.className = 'form-message error';
-            msgDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> មានបញ្ហាក្នុងការផ្ញើសារ។`;
+            msgDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${t('contactError') || 'មានបញ្ហាក្នុងការផ្ញើសារ។'}`;
             resetBtn();
         });
     }
