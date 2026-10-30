@@ -3293,31 +3293,47 @@ body.dark-mode .pagination-ellipsis {
     position: relative;
     display: flex;
     align-items: center;
+    width: 100%;
 }
 .input-with-icon i:first-child {
     position: absolute;
     left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--text-muted);
     font-size: 0.95rem;
     pointer-events: none;
+    z-index: 2;
 }
 .input-with-icon .form-control {
-    padding-left: 38px !important;
-    padding-right: 38px !important;
+    padding-left: 40px !important;
+    padding-right: 44px !important;
     width: 100%;
+    box-sizing: border-box;
 }
 .btn-toggle-pwd {
     position: absolute;
     right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    font-size: 0.95rem;
-    padding: 4px;
+    font-size: 1rem;
+    padding: 0;
+    border-radius: 6px;
+    transition: color var(--transition-fast), background var(--transition-fast);
+    z-index: 3;
 }
 .btn-toggle-pwd:hover {
     color: var(--primary);
+    background: rgba(37, 99, 235, 0.1);
 }
 .auth-submit-btn {
     width: 100%;

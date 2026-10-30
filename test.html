@@ -884,8 +884,13 @@
             <h2>សូមបញ្ចូលលេខសម្ងាត់</h2>
             <p class="text-muted" style="margin-bottom: 20px;">ដើម្បីចូលទៅកាន់ផ្ទាំងគ្រប់គ្រងទិន្នន័យ</p>
             <form id="adminLoginForm">
-                <input type="password" id="adminPassword" class="form-control" placeholder="លេខសម្ងាត់ (Password)"
-                    required>
+                <div style="position: relative; margin-bottom: 15px;">
+                    <input type="password" id="adminPassword" class="form-control" placeholder="លេខសម្ងាត់ (Password)"
+                        required style="padding-right: 44px; box-sizing: border-box; width: 100%;">
+                    <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('adminPassword', this)" aria-label="បង្ហាញ/លាក់លេខសម្ងាត់" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 0;">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-sign-in-alt"></i> ចូលប្រព័ន្ធ
                 </button>
@@ -911,7 +916,8 @@
 
             <div class="sidebar-nav">
                 <div class="nav-item active" onclick="switchView('view-dashboard', this)"><i class="fas fa-home"></i>
-                    <span data-i18n="dashboard">ផ្ទាំងដើម</span></div>
+                    <span data-i18n="dashboard">ផ្ទាំងដើម</span>
+                </div>
                 <div class="nav-item" onclick="switchView('view-library', this)"><i class="fas fa-book"></i> <span
                         data-i18n="library">គ្រប់គ្រងបណ្ណាល័យ</span></div>
                 <div class="nav-item" onclick="switchView('view-news', this)"><i class="fas fa-newspaper"></i> <span
@@ -979,7 +985,8 @@
                     <div class="profile-dropdown" id="profileDropdown">
                         <div class="profile-dropdown-item"
                             onclick="event.stopPropagation(); switchView('view-settings', document.querySelector('.nav-item:nth-child(9)')); toggleProfileDropdown();">
-                            <i class="fas fa-cog"></i> ការកំណត់គណនី</div>
+                            <i class="fas fa-cog"></i> ការកំណត់គណនី
+                        </div>
                         <div class="profile-dropdown-item" onclick="event.stopPropagation(); adminLogout()"><i
                                 class="fas fa-sign-out-alt"></i> ចាកចេញពីគណនី</div>
                     </div>
@@ -1673,6 +1680,14 @@
     </div>
 
     <script>
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.innerHTML = isPassword ? '<i class="far fa-eye-slash"></i>' : '<i class="far fa-eye"></i>';
+        }
+
         function switchView(viewId, navElement) {
             document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
             navElement.classList.add('active');
@@ -1808,8 +1823,6 @@
                 }).deleteBookRow(rowNum);
             }
         }
-
-
 
         function saveSettings() {
             const name = document.getElementById('settingSchoolName').value;

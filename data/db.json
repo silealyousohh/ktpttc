@@ -12,12 +12,14 @@
     "historyThumb2": "https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link",
     "historyThumb3": "https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link",
     "telegramBotToken": "8770191833:AAG3-CzBO0DI7BrktIqONIfKAAvvbh2pqBY",
-    "telegramChatId": "",
+    "telegramChatId": "441408236",
     "telegramNotifyOnMessage": true,
     "telegramNotifyOnBackup": true,
     "telegramSubscribers": [
       "7400913188",
-      "5929157778"
+      "5929157778",
+      "441408236",
+      "1221141403"
     ],
     "telegramCustomCommands": [
       {
@@ -42,14 +44,27 @@
         "updatedAt": "2026-10-20T07:59:16.202Z"
       }
     ],
-    "telegramSystemCommands": {}
+    "telegramSystemCommands": {
+      "status": {
+        "enabled": false,
+        "description": "ស្ថានភាពប្រព័ន្ធ និងគេហទំព័រ"
+      },
+      "news": {
+        "enabled": true,
+        "description": "ព័ត៌មាន និងសេចក្តីជូនដំណឹង"
+      },
+      "messages": {
+        "enabled": false,
+        "description": "សារពីគេហទំព័រ"
+      }
+    }
   },
   "adminProfile": {
     "name": "Admin",
     "avatar": ""
   },
   "adminPassword": "611431022",
-  "visitorCount": 294,
+  "visitorCount": 305,
   "news": [
     {
       "title": "វគ្គសិក្សា៖ ការប្រើប្រាស់បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និង AI ក្នុងការបង្រៀន",
@@ -922,6 +937,14 @@
     }
   ],
   "readers": [
+    {
+      "id": "1793348387072",
+      "name": "យាន ប៊ុនលេង",
+      "username": "0972627553",
+      "role": "teacher",
+      "password": "04071995leng",
+      "createdAt": "2026-10-30T08:19:47.072Z"
+    },
     {
       "id": "1793331643892",
       "name": "យូសុះ ស៊ីលាល",
