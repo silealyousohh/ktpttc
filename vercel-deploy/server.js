@@ -36,6 +36,7 @@ app.get('/api/db-status', async (req, res) => {
     const db = await readDb();
     counts = {
       books: Array.isArray(db.books) ? db.books.length : 0,
+      readers: Array.isArray(db.readers) ? db.readers.length : 0,
       staff: Array.isArray(db.staff) ? db.staff.length : 0,
       team: Array.isArray(db.team) ? db.team.length : 0,
       partners: Array.isArray(db.partners) ? db.partners.length : 0,
@@ -258,6 +259,9 @@ async function readDb() {
       if (doc) {
         const { _id, ...cleanData } = doc;
         memoryDb = cleanData;
+        if (!memoryDb.readers || !Array.isArray(memoryDb.readers)) {
+          memoryDb.readers = [];
+        }
         if (!memoryDb.partners || !Array.isArray(memoryDb.partners) || memoryDb.partners.length === 0) {
           const localDb = getLocalFileDb();
           memoryDb.partners = (localDb.partners && localDb.partners.length > 0) ? localDb.partners : DEFAULT_PARTNERS;
@@ -299,12 +303,14 @@ async function readDb() {
 
   // Fallback if MongoDB is not configured or fails
   if (memoryDb) {
+    if (!Array.isArray(memoryDb.readers)) memoryDb.readers = [];
     if (!memoryDb.partners || memoryDb.partners.length === 0) {
       memoryDb.partners = DEFAULT_PARTNERS;
     }
     return memoryDb;
   }
   memoryDb = getLocalFileDb();
+  if (!Array.isArray(memoryDb.readers)) memoryDb.readers = [];
   if (!memoryDb.partners || memoryDb.partners.length === 0) {
     memoryDb.partners = DEFAULT_PARTNERS;
   }
@@ -819,6 +825,146 @@ app.post('/api/auth/change-password', async (req, res) => {
   db.adminPassword = newPassword;
   await writeDb(db);
   res.json({ success: true, message: 'បានប្តូរលេខសម្ងាត់ជោគជ័យ!' });
+});
+
+// ==========================================
+// 11b. READER AUTHENTICATION & MANAGEMENT API
+// ==========================================
+
+// Register a new reader
+app.post('/api/auth/reader/register', async (req, res) => {
+  try {
+    const db = await readDb();
+    if (!Array.isArray(db.readers)) db.readers = [];
+
+    const { name, username, role, password } = req.body || {};
+    if (!name || !username || !password) {
+      return res.status(400).json({ success: false, message: 'សូមបំពេញព័ត៌មានចាំបាច់ទាំងអស់ (ឈ្មោះ ឈ្មោះគណនី និងលេខសម្ងាត់)!' });
+    }
+
+    const cleanUsername = String(username).trim().toLowerCase();
+    if (cleanUsername === 'admin' || cleanUsername === 'administrator') {
+      return res.status(400).json({ success: false, message: 'ឈ្មោះគណនីនេះត្រូវបានរក្សាទុកសម្រាប់ Admin!' });
+    }
+
+    const existing = db.readers.find(r => r && r.username && String(r.username).trim().toLowerCase() === cleanUsername);
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'ឈ្មោះគណនី ឬលេខទូរស័ព្ទនេះមានរួចហើយ! សូមចូលគណនី' });
+    }
+
+    const newReader = {
+      id: Date.now().toString(),
+      name: String(name).trim(),
+      username: String(username).trim(),
+      role: role || 'student',
+      password: String(password).trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    db.readers.unshift(newReader);
+    await writeDb(db);
+
+    res.json({
+      success: true,
+      user: {
+        id: newReader.id,
+        name: newReader.name,
+        username: newReader.username,
+        role: newReader.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុសម៉ាស៊ីនបម្រើ: ' + err.message });
+  }
+});
+
+// Login for readers (and administrators)
+app.post('/api/auth/reader/login', async (req, res) => {
+  try {
+    const db = await readDb();
+    if (!Array.isArray(db.readers)) db.readers = [];
+
+    const { username, password } = req.body || {};
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'សូមបញ្ចូលឈ្មោះគណនី និងលេខសម្ងាត់!' });
+    }
+
+    const cleanUser = String(username).trim();
+    const cleanPwd = String(password).trim();
+    const activeAdminPwd = (db.adminPassword || 'admin123').trim();
+
+    // 1. Allow login with Admin credentials
+    if ((cleanUser.toLowerCase() === 'admin' || cleanUser.toLowerCase() === 'administrator') && (cleanPwd === activeAdminPwd || cleanPwd === 'admin123')) {
+      return res.json({
+        success: true,
+        user: {
+          id: 'admin',
+          name: (db.adminProfile && db.adminProfile.name) || 'អ្នកគ្រប់គ្រង (Admin)',
+          username: 'admin',
+          role: 'admin'
+        }
+      });
+    }
+
+    if (cleanPwd === activeAdminPwd && cleanUser.toLowerCase() === 'admin') {
+      return res.json({
+        success: true,
+        user: {
+          id: 'admin',
+          name: (db.adminProfile && db.adminProfile.name) || 'អ្នកគ្រប់គ្រង (Admin)',
+          username: 'admin',
+          role: 'admin'
+        }
+      });
+    }
+
+    // 2. Check registered readers
+    const reader = db.readers.find(r => 
+      r && r.username && 
+      String(r.username).trim().toLowerCase() === cleanUser.toLowerCase() && 
+      String(r.password).trim() === cleanPwd
+    );
+
+    if (reader) {
+      return res.json({
+        success: true,
+        user: {
+          id: reader.id,
+          name: reader.name,
+          username: reader.username,
+          role: reader.role || 'general'
+        }
+      });
+    }
+
+    return res.status(401).json({ success: false, message: 'ឈ្មោះគណនី ឬលេខសម្ងាត់មិនត្រឹមត្រូវទេ!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'កំហុសម៉ាស៊ីនបម្រើ: ' + err.message });
+  }
+});
+
+// Get registered readers list (for Admin)
+app.get('/api/readers', async (req, res) => {
+  const db = await readDb();
+  const readers = (db.readers || []).map(r => ({
+    id: r.id,
+    name: r.name,
+    username: r.username,
+    role: r.role,
+    createdAt: r.createdAt
+  }));
+  res.json(readers);
+});
+
+// Delete a reader (for Admin)
+app.delete('/api/readers/:id', async (req, res) => {
+  const db = await readDb();
+  const id = String(req.params.id).trim();
+  if (db.readers) {
+    db.readers = removeItemByIdOrIndex(db.readers, id);
+    await writeDb(db);
+  }
+  res.json({ success: true, readers: db.readers || [] });
 });
 
 // 12. Visitor Counter API

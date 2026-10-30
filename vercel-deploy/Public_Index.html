@@ -2992,6 +2992,395 @@ body.dark-mode .pagination-ellipsis {
     filter: brightness(1.1);
     transform: translateY(-2px);
 }
+
+/* ==========================================================================
+   Reader Auth & Book Download Styling
+   ========================================================================== */
+/* Book Card Action Buttons (Read & Download) */
+.book-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    align-items: center;
+}
+.btn-card-read {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+.btn-card-download {
+    background: #059669 !important;
+    border: 1px solid #059669 !important;
+    color: #ffffff !important;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.btn-card-download:hover {
+    background: #047857 !important;
+    border-color: #047857 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+}
+
+/* Home Featured Book Download Button */
+.btn-home-download {
+    background: #059669;
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.btn-home-download:hover {
+    background: #047857;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4);
+}
+
+/* Reader Modal Download Button */
+.btn-download-modal {
+    background: #059669;
+    color: #ffffff;
+    border: none;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+.btn-download-modal:hover {
+    background: #047857;
+    transform: translateY(-1px);
+}
+
+/* Top Bar Auth Badge & Login Button */
+.top-bar-auth {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.btn-topbar-login {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all var(--transition-fast);
+}
+.btn-topbar-login:hover {
+    background: #ffffff;
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+.user-chip {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 20px;
+    padding: 3px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #ffffff;
+}
+.user-chip-name {
+    font-weight: 600;
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.user-chip-role {
+    font-size: 0.68rem;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 1px 7px;
+    border-radius: 10px;
+}
+.btn-chip-logout {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 0.85rem;
+    opacity: 0.85;
+    transition: all var(--transition-fast);
+}
+.btn-chip-logout:hover {
+    opacity: 1;
+    color: #fca5a5;
+    transform: scale(1.1);
+}
+
+/* Mobile Navigation Auth Badge */
+.mobile-auth-switch {
+    display: none;
+    margin-bottom: 12px;
+}
+@media (max-width: 768px) {
+    .mobile-auth-switch {
+        display: block;
+    }
+}
+.mobile-auth-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.mobile-auth-login-btn {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+/* Reader Auth Modal Styling */
+.auth-modal-container {
+    max-width: 440px !important;
+    width: 92% !important;
+    height: auto !important;
+    max-height: 92vh !important;
+    background: var(--bg-surface) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid var(--border) !important;
+    overflow-y: auto !important;
+    animation: authModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes authModalPop {
+    from { opacity: 0; transform: scale(0.93) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.auth-modal-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.auth-header-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.auth-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+.auth-title {
+    font-size: 1.12rem;
+    font-weight: 700;
+    margin: 0 0 2px 0;
+    color: var(--text-main);
+}
+.auth-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.35;
+}
+.auth-notice-banner {
+    margin: 14px 22px 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.22);
+    color: var(--primary);
+    font-size: 0.86rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.auth-tabs {
+    display: flex;
+    margin: 14px 22px 0;
+    background: var(--bg-main);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    gap: 4px;
+}
+.auth-tab {
+    flex: 1;
+    padding: 9px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.88rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.auth-tab.active {
+    background: var(--bg-surface);
+    color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.auth-modal-body {
+    padding: 18px 22px 24px;
+}
+.auth-modal-body .form-group {
+    margin-bottom: 14px;
+}
+.auth-modal-body .form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.input-with-icon i:first-child {
+    position: absolute;
+    left: 14px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    pointer-events: none;
+}
+.input-with-icon .form-control {
+    padding-left: 38px !important;
+    padding-right: 38px !important;
+    width: 100%;
+}
+.btn-toggle-pwd {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 4px;
+}
+.btn-toggle-pwd:hover {
+    color: var(--primary);
+}
+.auth-submit-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 11px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.auth-form-footer {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.auth-form-footer a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 4px;
+}
+.auth-form-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Toast Floating Notification Container */
+.toast-portal-container {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+.toast-portal-msg {
+    min-width: 280px;
+    max-width: 420px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    background: #1e293b;
+    color: #ffffff;
+    font-size: 0.9rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+    animation: toastPortalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    border-left: 4px solid var(--primary);
+}
+.toast-portal-msg.success { border-left-color: #10b981; }
+.toast-portal-msg.error { border-left-color: #ef4444; }
+.toast-portal-msg.warning { border-left-color: #f59e0b; }
+@keyframes toastPortalSlide {
+    from { opacity: 0; transform: translateY(18px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
 </style>
 
 </head>
@@ -3011,6 +3400,7 @@ body.dark-mode .pagination-ellipsis {
                     </span>
                 </div>
                 <div class="top-bar-right">
+                    <div id="topBarAuthArea" class="top-bar-auth"></div>
                     <div class="lang-switch">
                         <button id="btn-kh" class="lang-btn active" onclick="setLanguage('kh')">🇰🇭 KH</button>
                         <button id="btn-en" class="lang-btn" onclick="setLanguage('en')">🇬🇧 EN</button>
@@ -3059,6 +3449,8 @@ body.dark-mode .pagination-ellipsis {
                         <a href="https://t.me/ktpttc_bot" target="_blank" id="navTelegramLink" title="KTPTTC Telegram Bot" class="nav-social-btn"><i class="fab fa-telegram-plane"></i></a>
                         <a href="https://www.youtube.com/@ktpttc" target="_blank" class="nav-social-btn"><i class="fab fa-youtube"></i></a>
                     </div>
+                    
+                    <div class="mobile-auth-switch" id="mobileAuthSwitch"></div>
                     
                     <div class="mobile-lang-switch">
                         <button class="lang-btn btn-kh active" onclick="setLanguage('kh')">🇰🇭 ខ្មែរ (KH)</button>
@@ -3992,9 +4384,12 @@ body.dark-mode .pagination-ellipsis {
     <!-- Book Reader Modal -->
     <div id="bookReaderModal" class="modal-overlay" onclick="if(event.target === this) closeBookModal()">
         <div class="modal-container" style="max-width: 900px; width: 92%; height: 85vh; display: flex; flex-direction: column;">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 id="bookModalTitle" style="font-size: 1.1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;" data-lang="readBook">អានសៀវភៅ</h2>
-                <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                <h2 id="bookModalTitle" style="font-size: 1.1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%;" data-lang="readBook">អានសៀវភៅ</h2>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button id="bookModalDownloadBtn" type="button" onclick="handleBookModalDownload()" class="btn btn-download-modal" title="ទាញយក">
+                        <i class="fas fa-download"></i> <span data-lang="downloadBook">ទាញយក</span>
+                    </button>
                     <a id="bookModalExternalLink" href="#" target="_blank" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem; text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
                         <i class="fas fa-external-link-alt"></i> <span data-lang="openInNewTab">បើកក្នុង Tab ថ្មី</span>
                     </a>
@@ -4006,6 +4401,119 @@ body.dark-mode .pagination-ellipsis {
             </div>
         </div>
     </div>
+
+    <!-- Reader Authentication Modal -->
+    <div id="readerAuthModal" class="modal-overlay" onclick="if(event.target === this) closeAuthModal()">
+        <div class="modal-container auth-modal-container">
+            <div class="modal-header auth-modal-header">
+                <div class="auth-header-title-wrap">
+                    <div class="auth-icon-badge"><i class="fas fa-book-reader"></i></div>
+                    <div>
+                        <h3 id="authModalTitle" class="auth-title" data-lang="loginRequiredTitle">តម្រូវឱ្យចូលគណនី</h3>
+                        <p id="authModalSubtitle" class="auth-subtitle" data-lang="loginOrRegisterPrompt">ចូលប្រើប្រាស់គណនីរបស់អ្នកដើម្បីអាន ឬទាញយកសៀវភៅ</p>
+                    </div>
+                </div>
+                <button class="btn-close" onclick="closeAuthModal()" aria-label="Close">&times;</button>
+            </div>
+
+            <!-- Dynamic Context Notice -->
+            <div id="authNoticeBanner" class="auth-notice-banner" style="display: none;">
+                <i class="fas fa-info-circle"></i>
+                <span id="authNoticeText"></span>
+            </div>
+
+            <!-- Auth Tabs Toggle -->
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab active" id="tabBtnLogin" onclick="switchAuthTab('login')">
+                    <i class="fas fa-sign-in-alt"></i> <span data-lang="tabLogin">ចូលគណនី</span>
+                </button>
+                <button type="button" class="auth-tab" id="tabBtnRegister" onclick="switchAuthTab('register')">
+                    <i class="fas fa-user-plus"></i> <span data-lang="tabRegister">ចុះឈ្មោះ</span>
+                </button>
+            </div>
+
+            <div class="modal-body auth-modal-body">
+                <!-- Login Form -->
+                <form id="readerLoginForm" onsubmit="handleReaderLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label" data-lang="userIdentifierLabel">ឈ្មោះគណនី ឬលេខទូរស័ព្ទ</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="loginUsername" class="form-control" placeholder="admin, 099xxxxxx ឬ ឈ្មោះគណនី" required autocomplete="username">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-lang="passwordLabel">លេខសម្ងាត់</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('loginPassword', this)">
+                                <i class="far fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="loginErrorMsg" class="form-message error" style="display: none; margin-top: 10px; padding: 10px 14px; font-size: 0.88rem;"></div>
+                    <button type="submit" id="btnReaderLoginSubmit" class="btn btn-primary auth-submit-btn">
+                        <i class="fas fa-sign-in-alt"></i> <span data-lang="btnDoLogin">ចូលប្រព័ន្ធ</span>
+                    </button>
+                    <div class="auth-form-footer">
+                        <span data-lang="dontHaveAccount">មិនទាន់មានគណនី?</span> 
+                        <a href="javascript:void(0)" onclick="switchAuthTab('register')" data-lang="tabRegister">ចុះឈ្មោះទីនេះ</a>
+                    </div>
+                </form>
+
+                <!-- Register Form -->
+                <form id="readerRegisterForm" style="display: none;" onsubmit="handleReaderRegister(event)">
+                    <div class="form-group">
+                        <label class="form-label" data-lang="fullNameLabel">ឈ្មោះពេញ</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-id-card"></i>
+                            <input type="text" id="regFullName" class="form-control" placeholder="ឧទាហរណ៍៖ សុខ សាន" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-lang="userIdentifierLabel">ឈ្មោះគណនី ឬលេខទូរស័ព្ទ</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="regUsername" class="form-control" placeholder="ឧទាហរណ៍៖ sokhsan ឬ 099992881" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-lang="roleLabel">តួនាទី / ស្ថានភាព</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user-tag"></i>
+                            <select id="regRole" class="form-control" style="font-weight: 500;">
+                                <option value="student" data-lang="roleStudent">គរុសិស្ស / និស្សិត</option>
+                                <option value="teacher" data-lang="roleTeacher">គ្រូឧទ្ទេស / បុគ្គលិក</option>
+                                <option value="general" data-lang="roleGeneral">អ្នកអានទូទៅ</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-lang="passwordReqLabel">លេខសម្ងាត់ (យ៉ាងតិច ៤ ខ្ទង់)</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="regPassword" class="form-control" placeholder="••••••••" required minlength="4">
+                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('regPassword', this)">
+                                <i class="far fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="regErrorMsg" class="form-message error" style="display: none; margin-top: 10px; padding: 10px 14px; font-size: 0.88rem;"></div>
+                    <button type="submit" id="btnReaderRegSubmit" class="btn btn-primary auth-submit-btn" style="background: #059669; border-color: #059669;">
+                        <i class="fas fa-user-plus"></i> <span data-lang="btnDoRegister">ចុះឈ្មោះ</span>
+                    </button>
+                    <div class="auth-form-footer">
+                        <span data-lang="alreadyHaveAccount">មានគណនីរួចហើយ?</span> 
+                        <a href="javascript:void(0)" onclick="switchAuthTab('login')" data-lang="tabLogin">ចូលគណនីទីនេះ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Floating Portal -->
+    <div id="toastPortalContainer" class="toast-portal-container"></div>
 
     <!-- News Detail Modal -->
     <div id="newsDetailModal" class="modal-overlay" onclick="if(event.target === this) closeNewsModal()">
@@ -4501,7 +5009,35 @@ const i18n = {
         loadingStructure: "កំពុងផ្ទុកទិន្នន័យរចនាសម្ព័ន្ធ...",
         contactSuccess: "សាររបស់អ្នកត្រូវបានផ្ញើដោយជោគជ័យ។ អរគុណ!",
         contactError: "មានបញ្ហាក្នុងការផ្ញើសារ។ សូមព្យាយាមម្តងទៀត!",
-        openInNewTab: "បើកក្នុង Tab ថ្មី"
+        openInNewTab: "បើកក្នុង Tab ថ្មី",
+        downloadBook: "ទាញយក",
+        login: "ចូលគណនី",
+        logout: "ចាកចេញ",
+        loginRequiredTitle: "តម្រូវឱ្យចូលគណនី",
+        loginOrRegisterPrompt: "ចូលប្រើប្រាស់គណនីរបស់អ្នកដើម្បីអាន ឬទាញយកសៀវភៅ",
+        loginNoticeToRead: "សូមចូលគណនីជាមុនសិន ដើម្បីអានសៀវភៅនេះ!",
+        loginNoticeToDownload: "សូមចូលគណនីជាមុនសិន ដើម្បីទាញយកសៀវភៅនេះ!",
+        tabLogin: "ចូលគណនី",
+        tabRegister: "ចុះឈ្មោះ",
+        fullNameLabel: "ឈ្មោះពេញ",
+        userIdentifierLabel: "ឈ្មោះគណនី ឬលេខទូរស័ព្ទ",
+        passwordLabel: "លេខសម្ងាត់",
+        passwordReqLabel: "លេខសម្ងាត់ (យ៉ាងតិច ៤ ខ្ទង់)",
+        roleLabel: "តួនាទី / ស្ថានភាព",
+        roleStudent: "គរុសិស្ស / និស្សិត",
+        roleTeacher: "គ្រូឧទ្ទេស / បុគ្គលិក",
+        roleGeneral: "អ្នកអានទូទៅ",
+        btnDoLogin: "ចូលប្រព័ន្ធ",
+        btnDoRegister: "ចុះឈ្មោះ",
+        loggingIn: "កំពុងចូលប្រព័ន្ធ...",
+        registering: "កំពុងចុះឈ្មោះ...",
+        dontHaveAccount: "មិនទាន់មានគណនី?",
+        alreadyHaveAccount: "មានគណនីរួចហើយ?",
+        loginSuccess: "ចូលគណនីបានជោគជ័យ!",
+        registerSuccess: "ចុះឈ្មោះគណនីបានជោគជ័យ!",
+        logoutSuccess: "បានចាកចេញពីគណនី!",
+        downloadStarting: "កំពុងចាប់ផ្តើមទាញយក...",
+        noDownloadLink: "មិនមានតំណភ្ជាប់ទាញយកសម្រាប់សៀវភៅនេះទេ"
     },
     en: {
         schoolName: "Kratié Provincial Teacher Training Center",
@@ -4600,7 +5136,35 @@ const i18n = {
         loadingStructure: "Loading organizational structure...",
         contactSuccess: "Your message has been sent successfully. Thank you!",
         contactError: "An error occurred while sending your message. Please try again!",
-        openInNewTab: "Open in New Tab"
+        openInNewTab: "Open in New Tab",
+        downloadBook: "Download",
+        login: "Log In",
+        logout: "Log Out",
+        loginRequiredTitle: "Login Required",
+        loginOrRegisterPrompt: "Log in to your account to read or download books",
+        loginNoticeToRead: "Please log in first to read this book!",
+        loginNoticeToDownload: "Please log in first to download this book!",
+        tabLogin: "Log In",
+        tabRegister: "Register",
+        fullNameLabel: "Full Name",
+        userIdentifierLabel: "Username or Phone Number",
+        passwordLabel: "Password",
+        passwordReqLabel: "Password (min. 4 characters)",
+        roleLabel: "Role / Status",
+        roleStudent: "Trainee / Student",
+        roleTeacher: "Teacher Educator / Staff",
+        roleGeneral: "General Reader",
+        btnDoLogin: "Log In",
+        btnDoRegister: "Register",
+        loggingIn: "Logging in...",
+        registering: "Registering...",
+        dontHaveAccount: "Don't have an account?",
+        alreadyHaveAccount: "Already have an account?",
+        loginSuccess: "Logged in successfully!",
+        registerSuccess: "Reader account registered successfully!",
+        logoutSuccess: "Logged out successfully!",
+        downloadStarting: "Starting download...",
+        noDownloadLink: "No download link available for this book"
     }
 };
 
@@ -4731,6 +5295,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Initialize Language
     initLanguage();
+    
+    // Initialize Reader Auth UI
+    renderUserAuthUI();
     
     // Fetch School Settings from Node API
     try {
@@ -5039,7 +5606,7 @@ function updateHomeMainBook(book) {
         : `<div class="main-book-cover-placeholder"><i class="fas fa-book-open"></i><span style="font-size: 0.9rem; font-weight: 500;">No Cover</span></div>`;
 
     mainCard.innerHTML = `
-        <div class="main-book-cover-wrap" onclick="openBookModal('${safeTitle}', '${safeLink}')" title="${t('readBook') || 'អានសៀវភៅ'}">
+        <div class="main-book-cover-wrap" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read')" title="${t('readBook') || 'អានសៀវភៅ'}">
             ${coverDisplayHtml}
             <div class="main-book-cover-overlay">
                 <i class="fas fa-book-reader"></i> <span>${t('readBook') || 'អានសៀវភៅ'}</span>
@@ -5062,10 +5629,13 @@ function updateHomeMainBook(book) {
                 ` : ''}
             </div>
             <div class="main-book-actions">
-                <button class="btn btn-primary" onclick="openBookModal('${safeTitle}', '${safeLink}')">
+                <button type="button" class="btn btn-primary" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read')">
                     <i class="fas fa-book-reader"></i> <span>${t('readBook') || 'អានសៀវភៅ'}</span>
                 </button>
-                <button class="btn btn-outline" onclick="navigateTo('library')">
+                <button type="button" class="btn btn-home-download" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'download')" title="${t('downloadBook') || 'ទាញយក'}">
+                    <i class="fas fa-download"></i> <span>${t('downloadBook') || 'ទាញយក'}</span>
+                </button>
+                <button type="button" class="btn btn-outline" onclick="navigateTo('library')">
                     <i class="fas fa-th-large"></i> <span>${t('viewAllBooks') || 'មើលសៀវភៅទាំងអស់'}</span>
                 </button>
             </div>
@@ -5184,10 +5754,16 @@ function setLanguage(lang) {
         s.textContent = t('readMore');
     });
 
-    // Update read-book buttons if library cards are rendered
-    document.querySelectorAll('#books-grid .btn-outline').forEach(btn => {
-        btn.innerHTML = `<i class="fas fa-book-reader"></i> ${t('readBook')}`;
+    // Update read-book & download buttons if library cards are rendered
+    document.querySelectorAll('#books-grid .btn-card-read').forEach(btn => {
+        btn.innerHTML = `<i class="fas fa-book-reader"></i> <span>${t('readBook')}</span>`;
     });
+    document.querySelectorAll('#books-grid .btn-card-download').forEach(btn => {
+        btn.innerHTML = `<i class="fas fa-download"></i> <span>${t('downloadBook')}</span>`;
+    });
+
+    // Update user auth UI
+    if (typeof renderUserAuthUI === 'function') renderUserAuthUI();
 }
 function t(key) {
     return (i18n[currentLang] && i18n[currentLang][key]) ? i18n[currentLang][key] : (i18n.kh[key] || key);
@@ -5616,17 +6192,25 @@ function renderBooksPage(shouldScroll = false) {
             : `<i class="fas fa-book-open" style="z-index:0;"></i>
                <span class="book-category" style="z-index:1;">${book.category}${gradeBadge}</span>`;
 
+        const safeTitle = (book.title || 'សៀវភៅ').replace(/'/g, "\\'");
+        const safeLink = (book.link || '#').replace(/'/g, "\\'");
+
         card.innerHTML = `
-            <div class="book-cover">
+            <div class="book-cover" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read')" style="cursor: pointer;" title="${t('readBook') || 'អានសៀវភៅ'}">
                 ${coverHtml}
             </div>
             <div class="book-info">
-                <h3 class="book-title">${book.title}</h3>
+                <h3 class="book-title">${book.title || 'សៀវភៅ'}</h3>
                 <p class="book-author"><i class="fas fa-user-edit"></i> ${book.author || 'MoEYS'}</p>
-                <div class="book-code">Code: ${book.code} ${book.grade ? '| ' + book.grade : ''}</div>
-                <button onclick="openBookModal('${book.title.replace(/'/g, "\\'")}', '${book.link}')" class="btn btn-outline" style="width: 100%; margin-top: 15px; padding: 8px;">
-                    <i class="fas fa-book-reader"></i> ${t('readBook')}
-                </button>
+                <div class="book-code">Code: ${book.code || ''} ${book.grade ? '| ' + book.grade : ''}</div>
+                <div class="book-card-actions">
+                    <button type="button" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read')" class="btn btn-outline btn-card-read">
+                        <i class="fas fa-book-reader"></i> <span>${t('readBook')}</span>
+                    </button>
+                    <button type="button" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'download')" class="btn btn-primary btn-card-download" title="${t('downloadBook')}">
+                        <i class="fas fa-download"></i> <span>${t('downloadBook')}</span>
+                    </button>
+                </div>
             </div>
         `;
         grid.appendChild(card);
@@ -5862,12 +6446,163 @@ async function handleContactSubmit(e) {
     }
 }
 
-// --- Book Reader Modal Functions ---
+// ==========================================================================
+// Reader Authentication & Book Download System
+// ==========================================================================
+let pendingBookAction = null; // Stores { title, link, action: 'read' | 'download' }
+let currentReadingBook = null; // Stores { title, link }
+
+// Check if reader or admin is logged in
+function isReaderLoggedIn() {
+    try {
+        const u = localStorage.getItem('ktpttc_reader_user');
+        if (!u) return false;
+        const parsed = JSON.parse(u);
+        return (parsed && (parsed.id || parsed.username)) ? parsed : false;
+    } catch(e) {
+        return false;
+    }
+}
+
+// Get logged-in reader info
+function getReaderUser() {
+    return isReaderLoggedIn();
+}
+
+// Toast notification helper
+function showToast(message, type = 'info', duration = 3500) {
+    const container = document.getElementById('toastPortalContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast-portal-msg ${type}`;
+    
+    let icon = 'fa-info-circle';
+    if (type === 'success') icon = 'fa-check-circle';
+    if (type === 'error') icon = 'fa-exclamation-circle';
+    if (type === 'warning') icon = 'fa-exclamation-triangle';
+
+    toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(12px) scale(0.96)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 300);
+    }, duration);
+}
+
+// Extract Google Drive download URL
+function getDriveDownloadUrl(url) {
+    if (!url || typeof url !== 'string' || url === '#' || url === '') {
+        return null;
+    }
+    url = url.trim();
+
+    let fileId = null;
+    const dMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (dMatch && dMatch[1] && dMatch[1] !== 'undefined') {
+        fileId = dMatch[1];
+    }
+    if (!fileId) {
+        const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
+        if (idMatch && idMatch[1] && idMatch[1] !== 'undefined') {
+            fileId = idMatch[1];
+        }
+    }
+    if (!fileId && /^[a-zA-Z0-9_-]{25,50}$/.test(url)) {
+        fileId = url;
+    }
+
+    if (fileId) {
+        return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    }
+
+    return url;
+}
+
+// Download book file
+function downloadBookFile(title, url) {
+    if (!isReaderLoggedIn()) {
+        pendingBookAction = { title, link: url, action: 'download' };
+        openAuthModal('download', title);
+        return;
+    }
+
+    if (!url || url === '#' || url === '') {
+        showToast(t('noDownloadLink') || 'មិនមានតំណភ្ជាប់ទាញយកសម្រាប់សៀវភៅនេះទេ', 'warning');
+        return;
+    }
+
+    const downloadUrl = getDriveDownloadUrl(url);
+    if (!downloadUrl) {
+        showToast(t('noDownloadLink') || 'មិនមានតំណភ្ជាប់ទាញយកសម្រាប់សៀវភៅនេះទេ', 'warning');
+        return;
+    }
+
+    showToast((t('downloadStarting') || 'កំពុងចាប់ផ្តើមទាញយក...') + ` ${title}`, 'success');
+
+    // Trigger download in new window/tab safely
+    const win = window.open(downloadUrl, '_blank');
+    if (!win) {
+        // Fallback to link click if popup blocked
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.setAttribute('download', (title || 'Book') + '.pdf');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
+// Handle Book Action (Requires Login for both read & download)
+function handleBookAction(title, link, action = 'read') {
+    const user = isReaderLoggedIn();
+    if (!user) {
+        pendingBookAction = { title, link, action };
+        openAuthModal(action, title);
+        return;
+    }
+
+    if (action === 'read') {
+        openBookModal(title, link);
+    } else if (action === 'download') {
+        downloadBookFile(title, link);
+    }
+}
+
+// Handle Download from inside Book Reader Modal
+function handleBookModalDownload() {
+    if (!currentReadingBook) return;
+    if (!isReaderLoggedIn()) {
+        pendingBookAction = { title: currentReadingBook.title, link: currentReadingBook.link, action: 'download' };
+        openAuthModal('download', currentReadingBook.title);
+        return;
+    }
+    downloadBookFile(currentReadingBook.title, currentReadingBook.link);
+}
+
+// --- Book Reader Modal Functions (Protected) ---
 function openBookModal(title, url) {
+    // Enforce login requirement
+    if (!isReaderLoggedIn()) {
+        pendingBookAction = { title, link: url, action: 'read' };
+        openAuthModal('read', title);
+        return;
+    }
+
+    currentReadingBook = { title, link: url };
+
     const modal = document.getElementById('bookReaderModal');
     const iframe = document.getElementById('bookIframe');
     const titleEl = document.getElementById('bookModalTitle');
     const extBtn = document.getElementById('bookModalExternalLink');
+    const dlBtn = document.getElementById('bookModalDownloadBtn');
     
     titleEl.textContent = title;
     
@@ -5876,10 +6611,14 @@ function openBookModal(title, url) {
         embedUrl = 'about:blank';
         titleEl.textContent += " (មិនមានតំណភ្ជាប់សៀវភៅ)";
         if (extBtn) extBtn.style.display = 'none';
+        if (dlBtn) dlBtn.style.display = 'none';
     } else {
         if (extBtn) {
             extBtn.style.display = 'inline-flex';
             extBtn.href = url;
+        }
+        if (dlBtn) {
+            dlBtn.style.display = 'inline-flex';
         }
     }
     
@@ -5894,6 +6633,264 @@ function closeBookModal() {
     modal.style.display = 'none';
     iframe.src = '';
     document.body.style.overflow = '';
+}
+
+// --- Reader Authentication Modal Functions ---
+function openAuthModal(actionType = 'read', bookTitle = '') {
+    const modal = document.getElementById('readerAuthModal');
+    if (!modal) return;
+
+    const banner = document.getElementById('authNoticeBanner');
+    const bannerText = document.getElementById('authNoticeText');
+
+    if (actionType === 'read') {
+        banner.style.display = 'flex';
+        bannerText.textContent = bookTitle
+            ? (currentLang === 'en' ? `Please log in to read "${bookTitle}"` : `សូមចូលគណនីជាមុនសិន ដើម្បីអានសៀវភៅ «${bookTitle}»`)
+            : (t('loginNoticeToRead') || 'សូមចូលគណនីជាមុនសិន ដើម្បីអានសៀវភៅនេះ!');
+    } else if (actionType === 'download') {
+        banner.style.display = 'flex';
+        bannerText.textContent = bookTitle
+            ? (currentLang === 'en' ? `Please log in to download "${bookTitle}"` : `សូមចូលគណនីជាមុនសិន ដើម្បីទាញយកសៀវភៅ «${bookTitle}»`)
+            : (t('loginNoticeToDownload') || 'សូមចូលគណនីជាមុនសិន ដើម្បីទាញយកសៀវភៅនេះ!');
+    } else {
+        banner.style.display = 'none';
+    }
+
+    switchAuthTab('login');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAuthModal() {
+    const modal = document.getElementById('readerAuthModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+    const loginErr = document.getElementById('loginErrorMsg');
+    const regErr = document.getElementById('regErrorMsg');
+    if (loginErr) loginErr.style.display = 'none';
+    if (regErr) regErr.style.display = 'none';
+    pendingBookAction = null;
+}
+
+function switchAuthTab(tab) {
+    const loginForm = document.getElementById('readerLoginForm');
+    const regForm = document.getElementById('readerRegisterForm');
+    const tabLogin = document.getElementById('tabBtnLogin');
+    const tabReg = document.getElementById('tabBtnRegister');
+
+    if (tab === 'register') {
+        if (loginForm) loginForm.style.display = 'none';
+        if (regForm) regForm.style.display = 'block';
+        if (tabLogin) tabLogin.classList.remove('active');
+        if (tabReg) tabReg.classList.add('active');
+    } else {
+        if (loginForm) loginForm.style.display = 'block';
+        if (regForm) regForm.style.display = 'none';
+        if (tabLogin) tabLogin.classList.add('active');
+        if (tabReg) tabReg.classList.remove('active');
+    }
+}
+
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.innerHTML = isPassword ? '<i class="far fa-eye-slash"></i>' : '<i class="far fa-eye"></i>';
+}
+
+// Handle Reader Login
+async function handleReaderLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnReaderLoginSubmit');
+    const errDiv = document.getElementById('loginErrorMsg');
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+
+    if (errDiv) errDiv.style.display = 'none';
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>${t('loggingIn') || 'កំពុងចូលប្រព័ន្ធ...'}</span>`;
+
+    try {
+        const res = await fetch('/api/auth/reader/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            localStorage.setItem('ktpttc_reader_user', JSON.stringify(data.user));
+            renderUserAuthUI();
+            closeAuthModal();
+            showToast(t('loginSuccess') || 'ចូលគណនីបានជោគជ័យ!', 'success');
+
+            // Resume pending action if present
+            if (pendingBookAction) {
+                const actionToRun = pendingBookAction;
+                pendingBookAction = null;
+                setTimeout(() => {
+                    handleBookAction(actionToRun.title, actionToRun.link, actionToRun.action);
+                }, 200);
+            }
+            return;
+        } else {
+            if (errDiv) {
+                errDiv.style.display = 'block';
+                errDiv.textContent = data.message || (currentLang === 'en' ? 'Incorrect username or password' : 'ឈ្មោះគណនី ឬលេខសម្ងាត់មិនត្រឹមត្រូវទេ!');
+            }
+        }
+    } catch(err) {
+        // Fallback for offline / static preview mode: check admin password
+        const activeAdminPwd = localStorage.getItem('adminPassword') || 'admin123';
+        if (password === activeAdminPwd || password === 'admin123') {
+            const adminUser = { id: 'admin', name: 'Administrator', username: 'admin', role: 'admin' };
+            localStorage.setItem('ktpttc_reader_user', JSON.stringify(adminUser));
+            renderUserAuthUI();
+            closeAuthModal();
+            showToast(t('loginSuccess') || 'ចូលគណនីបានជោគជ័យ!', 'success');
+            if (pendingBookAction) {
+                const actionToRun = pendingBookAction;
+                pendingBookAction = null;
+                setTimeout(() => {
+                    handleBookAction(actionToRun.title, actionToRun.link, actionToRun.action);
+                }, 200);
+            }
+            return;
+        }
+
+        if (errDiv) {
+            errDiv.style.display = 'block';
+            errDiv.textContent = currentLang === 'en' ? 'Network error, please try again' : 'មានបញ្ហាតភ្ជាប់ សូមព្យាយាមម្តងទៀត!';
+        }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+    }
+}
+
+// Handle Reader Registration
+async function handleReaderRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnReaderRegSubmit');
+    const errDiv = document.getElementById('regErrorMsg');
+    const name = document.getElementById('regFullName').value.trim();
+    const username = document.getElementById('regUsername').value.trim();
+    const role = document.getElementById('regRole').value;
+    const password = document.getElementById('regPassword').value.trim();
+
+    if (errDiv) errDiv.style.display = 'none';
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>${t('registering') || 'កំពុងចុះឈ្មោះ...'}</span>`;
+
+    try {
+        const res = await fetch('/api/auth/reader/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, username, role, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            localStorage.setItem('ktpttc_reader_user', JSON.stringify(data.user));
+            renderUserAuthUI();
+            closeAuthModal();
+            showToast(t('registerSuccess') || 'ចុះឈ្មោះគណនីបានជោគជ័យ!', 'success');
+
+            // Resume pending action if present
+            if (pendingBookAction) {
+                const actionToRun = pendingBookAction;
+                pendingBookAction = null;
+                setTimeout(() => {
+                    handleBookAction(actionToRun.title, actionToRun.link, actionToRun.action);
+                }, 200);
+            }
+            return;
+        } else {
+            if (errDiv) {
+                errDiv.style.display = 'block';
+                errDiv.textContent = data.message || (currentLang === 'en' ? 'Registration failed' : 'ការចុះឈ្មោះមិនបានសម្រេច!');
+            }
+        }
+    } catch(err) {
+        if (errDiv) {
+            errDiv.style.display = 'block';
+            errDiv.textContent = currentLang === 'en' ? 'Network error, please try again' : 'មានបញ្ហាតភ្ជាប់ សូមព្យាយាមម្តងទៀត!';
+        }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+    }
+}
+
+// Reader Logout
+function readerLogout() {
+    localStorage.removeItem('ktpttc_reader_user');
+    renderUserAuthUI();
+    closeBookModal();
+    showToast(t('logoutSuccess') || 'បានចាកចេញពីគណនី!', 'info');
+}
+
+// Render User Auth State in Navbar & Mobile Drawer
+function renderUserAuthUI() {
+    const topBarAuth = document.getElementById('topBarAuthArea');
+    const mobileAuth = document.getElementById('mobileAuthSwitch');
+    const user = isReaderLoggedIn();
+
+    const roleName = user ? (
+        user.role === 'admin' ? (currentLang === 'en' ? 'Admin' : 'រដ្ឋបាល') :
+        user.role === 'teacher' ? (currentLang === 'en' ? 'Teacher' : 'គ្រូឧទ្ទេស') :
+        (currentLang === 'en' ? 'Reader' : 'អ្នកអាន')
+    ) : '';
+
+    if (topBarAuth) {
+        if (user) {
+            topBarAuth.innerHTML = `
+                <div class="user-chip" title="${user.name}">
+                    <i class="fas ${user.role === 'admin' ? 'fa-user-shield' : 'fa-user-circle'}"></i>
+                    <span class="user-chip-name">${user.name}</span>
+                    <span class="user-chip-role">${roleName}</span>
+                    <button type="button" class="btn-chip-logout" onclick="readerLogout()" title="${t('logout') || 'ចាកចេញ'}">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            `;
+        } else {
+            topBarAuth.innerHTML = `
+                <button type="button" class="btn-topbar-login" onclick="openAuthModal('general')">
+                    <i class="fas fa-sign-in-alt"></i> <span>${t('login') || 'ចូលគណនី'}</span>
+                </button>
+            `;
+        }
+    }
+
+    if (mobileAuth) {
+        if (user) {
+            mobileAuth.innerHTML = `
+                <div class="mobile-auth-card">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas ${user.role === 'admin' ? 'fa-user-shield' : 'fa-user-circle'}" style="font-size: 1.5rem; color: var(--primary);"></i>
+                        <div>
+                            <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">${user.name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${roleName}</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="readerLogout()" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.8rem;">
+                        <i class="fas fa-sign-out-alt"></i> ${t('logout') || 'ចាកចេញ'}
+                    </button>
+                </div>
+            `;
+        } else {
+            mobileAuth.innerHTML = `
+                <button type="button" class="mobile-auth-login-btn" onclick="toggleMobileMenu(); openAuthModal('general');">
+                    <i class="fas fa-sign-in-alt"></i> <span>${t('login') || 'ចូលគណនី'}</span>
+                </button>
+            `;
+        }
+    }
 }
 
 async function fetchTeam() {

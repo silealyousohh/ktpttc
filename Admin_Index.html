@@ -1558,6 +1558,7 @@
                                 <i class="fas fa-print" style="color: var(--primary);"></i> <span>មើលគំរូបោះពុម្ព (Print Preview)</span>
                             </button>
                             <button class="btn btn-outline" style="width: auto;" onclick="openCategoryModal()"><i class="fas fa-tags"></i> គ្រប់គ្រងប្រភេទ</button>
+                            <button class="btn btn-outline" style="width: auto; display: flex; align-items: center; gap: 6px;" onclick="openReadersModal()" title="គ្រប់គ្រងគណនីអ្នកអានសៀវភៅ"><i class="fas fa-users" style="color: #059669;"></i> <span>បញ្ជីអ្នកអាន (<span id="admin-readers-badge">0</span>)</span></button>
                             <button class="btn btn-primary" style="width: auto;" onclick="openAddBookModal()"><i class="fas fa-plus"></i> បន្ថែមសៀវភៅថ្មី</button>
                         </div>
                     </div>
@@ -2559,7 +2560,41 @@
         </div>
     </div>
     
-    <!-- MODALS -->
+    <!-- MODAL: READERS MANAGEMENT -->
+    <div id="modal-readers" class="modal">
+        <div class="modal-content" style="max-width: 820px; width: 94%;">
+            <div class="modal-header">
+                <h3><i class="fas fa-users" style="color: #059669; margin-right: 8px;"></i> បញ្ជីអ្នកអានសៀវភៅ (Registered Readers)</h3>
+                <i class="fas fa-times close-modal" onclick="closeModal('modal-readers')"></i>
+            </div>
+            <div style="padding: 12px 0 10px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+                    <input type="text" id="adminReaderSearchInput" class="form-control" placeholder="ស្វែងរកតាមឈ្មោះ, ឈ្មោះគណនី, ឬតួនាទី..." style="max-width: 320px; margin-bottom: 0;" oninput="filterAdminReaders()">
+                    <span id="readers-summary-badge" style="font-size: 0.88rem; color: var(--text-muted); font-weight: 600;">សរុប៖ 0 នាក់</span>
+                </div>
+                <div style="max-height: 420px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                        <thead>
+                            <tr style="background: var(--bg-body); border-bottom: 1px solid var(--border-color); text-align: left;">
+                                <th style="padding: 10px 12px;">ល.រ</th>
+                                <th style="padding: 10px 12px;">ឈ្មោះពេញ</th>
+                                <th style="padding: 10px 12px;">ឈ្មោះគណនី / ទូរស័ព្ទ</th>
+                                <th style="padding: 10px 12px;">តួនាទី</th>
+                                <th style="padding: 10px 12px;">កាលបរិច្ឆេទ</th>
+                                <th style="padding: 10px 12px; text-align: center;">សកម្មភាព</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminReadersTableBody">
+                            <tr><td colspan="6" style="text-align: center; padding: 25px; color: var(--text-muted);">កំពុងផ្ទុក...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="margin-top: 15px; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-readers')">បិទ</button>
+            </div>
+        </div>
+    </div>
 
     <div id="modal-add-book" class="modal">
         <div class="modal-content">
@@ -5146,6 +5181,7 @@
 
         async function loadAdminBooks() {
             try {
+                if (typeof loadAdminReaders === 'function') loadAdminReaders();
                 const res = await fetch('/api/books', { cache: 'no-store' });
                 if (res.ok) {
                     const books = await res.json();
@@ -5171,6 +5207,88 @@
                 }
             } catch(e) {}
             await loadAdminBooks();
+        }
+
+        // --- Readers Management ---
+        let allAdminReaders = [];
+        async function openReadersModal() {
+            openModal('modal-readers');
+            await loadAdminReaders();
+        }
+
+        async function loadAdminReaders() {
+            const tbody = document.getElementById('adminReadersTableBody');
+            try {
+                const res = await fetch('/api/readers');
+                if (res.ok) {
+                    allAdminReaders = await res.json();
+                    renderAdminReaders(allAdminReaders);
+                    const badge = document.getElementById('admin-readers-badge');
+                    if (badge) badge.textContent = allAdminReaders.length;
+                    const summary = document.getElementById('readers-summary-badge');
+                    if (summary) summary.textContent = `សរុប៖ ${allAdminReaders.length} នាក់`;
+                }
+            } catch(err) {
+                if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red; padding: 20px;">មិនអាចទាញយកទិន្នន័យបានទេ</td></tr>`;
+            }
+        }
+
+        function renderAdminReaders(list) {
+            const tbody = document.getElementById('adminReadersTableBody');
+            if (!tbody) return;
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 25px; color: var(--text-muted);">មិនទាន់មានអ្នកអានចុះឈ្មោះនៅឡើយទេ</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = list.map((r, idx) => {
+                const roleLabel = r.role === 'teacher' ? 'គ្រូឧទ្ទេស' : (r.role === 'general' ? 'អ្នកអានទូទៅ' : 'គរុសិស្ស');
+                const roleBadgeColor = r.role === 'teacher' ? 'background: #0d6efd; color: #fff;' : (r.role === 'general' ? 'background: #6c757d; color: #fff;' : 'background: #10b981; color: #fff;');
+                const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('km-KH') : '-';
+                return `
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 10px 12px;">${idx + 1}</td>
+                        <td style="padding: 10px 12px; font-weight: 600;">${r.name || '-'}</td>
+                        <td style="padding: 10px 12px; font-family: monospace;">${r.username || '-'}</td>
+                        <td style="padding: 10px 12px;"><span style="padding: 2px 8px; border-radius: 12px; font-size: 0.78rem; ${roleBadgeColor}">${roleLabel}</span></td>
+                        <td style="padding: 10px 12px; font-size: 0.85rem; color: var(--text-muted);">${dateStr}</td>
+                        <td style="padding: 10px 12px; text-align: center;">
+                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.78rem; color: #dc3545; border-color: #dc3545;" onclick="deleteAdminReader('${r.id}')" title="លុបគណនី"><i class="fas fa-trash"></i> លុប</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterAdminReaders() {
+            const q = (document.getElementById('adminReaderSearchInput')?.value || '').toLowerCase().trim();
+            if (!q) {
+                renderAdminReaders(allAdminReaders);
+                return;
+            }
+            const filtered = allAdminReaders.filter(r => 
+                (r.name && r.name.toLowerCase().includes(q)) || 
+                (r.username && r.username.toLowerCase().includes(q)) ||
+                (r.role && r.role.toLowerCase().includes(q))
+            );
+            renderAdminReaders(filtered);
+        }
+
+        async function deleteAdminReader(id) {
+            if (!confirm('តើអ្នកពិតជាចង់លុបគណនីអ្នកអាននេះមែនទេ?')) return;
+            try {
+                const res = await fetch('/api/readers/' + id, { method: 'DELETE' });
+                if (res.ok) {
+                    allAdminReaders = allAdminReaders.filter(r => String(r.id) !== String(id));
+                    renderAdminReaders(allAdminReaders);
+                    const badge = document.getElementById('admin-readers-badge');
+                    if (badge) badge.textContent = allAdminReaders.length;
+                    const summary = document.getElementById('readers-summary-badge');
+                    if (summary) summary.textContent = `សរុប៖ ${allAdminReaders.length} នាក់`;
+                    alert('បានលុបគណនីអ្នកអានជោគជ័យ!');
+                }
+            } catch(err) {
+                alert('កំហុសក្នុងការលុប!');
+            }
         }
 
         function openEditTeamModal(member, idx) {

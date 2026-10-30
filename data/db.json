@@ -10,14 +10,46 @@
     "mapUrl": "https://maps.app.goo.gl/e9iEnTB2JdNTMY1f6",
     "historyThumb1": "https://drive.google.com/file/d/1UgYN47PkN9O4MmVMnneM0kSAm57TxmCW/view?usp=sharing",
     "historyThumb2": "https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link",
-    "historyThumb3": "https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link"
+    "historyThumb3": "https://drive.google.com/file/d/1NTMPspAg8K6Ay_UuucKNP_XJgHlCaMCP/view?usp=share_link",
+    "telegramBotToken": "8770191833:AAG3-CzBO0DI7BrktIqONIfKAAvvbh2pqBY",
+    "telegramChatId": "",
+    "telegramNotifyOnMessage": true,
+    "telegramNotifyOnBackup": true,
+    "telegramSubscribers": [
+      "7400913188",
+      "5929157778"
+    ],
+    "telegramCustomCommands": [
+      {
+        "command": "contact",
+        "description": "ព័ត៌មានទំនាក់ទំនង និងអាសយដ្ឋានសាលា",
+        "response": "📍 <b>អាសយដ្ឋាន៖</b> ផ្លូវជាតិលេខ ៧ ភូមិអូរឬស្សី២ សង្កាត់អូរឬស្សី ក្រុងក្រចេះ ខេត្តក្រចេះ\n📞 <b>ទូរស័ព្ទ៖</b> 072 971 445 / 097 555 5873\n✉️ <b>អ៊ីមែល៖</b> info@ktpttc.edu.kh\n🌐 <b>គេហទំព័រ៖</b> https://ktpttc-edu-kh-ll8r.vercel.app",
+        "enabled": true,
+        "updatedAt": "2026-10-20T07:59:07.485Z"
+      },
+      {
+        "command": "courses",
+        "description": "វគ្គបណ្តុះបណ្តាល និងកម្មវិធីសិក្សា",
+        "response": "🎓 <b>កម្មវិធីបណ្តុះបណ្តាលនៅសាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ៖</b>\n• គរុកោសល្យបឋមសិក្សា (កម្រិត ១២+៤)\n• គរុកោសល្យបឋមសិក្សា (កម្រិត បរិញ្ញាបត្រ+១)\n• វគ្គវិក្រឹតការ និងបំប៉នសមត្ថភាពគ្រូបង្រៀនជាប្រចាំ\n\nចូលមើលព័ត៌មានលម្អិតក្នុងគេហទំព័រផ្លូវការ!",
+        "enabled": true,
+        "updatedAt": "2026-10-20T08:36:49.029Z"
+      },
+      {
+        "command": "location",
+        "description": "ទីតាំងសាលា និងផែនទីធ្វើដំណើរ",
+        "response": "🗺️ <b>ទីតាំងសាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</b>\nស្ថិតនៅតាមបណ្តោយផ្លូវជាតិលេខ ៧ ភូមិអូរឬស្សី២ សង្កាត់អូរឬស្សី ក្រុងក្រចេះ ខេត្តក្រចេះ។",
+        "enabled": true,
+        "updatedAt": "2026-10-20T07:59:16.202Z"
+      }
+    ],
+    "telegramSystemCommands": {}
   },
   "adminProfile": {
     "name": "Admin",
     "avatar": ""
   },
   "adminPassword": "611431022",
-  "visitorCount": 251,
+  "visitorCount": 294,
   "news": [
     {
       "title": "វគ្គសិក្សា៖ ការប្រើប្រាស់បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និង AI ក្នុងការបង្រៀន",
@@ -761,6 +793,18 @@
   ],
   "messages": [
     {
+      "id": "MSG-1792375414220",
+      "sender": "អេង ដានី",
+      "name": "អេង ដានី",
+      "contact": "070718192",
+      "subject": " ",
+      "message": "តើគ្រូកិច្ចព្រមព្រៀងត្រូវទៅបង្ហាញខ្លួននៅថ្ងៃណា?",
+      "date": "19/10/2026 02:03",
+      "status": "read",
+      "fromVisitor": true,
+      "createdAt": "2026-10-19T02:03:34.220Z"
+    },
+    {
       "id": "MSG-1787201545164",
       "sender": "យូសុះ ស៊ីលាល",
       "name": "យូសុះ ស៊ីលាល",
@@ -771,18 +815,6 @@
       "status": "read",
       "fromVisitor": true,
       "createdAt": "2026-08-20T04:52:25.164Z"
-    },
-    {
-      "id": "MSG-1787122833136",
-      "sender": "យូសុះ ស៊ីលាល",
-      "name": "យូសុះ ស៊ីលាល",
-      "contact": "0987654321",
-      "subject": " ",
-      "message": "វេបសាយស្អាត នឹងមានសោភណ្ឌភាព",
-      "date": "19/08/2026 14:00",
-      "status": "read",
-      "fromVisitor": true,
-      "createdAt": "2026-08-19T07:00:33.136Z"
     }
   ],
   "slides": [
@@ -887,6 +919,16 @@
       "email": "teang.kimlaeng@ktpttc.com",
       "photo": "https://drive.google.com/file/d/1YC6dDTHAxy0Rv0xxjM6Kkp-q9hw7MJ5V/view?usp=share_link",
       "id": "1790651989433"
+    }
+  ],
+  "readers": [
+    {
+      "id": "1793331643892",
+      "name": "យូសុះ ស៊ីលាល",
+      "username": "0968525956",
+      "role": "teacher",
+      "password": "611431022",
+      "createdAt": "2026-10-30T03:40:43.892Z"
     }
   ]
 }
