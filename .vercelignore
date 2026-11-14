@@ -1,7 +1,0 @@
-node_modules
-vercel-deploy/
-.git
-.env*
-scratch/
-*.log
-test*

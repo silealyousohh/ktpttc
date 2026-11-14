@@ -13,8 +13,8 @@ const DB_FILE = path.join(__dirname, 'data', 'db.json');
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
 // Disable caching for all API routes (prevents stale data on reload)
 app.use('/api', (req, res, next) => {
@@ -205,6 +205,45 @@ function getLocalFileDb() {
   return {};
 }
 
+const DEFAULT_COURSES = [
+  {
+    id: "1",
+    title: "ប្រកាសស្តីពីការជ្រើសរើស «គរុកោសល្យ និងវគ្គបណ្តុះបណ្តាលបែបថ្មី» ជំនាន់ទី១២",
+    image: "./cpd-p1.jpg",
+    description: "សូមជម្រាបដល់លោកគ្រូ អ្នកគ្រូ និស្សិត និងសាធារណជន ដែលមានបំណងពង្រឹងសមត្ថភាពគរុកោសល្យ សាលាបើកទទួលចុះឈ្មោះចូលរៀនវគ្គថ្មីចាប់ពីថ្ងៃនេះតទៅ។ រួសរាន់ចុះឈ្មោះឱ្យទាន់ពេលវេលា ចំនួនមានកំណត់។",
+    meta1: "វគ្គបណ្ដុះបណ្ដាលថ្មី ជំនាន់ទី១២",
+    meta2: "ចន្ទ - សុក្រ (Online) | សៅរ៍ - អាទិត្យ (ផ្ទាល់)",
+    date: "03/11/2026"
+  },
+  {
+    id: "2",
+    title: "📣 កម្មវិធីត្រៀមប្រឡងសមត្ថភាព BEPT បើកទទួលចុះឈ្មោះហើយ!",
+    image: "./cpd-p2.jpg",
+    description: "តើអ្នកកំពុងរៀបចំសម្រាប់ការប្រឡង BEPT ហើយចង់ពង្រឹងជំនាញភាសាអង់គ្លេសទាំងបួនមែនទេ? ចូលរួមកម្មវិធីត្រៀមប្រឡងរយៈពេល 30 ម៉ោងរបស់យើងជាមួយគ្រូបង្រៀន TESOL ដែលមានបទពិសោធន៍ និងការអនុវត្តជាក់ស្ដែង។",
+    meta1: "រយៈពេលវគ្គសិក្សា៖ 30 ម៉ោង",
+    meta2: "ថ្លៃសិក្សា៖ ត្រឹមតែ 25 ដុល្លារប៉ុណ្ណោះ",
+    date: "03/11/2026"
+  },
+  {
+    id: "3",
+    title: "BTEC Foreign Languages (BFL) – កម្មវិធីភាសាអង់គ្លេសទូទៅ និយាយដោយទំនុកចិត្ត, រៀនដោយគុណភាព",
+    image: "./cpd-p3.jpg",
+    description: "កម្មវិធីភាសាអង់គ្លេសទូទៅនៅ BFL ត្រូវបានបង្កើតឡើងដើម្បីអភិវឌ្ឍសមត្ថភាពភាសាអង់គ្លេសជាក់ស្តែងរបស់អ្នកសិក្សាសម្រាប់ការប្រើប្រាស់ក្នុងជីវិតពិត ផ្តោតលើការប្រាស្រ័យទាក់ទង ការអាន ការសរសេរ និងការបញ្ចេញសំឡេងស្តង់ដារ។",
+    meta1: "ភាសាអង់គ្លេសទូទៅ (General English)",
+    meta2: "វិញ្ញាបនបត្របញ្ជាក់ការសិក្សា",
+    date: "03/11/2026"
+  },
+  {
+    id: "4",
+    title: "វគ្គបណ្តុះបណ្តាល៖ ការប្រើប្រាស់បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និង AI ក្នុងការបង្រៀន",
+    image: "./login_bg.jpg",
+    description: "វគ្គបណ្ដុះបណ្ដាលស្ដីពីការប្រើប្រាស់បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងបញ្ញាសិប្បនិម្មិត (AI) ក្នុងការរៀបចំកិច្ចតែងការបង្រៀន ការបង្កើតមាតិកាឌីជីថល និងវិធីសាស្ត្របង្រៀនសម័យទំនើប ដើម្បីបង្កើនប្រសិទ្ធភាពនៃការអប់រំក្នុងយុគសម័យឌីជីថល។",
+    meta1: "បច្ចេកវិទ្យា & AI ក្នុងការអប់រំ",
+    meta2: "ទទួលបានក្រេឌីត និងវិញ្ញាបនបត្រ CPD",
+    date: "03/11/2026"
+  }
+];
+
 const DEFAULT_PARTNERS = [
   {
     id: "1",
@@ -250,8 +289,68 @@ const DEFAULT_PARTNERS = [
   }
 ];
 
-// Helper: Read DB (MongoDB priority -> Local db.json fallback)
-async function readDb() {
+// In-memory cache for fast serverless responses & low MongoDB egress
+let lastDbFetchTime = 0;
+const DB_CACHE_TTL = 30 * 1000; // 30 seconds
+
+const fieldCache = {};
+const FIELD_CACHE_TTL = 30 * 1000; // 30 seconds
+
+function invalidateDbCache(field = null) {
+  lastDbFetchTime = 0;
+  if (field) {
+    delete fieldCache[field];
+  } else {
+    for (const k of Object.keys(fieldCache)) {
+      delete fieldCache[k];
+    }
+  }
+}
+
+// Fast targeted read of a single field (downloads only few KB via MongoDB projection instead of full 7.6MB)
+async function readDbField(fieldName) {
+  const now = Date.now();
+  if (fieldCache[fieldName] && (now - fieldCache[fieldName].time < FIELD_CACHE_TTL)) {
+    return fieldCache[fieldName].data;
+  }
+  if (memoryDb && memoryDb[fieldName] !== undefined && (now - lastDbFetchTime < DB_CACHE_TTL)) {
+    return memoryDb[fieldName];
+  }
+
+  const collection = await getMongoCollection();
+  if (collection) {
+    try {
+      const doc = await collection.findOne(
+        { _id: 'main_store' },
+        { projection: { [fieldName]: 1 } }
+      );
+      if (doc && doc[fieldName] !== undefined) {
+        fieldCache[fieldName] = { data: doc[fieldName], time: now };
+        if (!memoryDb) memoryDb = {};
+        memoryDb[fieldName] = doc[fieldName];
+        return doc[fieldName];
+      }
+    } catch (err) {
+      console.error(`Error reading field ${fieldName} from MongoDB:`, err.message);
+    }
+  }
+
+  // Fallback to local db.json
+  const localDb = getLocalFileDb();
+  if (localDb && localDb[fieldName] !== undefined) {
+    fieldCache[fieldName] = { data: localDb[fieldName], time: now };
+    return localDb[fieldName];
+  }
+  return undefined;
+}
+
+// Helper: Read DB (MongoDB priority -> Local db.json fallback with TTL caching)
+async function readDb(forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && memoryDb && (now - lastDbFetchTime < DB_CACHE_TTL)) {
+    return memoryDb;
+  }
+
   const collection = await getMongoCollection();
   if (collection) {
     try {
@@ -259,12 +358,20 @@ async function readDb() {
       if (doc) {
         const { _id, ...cleanData } = doc;
         memoryDb = cleanData;
+        lastDbFetchTime = Date.now();
         if (!memoryDb.readers || !Array.isArray(memoryDb.readers)) {
           memoryDb.readers = [];
         }
         if (!memoryDb.partners || !Array.isArray(memoryDb.partners) || memoryDb.partners.length === 0) {
           const localDb = getLocalFileDb();
           memoryDb.partners = (localDb.partners && localDb.partners.length > 0) ? localDb.partners : DEFAULT_PARTNERS;
+          const toSave = { ...memoryDb };
+          delete toSave._id;
+          await collection.replaceOne({ _id: 'main_store' }, toSave, { upsert: true });
+        }
+        if (!memoryDb.courses || !Array.isArray(memoryDb.courses) || memoryDb.courses.length === 0) {
+          const localDb = getLocalFileDb();
+          memoryDb.courses = (localDb.courses && localDb.courses.length > 0) ? localDb.courses : DEFAULT_COURSES;
           const toSave = { ...memoryDb };
           delete toSave._id;
           await collection.replaceOne({ _id: 'main_store' }, toSave, { upsert: true });
@@ -291,6 +398,7 @@ async function readDb() {
           { upsert: true }
         );
         memoryDb = initialData;
+        lastDbFetchTime = Date.now();
         return memoryDb;
       }
     } catch (err) {
@@ -307,12 +415,19 @@ async function readDb() {
     if (!memoryDb.partners || memoryDb.partners.length === 0) {
       memoryDb.partners = DEFAULT_PARTNERS;
     }
+    if (!memoryDb.courses || memoryDb.courses.length === 0) {
+      memoryDb.courses = DEFAULT_COURSES;
+    }
     return memoryDb;
   }
   memoryDb = getLocalFileDb();
+  lastDbFetchTime = Date.now();
   if (!Array.isArray(memoryDb.readers)) memoryDb.readers = [];
   if (!memoryDb.partners || memoryDb.partners.length === 0) {
     memoryDb.partners = DEFAULT_PARTNERS;
+  }
+  if (!memoryDb.courses || memoryDb.courses.length === 0) {
+    memoryDb.courses = DEFAULT_COURSES;
   }
   return memoryDb;
 }
@@ -322,6 +437,8 @@ async function writeDb(data) {
   const cleanData = { ...data };
   delete cleanData._id;
   memoryDb = cleanData;
+  lastDbFetchTime = Date.now();
+  invalidateDbCache();
   let mongoSaved = false;
 
   // 1. Save to MongoDB Atlas
@@ -358,10 +475,16 @@ async function writeDb(data) {
 
 // Routes for HTML Pages
 app.get('/', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.sendFile(path.join(__dirname, 'Public_Index.html'));
 });
 
 app.get('/admin', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.sendFile(path.join(__dirname, 'Admin_Index.html'));
 });
 
@@ -371,8 +494,8 @@ app.get('/admin', (req, res) => {
 
 // 1. Settings API
 app.get('/api/settings', async (req, res) => {
-  const db = await readDb();
-  res.json(db.settings || {});
+  const settings = await readDbField('settings');
+  res.json(settings || {});
 });
 
 app.post('/api/settings', async (req, res) => {
@@ -384,8 +507,8 @@ app.post('/api/settings', async (req, res) => {
 
 // 2. News API
 app.get('/api/news', async (req, res) => {
-  const db = await readDb();
-  res.json(db.news || []);
+  const news = await readDbField('news');
+  res.json(news || []);
 });
 
 app.post('/api/news', async (req, res) => {
@@ -416,8 +539,8 @@ app.delete('/api/news/:id', async (req, res) => {
 
 // 3. Books API
 app.get('/api/books', async (req, res) => {
-  const db = await readDb();
-  res.json(db.books || []);
+  const books = await readDbField('books');
+  res.json(books || []);
 });
 
 app.post('/api/books', async (req, res) => {
@@ -453,9 +576,26 @@ app.delete('/api/books/:id', async (req, res) => {
 });
 
 // 4. Structure (Organization Chart) API
-app.get('/api/structure', async (req, res) => {
+app.get('/api/structure-image', async (req, res) => {
+  const settings = await readDbField('settings');
+  const structureImage = await readDbField('structureImage');
+  const image = (settings && settings.structureImage) || structureImage || '';
+  res.json({ success: true, image });
+});
+
+app.post('/api/structure-image', async (req, res) => {
   const db = await readDb();
-  res.json(db.structure || []);
+  const image = req.body.image || '';
+  if (!db.settings) db.settings = {};
+  db.settings.structureImage = image;
+  db.structureImage = image;
+  await writeDb(db);
+  res.json({ success: true, image });
+});
+
+app.get('/api/structure', async (req, res) => {
+  const structure = await readDbField('structure');
+  res.json(structure || []);
 });
 
 app.post('/api/structure', async (req, res) => {
@@ -553,7 +693,23 @@ app.get('/api/gallery', async (req, res) => {
 app.post('/api/gallery', async (req, res) => {
   const db = await readDb();
   if (!db.gallery) db.gallery = [];
-  const item = req.body;
+  
+  const payload = req.body;
+  
+  // Support batch upload of multiple gallery photos at once
+  const batchItems = Array.isArray(payload) ? payload : (Array.isArray(payload?.items) ? payload.items : null);
+  if (batchItems && batchItems.length > 0) {
+    const newItems = batchItems.map((item, i) => ({
+      ...item,
+      id: item.id || (Date.now() + i).toString()
+    }));
+    db.gallery.unshift(...newItems);
+    await writeDb(db);
+    return res.json({ success: true, count: newItems.length, gallery: db.gallery });
+  }
+
+  // Single item
+  const item = payload;
   if (!item.id) {
     item.id = Date.now().toString();
   }
@@ -785,6 +941,42 @@ app.delete('/api/partners/:id', async (req, res) => {
     await writeDb(db);
   }
   res.json({ success: true, partners: db.partners || [] });
+});
+
+// 10.1 Courses API (គ្រប់គ្រងវគ្គសិក្សា CPD)
+app.get('/api/courses', async (req, res) => {
+  const db = await readDb();
+  if (!db.courses || !Array.isArray(db.courses) || db.courses.length === 0) {
+    db.courses = DEFAULT_COURSES;
+    await writeDb(db);
+  }
+  res.json(db.courses || []);
+});
+
+app.post('/api/courses', async (req, res) => {
+  const db = await readDb();
+  if (!db.courses) db.courses = [];
+  const newItem = req.body;
+  if (!newItem.id) {
+    newItem.id = Date.now().toString();
+  }
+  const index = db.courses.findIndex((c, idx) => String(c.id) === String(newItem.id) || String(idx) === String(newItem.id));
+  if (index >= 0) {
+    db.courses[index] = { ...db.courses[index], ...newItem };
+  } else {
+    db.courses.unshift(newItem);
+  }
+  await writeDb(db);
+  res.json({ success: true, courses: db.courses });
+});
+
+app.delete('/api/courses/:id', async (req, res) => {
+  const db = await readDb();
+  if (db.courses) {
+    db.courses = removeItemByIdOrIndex(db.courses, req.params.id);
+    await writeDb(db);
+  }
+  res.json({ success: true, courses: db.courses || [] });
 });
 
 // 11. Admin Profile API
@@ -1425,11 +1617,11 @@ app.post('/api/telegram/sync-commands', async (req, res) => {
   }
 });
 
-// Export Express app for Serverless / Vercel
+// Export Express app
 module.exports = app;
 
-// Start Server (only if executed directly)
-if (require.main === module && !process.env.VERCEL) {
+// Start Server (Runs standalone, on PM2, or inside hosting environments like Hostinger)
+const startServer = () => {
   app.listen(PORT, '0.0.0.0', () => {
     const os = require('os');
     const interfaces = os.networkInterfaces();
@@ -1446,8 +1638,12 @@ if (require.main === module && !process.env.VERCEL) {
     console.log(`🚀 KTPTTC Full-Stack Node.js App Running!`);
     console.log(`🌐 Public Site (Local)  : http://localhost:${PORT}`);
     console.log(`⚙️ Admin Panel (Local)   : http://localhost:${PORT}/admin`);
-    console.log(`📱 Public Site (Mobile) : http://${localIp}:${PORT}`);
-    console.log(`📱 Admin Panel (Mobile)  : http://${localIp}:${PORT}/admin`);
+    console.log(`📱 Public Site (Network): http://${localIp}:${PORT}`);
+    console.log(`📱 Admin Panel (Network) : http://${localIp}:${PORT}/admin`);
     console.log(`===================================================`);
   });
+};
+
+if (require.main === module || process.env.NODE_ENV === 'production' || process.env.PORT) {
+  startServer();
 }

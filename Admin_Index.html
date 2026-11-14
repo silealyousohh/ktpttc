@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KTPTTC | Admin</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico?v=8">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=8">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=8">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=8">
+    <link rel="apple-touch-icon" sizes="192x192" href="favicon.png?v=8">
+    
     <!-- Google Fonts: Moul, Kantumruy Pro, Noto Sans Khmer & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +30,9 @@
     
     <!-- html2pdf.js Bundle for 1-Click Multi-Page A4 PDF Direct Download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Google Identity Services (GIS) for Google Drive API Upload -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300..700;1,300..700&family=Moul&family=Moulpali&family=Noto+Sans+Khmer:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -107,7 +117,7 @@
             max-width: 100%;
             height: 100vh;
             overflow: hidden;
-            background: linear-gradient(135deg, rgba(13, 71, 161, 0.2), rgba(10, 25, 47, 0.5)), url('login_bg.jpg') center center / 100% 100% no-repeat;
+            background: url('login_bg.jpg?v=3') center bottom / cover no-repeat;
         }
         .login-card {
             background: rgba(255, 255, 255, 0.95) !important;
@@ -465,14 +475,52 @@
         .action-icons i.fa-trash { color: var(--danger); }
         
         /* Modal */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-content { background: var(--bg-card); padding: 30px; border-radius: 12px; width: 100%; max-width: 500px; animation: slideDown 0.3s ease; }
-        .modal-content.modal-lg { max-width: 800px; }
-        @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
-        .close-modal { cursor: pointer; font-size: 1.5rem; color: var(--text-muted); }
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.55); 
+            z-index: 1000; 
+            justify-content: center; 
+            align-items: center; 
+            backdrop-filter: blur(5px);
+            padding: 15px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .modal-content { 
+            background: var(--bg-card); 
+            padding: 22px 24px; 
+            border-radius: 14px; 
+            width: 100%; 
+            max-width: 520px; 
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            animation: slideDown 0.25s ease;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.25);
+            box-sizing: border-box;
+        }
+        .modal-content.modal-lg { max-width: 840px; }
+        .modal-content.modal-xl { max-width: 980px; }
+        .modal-body-scroll {
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+            padding-right: 4px;
+        }
+        .modal-body-scroll::-webkit-scrollbar { width: 6px; }
+        .modal-body-scroll::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 4px; }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        .close-modal { cursor: pointer; font-size: 1.3rem; color: var(--text-muted); transition: color 0.2s; }
         .close-modal:hover { color: var(--danger); }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 768px) {
+            .book-modal-grid { grid-template-columns: 1fr !important; }
+            .modal-content { padding: 18px 16px; max-height: 94vh; }
+        }
         
         /* Preview Images in Table */
         .img-preview { width: 60px; height: 40px; object-fit: cover; border-radius: 5px; border: 1px solid var(--border-color); }
@@ -1355,6 +1403,122 @@
                 print-color-adjust: exact !important;
             }
         }
+
+        /* Multi Photo Upload Styles for Gallery */
+        .multi-upload-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        .multi-upload-tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .multi-upload-tab-btn:hover {
+            color: var(--primary);
+            background: rgba(14, 116, 144, 0.06);
+        }
+        .multi-upload-tab-btn.active {
+            background: rgba(14, 116, 144, 0.12);
+            color: var(--primary);
+            border-color: rgba(14, 116, 144, 0.25);
+        }
+        .multi-upload-dropzone {
+            border: 2px dashed var(--primary);
+            border-radius: 12px;
+            padding: 24px 16px;
+            text-align: center;
+            background: rgba(14, 116, 144, 0.04);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+        }
+        .multi-upload-dropzone:hover, .multi-upload-dropzone.dragover {
+            border-color: #0284c7;
+            background: rgba(14, 116, 144, 0.1);
+            transform: translateY(-1px);
+        }
+        .gallery-preview-wrapper {
+            margin-top: 15px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 12px;
+        }
+        .gallery-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .gallery-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+            gap: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+        .gallery-preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+            background: #111;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-color);
+        }
+        .gallery-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .gallery-preview-item .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.9);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+        .gallery-preview-item .remove-btn:hover {
+            background: #dc2626;
+            transform: scale(1.15);
+        }
+        .gallery-preview-item .badge-index {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            font-size: 0.68rem;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -1363,7 +1527,7 @@
     <div id="login-view" class="login-screen">
         <div class="login-card" style="border: 1px solid var(--border-color); box-shadow: 0 12px 32px rgba(0,0,0,0.1); border-radius: 16px;">
             <div style="margin-bottom: 20px;">
-                <img src="https://lh3.googleusercontent.com/d/1qqeJ-_cVSW3ln0LoCQ70EP0__Q2H-I4c" alt="Logo" referrerpolicy="no-referrer" style="width: 85px; height: 85px; object-fit: contain; margin-bottom: 12px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=view&id=1qqeJ-_cVSW3ln0LoCQ70EP0__Q2H-I4c';">
+                <img src="ktpttc-logo.png?v=6" alt="KTPTTC Logo" style="width: 104px; height: 104px; object-fit: contain; margin-bottom: 12px; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.12));">
                 <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">សូមបញ្ចូលលេខសម្ងាត់</h2>
                 <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 0;">ដើម្បីចូលទៅកាន់ផ្ទាំងគ្រប់គ្រងទិន្នន័យ</p>
             </div>
@@ -1387,9 +1551,9 @@
         
         <!-- Sidebar -->
         <div class="sidebar">
-            <div class="sidebar-header">
-                <img src="KTPTTC1.png" alt="KTPTTC Logo" class="sidebar-logo-light">
-                <img src="KTPTTC.png" alt="KTPTTC Logo" class="sidebar-logo-dark">
+            <div class="sidebar-header" style="padding: 16px 14px; display: flex; align-items: center; border-bottom: 1px solid var(--border-color);">
+                <img src="KTPTTC1.png?v=10" alt="KTPTTC Logo" class="sidebar-logo-light" style="height: 44px; width: auto; max-width: 100%; object-fit: contain;">
+                <img src="KTPTTC.png?v=10" alt="KTPTTC Logo" class="sidebar-logo-dark" style="height: 44px; width: auto; max-width: 100%; object-fit: contain;">
             </div>
             
             <div class="sidebar-title" data-i18n="admin_title">ផ្ទាំងគ្រប់គ្រង</div>
@@ -1398,6 +1562,7 @@
                 <div class="nav-item active" onclick="switchView('view-dashboard', this)"><i class="fas fa-home"></i> <span data-i18n="dashboard">ផ្ទាំងដើម</span></div>
                 <div class="nav-item" onclick="switchView('view-library', this)"><i class="fas fa-book"></i> <span data-i18n="library">គ្រប់គ្រងបណ្ណាល័យ</span></div>
                 <div class="nav-item" onclick="switchView('view-news', this)"><i class="fas fa-newspaper"></i> <span data-i18n="news">គ្រប់គ្រងព័ត៌មាន</span></div>
+                <div class="nav-item" onclick="switchView('view-courses', this)"><i class="fas fa-graduation-cap"></i> <span data-i18n="courses">គ្រប់គ្រងវគ្គសិក្សា CPD</span></div>
                 <div class="nav-item" onclick="switchView('view-lessons', this)"><i class="fas fa-video"></i> <span data-i18n="lessons">គ្រប់គ្រងវីដេអូ</span></div>
                 <div class="nav-item" onclick="switchView('view-messages', this)"><i class="fas fa-envelope-open-text"></i> <span data-i18n="messages">គ្រប់គ្រងការផ្ញើសារ</span></div>
                 <div class="nav-item" onclick="switchView('view-personnel', this)"><i class="fas fa-users-cog"></i> <span data-i18n="personnel">បុគ្គលិក & រចនាសម្ព័ន្ធ</span></div>
@@ -1651,6 +1816,37 @@
                             </tbody>
                         </table>
                     </div></div>
+                </div>
+
+                <!-- 3.1 CPD Course Management -->
+                <div id="view-courses" class="view-section">
+                    <div class="page-header">
+                        <div class="page-title">
+                            <h1 data-i18n="courses_title">គ្រប់គ្រងវគ្គសិក្សា CPD</h1>
+                            <p data-i18n="courses_subtitle">បញ្ជី និងព័ត៌មានលម្អិតនៃវគ្គសិក្សា CPD និងវគ្គខ្លីៗ</p>
+                        </div>
+                        <button class="btn btn-primary" style="width: auto;" onclick="openModal('modal-add-course')">
+                            <i class="fas fa-plus"></i> <span data-i18n="add_course">បន្ថែមវគ្គសិក្សាថ្មី</span>
+                        </button>
+                    </div>
+                    <div class="data-card">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 80px;">រូបភាព</th>
+                                        <th>ចំណងជើងវគ្គសិក្សា</th>
+                                        <th>ព័ត៌មានបន្ថែម / Meta</th>
+                                        <th>ខ្លឹមសារសង្ខេប</th>
+                                        <th style="width: 100px; text-align: center;">សកម្មភាព</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-courses-table-body">
+                                    <tr><td colspan="5" style="text-align:center;">កំពុងទាញយកទិន្នន័យ...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 4. Lessons Management -->
@@ -1933,45 +2129,97 @@
 
                     <!-- Sub-Tab 3: Structure (រចនាសម្ព័ន្ធសាលា) -->
                     <div id="personnel-subtab-structure" class="personnel-subtab-content" style="display: none;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                            <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-sitemap" style="color: var(--primary);"></i> រចនាសម្ព័ន្ធគណៈគ្រប់គ្រង និងឋានានុក្រមសាលា
-                            </h3>
-                            <button class="btn btn-primary" style="width: auto;" onclick="openModal('modal-add-structure')"><i class="fas fa-plus"></i> បន្ថែមសមាជិកថ្មី</button>
-                        </div>
-
-                        <!-- Live Structure Chart Preview in Admin -->
-                        <div class="data-card" style="margin-bottom: 25px;">
-                            <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 1.05rem; color: var(--text-main);">
-                                <i class="fas fa-eye" style="color: var(--primary);"></i> ការមើលគំរូដើមរចនាសម្ព័ន្ធ (Live Structure Preview)
-                            </h3>
-                            <div id="admin-structure-preview" style="padding: 20px 10px; background: #0f172a; border-radius: 12px; overflow-x: auto; text-align: center; border: 1px solid rgba(255,255,255,0.08);">
-                                <p style="color: #94a3b8; font-size: 0.9rem;">កំពុងផ្ទុកទិន្នន័យ...</p>
+                        <div class="page-header" style="margin-bottom: 20px;">
+                            <div class="page-title">
+                                <h1 style="font-size: 1.3rem; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-sitemap" style="color: var(--primary);"></i> គ្រប់គ្រងរូបភាពរចនាសម្ព័ន្ធសាលា (Organization Structure Image)
+                                </h1>
+                                <p style="margin-top: 4px; color: var(--text-muted); font-size: 0.88rem;">
+                                    កំណត់រូបភាពដ្យាក្រាម ឬផ្ទាំង Poster រចនាសម្ព័ន្ធគ្រប់គ្រងសាលាដោយផ្ទាល់ មិនបាច់បញ្ចូលឈ្មោះបុគ្គលិកម្តងមួយៗឡើយ
+                                </p>
                             </div>
                         </div>
 
-                        <!-- Structure Management Table -->
-                        <div class="data-card">
-                            <h3 style="margin-bottom: 15px; font-size: 1.05rem; color: var(--text-main);"><i class="fas fa-list"></i> បញ្ជីសមាជិករចនាសម្ព័ន្ធ</h3>
-                            <div class="table-responsive">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 70px;">រូបភាព</th>
-                                            <th>ឈ្មោះ</th>
-                                            <th>តួនាទី</th>
-                                            <th>កម្រិតឋានានុក្រម</th>
-                                            <th>ផ្នែក/ការិយាល័យ</th>
-                                            <th style="width: 80px; text-align: center;">លំដាប់</th>
-                                            <th style="width: 100px; text-align: center;">សកម្មភាព</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="structure-table-body">
-                                        <tr><td colspan="7" style="text-align:center;">កំពុងទាញយកទិន្នន័យ...</td></tr>
-                                    </tbody>
-                                </table>
+                        <!-- Card 1: Upload & Image Settings -->
+                        <div class="data-card" style="margin-bottom: 25px; border-left: 4px solid var(--primary);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-image" style="color: var(--primary);"></i> រូបភាពដ្យាក្រាមរចនាសម្ព័ន្ធ (Structure Chart Image)
+                                </h3>
+                                <span id="adminStructureStatusBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; background: rgba(156, 163, 175, 0.15); color: #64748b;">
+                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block;"></span> មិនទាន់មានរូបភាព
+                                </span>
+                            </div>
+
+                            <div style="background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--border-color); padding: 18px; border-radius: 12px; margin-bottom: 18px;">
+                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+                                    <input type="file" id="structureImageFileInput" accept="image/*" style="display: none;" onchange="handleStructureImageUpload(this.files)">
+                                    <button type="button" class="btn btn-primary" onclick="document.getElementById('structureImageFileInput').click()" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; font-weight: 600; font-size: 0.92rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);">
+                                        <i class="fas fa-cloud-upload-alt" style="font-size: 1.1rem;"></i> Upload រូបភាពរចនាសម្ព័ន្ធផ្ទាល់ (Direct Upload)
+                                    </button>
+                                    <button type="button" class="btn btn-outline" onclick="clearStructureImage()" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 9px 15px; font-size: 0.88rem;" title="លុបរូបភាព">
+                                        <i class="fas fa-trash-alt"></i> លុបរូបភាព
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="btnSaveStructureImage" onclick="saveAdminStructureImage()" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; font-weight: 600; font-size: 0.92rem; border-radius: 8px;">
+                                        <i class="fas fa-save"></i> រក្សាទុក
+                                    </button>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 8px;">
+                                    <label class="form-label" style="font-weight: 600; font-size: 0.85rem;"><i class="fas fa-link" style="color: var(--primary); margin-right: 4px;"></i> តំណភ្ជាប់រូបភាព (Image URL / Google Drive / Base64)</label>
+                                    <input type="text" id="adminStructureImageUrl" class="form-control" placeholder="https://... ឬចុចប៊ូតុង «Upload រូបភាពរចនាសម្ព័ន្ធផ្ទាល់» ខាងលើ" style="padding: 10px 14px; font-size: 0.9rem;" oninput="handleStructureUrlInput(this.value)">
+                                </div>
+                                <small style="color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-info-circle"></i> គាំទ្ររូបភាព JPG, PNG, WebP គ្រប់ទំហំ (កម្រិតច្បាស់ HD រហូតដល់ 2000px+) ពីទូរស័ព្ទដៃ ឬកុំព្យូទ័រ
+                                </small>
+                            </div>
+
+                            <!-- Live Preview Frame in Admin -->
+                            <div>
+                                <h4 style="font-size: 0.95rem; margin-bottom: 10px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-eye" style="color: var(--primary);"></i> ការមើលគំរូរូបភាពជាក់ស្តែង (Live Preview)
+                                </h4>
+                                <div id="admin-structure-preview-wrap" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; text-align: center; min-height: 250px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+                                    <div id="admin-structure-placeholder" style="color: var(--text-muted); padding: 40px 20px;">
+                                        <i class="fas fa-sitemap" style="font-size: 3.5rem; color: #cbd5e1; margin-bottom: 12px; display: block;"></i>
+                                        <p style="font-size: 0.95rem; margin: 0; font-weight: 600;">មិនទាន់មានរូបភាពរចនាសម្ព័ន្ធនៅឡើយទេ</p>
+                                        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">សូមចុចប៊ូតុង «Upload រូបភាពរចនាសម្ព័ន្ធផ្ទាល់» ខាងលើ ដើម្បីជ្រើសរើសរូបថតដ្យាក្រាមរចនាសម្ព័ន្ធ</p>
+                                    </div>
+                                    <img id="admin-structure-img" src="" alt="Structure Preview" style="max-width: 100%; max-height: 70vh; height: auto; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); display: none;" onerror="handleAdminStructureImgError()">
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Optional: Collapsible Advanced Tree Settings -->
+                        <details style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-top: 20px;">
+                            <summary style="font-weight: 600; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; user-select: none;">
+                                <i class="fas fa-sliders-h" style="margin-right: 6px;"></i> ជម្រើសបន្ថែម៖ បញ្ជីសមាជិកម្តងមួយៗ (Advanced: Manual Tree List)
+                            </summary>
+                            <div style="margin-top: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                                    <span style="font-size: 0.85rem; color: var(--text-muted);">ករណីមិនប្រើរូបភាព ប្រព័ន្ធនឹងប្រើប្រាស់បញ្ជីសមាជិកខាងក្រោមជំនួស</span>
+                                    <button class="btn btn-sm btn-outline" style="width: auto;" onclick="openModal('modal-add-structure')"><i class="fas fa-plus"></i> បន្ថែមសមាជិក</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 70px;">រូបភាព</th>
+                                                <th>ឈ្មោះ</th>
+                                                <th>តួនាទី</th>
+                                                <th>កម្រិតឋានានុក្រម</th>
+                                                <th>ផ្នែក/ការិយាល័យ</th>
+                                                <th style="width: 80px; text-align: center;">លំដាប់</th>
+                                                <th style="width: 100px; text-align: center;">សកម្មភាព</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="structure-table-body">
+                                            <tr><td colspan="7" style="text-align:center;">កំពុងទាញយកទិន្នន័យ...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                 </div>
 
@@ -1994,8 +2242,8 @@
                 <!-- 8. Gallery Management -->
                 <div id="view-gallery" class="view-section">
                     <div class="page-header">
-                        <div class="page-title"><h1>គ្រប់គ្រងរូបភាព</h1><p>បណ្តុំរូបភាពសកម្មភាពផ្សេងៗរបស់សាលា</p></div>
-                        <button class="btn btn-primary" style="width: auto;" onclick="openModal('modal-add-gallery')"><i class="fas fa-plus"></i> បន្ថែមរូបភាពថ្មី</button>
+                        <div class="page-title"><h1>គ្រប់គ្រងរូបភាព និងអាល់ប៊ុម</h1><p>បណ្តុំរូបភាព និងអាល់ប៊ុមសកម្មភាពផ្សេងៗរបស់សាលា</p></div>
+                        <button class="btn btn-primary" style="width: auto;" onclick="openModal('modal-add-gallery')"><i class="fas fa-plus"></i> បន្ថែមអាល់ប៊ុមថ្មី</button>
                     </div>
                     <div class="data-card"><div class="table-responsive">
                         <table class="data-table">
@@ -2539,6 +2787,68 @@
                             </div>
                         </div>
 
+                        <!-- Google Drive Integration Settings -->
+                        <div class="settings-card" style="margin-top: 25px; border: 1px solid rgba(15, 157, 88, 0.35); box-shadow: 0 4px 15px rgba(15, 157, 88, 0.06);">
+                            <div class="settings-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <div class="settings-icon" style="background: rgba(15, 157, 88, 0.12); color: #0f9d58; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                        <i class="fab fa-google-drive"></i>
+                                    </div>
+                                    <div>
+                                        <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">ការតភ្ជាប់ Google Drive API (Google Drive Integration)</h3>
+                                        <p style="margin: 3px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">គ្រប់គ្រងការ Upload ឯកសារសៀវភៅ PDF ផ្ទាល់ចូល Google Drive របស់សាលា</p>
+                                    </div>
+                                </div>
+                                <div id="settingsDriveStatusBadge" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; background: rgba(156, 163, 175, 0.15); color: #6b7280; border: 1px solid rgba(156, 163, 175, 0.3);">
+                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; display: inline-block;"></span>
+                                    <span id="settingsDriveBadgeText">មិនទាន់ភ្ជាប់</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label class="form-label"><i class="fas fa-globe" style="color: #0f9d58; margin-right: 5px;"></i> Authorized Origin (ប្រភពវេបសាយបច្ចុប្បន្នដែលត្រូវដាក់ក្នុង Google Cloud)</label>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="text" id="settingCurrentOriginDisplay" class="form-control" readonly style="background: rgba(0,0,0,0.03); font-family: monospace; font-size: 0.88rem; font-weight: 600;">
+                                    <button type="button" class="btn btn-outline" onclick="navigator.clipboard.writeText(window.location.origin); alert('បានចម្លង URL ៖ ' + window.location.origin);" title="ចម្លង Domain">
+                                        <i class="fas fa-copy"></i> ចម្លង
+                                    </button>
+                                </div>
+                                <small style="color: #d97706; font-size: 0.78rem; display: block; margin-top: 4px;">
+                                    ⚠️ ប្រសិនបើ Google បង្ហាញកំហុស <strong>"no registered origin (Error 401: invalid_client)"</strong> សូមចូលទៅកាន់ Google Cloud Console ➡️ Credentials ➡️ ចុចលើ OAuth 2.0 Client ID ➡️ ចម្លង URL ខាងលើនេះដាក់ក្នុងប្រអប់ <strong>Authorized JavaScript origins</strong> (មិនត្រូវមានសញ្ញា / នៅខាងចុងឡើយ)។
+                                </small>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label class="form-label"><i class="fas fa-key" style="color: #0f9d58; margin-right: 5px;"></i> Google OAuth 2.0 Client ID</label>
+                                <input type="text" id="settingGoogleClientId" class="form-control" placeholder="967752963578-..." value="967752963578-88lko343u4tutlq65hp141i347ib5k6g.apps.googleusercontent.com">
+                                <small style="color: var(--text-muted); font-size: 0.78rem;">Client ID នេះត្រូវបានកំណត់រួចជាស្រេចសម្រាប់ការ Upload</small>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label class="form-label"><i class="fas fa-folder-open" style="color: #0f9d58; margin-right: 5px;"></i> Google Drive Target Folder ID (ដាក់ឯកសារចូល Folder នេះដោយស្វ័យប្រវត្តិ)</label>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="text" id="settingGoogleDriveFolderId" class="form-control" placeholder="1lLjZ_xH-JruEW8_n1TDHfyMv5ENkhmsQ" value="1lLjZ_xH-JruEW8_n1TDHfyMv5ENkhmsQ" style="font-family: monospace; font-size: 0.88rem;">
+                                    <a href="https://drive.google.com/drive/u/0/folders/1lLjZ_xH-JruEW8_n1TDHfyMv5ENkhmsQ" target="_blank" class="btn btn-outline" style="white-space: nowrap; color: #0f9d58; border-color: #0f9d58; font-size: 0.85rem; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;">
+                                        <i class="fas fa-external-link-alt"></i> បើក Folder
+                                    </a>
+                                </div>
+                                <small style="color: var(--text-muted); font-size: 0.78rem;">ឯកសារ PDF ទាំងអស់ដែល Upload តាម Google Drive នឹងត្រូវដាក់ចូលទៅក្នុង Folder នេះដោយស្វ័យប្រវត្តិ</small>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 18px; flex-wrap: wrap;">
+                                <button type="button" class="btn btn-primary" id="btnConnectGoogleDriveSettings" onclick="connectGoogleDriveAccount(true)" style="background: #0f9d58; border-color: #0f9d58;">
+                                    <i class="fab fa-google-drive" style="margin-right: 8px;"></i> <span id="textBtnConnectDrive">ភ្ជាប់ជាមួយ Google Drive ឥឡូវនេះ</span>
+                                </button>
+                                <button type="button" class="btn btn-outline" id="btnDisconnectGoogleDriveSettings" onclick="disconnectGoogleDriveAccount()" style="display: none; color: var(--danger); border-color: var(--danger);">
+                                    <i class="fas fa-unlink" style="margin-right: 6px;"></i> ផ្តាច់ការតភ្ជាប់
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="saveGoogleDriveSettings()">
+                                    <i class="fas fa-save" style="margin-right: 6px;"></i> រក្សាទុក Client ID
+                                </button>
+                                <span id="save-setting-msg-gdrive" style="color: var(--success); display: none; font-size: 0.9rem;"><i class="fas fa-check-circle"></i> បានរក្សាទុក!</span>
+                            </div>
+                        </div>
+
                         <!-- UI Settings (Mock) -->
                         <div class="settings-card">
                             <div class="settings-header">
@@ -2600,75 +2910,254 @@
     </div>
 
     <div id="modal-add-book" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>បន្ថែមសៀវភៅថ្មី</h3>
+        <div class="modal-content modal-lg" style="max-width: 860px; max-height: 88vh; padding: 18px 22px;">
+            <div class="modal-header" style="margin-bottom: 10px; padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(15, 157, 88, 0.12); color: #0f9d58; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700;">បន្ថែមសៀវភៅថ្មី</h3>
+                </div>
                 <i class="fas fa-times close-modal" onclick="closeModal('modal-add-book')"></i>
             </div>
-            <form id="addBookForm" onsubmit="saveNewBook(event)">
+            
+            <form id="addBookForm" onsubmit="saveNewBook(event)" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                 <input type="hidden" id="bookIdInput">
-                <div class="form-row">
-                    <div>
-                        <label class="form-label">កូដសៀវភៅ (ស្វ័យប្រវត្តិ)</label>
-                        <input type="text" id="bookCodeInput" class="form-control" readonly style="background-color: #e9ecef; cursor: not-allowed;" required>
-                    </div>
-                    <div>
-                        <label class="form-label">ប្រភេទ</label>
-                        <select id="bookCategoryInput" class="form-control" required>
-                            <option value="">ជ្រើសរើសប្រភេទ...</option>
-                            <option value="សៀវភៅសិក្សាគោល">សៀវភៅសិក្សាគោល</option>
-                            <option value="សៀវភៅកិច្ចតែងការបង្រៀន">សៀវភៅកិច្ចតែងការបង្រៀន</option>
-                            <option value="សៀវភៅចំណេះដឹងទូទៅ">សៀវភៅចំណេះដឹងទូទៅ</option>
-                            <option value="ស្រាវជ្រាវ">ស្រាវជ្រាវ</option>
-                            <option value="សៀវភៅបច្ចេកវិទ្យា">សៀវភៅបច្ចេកវិទ្យា</option>
-                            <option value="សៀវភៅវិធីសាស្ត្របង្រៀន">សៀវភៅវិធីសាស្ត្របង្រៀន</option>
-                            <option value="ផ្សេងៗ">ផ្សេងៗ</option>
-                        </select>
+                
+                <div class="modal-body-scroll" style="overflow-y: auto; flex: 1; min-height: 0; padding-right: 6px;">
+                    <div class="book-modal-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start;">
+                        
+                        <!-- LEFT COLUMN: Book Information & Cover -->
+                        <div style="display: flex; flex-direction: column; gap: 9px;">
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div>
+                                    <label class="form-label" style="font-size: 0.8rem; margin-bottom: 3px; font-weight: 600;">កូដសៀវភៅ (ស្វ័យប្រវត្តិ)</label>
+                                    <input type="text" id="bookCodeInput" class="form-control" readonly style="background-color: #f1f5f9; cursor: not-allowed; font-size: 0.85rem; padding: 6px 10px;" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" style="font-size: 0.8rem; margin-bottom: 3px; font-weight: 600;">ប្រភេទសៀវភៅ</label>
+                                    <select id="bookCategoryInput" class="form-control" style="font-size: 0.85rem; padding: 6px 10px;" required>
+                                        <option value="">ជ្រើសរើសប្រភេទ...</option>
+                                        <option value="សៀវភៅសិក្សាគោល">សៀវភៅសិក្សាគោល</option>
+                                        <option value="សៀវភៅកិច្ចតែងការបង្រៀន">សៀវភៅកិច្ចតែងការបង្រៀន</option>
+                                        <option value="សៀវភៅចំណេះដឹងទូទៅ">សៀវភៅចំណេះដឹងទូទៅ</option>
+                                        <option value="ស្រាវជ្រាវ">ស្រាវជ្រាវ</option>
+                                        <option value="សៀវភៅបច្ចេកវិទ្យា">សៀវភៅបច្ចេកវិទ្យា</option>
+                                        <option value="សៀវភៅវិធីសាស្ត្របង្រៀន">សៀវភៅវិធីសាស្ត្របង្រៀន</option>
+                                        <option value="ផ្សេងៗ">ផ្សេងៗ</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="form-label" style="font-size: 0.8rem; margin-bottom: 3px; font-weight: 600;">ចំណងជើងសៀវភៅ</label>
+                                <input type="text" id="bookTitleInput" class="form-control" style="font-size: 0.88rem; padding: 6px 10px;" required placeholder="បញ្ចូលចំណងជើងសៀវភៅ...">
+                            </div>
+
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div>
+                                    <label class="form-label" style="font-size: 0.8rem; margin-bottom: 3px; font-weight: 600;">កម្រិតថ្នាក់</label>
+                                    <select id="bookGradeInput" class="form-control" style="font-size: 0.85rem; padding: 6px 10px;">
+                                        <option value="">ជ្រើសរើសកម្រិតថ្នាក់...</option>
+                                        <option value="ថ្នាក់ទី១">ថ្នាក់ទី១</option>
+                                        <option value="ថ្នាក់ទី២">ថ្នាក់ទី២</option>
+                                        <option value="ថ្នាក់ទី៣">ថ្នាក់ទី៣</option>
+                                        <option value="ថ្នាក់ទី៤">ថ្នាក់ទី៤</option>
+                                        <option value="ថ្នាក់ទី៥">ថ្នាក់ទី៥</option>
+                                        <option value="ថ្នាក់ទី៦">ថ្នាក់ទី៦</option>
+                                        <option value="ថ្នាក់ទី៧">ថ្នាក់ទី៧</option>
+                                        <option value="ថ្នាក់ទី៨">ថ្នាក់ទី៨</option>
+                                        <option value="ថ្នាក់ទី៩">ថ្នាក់ទី៩</option>
+                                        <option value="ថ្នាក់ទី១០">ថ្នាក់ទី១០</option>
+                                        <option value="ថ្នាក់ទី១១">ថ្នាក់ទី១១</option>
+                                        <option value="ថ្នាក់ទី១២">ថ្នាក់ទី១២</option>
+                                        <option value="១២+២">១២+២ (គរុកោសល្យ)</option>
+                                        <option value="១២+៤">១២+៤ (គរុសិស្ស)</option>
+                                        <option value="បរិញ្ញាបត្រ+១">បរិញ្ញាបត្រ+១</option>
+                                        <option value="ផ្សេងៗ">ផ្សេងៗ</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label" style="font-size: 0.8rem; margin-bottom: 3px; font-weight: 600;">អ្នកនិពន្ធ</label>
+                                    <input type="text" id="bookAuthorInput" class="form-control" style="font-size: 0.85rem; padding: 6px 10px;" placeholder="ឧ. ក្រសួងអប់រំ យុវជន និងកីឡា">
+                                </div>
+                            </div>
+
+                            <!-- Book Cover Subsection -->
+                            <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; margin-top: 2px;">
+                                <label class="form-label" style="font-size: 0.78rem; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+                                    <i class="fas fa-image" style="color: var(--primary);"></i> រូបភាពក្របសៀវភៅ (Book Cover)
+                                </label>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <div id="bookCoverPreviewWrap" style="width: 44px; height: 58px; border-radius: 6px; border: 1px solid var(--border-color); background: #1e293b; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
+                                        <img id="bookCoverPreviewImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;" referrerpolicy="no-referrer">
+                                        <i id="bookCoverPreviewIcon" class="fas fa-book-open" style="color: var(--primary); font-size: 1.1rem;"></i>
+                                    </div>
+                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+                                        <div style="display: flex; gap: 6px;">
+                                            <input type="file" id="bookCoverFileInput" accept="image/*" style="display: none;" onchange="handleBookCoverFileSelected(this.files)">
+                                            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('bookCoverFileInput').click()" style="padding: 4px 10px; font-size: 0.78rem; border-radius: 5px;">
+                                                <i class="fas fa-upload" style="margin-right: 4px;"></i> ជ្រើសរូបភាព
+                                            </button>
+                                            <button type="button" class="btn btn-outline btn-sm" onclick="clearBookCover()" style="padding: 4px 8px; font-size: 0.78rem; color: var(--danger); border-color: rgba(239,68,68,0.3); border-radius: 5px;" title="លុបរូបភាព">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <input type="url" id="bookCoverInput" class="form-control" placeholder="https://... ឬជ្រើសរូបភាពខាងលើ" style="font-size: 0.78rem; padding: 4px 8px;" oninput="updateBookCoverPreview(this.value)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN: Google Drive PDF Upload Box -->
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="background: rgba(15, 157, 88, 0.04); border: 1px solid rgba(15, 157, 88, 0.28); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 700; color: #0f9d58; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fab fa-google-drive" style="font-size: 1.1rem;"></i> ឯកសារ PDF (Google Drive)
+                                    </span>
+                                    <div id="bookDriveStatusPill" style="display: inline-flex; align-items: center; cursor: pointer;" onclick="connectGoogleDriveAccount()">
+                                        <!-- Rendered by updateGoogleDriveUI() -->
+                                    </div>
+                                </div>
+
+                                <!-- Compact Status Banner -->
+                                <div id="bookDriveStatusCard" style="border-radius: 6px; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.22);">
+                                    <div style="font-weight: 600; color: #059669; font-size: 0.78rem; display: flex; align-items: center; gap: 5px;">
+                                        <i class="fab fa-google-drive"></i> <span id="bookDriveStatusCardTitle">Google Drive: បានភ្ជាប់រួចរាល់</span>
+                                    </div>
+                                    <div id="bookDriveStatusCardSub" style="display: none;"></div>
+                                    <button type="button" class="btn btn-sm" id="btnBookDriveAction" onclick="connectGoogleDriveAccount(true)" style="background: #059669; color: #fff; font-weight: 600; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; border: none; cursor: pointer;">
+                                        ប្តូរគណនី
+                                    </button>
+                                </div>
+
+                                <!-- Compact Tab Toggle -->
+                                <div style="display: flex; gap: 6px;">
+                                    <button type="button" class="btn btn-sm" id="btnTabBookPdfUpload" onclick="switchBookPdfTab('upload')" style="border-radius: 5px; font-size: 0.78rem; padding: 4px 10px; background: #0f9d58; color: #fff; font-weight: 600; border: none;">
+                                        <i class="fas fa-cloud-upload-alt" style="margin-right: 4px;"></i> Upload ចូល Drive
+                                    </button>
+                                    <button type="button" class="btn btn-sm" id="btnTabBookPdfUrl" onclick="switchBookPdfTab('url')" style="border-radius: 5px; font-size: 0.78rem; padding: 4px 10px; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); font-weight: 600;">
+                                        <i class="fas fa-link" style="margin-right: 4px;"></i> បញ្ចូល Link ដោយដៃ
+                                    </button>
+                                </div>
+
+                                <!-- Pane 1: Direct Dropzone -->
+                                <div id="paneBookPdfUpload">
+                                    <input type="file" id="bookPdfFileInput" accept="application/pdf" style="display: none;" onchange="handleBookPdfSelected(this.files)">
+                                    <div id="bookPdfDropzone" class="multi-upload-dropzone" onclick="document.getElementById('bookPdfFileInput').click()" style="padding: 16px 10px; margin-bottom: 0; background: rgba(15, 157, 88, 0.04); border: 2px dashed #0f9d58; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+                                        <i class="fas fa-file-pdf" style="font-size: 1.8rem; color: #ef4444; margin-bottom: 5px; display: inline-block;"></i>
+                                        <div id="bookPdfDropText" style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); margin-bottom: 2px;">
+                                            ចុចទីនេះ ដើម្បីជ្រើសរើសឯកសារ PDF
+                                        </div>
+                                        <div style="font-size: 0.74rem; color: var(--text-muted);">
+                                            ឬអូសទម្លាក់ចូល • Upload ចូល Google Drive សាលាស្វ័យប្រវត្តិ
+                                        </div>
+                                    </div>
+
+                                    <!-- Selected File Actions Box -->
+                                    <div id="bookPdfFileActionBox" style="display: none; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px;">
+                                            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                                                <i class="fas fa-file-pdf" style="color: #ef4444; font-size: 1.2rem; flex-shrink: 0;"></i>
+                                                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                    <span id="bookPdfPickedName" style="font-weight: 700; font-size: 0.82rem; color: var(--text-main);"></span>
+                                                    <span id="bookPdfPickedSize" style="font-size: 0.72rem; color: var(--text-muted); margin-left: 4px;"></span>
+                                                </div>
+                                            </div>
+                                            <div id="bookPdfActionButtons" style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;"></div>
+                                        </div>
+
+                                        <!-- Progress Bar -->
+                                        <div id="bookPdfProgressWrap" style="display: none;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.78rem;">
+                                                <span id="bookPdfStatusMsg" style="font-size: 0.74rem; color: var(--text-muted);"></span>
+                                                <span id="bookPdfProgressPercent" style="font-weight: 700; color: #0f9d58;">0%</span>
+                                            </div>
+                                            <div style="background: rgba(0,0,0,0.08); border-radius: 8px; height: 8px; overflow: hidden;">
+                                                <div id="bookPdfProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #0f9d58); transition: width 0.2s ease;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pane 2: Manual Link -->
+                                <div id="paneBookPdfUrl" style="display: none;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-link" style="position: absolute; left: 10px; top: 9px; color: var(--text-muted); font-size: 0.82rem;"></i>
+                                        <input type="url" id="bookUrlInput" class="form-control" placeholder="https://drive.google.com/file/d/..." style="padding-left: 32px; font-size: 0.82rem; padding-top: 6px; padding-bottom: 6px;">
+                                    </div>
+                                    <small style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: block;">
+                                        បញ្ចូលតំណភ្ជាប់ PDF ពី Google Drive ឬប្រភពផ្សេងទៀត
+                                    </small>
+                                </div>
+
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-                <div class="form-row">
-                    <div>
-                        <label class="form-label">ចំណងជើងសៀវភៅ</label>
-                        <input type="text" id="bookTitleInput" class="form-control" required>
+
+                <!-- Modal Footer (Always Visible at 100% Zoom) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color); flex-shrink: 0;">
+                    <div style="font-size: 0.76rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-folder" style="color: #0f9d58;"></i> Folder សាលា ៖ <span style="font-family: monospace; font-weight: 600;">1lLjZ...khmsQ</span>
                     </div>
-                    <div>
-                        <label class="form-label">កម្រិតថ្នាក់</label>
-                        <select id="bookGradeInput" class="form-control">
-                            <option value="">ជ្រើសរើសកម្រិតថ្នាក់...</option>
-                            <option value="ថ្នាក់ទី១">ថ្នាក់ទី១</option>
-                            <option value="ថ្នាក់ទី២">ថ្នាក់ទី២</option>
-                            <option value="ថ្នាក់ទី៣">ថ្នាក់ទី៣</option>
-                            <option value="ថ្នាក់ទី៤">ថ្នាក់ទី៤</option>
-                            <option value="ថ្នាក់ទី៥">ថ្នាក់ទី៥</option>
-                            <option value="ថ្នាក់ទី៦">ថ្នាក់ទី៦</option>
-                            <option value="ថ្នាក់ទី៧">ថ្នាក់ទី៧</option>
-                            <option value="ថ្នាក់ទី៨">ថ្នាក់ទី៨</option>
-                            <option value="ថ្នាក់ទី៩">ថ្នាក់ទី៩</option>
-                            <option value="ថ្នាក់ទី១០">ថ្នាក់ទី១០</option>
-                            <option value="ថ្នាក់ទី១១">ថ្នាក់ទី១១</option>
-                            <option value="ថ្នាក់ទី១២">ថ្នាក់ទី១២</option>
-                            <option value="១២+២">១២+២ (គរុកោសល្យ)</option>
-                            <option value="១២+៤">១២+៤ (គរុសិស្ស)</option>
-                            <option value="បរិញ្ញាបត្រ+១">បរិញ្ញាបត្រ+១</option>
-                            <option value="ផ្សេងៗ">ផ្សេងៗ</option>
-                        </select>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('modal-add-book')" style="padding: 6px 14px; font-size: 0.85rem; border-radius: 6px;">
+                            បោះបង់
+                        </button>
+                        <button type="submit" class="btn btn-sm" style="background: #0f9d58; color: #fff; font-weight: 700; border: none; padding: 6px 18px; border-radius: 6px; box-shadow: 0 2px 8px rgba(15,157,88,0.3); font-size: 0.85rem; cursor: pointer;">
+                            <i class="fas fa-save" style="margin-right: 5px;"></i> រក្សាទុក
+                        </button>
                     </div>
-                </div>
-                <label class="form-label">អ្នកនិពន្ធ</label>
-                <input type="text" id="bookAuthorInput" class="form-control">
-                <label class="form-label">តំណភ្ជាប់ (PDF/Drive URL)</label>
-                <input type="url" id="bookUrlInput" class="form-control">
-                <label class="form-label">តំណភ្ជាប់រូបភាពក្របសៀវភៅ (Cover Image URL)</label>
-                <input type="url" id="bookCoverInput" class="form-control">
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-book')">បោះបង់</button>
-                    <button type="submit" class="btn btn-success" style="width:auto;">រក្សាទុក</button>
                 </div>
             </form>
         </div>
     </div>
     
-    <div id="modal-add-news" class="modal"><div class="modal-content modal-lg"><div class="modal-header"><h3>បន្ថែមព័ត៌មានថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-news')"></i></div><form id="addNewsForm" onsubmit="saveNewNews(event)"><input type="hidden" id="newsIdInput"><label class="form-label">ចំណងជើង</label><input type="text" id="newsTitleInput" class="form-control" required><label class="form-label">តំណភ្ជាប់រូបភាព (Image URL)</label><input type="url" id="newsUrlInput" class="form-control" required><label class="form-label">ខ្លឹមសារ</label><textarea id="newsContentInput" class="form-control" rows="5"></textarea><div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;"><button type="button" class="btn btn-outline" onclick="closeModal('modal-add-news')">បោះបង់</button><button type="submit" class="btn btn-success" style="width:auto;">បង្ហោះ</button></div></form></div></div>
+    <div id="modal-add-news" class="modal"><div class="modal-content modal-lg"><div class="modal-header"><h3>បន្ថែមព័ត៌មានថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-news')"></i></div><form id="addNewsForm" onsubmit="saveNewNews(event)"><input type="hidden" id="newsIdInput"><label class="form-label">ចំណងជើង</label><input type="text" id="newsTitleInput" class="form-control" required><label class="form-label">តំណភ្ជាប់រូបភាព (Image URL)</label><input type="url" id="newsUrlInput" class="form-control" required><label class="form-label">ខ្លឹមសារ</label><textarea id="newsContentInput" class="form-control" rows="5"></textarea><div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;"><button type="button" class="btn btn-outline" onclick="closeModal('modal-add-news')">បោះបង់</button><button type="submit" id="btn-save-news" class="btn btn-success" style="width:auto;">បង្ហោះ</button></div></form></div></div>
+
+    <div id="modal-add-course" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>បន្ថែមវគ្គសិក្សា CPD ថ្មី</h3>
+                <i class="fas fa-times close-modal" onclick="closeModal('modal-add-course')"></i>
+            </div>
+            <form id="addCourseForm" onsubmit="saveNewCourse(event)">
+                <input type="hidden" id="courseIdInput">
+                
+                <label class="form-label">ចំណងជើងវគ្គសិក្សា (Course Title)</label>
+                <input type="text" id="courseTitleInput" class="form-control" required placeholder="ឧ. ប្រកាសស្តីពីការជ្រើសរើស «គរុកោសល្យ និងវគ្គបណ្តុះបណ្តាលបែបថ្មី» ជំនាន់ទី១២">
+                
+                <label class="form-label">តំណភ្ជាប់រូបភាព Poster (Image URL)</label>
+                <input type="text" id="courseImageUrlInput" class="form-control" required placeholder="./cpd-p1.jpg ឬ Google Drive Link ឬ Web URL">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="form-label">ព័ត៌មានបន្ថែម ១ (Meta 1 - ឧ. កាលវិភាគ / រយៈពេល)</label>
+                        <input type="text" id="courseMeta1Input" class="form-control" placeholder="ឧ. រយៈពេលវគ្គសិក្សា៖ 30 ម៉ោង">
+                    </div>
+                    <div>
+                        <label class="form-label">ព័ត៌មានបន្ថែម ២ (Meta 2 - ឧ. តម្លៃ / វិញ្ញាបនបត្រ)</label>
+                        <input type="text" id="courseMeta2Input" class="form-control" placeholder="ឧ. ថ្លៃសិក្សា៖ ត្រឹមតែ 25 ដុល្លារប៉ុណ្ណោះ">
+                    </div>
+                </div>
+
+                <label class="form-label">តំណភ្ជាប់ចុះឈ្មោះ (Registration Link / Telegram / Form - ស្រេចចិត្ត)</label>
+                <input type="url" id="courseLinkInput" class="form-control" placeholder="https://t.me/... ឬ Google Form">
+
+                <label class="form-label">ខ្លឹមសារពណ៌នាអំពីវគ្គសិក្សា (Course Description)</label>
+                <textarea id="courseDescInput" class="form-control" rows="5" required placeholder="ពណ៌នាអំពីខ្លឹមសារនៃវគ្គសិក្សា គោលបំណង និងអត្ថប្រយោជន៍..."></textarea>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-course')">បោះបង់</button>
+                    <button type="submit" id="btn-save-course" class="btn btn-success" style="width:auto;">រក្សាទុក</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div id="modal-add-lesson" class="modal"><div class="modal-content"><div class="modal-header"><h3>បន្ថែមវីដេអូថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-lesson')"></i></div><form id="addVideoForm" onsubmit="saveNewVideo(event)"><input type="hidden" id="videoIdInput"><label class="form-label">ចំណងជើងវីដេអូ</label><input type="text" id="videoTitleInput" class="form-control" required placeholder="បញ្ចូលចំណងជើងវីដេអូ..."><label class="form-label">ពណ៌នា</label><textarea id="videoDescInput" class="form-control" rows="3" placeholder="ពណ៌នាអំពីវីដេអូ..."></textarea><label class="form-label">តំណភ្ជាប់វីដេអូ (YouTube URL / Link)</label><input type="url" id="videoLinkInput" class="form-control" required placeholder="https://www.youtube.com/watch?v=..."><div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;"><button type="button" class="btn btn-outline" onclick="closeModal('modal-add-lesson')">បោះបង់</button><button type="submit" class="btn btn-success" style="width:auto;">រក្សាទុក</button></div></form></div></div>
 
@@ -2837,7 +3326,37 @@
 
     <div id="modal-add-slide" class="modal"><div class="modal-content"><div class="modal-header"><h3>បន្ថែមស្លាយផ្សព្វផ្សាយថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-slide')"></i></div><form id="addSlideForm" onsubmit="saveNewSlide(event)"><input type="hidden" id="slideIdInput"><label class="form-label">ចំណងជើង</label><input type="text" id="slideTitleInput" class="form-control" placeholder="ឧ. ស្វាគមន៍ឆ្នាំសិក្សាថ្មី" required><label class="form-label">តំណភ្ជាប់រូបភាព (Image URL / Google Drive)</label><input type="url" id="slideImageInput" class="form-control" placeholder="https://..." required><small style="color:var(--text-muted); display:block; margin-top:-5px; margin-bottom:12px;"><i class="fas fa-info-circle"></i> ទំហំរូបភាពណែនាំ៖ <strong>1920 x 600 px</strong></small><label class="form-label">តំណភ្ជាប់ទំព័រគោលដៅ (Target URL - ជម្រើស)</label><input type="url" id="slideTargetInput" class="form-control" placeholder="https://..."><div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-outline" onclick="closeModal('modal-add-slide')">បោះបង់</button><button type="submit" class="btn btn-success" style="width:auto;"><i class="fas fa-save"></i> រក្សាទុក</button></div></form></div></div>
     
-    <div id="modal-add-team" class="modal"><div class="modal-content"><div class="modal-header"><h3>បន្ថែមសមាជិកគណៈគ្រប់គ្រងថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-team')"></i></div><form id="addTeamForm" onsubmit="submitTeam(event)"><input type="hidden" id="teamIdInput"><label class="form-label">ឈ្មោះ</label><input type="text" id="teamName" class="form-control" required><label class="form-label">តួនាទី</label><input type="text" id="teamRole" class="form-control" required><label class="form-label">ការពិពណ៌នាខ្លី (កម្រិតវប្បធម៌ ឬបទពិសោធន៍)</label><input type="text" id="teamDesc" class="form-control"><label class="form-label">តំណភ្ជាប់រូបភាព (Image URL)</label><input type="url" id="teamPhoto" class="form-control" required><div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;"><button type="button" class="btn btn-outline" onclick="closeModal('modal-add-team')">បោះបង់</button><button type="submit" id="btn-submit-team" class="btn btn-success" style="width:auto;">រក្សាទុក</button></div></form></div></div>
+    <div id="modal-add-team" class="modal"><div class="modal-content"><div class="modal-header"><h3>បន្ថែមសមាជិកគណៈគ្រប់គ្រងថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-team')"></i></div><form id="addTeamForm" onsubmit="submitTeam(event)"><input type="hidden" id="teamIdInput"><label class="form-label">ឈ្មោះ</label><input type="text" id="teamName" class="form-control" required><label class="form-label">តួនាទី</label><input type="text" id="teamRole" class="form-control" required><label class="form-label">ការពិពណ៌នាខ្លី (កម្រិតវប្បធម៌ ឬបទពិសោធន៍)</label><input type="text" id="teamDesc" class="form-control">
+        <div style="margin-top: 15px; margin-bottom: 12px;">
+            <label class="form-label" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span><i class="fas fa-camera" style="color: var(--primary); margin-right: 5px;"></i> រូបថត Profile (Team Photo)</span>
+                <span id="teamPhotoStatusBadge" style="display: none; font-size: 0.78rem; color: #059669; font-weight: 700; align-items: center; gap: 4px;">
+                    <i class="fas fa-check-circle"></i> បានភ្ជាប់រូបថតរួចរាល់
+                </span>
+            </label>
+            <div style="display: flex; gap: 14px; align-items: center; background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--border-color); padding: 12px 14px; border-radius: 12px;">
+                <div id="teamModalPreviewWrap" style="width: 74px; height: 74px; border-radius: 50%; border: 2px solid var(--primary); background: var(--bg-card); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.08); position: relative;">
+                    <img id="teamModalPreview" src="" alt="Team Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;" onerror="this.style.display='none'; document.getElementById('teamModalPreviewDefaultIcon').style.display='block';">
+                    <i id="teamModalPreviewDefaultIcon" class="fas fa-user-tie" style="color: var(--text-muted); font-size: 2rem;"></i>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <input type="file" id="teamPhotoFileInput" accept="image/*" style="display: none;" onchange="handleTeamPhotoSelected(this.files)">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('teamPhotoFileInput').click()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25);">
+                            <i class="fas fa-upload"></i> Upload រូបថតផ្ទាល់
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="clearTeamPhoto()" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 7px 12px; font-size: 0.85rem;" title="លុបរូបថត">
+                            <i class="fas fa-trash-alt"></i> លុប
+                        </button>
+                    </div>
+                    <input type="text" id="teamPhoto" class="form-control" placeholder="https://... ឬចុចប៊ូតុង Upload ខាងលើ" style="margin-bottom: 0; font-size: 0.85rem; padding: 7px 12px; border-radius: 8px;" oninput="updateTeamModalPreview(this.value)">
+                    <small style="color: var(--text-muted); font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                        <i class="fas fa-info-circle"></i> គាំទ្ររូបភាព JPG, PNG, WebP ពីទូរស័ព្ទ ឬកុំព្យូទ័រ
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;"><button type="button" class="btn btn-outline" onclick="closeModal('modal-add-team')">បោះបង់</button><button type="submit" id="btn-submit-team" class="btn btn-success" style="width:auto;">រក្សាទុក</button></div></form></div></div>
 
     <!-- Modal: Add / Edit Staff -->
     <div id="modal-add-staff" class="modal">
@@ -2868,11 +3387,36 @@
                         <input type="email" id="staffEmail" class="form-control" placeholder="ឧ. name@ktpttc.edu.kh">
                     </div>
                 </div>
-                <div>
-                    <label class="form-label"><i class="fas fa-image" style="color: var(--primary); margin-right: 4px;"></i> តំណភ្ជាប់រូបភាព Profile (Image URL)</label>
-                    <input type="url" id="staffPhoto" class="form-control" placeholder="https://..." oninput="updateStaffModalPreview(this.value)">
-                    <div id="staffModalPreviewWrap" style="margin-top: 10px; display: none; text-align: center;">
-                        <img id="staffModalPreview" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);" onerror="this.parentElement.style.display='none'">
+                <div style="margin-top: 12px;">
+                    <label class="form-label" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <span><i class="fas fa-camera" style="color: var(--primary); margin-right: 5px;"></i> រូបថតបុគ្គលិក (Staff Profile Photo)</span>
+                        <span id="staffPhotoStatusBadge" style="display: none; font-size: 0.78rem; color: #059669; font-weight: 700; align-items: center; gap: 4px;">
+                            <i class="fas fa-check-circle"></i> បានភ្ជាប់រូបថតរួចរាល់
+                        </span>
+                    </label>
+                    <div style="display: flex; gap: 14px; align-items: center; background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--border-color); padding: 12px 14px; border-radius: 12px;">
+                        <!-- Avatar Preview Frame -->
+                        <div id="staffModalPreviewWrap" style="width: 74px; height: 74px; border-radius: 50%; border: 2px solid var(--primary); background: var(--bg-card); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.08); position: relative;">
+                            <img id="staffModalPreview" src="" alt="Staff Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;" onerror="this.style.display='none'; document.getElementById('staffModalPreviewDefaultIcon').style.display='block';">
+                            <i id="staffModalPreviewDefaultIcon" class="fas fa-user-tie" style="color: var(--text-muted); font-size: 2rem;"></i>
+                        </div>
+
+                        <!-- Upload Actions & URL Input -->
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                <input type="file" id="staffPhotoFileInput" accept="image/*" style="display: none;" onchange="handleStaffPhotoSelected(this.files)">
+                                <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('staffPhotoFileInput').click()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25);">
+                                    <i class="fas fa-upload"></i> Upload រូបថតផ្ទាល់
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="clearStaffPhoto()" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 7px 12px; font-size: 0.85rem;" title="លុបរូបថត">
+                                    <i class="fas fa-trash-alt"></i> លុប
+                                </button>
+                            </div>
+                            <input type="text" id="staffPhoto" class="form-control" placeholder="https://... ឬចុចប៊ូតុង Upload ខាងលើ" style="margin-bottom: 0; font-size: 0.85rem; padding: 7px 12px; border-radius: 8px;" oninput="updateStaffModalPreview(this.value)">
+                            <small style="color: var(--text-muted); font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                <i class="fas fa-info-circle"></i> គាំទ្ររូបភាព JPG, PNG, WebP ពីទូរស័ព្ទ ឬកុំព្យូទ័រ (បង្ហាប់ និង Upload ស្វ័យប្រវត្តិ)
+                            </small>
+                        </div>
                     </div>
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
@@ -2995,7 +3539,82 @@
         </div>
     </div>
 
-    <div id="modal-add-gallery" class="modal"><div class="modal-content"><div class="modal-header"><h3>បន្ថែមរូបភាពថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-gallery')"></i></div><form id="addGalleryForm" onsubmit="saveNewGallery(event)"><input type="hidden" id="galleryIdInput"><label class="form-label">ចំណងជើង ឬព្រឹត្តិការណ៍</label><input type="text" id="galleryTitleInput" class="form-control" required><label class="form-label">តំណភ្ជាប់រូបភាព (Image URL)</label><input type="url" id="galleryImageInput" class="form-control" required><label class="form-label">កាលបរិច្ឆេទ</label><input type="date" id="galleryDateInput" class="form-control" required><div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;"><button type="button" class="btn btn-outline" onclick="closeModal('modal-add-gallery')">បោះបង់</button><button type="submit" class="btn btn-success" style="width:auto;">រក្សាទុក</button></div></form></div></div>
+    <!-- Modal: Add / Edit Gallery (Multi Photo Upload) -->
+    <div id="modal-add-gallery" class="modal">
+        <div class="modal-content" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3 id="galleryModalTitle"><i class="fas fa-images" style="color:var(--primary); margin-right:8px;"></i> បន្ថែមអាល់ប៊ុមរូបភាព (Create Album)</h3>
+                <i class="fas fa-times close-modal" onclick="closeModal('modal-add-gallery')"></i>
+            </div>
+            <form id="addGalleryForm" onsubmit="saveNewGallery(event)">
+                <input type="hidden" id="galleryIdInput">
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label class="form-label">ចំណងជើងអាល់ប៊ុម ឬព្រឹត្តិការណ៍ <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="galleryTitleInput" class="form-control" placeholder="ឧ. សកម្មភាពបង្រៀន ឬពិធីបើកបវេសនកាល..." required>
+                </div>
+
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">កាលបរិច្ឆេទ <span style="color:var(--danger)">*</span></label>
+                        <input type="date" id="galleryDateInput" class="form-control" required>
+                    </div>
+                    <div class="form-group" id="gallerySingleUrlGroup" style="display: none;">
+                        <label class="form-label">តំណភ្ជាប់រូបភាព (Image URL)</label>
+                        <input type="url" id="galleryImageInput" class="form-control" placeholder="https://...">
+                    </div>
+                </div>
+
+                <!-- Multi Photo Upload Section (Active when adding new) -->
+                <div id="galleryMultiUploadSection">
+                    <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span>ជ្រើសរើសរូបភាពក្នុងអាល់ប៊ុម (អាចជ្រើសរើសបានច្រើនសន្លឹក) <span style="color:var(--danger)">*</span></span>
+                        <span id="galleryUploadCountBadge" style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">0 រូបភាព</span>
+                    </label>
+
+                    <!-- Upload Tabs: Files or URLs -->
+                    <div class="multi-upload-tabs">
+                        <button type="button" class="multi-upload-tab-btn active" id="tabBtnFiles" onclick="switchGalleryTab('files')">
+                            <i class="fas fa-cloud-upload-alt"></i> ជ្រើសពីកុំព្យូទ័រ / ទូរស័ព្ទ
+                        </button>
+                        <button type="button" class="multi-upload-tab-btn" id="tabBtnUrls" onclick="switchGalleryTab('urls')">
+                            <i class="fas fa-link"></i> បិទភ្ជាប់តំណភ្ជាប់ (Links / Drive)
+                        </button>
+                    </div>
+
+                    <!-- Tab Pane 1: Files Dropzone -->
+                    <div id="galleryTabPaneFiles">
+                        <div class="multi-upload-dropzone" id="galleryDropzone" onclick="document.getElementById('galleryFilesInput').click()">
+                            <i class="fas fa-images" style="font-size: 2.2rem; color: var(--primary); margin-bottom: 8px;"></i>
+                            <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">ចុចទីនេះ ដើម្បីជ្រើសរើសរូបភាព ឬទម្លាក់រូបភាពចូល</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">អាចជ្រើសរើសរូបភាពច្រើនសន្លឹកក្នុងពេលតែមួយ (JPG, PNG, WEBP)</div>
+                            <input type="file" id="galleryFilesInput" multiple accept="image/*" style="display: none;" onchange="handleGalleryFilesSelected(this.files)">
+                        </div>
+                    </div>
+
+                    <!-- Tab Pane 2: URLs Paste -->
+                    <div id="galleryTabPaneUrls" style="display: none;">
+                        <textarea id="galleryMultiUrlsInput" class="form-control" rows="3" placeholder="https://drive.google.com/file/d/...\nhttps://example.com/photo2.jpg\n(បិទភ្ជាប់ Link រូបភាព ១ ឬច្រើន ដោយចុះបន្ទាត់)" oninput="handleGalleryUrlsInput(this.value)"></textarea>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">គាំទ្រទាំង Google Drive link និង direct image URL</div>
+                    </div>
+
+                    <!-- Live Image Previews Grid -->
+                    <div id="galleryPreviewWrapper" class="gallery-preview-wrapper" style="display: none;">
+                        <div class="gallery-preview-header">
+                            <span><i class="fas fa-eye"></i> រូបភាពដែលបានជ្រើសរើស (<span id="galleryPreviewCount">0</span>)</span>
+                            <button type="button" class="btn btn-outline" style="padding: 2px 10px; font-size: 0.78rem; width: auto;" onclick="clearAllGallerySelectedPhotos()"><i class="fas fa-trash"></i> លុបទាំងអស់</button>
+                        </div>
+                        <div id="galleryPreviewGrid" class="gallery-preview-grid"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:15px; border-top:1px solid var(--border-color);">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-gallery')">បោះបង់</button>
+                    <button type="submit" id="btnSaveGallery" class="btn btn-success" style="width:auto;"><i class="fas fa-check"></i> រក្សាទុកអាល់ប៊ុម</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal: Edit Admin Profile -->
     <div id="modal-edit-profile" class="modal">
@@ -3291,7 +3910,10 @@
 
             if (tabName === 'team') loadAdminTeam();
             else if (tabName === 'staff') loadAdminStaff();
-            else if (tabName === 'structure') loadAdminStructure();
+            else if (tabName === 'structure') {
+                loadStructureImage();
+                loadAdminStructure();
+            }
         }
 
         function switchView(viewId, navElement) {
@@ -3310,7 +3932,7 @@
             }
             
             if (viewId === 'view-dashboard') loadDashboardStats();
-            else if (viewId === 'view-library') loadAdminBooks();
+            else if (viewId === 'view-library') { loadAdminBooks(); setupBookPdfDragAndDrop(); updateGoogleDriveUI(); }
             else if (viewId === 'view-personnel') {
                 const activeTabBtn = document.querySelector('.personnel-tab-btn.active');
                 const activeTab = activeTabBtn ? activeTabBtn.id.replace('btn-personnel-tab-', '') : 'team';
@@ -3329,13 +3951,14 @@
                 switchPersonnelSubTab('structure');
             }
             else if (viewId === 'view-news') loadAdminNews();
+            else if (viewId === 'view-courses') loadAdminCourses();
             else if (viewId === 'view-lessons') loadAdminVideos();
             else if (viewId === 'view-slides') loadAdminSlides();
-            else if (viewId === 'view-gallery') loadAdminGallery();
+            else if (viewId === 'view-gallery') { loadAdminGallery(); setupGalleryDragAndDrop(); }
             else if (viewId === 'view-partners') loadAdminPartners();
             else if (viewId === 'view-messages') { loadAdminMessages(); loadSettings(); loadTelegramStatus(); loadTelegramCommands(); }
             else if (viewId === 'view-reports') loadReportsCenter();
-            else if (viewId === 'view-settings') { loadSettings(); loadDatabaseStatus(); }
+            else if (viewId === 'view-settings') { loadSettings(); loadDatabaseStatus(); updateGoogleDriveUI(); }
         }
 
         function getPlaceholderSvg(text = 'No Image', width = 400, height = 250) {
@@ -3473,6 +4096,9 @@
                 populateCategoryDropdowns();
                 updateMessageBadges();
                 if (typeof setupChartFilterListeners === 'function') setupChartFilterListeners();
+                initGoogleDriveClient();
+                setupBookPdfDragAndDrop();
+                updateGoogleDriveUI();
             } else {
                 if (msg) {
                     msg.style.display = 'block';
@@ -3722,7 +4348,7 @@
                 mission: "លើកកម្ពស់គុណភាពអប់រំ ផ្តោតលើចំណេះដឹង ជំនាញ សីលធម៌ និងនវានុវត្តន៍។",
                 values: "វិន័យ គុណធម៌ សាមគ្គីភាព និងការទទួលខុសត្រូវខ្ពស់ក្នុងសង្គម។",
                 historyP1: "សាលារៀនរបស់យើងត្រូវបានបង្កើតឡើងនៅក្នុងឆ្នាំ ១៩៩០ ដោយមានគោលបំណងចម្បងក្នុងការបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិត។ ឆ្លងកាត់រយៈពេលជាង ៣០ ឆ្នាំ សាលាបានអភិវឌ្ឍខ្លួនពីអគារឈើប្រក់ក្បឿង មកជាអគារបេតុងទំនើបដែលបំពាក់ដោយសម្ភារៈសិក្សាគ្រប់គ្រាន់។",
-                historyP2: "បច្ចុប្បន្ន សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ មានគរុសិស្ស/គរុនិស្សិតជាង ២០០០ នាក់ និងលោកគ្រូអ្នកគ្រូជាង ១០០ នាក់ ដែលកំពុងបំពេញបេសកកម្មបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិតសម្រាប់ប្រទេសជាតិ។",
+                historyP2: "បច្ចុប្បន្ន សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ មានគរុសិស្ស/គរុនិស្សិតជាង ២០០០ នាក់ និងលោកគ្រូអ្នកគ្រូជាង ២០ នាក់ ដែលកំពុងបំពេញបេសកកម្មបណ្ដុះបណ្ដាលគរុសិស្ស/គរុនិស្សិតសម្រាប់ប្រទេសជាតិ។",
                 historyImage: "https://drive.google.com/file/d/1eqv7sSwcybv5OG9HfL1l4s4ugpAgQHG0/view?usp=share_link",
                 historyThumb1: "https://drive.google.com/file/d/1PtRTKELxABPews_T9boyDZ9giEUmksRW/view?usp=share_link",
                 historyThumb2: "https://drive.google.com/file/d/1kgVjaEhJX_pLoDGZlYAwS1BtgKvgPbJZ/view?usp=share_link",
@@ -3773,7 +4399,11 @@
                 if (document.getElementById('settingTelegramChatId')) document.getElementById('settingTelegramChatId').value = data.telegramChatId || '';
                 if (document.getElementById('settingTelegramNotifyMsg')) document.getElementById('settingTelegramNotifyMsg').checked = data.telegramNotifyOnMessage !== undefined ? Boolean(data.telegramNotifyOnMessage) : true;
                 if (document.getElementById('settingTelegramNotifyBackup')) document.getElementById('settingTelegramNotifyBackup').checked = data.telegramNotifyOnBackup !== undefined ? Boolean(data.telegramNotifyOnBackup) : true;
+                if (document.getElementById('settingGoogleClientId')) document.getElementById('settingGoogleClientId').value = getGoogleClientId();
+                if (document.getElementById('settingGoogleDriveFolderId')) document.getElementById('settingGoogleDriveFolderId').value = getGoogleDriveFolderId();
+                if (document.getElementById('settingCurrentOriginDisplay')) document.getElementById('settingCurrentOriginDisplay').value = window.location.origin;
                 loadTelegramStatus();
+                updateGoogleDriveUI();
             };
 
             applyFormValues(settings);
@@ -4807,6 +5437,606 @@
                 wrap.style.display = 'none';
             }
         }
+
+        /* ==========================================================================
+           Google Drive API & Direct Book PDF Upload Integration
+           ========================================================================== */
+        const DEFAULT_GOOGLE_CLIENT_ID = '967752963578-88lko343u4tutlq65hp141i347ib5k6g.apps.googleusercontent.com';
+        const DEFAULT_GOOGLE_DRIVE_FOLDER_ID = '1lLjZ_xH-JruEW8_n1TDHfyMv5ENkhmsQ';
+        let gdriveTokenClient = null;
+        let gdriveAccessToken = localStorage.getItem('ktpttc_gdrive_token') || null;
+        let gdriveTokenExpiresAt = parseInt(localStorage.getItem('ktpttc_gdrive_expires_at') || '0', 10);
+        let pendingUploadAfterAuth = null;
+        let isUploadingBookPdf = false;
+
+        function getGoogleClientId() {
+            const saved = localStorage.getItem('ktpttc_google_client_id');
+            if (!saved || saved.includes('osingk1iq7s2qltu69t77ep3lmmm5i3d') || saved.includes('8kt7s50sspkk5pgffu11j7l23bjo4l8u')) {
+                localStorage.setItem('ktpttc_google_client_id', DEFAULT_GOOGLE_CLIENT_ID);
+                return DEFAULT_GOOGLE_CLIENT_ID;
+            }
+            return saved;
+        }
+
+        function getGoogleDriveFolderId() {
+            const saved = localStorage.getItem('ktpttc_gdrive_folder_id');
+            if (!saved || !saved.trim()) {
+                localStorage.setItem('ktpttc_gdrive_folder_id', DEFAULT_GOOGLE_DRIVE_FOLDER_ID);
+                return DEFAULT_GOOGLE_DRIVE_FOLDER_ID;
+            }
+            return saved.trim();
+        }
+
+        function isGoogleDriveConnected() {
+            return !!(gdriveAccessToken && Date.now() < gdriveTokenExpiresAt - 60000);
+        }
+
+        function initGoogleDriveClient() {
+            if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+                setTimeout(initGoogleDriveClient, 500);
+                return;
+            }
+
+            try {
+                gdriveTokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: getGoogleClientId(),
+                    scope: 'https://www.googleapis.com/auth/drive.file',
+                    callback: (tokenResponse) => {
+                        if (tokenResponse && tokenResponse.access_token) {
+                            gdriveAccessToken = tokenResponse.access_token;
+                            const expiresIn = (tokenResponse.expires_in || 3600) * 1000;
+                            gdriveTokenExpiresAt = Date.now() + expiresIn;
+                            localStorage.setItem('ktpttc_gdrive_token', gdriveAccessToken);
+                            localStorage.setItem('ktpttc_gdrive_expires_at', String(gdriveTokenExpiresAt));
+                            updateGoogleDriveUI();
+
+                            if (typeof pendingUploadAfterAuth === 'function') {
+                                const fn = pendingUploadAfterAuth;
+                                pendingUploadAfterAuth = null;
+                                fn();
+                            }
+                        } else if (tokenResponse && tokenResponse.error) {
+                            console.error('Google OAuth error:', tokenResponse);
+                            let errMsg = 'ការភ្ជាប់ Google Drive បរាជ័យ៖ ' + (tokenResponse.error_description || tokenResponse.error);
+                            if (tokenResponse.error === 'invalid_client' || (tokenResponse.error_description && tokenResponse.error_description.includes('origin'))) {
+                                errMsg = `កំហុស Google Drive (no registered origin) ៖\n\nប្រភព URL បច្ចុប្បន្ន (${window.location.origin}) មិនទាន់ត្រូវបានចុះឈ្មោះក្នុង "Authorized JavaScript origins" លើ Google Cloud Console នៅឡើយទេ។\n\nលោកអ្នកអាចប្រើប្រាស់មុខងារ "Upload ផ្ទាល់" (Direct Upload) ដែលដំណើរការភ្លាមៗដោយមិនបាច់ប្រើ Google Drive បាន!`;
+                            }
+                            alert(errMsg);
+                        }
+                    }
+                });
+                updateGoogleDriveUI();
+            } catch (err) {
+                console.error('initGoogleDriveClient error:', err);
+            }
+        }
+
+        function connectGoogleDriveAccount(isExplicit = false) {
+            if (!gdriveTokenClient) {
+                initGoogleDriveClient();
+            }
+            if (!gdriveTokenClient) {
+                alert('ប្រព័ន្ធមិនទាន់អាចទាញយក Google Identity Service បាននៅឡើយ។ សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត រួចព្យាយាមម្តងទៀត។');
+                return;
+            }
+
+            gdriveTokenClient.requestAccessToken({ prompt: isExplicit ? 'select_account' : '' });
+        }
+
+        function disconnectGoogleDriveAccount() {
+            if (gdriveAccessToken && typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+                try {
+                    google.accounts.oauth2.revoke(gdriveAccessToken, () => {});
+                } catch(e) {}
+            }
+            gdriveAccessToken = null;
+            gdriveTokenExpiresAt = 0;
+            localStorage.removeItem('ktpttc_gdrive_token');
+            localStorage.removeItem('ktpttc_gdrive_expires_at');
+            updateGoogleDriveUI();
+            alert('បានផ្តាច់ការតភ្ជាប់ពី Google Drive រួចរាល់។');
+        }
+
+        function saveGoogleDriveSettings() {
+            const inputClientId = document.getElementById('settingGoogleClientId');
+            const inputFolderId = document.getElementById('settingGoogleDriveFolderId');
+            if (inputClientId && inputClientId.value.trim()) {
+                const newId = inputClientId.value.trim();
+                localStorage.setItem('ktpttc_google_client_id', newId);
+            }
+            if (inputFolderId && inputFolderId.value.trim()) {
+                const newFolder = inputFolderId.value.trim();
+                localStorage.setItem('ktpttc_gdrive_folder_id', newFolder);
+            }
+            gdriveTokenClient = null;
+            initGoogleDriveClient();
+            const msg = document.getElementById('save-setting-msg-gdrive');
+            if (msg) {
+                msg.style.display = 'inline';
+                setTimeout(() => msg.style.display = 'none', 3000);
+            }
+        }
+
+        let selectedBookPdfFile = null;
+
+        function updateGoogleDriveUI() {
+            const connected = isGoogleDriveConnected();
+
+            // Status Pill in Book Modal Header
+            const pill = document.getElementById('bookDriveStatusPill');
+            if (pill) {
+                if (connected) {
+                    pill.innerHTML = `
+                        <span style="background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.25); padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="fas fa-check-circle"></i> ភ្ជាប់ Drive រួចរាល់
+                        </span>
+                    `;
+                    pill.title = "ចុចដើម្បីប្តូរគណនី Google Drive";
+                } else {
+                    pill.innerHTML = `
+                        <span style="background: rgba(15, 157, 88, 0.1); color: #0f9d58; border: 1px solid rgba(15, 157, 88, 0.3); padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+                            <i class="fab fa-google-drive"></i> ភ្ជាប់ Google Drive
+                        </span>
+                    `;
+                    pill.title = "ចុចដើម្បីភ្ជាប់ជាមួយ Google Drive របស់សាលា";
+                }
+            }
+
+            // Status Card in Upload Pane
+            const card = document.getElementById('bookDriveStatusCard');
+            const cardTitle = document.getElementById('bookDriveStatusCardTitle');
+            const cardSub = document.getElementById('bookDriveStatusCardSub');
+            const btnCard = document.getElementById('btnBookDriveAction');
+
+            if (card && cardTitle && btnCard) {
+                if (connected) {
+                    card.style.background = 'rgba(16, 185, 129, 0.08)';
+                    card.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+                    cardTitle.innerHTML = '<span style="color: #059669;"><i class="fas fa-check-circle"></i> Google Drive: បានភ្ជាប់រួចរាល់ (Active)</span>';
+                    if (cardSub) cardSub.innerText = 'ឯកសារ PDF នឹងត្រូវ Upload ចូលគណនី Google Drive របស់សាលាដោយស្វ័យប្រវត្តិ';
+                    btnCard.innerHTML = '<i class="fas fa-sync-alt" style="margin-right: 5px;"></i> ប្តូរគណនី';
+                    btnCard.style.background = '#059669';
+                } else {
+                    card.style.background = 'rgba(15, 157, 88, 0.08)';
+                    card.style.borderColor = 'rgba(15, 157, 88, 0.25)';
+                    cardTitle.innerHTML = '<span style="color: #0f9d58;"><i class="fab fa-google-drive"></i> Google Drive: មិនទាន់ភ្ជាប់</span>';
+                    if (cardSub) cardSub.innerText = 'សូមចុច "ភ្ជាប់ Google Drive" ដើម្បីអាច Upload ឯកសារ PDF ធំៗរហូតដល់ 200MB+ បាន';
+                    btnCard.innerHTML = '<i class="fab fa-google-drive" style="margin-right: 5px;"></i> ភ្ជាប់ Google Drive';
+                    btnCard.style.background = '#0f9d58';
+                }
+            }
+
+            // Status in Settings Card
+            const badge = document.getElementById('settingsDriveStatusBadge');
+            const badgeText = document.getElementById('settingsDriveBadgeText');
+            const btnConnect = document.getElementById('btnConnectGoogleDriveSettings');
+            const btnDisconnect = document.getElementById('btnDisconnectGoogleDriveSettings');
+            const textBtnConnect = document.getElementById('textBtnConnectDrive');
+
+            if (badge && badgeText) {
+                if (connected) {
+                    badge.style.background = 'rgba(16, 185, 129, 0.12)';
+                    badge.style.color = '#059669';
+                    badge.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+                    badgeText.innerHTML = '<span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block;"></span> ភ្ជាប់រួចរាល់ (Active)';
+                    if (btnDisconnect) btnDisconnect.style.display = 'inline-flex';
+                    if (textBtnConnect) textBtnConnect.innerText = 'ប្តូរគណនី Google Drive';
+                } else {
+                    badge.style.background = 'rgba(156, 163, 175, 0.15)';
+                    badge.style.color = '#6b7280';
+                    badge.style.borderColor = 'rgba(156, 163, 175, 0.3)';
+                    badgeText.innerHTML = '<span style="width:8px; height:8px; border-radius:50%; background:#9ca3af; display:inline-block;"></span> មិនទាន់ភ្ជាប់';
+                    if (btnDisconnect) btnDisconnect.style.display = 'none';
+                    if (textBtnConnect) textBtnConnect.innerText = 'ភ្ជាប់ជាមួយ Google Drive ឥឡូវនេះ';
+                }
+            }
+        }
+
+        function switchBookPdfTab(tab) {
+            const paneUpload = document.getElementById('paneBookPdfUpload');
+            const paneUrl = document.getElementById('paneBookPdfUrl');
+            const btnUpload = document.getElementById('btnTabBookPdfUpload');
+            const btnUrl = document.getElementById('btnTabBookPdfUrl');
+
+            if (tab === 'upload') {
+                if (paneUpload) paneUpload.style.display = 'block';
+                if (paneUrl) paneUrl.style.display = 'none';
+                if (btnUpload) {
+                    btnUpload.style.background = 'var(--primary)';
+                    btnUpload.style.color = '#fff';
+                    btnUpload.style.borderColor = 'transparent';
+                }
+                if (btnUrl) {
+                    btnUrl.style.background = 'transparent';
+                    btnUrl.style.color = 'var(--text-muted)';
+                    btnUrl.style.borderColor = 'var(--border-color)';
+                }
+            } else {
+                if (paneUpload) paneUpload.style.display = 'none';
+                if (paneUrl) paneUrl.style.display = 'block';
+                if (btnUpload) {
+                    btnUpload.style.background = 'transparent';
+                    btnUpload.style.color = 'var(--text-muted)';
+                    btnUpload.style.borderColor = 'var(--border-color)';
+                }
+                if (btnUrl) {
+                    btnUrl.style.background = 'var(--primary)';
+                    btnUrl.style.color = '#fff';
+                    btnUrl.style.borderColor = 'transparent';
+                }
+            }
+        }
+
+        function setupBookPdfDragAndDrop() {
+            const dropzone = document.getElementById('bookPdfDropzone');
+            if (!dropzone || dropzone.dataset.dndBound) return;
+            dropzone.dataset.dndBound = 'true';
+
+            ['dragenter', 'dragover'].forEach(name => {
+                dropzone.addEventListener(name, e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(name => {
+                dropzone.addEventListener(name, e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropzone.addEventListener('drop', e => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    handleBookPdfSelected(dt.files);
+                }
+            }, false);
+        }
+
+        function formatBytes(bytes, decimals = 1) {
+            if (!+bytes) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        }
+
+        function handleBookPdfSelected(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+
+            if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+                alert('សូមជ្រើសរើសឯកសារជាទម្រង់ PDF តែប៉ុណ្ណោះ!');
+                return;
+            }
+
+            selectedBookPdfFile = file;
+
+            // Auto-fill book title if currently blank
+            const titleInput = document.getElementById('bookTitleInput');
+            if (titleInput && !titleInput.value.trim()) {
+                const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+                titleInput.value = cleanName;
+            }
+
+            // Display file in Action Box
+            const actionBox = document.getElementById('bookPdfFileActionBox');
+            const pickedName = document.getElementById('bookPdfPickedName');
+            const pickedSize = document.getElementById('bookPdfPickedSize');
+            const actionBtns = document.getElementById('bookPdfActionButtons');
+            const progressWrap = document.getElementById('bookPdfProgressWrap');
+
+            if (actionBox) actionBox.style.display = 'block';
+            if (pickedName) pickedName.innerText = file.name;
+            if (pickedSize) pickedSize.innerText = formatBytes(file.size);
+            if (progressWrap) progressWrap.style.display = 'none';
+
+            renderBookPdfActionButtons();
+
+            // Auto-upload to Google Drive if already connected!
+            if (isGoogleDriveConnected()) {
+                startBookPdfUpload(file);
+            }
+        }
+
+        function renderBookPdfActionButtons(isUploaded = false, link = '') {
+            const actionBtns = document.getElementById('bookPdfActionButtons');
+            if (!actionBtns) return;
+
+            if (isUploaded && link) {
+                actionBtns.innerHTML = `
+                    <span style="color: #059669; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ PDF រួចរាល់!
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="connectAndUploadBookPdf()" style="font-size: 0.78rem; padding: 4px 10px; border-radius: 6px; color: #0f9d58; border-color: rgba(15,157,88,0.35);" title="ប្តូរទៅ Upload ចូល Google Drive វិញ">
+                        <i class="fab fa-google-drive"></i> Upload ចូល Google Drive ម្តងទៀត
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="clearSelectedBookPdf()" style="font-size: 0.78rem; padding: 4px 8px; color: var(--danger); border-color: rgba(239,68,68,0.3); border-radius: 6px;" title="ជ្រើសរើសឯកសារផ្សេង">
+                        <i class="fas fa-times"></i> ប្តូរ
+                    </button>
+                `;
+            } else if (isGoogleDriveConnected()) {
+                actionBtns.innerHTML = `
+                    <button type="button" class="btn btn-sm" onclick="startBookPdfUpload(selectedBookPdfFile)" style="background: #0f9d58; color: #fff; font-weight: 700; border: none; padding: 7px 16px; border-radius: 6px; box-shadow: 0 2px 8px rgba(15,157,88,0.35); display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem;">
+                        <i class="fab fa-google-drive"></i> Upload ចូល Google Drive (Folder សាលា) 🚀
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="clearSelectedBookPdf()" style="color: var(--danger); border-color: rgba(239,68,68,0.3); border-radius: 6px;" title="បោះបង់">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+            } else {
+                actionBtns.innerHTML = `
+                    <button type="button" class="btn btn-sm" onclick="connectAndUploadBookPdf()" style="background: #0f9d58; color: #fff; font-weight: 700; border: none; padding: 7px 16px; border-radius: 6px; box-shadow: 0 2px 8px rgba(15,157,88,0.35); display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem;">
+                        <i class="fab fa-google-drive"></i> ភ្ជាប់ & Upload ចូល Google Drive (Folder សាលា) 🚀
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="clearSelectedBookPdf()" style="color: var(--danger); border-color: rgba(239,68,68,0.3); border-radius: 6px;" title="បោះបង់">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+            }
+        }
+
+        function connectAndUploadBookPdf() {
+            if (!selectedBookPdfFile) {
+                alert('សូមជ្រើសរើសឯកសារ PDF ជាមុនសិន!');
+                return;
+            }
+            pendingUploadAfterAuth = () => startBookPdfUpload(selectedBookPdfFile);
+            connectGoogleDriveAccount(true);
+        }
+
+        async function uploadPdfAsDirectFile(file) {
+            if (!file) return;
+            if (file.size > 350000) {
+                alert('ឯកសារ PDF នេះមានទំហំធំ (' + formatBytes(file.size) + ') មិនអាច Upload ផ្ទាល់បានឡើយ ពីព្រោះកម្មវិធី Browser នឹងកាត់ផ្តាច់ទិន្នន័យ (Truncate) ដែលបណ្តាលឱ្យសៀវភៅខូចមិនអាចអានបាន។\n\nសូមចុចប៊ូតុងពណ៌បៃតង «Upload ចូល Google Drive» ដើម្បីបញ្ជូនឯកសារពេញលេញ 100% ទៅកាន់ Folder របស់សាលា!');
+                return;
+            }
+            const progressWrap = document.getElementById('bookPdfProgressWrap');
+            const percentEl = document.getElementById('bookPdfProgressPercent');
+            const barEl = document.getElementById('bookPdfProgressBar');
+            const statusEl = document.getElementById('bookPdfStatusMsg');
+
+            if (progressWrap) progressWrap.style.display = 'block';
+            if (percentEl) percentEl.innerText = '50%';
+            if (barEl) {
+                barEl.style.width = '50%';
+                barEl.style.background = 'linear-gradient(90deg, #10b981, #0284c7)';
+            }
+            if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងអាន និង Upload ឯកសារផ្ទាល់...';
+
+            try {
+                const reader = new FileReader();
+                reader.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        if (percentEl) percentEl.innerText = pct + '%';
+                        if (barEl) barEl.style.width = pct + '%';
+                    }
+                };
+                reader.onload = (e) => {
+                    const dataUrl = e.target.result;
+                    document.getElementById('bookUrlInput').value = dataUrl;
+                    if (percentEl) percentEl.innerText = '100%';
+                    if (barEl) barEl.style.width = '100%';
+                    if (statusEl) statusEl.innerHTML = '<span style="color: #059669; font-weight: 700;"><i class="fas fa-check-circle"></i> បាន Upload ផ្ទាល់រួចរាល់!</span>';
+                    renderBookPdfActionButtons(true, dataUrl);
+                };
+                reader.onerror = () => {
+                    throw new Error('មិនអាចអានឯកសារ PDF បានឡើយ');
+                };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                alert('កំហុស Upload ផ្ទាល់៖ ' + err.message);
+                if (statusEl) statusEl.innerHTML = `<span style="color: var(--danger);"><i class="fas fa-times"></i> ${err.message}</span>`;
+            }
+        }
+
+        function clearSelectedBookPdf() {
+            selectedBookPdfFile = null;
+            const actionBox = document.getElementById('bookPdfFileActionBox');
+            if (actionBox) actionBox.style.display = 'none';
+            const fileInput = document.getElementById('bookPdfFileInput');
+            if (fileInput) fileInput.value = '';
+            document.getElementById('bookUrlInput').value = '';
+            const dropText = document.getElementById('bookPdfDropText');
+            if (dropText) dropText.innerHTML = 'ចុចទីនេះ ដើម្បីជ្រើសរើសឯកសារ PDF ឬអូសទម្លាក់ចូល';
+        }
+
+        async function startBookPdfUpload(file) {
+            if (!file) return;
+            if (isUploadingBookPdf) return;
+
+            if (!isGoogleDriveConnected()) {
+                pendingUploadAfterAuth = () => startBookPdfUpload(file);
+                connectGoogleDriveAccount(true);
+                return;
+            }
+
+            isUploadingBookPdf = true;
+
+            const progressWrap = document.getElementById('bookPdfProgressWrap');
+            const percentEl = document.getElementById('bookPdfProgressPercent');
+            const barEl = document.getElementById('bookPdfProgressBar');
+            const statusEl = document.getElementById('bookPdfStatusMsg');
+
+            if (progressWrap) progressWrap.style.display = 'block';
+            if (percentEl) percentEl.innerText = '0%';
+            if (barEl) {
+                barEl.style.width = '0%';
+                barEl.style.background = 'linear-gradient(90deg, #10b981, #0f9d58)';
+            }
+            if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងរៀបចំ Upload ចូល Google Drive...';
+
+            try {
+                // Step 1: Initiate Resumable Upload on Google Drive API v3
+                const targetFolderId = getGoogleDriveFolderId();
+                const metadata = {
+                    name: file.name,
+                    mimeType: 'application/pdf',
+                    description: 'Uploaded from KTPTTC Library Admin'
+                };
+                if (targetFolderId) {
+                    metadata.parents = [targetFolderId];
+                }
+
+                const initRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${gdriveAccessToken}`,
+                        'Content-Type': 'application/json; charset=UTF-8',
+                        'X-Upload-Content-Type': 'application/pdf',
+                        'X-Upload-Content-Length': file.size.toString()
+                    },
+                    body: JSON.stringify(metadata)
+                });
+
+                if (!initRes.ok) {
+                    if (initRes.status === 401) {
+                        gdriveAccessToken = null;
+                        updateGoogleDriveUI();
+                        pendingUploadAfterAuth = () => startBookPdfUpload(file);
+                        connectGoogleDriveAccount(true);
+                        return;
+                    }
+                    const err = await initRes.text();
+                    throw new Error('Google Drive Init Failed: ' + err);
+                }
+
+                const uploadLocation = initRes.headers.get('Location');
+                if (!uploadLocation) throw new Error('Google Drive did not return upload location header.');
+
+                // Step 2: Upload File Binary Chunk with Progress Tracking
+                const uploadedFile = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('PUT', uploadLocation, true);
+                    xhr.setRequestHeader('Content-Type', 'application/pdf');
+
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const pct = Math.round((e.loaded / e.total) * 100);
+                            if (percentEl) percentEl.innerText = pct + '%';
+                            if (barEl) barEl.style.width = pct + '%';
+                            if (statusEl) statusEl.innerHTML = `<i class="fas fa-arrow-up"></i> កំពុង Upload... ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status === 200 || xhr.status === 201) {
+                            try {
+                                resolve(JSON.parse(xhr.responseText));
+                            } catch (e) {
+                                reject(e);
+                            }
+                        } else {
+                            reject(new Error(`Upload failed HTTP ${xhr.status}: ${xhr.responseText}`));
+                        }
+                    };
+
+                    xhr.onerror = () => reject(new Error('Network error during Google Drive upload.'));
+                    xhr.send(file);
+                });
+
+                const fileId = uploadedFile.id;
+                if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងកំណត់សិទ្ធិ Public (Anyone with link)...';
+
+                // Step 3: Set permission to Anyone with the link can view
+                try {
+                    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${gdriveAccessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            role: 'reader',
+                            type: 'anyone'
+                        })
+                    });
+                } catch (permErr) {
+                    console.warn('Could not set permissions directly:', permErr);
+                }
+
+                // Construct previewable/downloadable Drive Link
+                const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+                document.getElementById('bookUrlInput').value = driveLink;
+
+                if (percentEl) percentEl.innerText = '100%';
+                if (barEl) barEl.style.width = '100%';
+                if (statusEl) {
+                    const targetFolderId = getGoogleDriveFolderId();
+                    const folderLink = targetFolderId ? `https://drive.google.com/drive/u/0/folders/${targetFolderId}` : null;
+                    statusEl.innerHTML = `
+                        <div style="color: #059669; font-weight: 700; line-height: 1.5;">
+                            <div><i class="fas fa-check-circle"></i> Upload ជោគជ័យ!</div>
+                            ${folderLink ? `<a href="${folderLink}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 600; color: #0284c7; text-decoration: underline; margin-top: 3px;"><i class="fas fa-folder-open"></i> បានដាក់ចូល Folder គោលដៅស្វ័យប្រវត្តិ (ចុចបើក)</a>` : ''}
+                        </div>
+                    `;
+                }
+
+                renderBookPdfActionButtons(true, driveLink);
+
+                const dropText = document.getElementById('bookPdfDropText');
+                if (dropText) dropText.innerHTML = `ឯកសារ៖ <strong style="color: #059669;">${file.name}</strong> (ចុចដើម្បីប្តូរ)`;
+
+            } catch (err) {
+                console.error('startBookPdfUpload error:', err);
+                if (statusEl) {
+                    statusEl.innerHTML = `<span style="color: var(--danger); font-weight: 600;"><i class="fas fa-exclamation-triangle"></i> បរាជ័យ៖ ${err.message}</span>`;
+                }
+                if (barEl) barEl.style.background = 'var(--danger)';
+                alert('កំហុស Upload ចូល Google Drive ៖\n\n' + err.message);
+            } finally {
+                isUploadingBookPdf = false;
+            }
+        }
+
+        /* Cover Image Selection & Local Compression */
+        function updateBookCoverPreview(url) {
+            const wrap = document.getElementById('bookCoverPreviewWrap');
+            const img = document.getElementById('bookCoverPreviewImg');
+            const icon = document.getElementById('bookCoverPreviewIcon');
+            if (!wrap || !img || !icon) return;
+
+            if (url && url.trim()) {
+                img.src = getDriveImageUrl(url.trim());
+                img.style.display = 'block';
+                icon.style.display = 'none';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                icon.style.display = 'block';
+            }
+        }
+
+        async function handleBookCoverFileSelected(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            try {
+                const compressedBase64 = await compressImageFile(file, 800, 0.82);
+                document.getElementById('bookCoverInput').value = compressedBase64;
+                updateBookCoverPreview(compressedBase64);
+            } catch (err) {
+                console.error('Book cover compression error:', err);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('bookCoverInput').value = e.target.result;
+                    updateBookCoverPreview(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearBookCover() {
+            const input = document.getElementById('bookCoverInput');
+            const fileInput = document.getElementById('bookCoverFileInput');
+            if (input) input.value = '';
+            if (fileInput) fileInput.value = '';
+            updateBookCoverPreview('');
+        }
         
         function openEditBookModal(book, idx) {
             document.getElementById('bookIdInput').value = book.id || (typeof idx === 'number' ? idx : '');
@@ -4818,6 +6048,36 @@
             document.getElementById('bookUrlInput').value = book.link || '';
             document.getElementById('bookCoverInput').value = book.cover || '';
 
+            updateBookCoverPreview(book.cover || '');
+
+            if (book.link) {
+                switchBookPdfTab('url');
+                const actionBox = document.getElementById('bookPdfFileActionBox');
+                if (actionBox) actionBox.style.display = 'block';
+                const pickedName = document.getElementById('bookPdfPickedName');
+                if (pickedName) pickedName.innerText = book.title || 'ឯកសារសៀវភៅ';
+                const pickedSize = document.getElementById('bookPdfPickedSize');
+                if (pickedSize) pickedSize.innerText = 'មានតំណភ្ជាប់សៀវភៅរួចហើយ';
+                renderBookPdfActionButtons(true, book.link);
+            } else {
+                switchBookPdfTab('upload');
+                clearSelectedBookPdf();
+            }
+
+            const dropText = document.getElementById('bookPdfDropText');
+            if (dropText) {
+                if (book.link) {
+                    dropText.innerHTML = `មានតំណភ្ជាប់រួចហើយ (ចុចទីនេះបើចង់ Upload ឯកសារថ្មី)`;
+                } else {
+                    dropText.innerHTML = `ចុចទីនេះ ដើម្បីជ្រើសរើសឯកសារ PDF ឬអូសទម្លាក់ចូល`;
+                }
+            }
+            const progressWrap = document.getElementById('bookPdfProgressWrap');
+            if (progressWrap) progressWrap.style.display = 'none';
+
+            setupBookPdfDragAndDrop();
+            updateGoogleDriveUI();
+
             const modalHeader = document.querySelector('#modal-add-book .modal-header h3');
             if (modalHeader) modalHeader.innerText = 'កែប្រែព័ត៌មានសៀវភៅ';
 
@@ -4828,6 +6088,47 @@
             event.preventDefault();
             const btn = event.target.querySelector('button[type="submit"]');
             const originalText = btn.innerHTML;
+
+            let urlVal = document.getElementById('bookUrlInput').value.trim();
+            if (!urlVal) {
+                if (isUploadingBookPdf) {
+                    alert('ឯកសារ PDF កំពុង Upload ចូល Google Drive... សូមរង់ចាំមួយភ្លែតរហូតដល់ចប់ 100%!');
+                    return;
+                }
+                if (selectedBookPdfFile) {
+                    if (isGoogleDriveConnected()) {
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុង Upload ចូល Google Drive...';
+                        btn.disabled = true;
+                        try {
+                            await startBookPdfUpload(selectedBookPdfFile);
+                        } catch (uploadErr) {
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            alert('ការ Upload បរាជ័យ៖ ' + uploadErr.message);
+                            return;
+                        }
+                        urlVal = document.getElementById('bookUrlInput').value.trim();
+                        if (!urlVal) {
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            return;
+                        }
+                    } else {
+                        // Google Drive not connected yet: prompt auth, then auto-upload and auto-save!
+                        pendingUploadAfterAuth = async () => {
+                            await startBookPdfUpload(selectedBookPdfFile);
+                            const submitBtn = document.querySelector('#addBookForm button[type="submit"]');
+                            if (submitBtn) submitBtn.click();
+                        };
+                        connectGoogleDriveAccount(true);
+                        return;
+                    }
+                } else {
+                    alert('សូម Upload ឯកសារ PDF ឬបញ្ចូលតំណភ្ជាប់ (URL) របស់សៀវភៅជាមុនសិន!');
+                    return;
+                }
+            }
+
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> រក្សាទុក...';
             btn.disabled = true;
 
@@ -5302,6 +6603,60 @@
             }
         }
 
+        function updateTeamModalPreview(url) {
+            const wrap = document.getElementById('teamModalPreviewWrap');
+            const img = document.getElementById('teamModalPreview');
+            const defaultIcon = document.getElementById('teamModalPreviewDefaultIcon');
+            const badge = document.getElementById('teamPhotoStatusBadge');
+            if (!wrap || !img) return;
+            if (url && url.trim()) {
+                img.src = getDriveImageUrl(url.trim());
+                img.style.display = 'block';
+                if (defaultIcon) defaultIcon.style.display = 'none';
+                if (badge) {
+                    badge.style.display = 'inline-flex';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> បានភ្ជាប់រូបថតរួចរាល់';
+                    badge.style.color = '#059669';
+                }
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                if (defaultIcon) defaultIcon.style.display = 'block';
+                if (badge) badge.style.display = 'none';
+            }
+        }
+
+        async function handleTeamPhotoSelected(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            const badge = document.getElementById('teamPhotoStatusBadge');
+            if (badge) {
+                badge.style.display = 'inline-flex';
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងបង្ហាប់រូបថត...';
+                badge.style.color = 'var(--primary)';
+            }
+            try {
+                const dataUrl = await compressImageFile(file, 600, 0.85);
+                if (dataUrl) {
+                    const inputEl = document.getElementById('teamPhoto');
+                    if (inputEl) inputEl.value = dataUrl;
+                    updateTeamModalPreview(dataUrl);
+                }
+            } catch (err) {
+                console.error('handleTeamPhotoSelected error:', err);
+                alert('កំហុសក្នុងការអានរូបថត៖ ' + err.message);
+                if (badge) badge.style.display = 'none';
+            }
+        }
+
+        function clearTeamPhoto() {
+            const inputEl = document.getElementById('teamPhoto');
+            const fileInput = document.getElementById('teamPhotoFileInput');
+            if (inputEl) inputEl.value = '';
+            if (fileInput) fileInput.value = '';
+            updateTeamModalPreview('');
+        }
+
         function openEditTeamModal(member, idx) {
             document.getElementById('teamIdInput').value = member.id || (typeof idx === 'number' ? idx : '');
             document.getElementById('teamName').value = member.name || '';
@@ -5311,6 +6666,7 @@
             
             const modalHeader = document.querySelector('#modal-add-team .modal-header h3');
             if (modalHeader) modalHeader.innerText = 'កែប្រែសមាជិកគណៈគ្រប់គ្រង';
+            updateTeamModalPreview(member.photo || '');
             
             openModal('modal-add-team', true);
         }
@@ -5346,6 +6702,7 @@
                     closeModal('modal-add-team');
                     document.getElementById('addTeamForm').reset();
                     document.getElementById('teamIdInput').value = '';
+                    clearTeamPhoto();
                     await loadAdminTeam();
                     return;
                 }
@@ -5423,21 +6780,63 @@
         function updateStaffModalPreview(url) {
             const wrap = document.getElementById('staffModalPreviewWrap');
             const img = document.getElementById('staffModalPreview');
+            const defaultIcon = document.getElementById('staffModalPreviewDefaultIcon');
+            const badge = document.getElementById('staffPhotoStatusBadge');
             if (!wrap || !img) return;
             if (url && url.trim()) {
                 img.src = getDriveImageUrl(url.trim());
-                wrap.style.display = 'block';
+                img.style.display = 'block';
+                if (defaultIcon) defaultIcon.style.display = 'none';
+                if (badge) {
+                    badge.style.display = 'inline-flex';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> បានភ្ជាប់រូបថតរួចរាល់';
+                    badge.style.color = '#059669';
+                }
             } else {
-                wrap.style.display = 'none';
+                img.src = '';
+                img.style.display = 'none';
+                if (defaultIcon) defaultIcon.style.display = 'block';
+                if (badge) badge.style.display = 'none';
             }
+        }
+
+        async function handleStaffPhotoSelected(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            const badge = document.getElementById('staffPhotoStatusBadge');
+            if (badge) {
+                badge.style.display = 'inline-flex';
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងបង្ហាប់រូបថត...';
+                badge.style.color = 'var(--primary)';
+            }
+            try {
+                const dataUrl = await compressImageFile(file, 600, 0.85);
+                if (dataUrl) {
+                    const inputEl = document.getElementById('staffPhoto');
+                    if (inputEl) inputEl.value = dataUrl;
+                    updateStaffModalPreview(dataUrl);
+                }
+            } catch (err) {
+                console.error('handleStaffPhotoSelected error:', err);
+                alert('កំហុសក្នុងការអានរូបថត៖ ' + err.message);
+                if (badge) badge.style.display = 'none';
+            }
+        }
+
+        function clearStaffPhoto() {
+            const inputEl = document.getElementById('staffPhoto');
+            const fileInput = document.getElementById('staffPhotoFileInput');
+            if (inputEl) inputEl.value = '';
+            if (fileInput) fileInput.value = '';
+            updateStaffModalPreview('');
         }
 
         function openAddStaffModal() {
             document.getElementById('staffIdInput').value = '';
             document.getElementById('addStaffForm').reset();
+            clearStaffPhoto();
             const modalHeader = document.getElementById('modalStaffTitle');
             if (modalHeader) modalHeader.innerText = 'បន្ថែមបុគ្គលិកថ្មី';
-            updateStaffModalPreview('');
             openModal('modal-add-staff', true);
         }
 
@@ -5488,6 +6887,7 @@
                     closeModal('modal-add-staff');
                     document.getElementById('addStaffForm').reset();
                     document.getElementById('staffIdInput').value = '';
+                    clearStaffPhoto();
                     await loadAdminStaff();
                     return;
                 }
@@ -5762,9 +7162,204 @@
             await loadAdminStructure();
         }
 
+        // ==========================================
+        // Organization Structure Image Functions
+        // ==========================================
+        let currentStructureImageData = '';
+
+        function compressStructurePoster(file, maxDimension = 3200, targetMaxBytes = 1800000) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxDimension || height > maxDimension) {
+                            if (width > height) {
+                                height = Math.round((height * maxDimension) / width);
+                                width = maxDimension;
+                            } else {
+                                width = Math.round((width * maxDimension) / height);
+                                height = maxDimension;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        // Fill white background for diagrams / transparent images
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        let quality = 0.94;
+                        let result = canvas.toDataURL('image/jpeg', quality);
+                        // Progressively tune quality if needed to keep file size lightweight under 1.8MB
+                        while (result.length > targetMaxBytes && quality > 0.7) {
+                            quality -= 0.05;
+                            result = canvas.toDataURL('image/jpeg', quality);
+                        }
+                        resolve(result);
+                    };
+                    img.onerror = () => resolve(event.target.result);
+                };
+                reader.onerror = () => resolve('');
+            });
+        }
+
+        async function loadStructureImage() {
+            try {
+                const res = await fetch('/api/structure-image', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    const url = data.image || '';
+                    currentStructureImageData = url;
+                    const input = document.getElementById('adminStructureImageUrl');
+                    if (input) {
+                        if (url && url.startsWith('data:image')) {
+                            input.value = '[រូបភាពបាន Upload ដោយជោគជ័យ (' + Math.round(url.length / 1024) + ' KB)]';
+                        } else {
+                            input.value = url;
+                        }
+                    }
+                    updateAdminStructurePreview(url);
+                }
+            } catch(e) {
+                console.error("Error loading structure image:", e);
+            }
+        }
+
+        function handleStructureUrlInput(val) {
+            val = (val || '').trim();
+            if (!val || val.startsWith('[')) {
+                return;
+            }
+            currentStructureImageData = val;
+            updateAdminStructurePreview(val);
+        }
+
+        function updateAdminStructurePreview(url) {
+            const img = document.getElementById('admin-structure-img');
+            const placeholder = document.getElementById('admin-structure-placeholder');
+            const badge = document.getElementById('adminStructureStatusBadge');
+            if (!img || !placeholder) return;
+            if (url && url.trim()) {
+                img.src = getDriveImageUrl(url.trim());
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+                if (badge) {
+                    badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span> រូបភាពសកម្ម (Active)';
+                    badge.style.background = 'rgba(16, 185, 129, 0.15)';
+                    badge.style.color = '#059669';
+                }
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                placeholder.style.display = 'block';
+                if (badge) {
+                    badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block;"></span> មិនទាន់មានរូបភាព';
+                    badge.style.background = 'rgba(156, 163, 175, 0.15)';
+                    badge.style.color = '#64748b';
+                }
+            }
+        }
+
+        async function handleStructureImageUpload(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            const badge = document.getElementById('adminStructureStatusBadge');
+            if (badge) {
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងដំណើរការរូបភាព Ultra HD...';
+                badge.style.color = 'var(--primary)';
+            }
+            try {
+                const dataUrl = await compressStructurePoster(file, 3200, 1800000);
+                if (dataUrl) {
+                    currentStructureImageData = dataUrl;
+                    const input = document.getElementById('adminStructureImageUrl');
+                    if (input) {
+                        input.value = '[រូបភាព Ultra HD បាន Upload ដោយជោគជ័យ (' + Math.round(dataUrl.length / 1024) + ' KB)]';
+                    }
+                    updateAdminStructurePreview(dataUrl);
+                    await saveAdminStructureImage(true);
+                }
+            } catch(err) {
+                alert('កំហុសក្នុងការអានរូបភាព៖ ' + err.message);
+                if (badge) {
+                    updateAdminStructurePreview(currentStructureImageData || '');
+                }
+            }
+        }
+
+        async function saveAdminStructureImage(isSilent = false) {
+            const input = document.getElementById('adminStructureImageUrl');
+            let url = currentStructureImageData;
+            if (input && input.value && !input.value.startsWith('[')) {
+                url = input.value.trim();
+                currentStructureImageData = url;
+            }
+            if (input && !input.value.trim()) {
+                url = '';
+                currentStructureImageData = '';
+            }
+
+            const btn = document.getElementById('btnSaveStructureImage');
+            const orig = btn ? btn.innerHTML : '';
+            if (btn && !isSilent) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងរក្សាទុក...';
+                btn.disabled = true;
+            }
+            try {
+                const res = await fetch('/api/structure-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: url })
+                });
+                if (res.ok) {
+                    if (btn && !isSilent) {
+                        btn.innerHTML = orig;
+                        btn.disabled = false;
+                        alert('បានរក្សាទុករូបភាពរចនាសម្ព័ន្ធដោយជោគជ័យ!');
+                    }
+                    updateAdminStructurePreview(url);
+                    return;
+                }
+            } catch(e) {
+                console.error("Save structure image error:", e);
+            }
+            if (btn && !isSilent) {
+                btn.innerHTML = orig;
+                btn.disabled = false;
+                alert('មានបញ្ហាក្នុងការរក្សាទុក!');
+            }
+        }
+
+        async function clearStructureImage() {
+            if (!confirm('តើអ្នកពិតជាចង់លុបរូបភាពរចនាសម្ព័ន្ធនេះមែនទេ?')) return;
+            currentStructureImageData = '';
+            const input = document.getElementById('adminStructureImageUrl');
+            if (input) input.value = '';
+            const fileInput = document.getElementById('structureImageFileInput');
+            if (fileInput) fileInput.value = '';
+            updateAdminStructurePreview('');
+            await saveAdminStructureImage(true);
+        }
+
+        function handleAdminStructureImgError() {
+            const img = document.getElementById('admin-structure-img');
+            const placeholder = document.getElementById('admin-structure-placeholder');
+            if (img) img.style.display = 'none';
+            if (placeholder) placeholder.style.display = 'block';
+        }
+
         async function saveNewNews(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn-save-news');
+            const btn = document.getElementById('btn-save-news') || e.target.querySelector('button[type="submit"]');
             const originalText = btn ? btn.innerHTML : 'រក្សាទុក';
             if (btn) {
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងរក្សាទុក...';
@@ -5773,7 +7368,15 @@
 
             const idVal = document.getElementById('newsIdInput').value;
             const today = new Date();
-            const dateString = today.toLocaleDateString('en-GB');
+            let dateString = today.toLocaleDateString('en-GB');
+
+            // If editing, preserve the original date if available
+            if (idVal && Array.isArray(localMockNews)) {
+                const existing = localMockNews.find((n, i) => String(n.id) === String(idVal) || String(i) === String(idVal));
+                if (existing && existing.date) {
+                    dateString = existing.date;
+                }
+            }
 
             const newsData = {
                 title: document.getElementById('newsTitleInput').value,
@@ -5781,7 +7384,9 @@
                 content: document.getElementById('newsContentInput').value,
                 date: dateString
             };
-            if (idVal) newsData.id = idVal;
+            if (idVal !== undefined && idVal !== null && idVal !== '') {
+                newsData.id = idVal;
+            }
 
             try {
                 const res = await fetch('/api/news', {
@@ -5833,7 +7438,7 @@
                             <td>${n.date || '-'}</td>
                             <td>${n.title || '-'}</td>
                             <td class="action-icons">
-                                <i class="fas fa-edit" style="color:var(--primary); margin-right:12px; cursor:pointer;" title="កែប្រែ" onclick='openEditNewsModal(${JSON.stringify(n).replace(/'/g, "&apos;")}, ${idx})'></i>
+                                <i class="fas fa-edit" style="color:var(--primary); margin-right:12px; cursor:pointer;" title="កែប្រែ" onclick="openEditNewsModal(null, ${idx})"></i>
                                 <i class="fas fa-trash" style="color:var(--danger); cursor:pointer;" title="លុប" onclick="if(confirm('តើអ្នកពិតជាចង់លុបព័ត៌មាននេះមែនទេ?')) deleteAdminNews('${n.id || idx}')"></i>
                             </td>
                         </tr>
@@ -5845,6 +7450,42 @@
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">មិនមានទិន្នន័យព័ត៌មានទេ</td></tr>';
         }
 
+        function openEditNewsModal(item, idx) {
+            let n = item;
+            if (typeof item === 'number') {
+                idx = item;
+                n = localMockNews && localMockNews[idx];
+            } else if (!n && typeof idx === 'number' && localMockNews && localMockNews[idx]) {
+                n = localMockNews[idx];
+            } else if (typeof item === 'string') {
+                try { n = JSON.parse(item); } catch(e) {}
+            }
+            if (!n && typeof idx === 'number' && localMockNews && localMockNews[idx]) {
+                n = localMockNews[idx];
+            }
+            if (!n) return;
+
+            const idInput = document.getElementById('newsIdInput');
+            if (idInput) idInput.value = (n.id !== undefined && n.id !== null && n.id !== '') ? n.id : (typeof idx === 'number' ? idx : '');
+            
+            const titleInput = document.getElementById('newsTitleInput');
+            if (titleInput) titleInput.value = n.title || '';
+            
+            const urlInput = document.getElementById('newsUrlInput');
+            if (urlInput) urlInput.value = n.image || '';
+            
+            const contentInput = document.getElementById('newsContentInput');
+            if (contentInput) contentInput.value = n.content || '';
+
+            const modalHeader = document.querySelector('#modal-add-news .modal-header h3');
+            if (modalHeader) modalHeader.innerText = 'កែប្រែព័ត៌មាន';
+
+            const submitBtn = document.querySelector('#modal-add-news button[type="submit"]');
+            if (submitBtn) submitBtn.innerText = 'រក្សាទុកការកែប្រែ';
+
+            openModal('modal-add-news', true);
+        }
+
         async function deleteAdminNews(id) {
             try {
                 const res = await fetch('/api/news/' + id, { method: 'DELETE' });
@@ -5854,6 +7495,164 @@
                 }
             } catch(e) {}
             await loadAdminNews();
+        }
+
+        // =======================
+        // Course (CPD) Management Logic
+        // =======================
+        let localMockCourses = [];
+
+        function saveLocalMockCourses() {
+            try {
+                localStorage.setItem('mockCourses', JSON.stringify(localMockCourses));
+            } catch(e) {}
+        }
+
+        async function loadAdminCourses() {
+            const tbody = document.getElementById('admin-courses-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
+            
+            try {
+                const res = await fetch('/api/courses', { cache: 'no-store' });
+                if (res.ok) {
+                    const courses = await res.json();
+                    localMockCourses = Array.isArray(courses) ? courses : [];
+                    saveLocalMockCourses();
+                    if (localMockCourses.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">មិនមានទិន្នន័យវគ្គសិក្សាទេ</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = localMockCourses.map((c, idx) => `
+                        <tr>
+                            <td><img src="${getDriveImageUrl(c.image)}" referrerpolicy="no-referrer" loading="lazy" style="width:65px; height:45px; object-fit:contain; border-radius:4px; background:var(--bg-main);" onerror="handleImageFallback(this, 'CPD')"></td>
+                            <td style="font-weight:600; color:var(--text-main);">${c.title || '-'}</td>
+                            <td style="font-size:0.85rem; color:var(--text-muted);">
+                                ${c.meta1 ? `<div><i class="fas fa-calendar-alt" style="color:var(--primary); margin-right:4px;"></i>${c.meta1}</div>` : ''}
+                                ${c.meta2 ? `<div><i class="fas fa-tag" style="color:var(--success); margin-right:4px;"></i>${c.meta2}</div>` : ''}
+                            </td>
+                            <td style="font-size:0.85rem; color:var(--text-secondary); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.description || '-'}</td>
+                            <td class="action-icons" style="text-align:center;">
+                                <i class="fas fa-edit" style="color:var(--primary); margin-right:12px; cursor:pointer;" title="កែប្រែ" onclick="openEditCourseModal(null, ${idx})"></i>
+                                <i class="fas fa-trash" style="color:var(--danger); cursor:pointer;" title="លុប" onclick="if(confirm('តើអ្នកពិតជាចង់លុបវគ្គសិក្សានេះមែនទេ?')) deleteAdminCourse('${c.id || idx}')"></i>
+                            </td>
+                        </tr>
+                    `).join('');
+                    return;
+                }
+            } catch(e) {}
+
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">មិនមានទិន្នន័យវគ្គសិក្សាទេ</td></tr>';
+        }
+
+        function openEditCourseModal(item, idx) {
+            let c = item;
+            if (typeof item === 'number') {
+                idx = item;
+                c = localMockCourses && localMockCourses[idx];
+            } else if (!c && typeof idx === 'number' && localMockCourses && localMockCourses[idx]) {
+                c = localMockCourses[idx];
+            } else if (typeof item === 'string') {
+                try { c = JSON.parse(item); } catch(e) {}
+            }
+            if (!c && typeof idx === 'number' && localMockCourses && localMockCourses[idx]) {
+                c = localMockCourses[idx];
+            }
+            if (!c) return;
+
+            const idInput = document.getElementById('courseIdInput');
+            if (idInput) idInput.value = (c.id !== undefined && c.id !== null && c.id !== '') ? c.id : (typeof idx === 'number' ? idx : '');
+            
+            const titleInput = document.getElementById('courseTitleInput');
+            if (titleInput) titleInput.value = c.title || '';
+            
+            const urlInput = document.getElementById('courseImageUrlInput');
+            if (urlInput) urlInput.value = c.image || '';
+            
+            const meta1Input = document.getElementById('courseMeta1Input');
+            if (meta1Input) meta1Input.value = c.meta1 || '';
+
+            const meta2Input = document.getElementById('courseMeta2Input');
+            if (meta2Input) meta2Input.value = c.meta2 || '';
+
+            const linkInput = document.getElementById('courseLinkInput');
+            if (linkInput) linkInput.value = c.link || '';
+
+            const descInput = document.getElementById('courseDescInput');
+            if (descInput) descInput.value = c.description || '';
+
+            const modalHeader = document.querySelector('#modal-add-course .modal-header h3');
+            if (modalHeader) modalHeader.innerText = 'កែប្រែវគ្គសិក្សា CPD';
+
+            const submitBtn = document.getElementById('btn-save-course');
+            if (submitBtn) submitBtn.innerText = 'រក្សាទុកការកែប្រែ';
+
+            openModal('modal-add-course', true);
+        }
+
+        async function saveNewCourse(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-course') || e.target.querySelector('button[type="submit"]');
+            const originalText = btn ? btn.innerHTML : 'រក្សាទុក';
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងរក្សាទុក...';
+                btn.disabled = true;
+            }
+
+            const idVal = document.getElementById('courseIdInput').value;
+            const today = new Date();
+            let dateString = today.toLocaleDateString('en-GB');
+
+            if (idVal && Array.isArray(localMockCourses)) {
+                const existing = localMockCourses.find((c, i) => String(c.id) === String(idVal) || String(i) === String(idVal));
+                if (existing && existing.date) {
+                    dateString = existing.date;
+                }
+            }
+
+            const courseData = {
+                title: document.getElementById('courseTitleInput').value,
+                image: document.getElementById('courseImageUrlInput').value,
+                meta1: document.getElementById('courseMeta1Input').value,
+                meta2: document.getElementById('courseMeta2Input').value,
+                link: document.getElementById('courseLinkInput').value,
+                description: document.getElementById('courseDescInput').value,
+                date: dateString
+            };
+            if (idVal !== undefined && idVal !== null && idVal !== '') {
+                courseData.id = idVal;
+            }
+
+            try {
+                const res = await fetch('/api/courses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(courseData)
+                });
+                if (res.ok) {
+                    if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+                    alert(idVal ? "បានកែប្រែវគ្គសិក្សាដោយជោគជ័យ!" : "បានបន្ថែមវគ្គសិក្សាថ្មីដោយជោគជ័យ!");
+                    closeModal('modal-add-course');
+                    document.getElementById('addCourseForm').reset();
+                    document.getElementById('courseIdInput').value = '';
+                    await loadAdminCourses();
+                    return;
+                }
+            } catch(e) {}
+
+            if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+            alert("មានបញ្ហាក្នុងការរក្សាទុកវគ្គសិក្សា!");
+        }
+
+        async function deleteAdminCourse(id) {
+            try {
+                const res = await fetch('/api/courses/' + id, { method: 'DELETE' });
+                if (res.ok) {
+                    await loadAdminCourses();
+                    return;
+                }
+            } catch(e) {}
+            await loadAdminCourses();
         }
 
         // =======================
@@ -6087,9 +7886,11 @@
         }
 
         // =======================
-        // Gallery Management Logic
+        // Gallery Management Logic (Multi Photo Upload)
         // =======================
         let localMockGallery = [];
+        let gallerySelectedPhotos = [];
+        let currentGalleryUploadTab = 'files';
 
         function saveLocalMockGallery() {
             try {
@@ -6097,14 +7898,213 @@
             } catch(e) {}
         }
 
+        function switchGalleryTab(tab) {
+            currentGalleryUploadTab = tab;
+            const btnFiles = document.getElementById('tabBtnFiles');
+            const btnUrls = document.getElementById('tabBtnUrls');
+            const paneFiles = document.getElementById('galleryTabPaneFiles');
+            const paneUrls = document.getElementById('galleryTabPaneUrls');
+
+            if (tab === 'files') {
+                if (btnFiles) btnFiles.classList.add('active');
+                if (btnUrls) btnUrls.classList.remove('active');
+                if (paneFiles) paneFiles.style.display = 'block';
+                if (paneUrls) paneUrls.style.display = 'none';
+            } else {
+                if (btnFiles) btnFiles.classList.remove('active');
+                if (btnUrls) btnUrls.classList.add('active');
+                if (paneFiles) paneFiles.style.display = 'none';
+                if (paneUrls) paneUrls.style.display = 'block';
+            }
+        }
+
+        function compressImageFile(file, maxWidth = 1400, quality = 0.82) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth || height > maxWidth) {
+                            if (width > height) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            } else {
+                                width = Math.round((width * maxWidth) / height);
+                                height = maxWidth;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = () => resolve(event.target.result);
+                };
+                reader.onerror = () => resolve('');
+            });
+        }
+
+        async function handleGalleryFilesSelected(files) {
+            if (!files || files.length === 0) return;
+            const countBadge = document.getElementById('galleryUploadCountBadge');
+            if (countBadge) countBadge.innerText = 'កំពុងដំណើរការរូបភាព...';
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file && file.type && file.type.startsWith('image/')) {
+                    try {
+                        const dataUrl = await compressImageFile(file);
+                        if (dataUrl) gallerySelectedPhotos.push(dataUrl);
+                    } catch(e) {
+                        console.error('Error compressing image:', e);
+                    }
+                }
+            }
+            
+            const fileInput = document.getElementById('galleryFilesInput');
+            if (fileInput) fileInput.value = '';
+            
+            renderGalleryPreviews();
+        }
+
+        function handleGalleryUrlsInput(text) {
+            if (!text) return;
+            const lines = text.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+            lines.forEach(url => {
+                const directUrl = getDriveImageUrl(url);
+                if (directUrl && !gallerySelectedPhotos.includes(directUrl)) {
+                    gallerySelectedPhotos.push(directUrl);
+                }
+            });
+            renderGalleryPreviews();
+        }
+
+        function handleSingleUrlInput(val) {
+            const trimmed = val ? val.trim() : '';
+            if (trimmed) {
+                const direct = getDriveImageUrl(trimmed);
+                gallerySelectedPhotos = [direct];
+            } else {
+                gallerySelectedPhotos = [];
+            }
+            renderGalleryPreviews();
+        }
+
+        function removeGalleryPhoto(idx) {
+            gallerySelectedPhotos.splice(idx, 1);
+            renderGalleryPreviews();
+        }
+
+        function clearAllGallerySelectedPhotos() {
+            gallerySelectedPhotos = [];
+            const urlsInput = document.getElementById('galleryMultiUrlsInput');
+            if (urlsInput) urlsInput.value = '';
+            const singleInput = document.getElementById('galleryImageInput');
+            if (singleInput) singleInput.value = '';
+            renderGalleryPreviews();
+        }
+
+        function renderGalleryPreviews() {
+            const wrapper = document.getElementById('galleryPreviewWrapper');
+            const grid = document.getElementById('galleryPreviewGrid');
+            const countEl = document.getElementById('galleryPreviewCount');
+            const countBadge = document.getElementById('galleryUploadCountBadge');
+            const submitBtn = document.getElementById('btnSaveGallery');
+
+            const total = gallerySelectedPhotos.length;
+            if (countEl) countEl.innerText = total;
+            if (countBadge) countBadge.innerText = `${total} រូបភាព`;
+
+            if (!wrapper || !grid) return;
+
+            if (total === 0) {
+                wrapper.style.display = 'none';
+                grid.innerHTML = '';
+                if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-check"></i> រក្សាទុក';
+                return;
+            }
+
+            wrapper.style.display = 'block';
+            grid.innerHTML = gallerySelectedPhotos.map((src, idx) => `
+                <div class="gallery-preview-item">
+                    <img src="${src}" alt="Photo ${idx + 1}" loading="lazy" onerror="handleImageFallback(this, 'Gallery')">
+                    <span class="badge-index">#${idx + 1}</span>
+                    <button type="button" class="remove-btn" onclick="removeGalleryPhoto(${idx})" title="លុបរូបភាពនេះ"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+
+            const isEdit = !!document.getElementById('galleryIdInput')?.value;
+            if (submitBtn) {
+                if (isEdit) {
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> ធ្វើបច្ចុប្បន្នភាព';
+                } else {
+                    submitBtn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> រក្សាទុក (${total} រូបភាព)`;
+                }
+            }
+        }
+
+        function setupGalleryDragAndDrop() {
+            const dropzone = document.getElementById('galleryDropzone');
+            if (!dropzone || dropzone.dataset.dndBound) return;
+            dropzone.dataset.dndBound = 'true';
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('dragover');
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('dragover');
+                }, false);
+            });
+            
+            dropzone.addEventListener('drop', e => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    handleGalleryFilesSelected(dt.files);
+                }
+            }, false);
+        }
+
         function openEditGalleryModal(img, idx) {
             document.getElementById('galleryIdInput').value = img.id || (typeof idx === 'number' ? idx : '');
             document.getElementById('galleryTitleInput').value = img.title || '';
-            document.getElementById('galleryImageInput').value = img.image || '';
             document.getElementById('galleryDateInput').value = img.date || '';
 
-            const modalHeader = document.querySelector('#modal-add-gallery .modal-header h3');
-            if (modalHeader) modalHeader.innerText = 'កែប្រែរូបភាព';
+            const singleUrlGroup = document.getElementById('gallerySingleUrlGroup');
+            const multiSection = document.getElementById('galleryMultiUploadSection');
+            if (singleUrlGroup) singleUrlGroup.style.display = 'none';
+            if (multiSection) multiSection.style.display = 'block';
+
+            const singleInput = document.getElementById('galleryImageInput');
+            if (singleInput) singleInput.value = img.image || '';
+
+            if (img.photos && Array.isArray(img.photos) && img.photos.length > 0) {
+                gallerySelectedPhotos = [...img.photos];
+            } else if (img.image) {
+                gallerySelectedPhotos = [img.image];
+            } else {
+                gallerySelectedPhotos = [];
+            }
+            renderGalleryPreviews();
+
+            const modalTitle = document.getElementById('galleryModalTitle');
+            if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-edit" style="color:var(--primary); margin-right:8px;"></i> កែប្រែអាល់ប៊ុមរូបភាព';
+
+            const submitBtn = document.getElementById('btnSaveGallery');
+            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-check"></i> ធ្វើបច្ចុប្បន្នភាពអាល់ប៊ុម';
 
             openModal('modal-add-gallery', true);
         }
@@ -6124,17 +8124,32 @@
                         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">មិនមានទិន្នន័យទេ</td></tr>';
                         return;
                     }
-                    tbody.innerHTML = localMockGallery.map((img, idx) => `
+                    tbody.innerHTML = localMockGallery.map((img, idx) => {
+                        const photosCount = (img.photos && Array.isArray(img.photos) && img.photos.length > 0) ? img.photos.length : 1;
+                        const coverSrc = getDriveImageUrl(img.image || (img.photos && img.photos[0]) || '');
+                        const isAlbum = photosCount > 1;
+                        return `
                         <tr>
-                            <td><img src="${getDriveImageUrl(img.image)}" referrerpolicy="no-referrer" loading="lazy" style="width:80px; height:50px; border-radius:4px; object-fit:cover;" onerror="handleImageFallback(this, 'Gallery')"></td>
-                            <td>${img.title || '-'}</td>
+                            <td>
+                                <div style="position: relative; width: 80px; height: 50px; display: inline-block;">
+                                    <img src="${coverSrc}" referrerpolicy="no-referrer" loading="lazy" style="width:80px; height:50px; border-radius:6px; object-fit:cover; border: 1px solid var(--border-color);" onerror="handleImageFallback(this, 'Gallery')">
+                                    ${isAlbum ? `<span style="position: absolute; bottom: 2px; right: 2px; background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 0.68rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;"><i class="fas fa-images" style="color: #60a5fa;"></i> ${photosCount}</span>` : ''}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <strong>${img.title || '-'}</strong>
+                                    ${isAlbum ? `<span style="font-size: 0.72rem; color: #2563eb; background: #eff6ff; padding: 2px 8px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-layer-group"></i> អាល់ប៊ុម (${photosCount} រូប)</span>` : ''}
+                                </div>
+                            </td>
                             <td>${img.date || '-'}</td>
                             <td class="action-icons">
                                 <i class="fas fa-edit" style="color:var(--primary); margin-right:12px; cursor:pointer;" title="កែប្រែ" onclick='openEditGalleryModal(${JSON.stringify(img).replace(/'/g, "&apos;")}, ${idx})'></i>
-                                <i class="fas fa-trash" style="color:var(--danger)" title="លុប" onclick="if(confirm('តើអ្នកពិតជាចង់លុបរូបភាពនេះមែនទេ?')) deleteAdminGallery('${img.id || idx}')"></i>
+                                <i class="fas fa-trash" style="color:var(--danger); cursor:pointer;" title="លុប" onclick="if(confirm('តើអ្នកពិតជាចង់លុបអាល់ប៊ុមនេះមែនទេ?')) deleteAdminGallery('${img.id || idx}')"></i>
                             </td>
                         </tr>
-                    `).join('');
+                        `;
+                    }).join('');
                     return;
                 }
             } catch(e) {}
@@ -6144,34 +8159,64 @@
 
         async function saveNewGallery(event) {
             event.preventDefault();
-            const btn = event.target.querySelector('button[type="submit"]');
+            const btn = document.getElementById('btnSaveGallery') || event.target.querySelector('button[type="submit"]');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> រក្សាទុក...';
+            
+            const idVal = document.getElementById('galleryIdInput').value;
+            const titleVal = document.getElementById('galleryTitleInput').value.trim();
+            const dateVal = document.getElementById('galleryDateInput').value;
+
+            // Catch any unparsed text in URLs textarea
+            const urlsText = document.getElementById('galleryMultiUrlsInput')?.value || '';
+            if (urlsText.trim()) {
+                const lines = urlsText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+                lines.forEach(u => {
+                    const direct = getDriveImageUrl(u);
+                    if (direct && !gallerySelectedPhotos.includes(direct)) {
+                        gallerySelectedPhotos.push(direct);
+                    }
+                });
+            }
+
+            // Single URL input (if provided)
+            const singleVal = document.getElementById('galleryImageInput')?.value.trim();
+            if (singleVal) {
+                const direct = getDriveImageUrl(singleVal);
+                if (direct && !gallerySelectedPhotos.includes(direct)) {
+                    gallerySelectedPhotos.unshift(direct);
+                }
+            }
+
+            if (gallerySelectedPhotos.length === 0) {
+                alert('សូមជ្រើសរើសរូបភាព ឬបញ្ចូលតំណភ្ជាប់រូបភាពយ៉ាងហោចណាស់ ១ សន្លឹក!');
+                return;
+            }
+
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> កំពុងរក្សាទុកអាល់ប៊ុម (${gallerySelectedPhotos.length} រូប)...`;
             btn.disabled = true;
 
-            const idVal = document.getElementById('galleryIdInput').value;
-            const galleryData = {
-                title: document.getElementById('galleryTitleInput').value,
-                image: document.getElementById('galleryImageInput').value,
-                date: document.getElementById('galleryDateInput').value
+            const albumItem = {
+                id: idVal || Date.now().toString(),
+                title: titleVal,
+                image: gallerySelectedPhotos[0], // Cover photo
+                photos: gallerySelectedPhotos,   // All photos in this album
+                date: dateVal
             };
-            if (idVal) {
-                galleryData.id = idVal;
-            }
 
             try {
                 const res = await fetch('/api/gallery', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(galleryData)
+                    body: JSON.stringify(albumItem)
                 });
                 if (res.ok) {
                     btn.innerHTML = originalText;
                     btn.disabled = false;
-                    alert(idVal ? "បានកែប្រែរូបភាពដោយជោគជ័យ!" : "បានបន្ថែមរូបភាពថ្មីដោយជោគជ័យ!");
+                    alert(idVal ? 'បានកែប្រែអាល់ប៊ុមដោយជោគជ័យ!' : `បានបង្កើតអាល់ប៊ុមដោយជោគជ័យ (${gallerySelectedPhotos.length} រូបភាព)!`);
                     closeModal('modal-add-gallery');
                     document.getElementById('addGalleryForm').reset();
-                    document.getElementById('galleryIdInput').value = '';
+                    gallerySelectedPhotos = [];
+                    renderGalleryPreviews();
                     await loadAdminGallery();
                     return;
                 }
@@ -6179,7 +8224,7 @@
 
             btn.innerHTML = originalText;
             btn.disabled = false;
-            alert("មានបញ្ហាក្នុងការរក្សាទុក!");
+            alert('មានបញ្ហាក្នុងការរក្សាទុក!');
         }
 
         async function deleteAdminGallery(id) {
@@ -6504,12 +8549,18 @@
 
         // ==================== CATEGORIES MANAGEMENT ====================
         const defaultCategories = [
+            "គរុកោសល្យ នវានុវត្តន៍",
+            "កម្មវិធីសិក្សាលម្អិត",
+            "កញ្ចប់អំណាន និងគណិតវិទ្យាថ្នាក់ដំបូង",
+            "កម្រងសៀវភៅ ឧបនាយករដ្ឋមន្ត្រី",
+            "អក្សរសិល្ប៍",
+            "បច្ចេកវិទ្យា",
+            "ស្រាវជ្រាវប្រតិបត្តិ",
+            "វិធីសាស្ត្របង្រៀន",
             "សៀវភៅសិក្សាគោល",
-            "សៀវភៅកិច្ចតែងការបង្រៀន",
-            "សៀវភៅចំណេះដឹងទូទៅ",
-            "ស្រាវជ្រាវ",
-            "សៀវភៅបច្ចេកវិទ្យា",
-            "សៀវភៅវិធីសាស្ត្របង្រៀន",
+            "សៀវភៅណែនាំគ្រូ",
+            "សៀវភៅលំហាត់",
+            "សៀវភៅជំនួយ",
             "ផ្សេងៗ"
         ];
         let localCategories = [...defaultCategories];
@@ -7007,6 +9058,9 @@
                 populateCategoryDropdowns();
                 updateMessageBadges();
                 if (typeof setupChartFilterListeners === 'function') setupChartFilterListeners();
+                initGoogleDriveClient();
+                setupBookPdfDragAndDrop();
+                updateGoogleDriveUI();
             } else {
                 document.getElementById('login-view').style.display = 'flex';
                 document.getElementById('admin-layout').style.display = 'none';
@@ -7040,6 +9094,19 @@
                 document.getElementById('bookIdInput').value = '';
                 const randomCode = 'BK-' + Math.floor(1000 + Math.random() * 9000);
                 document.getElementById('bookCodeInput').value = randomCode;
+
+                switchBookPdfTab('upload');
+                const progressWrap = document.getElementById('bookPdfProgressWrap');
+                if (progressWrap) progressWrap.style.display = 'none';
+                const dropText = document.getElementById('bookPdfDropText');
+                if (dropText) dropText.innerHTML = 'ចុចទីនេះ ដើម្បីជ្រើសរើសឯកសារ PDF ឬអូសទម្លាក់ចូល';
+                const fileInput = document.getElementById('bookPdfFileInput');
+                if (fileInput) fileInput.value = '';
+                clearBookCover();
+                clearSelectedBookPdf();
+                setupBookPdfDragAndDrop();
+                updateGoogleDriveUI();
+
                 const modalHeader = document.querySelector('#modal-add-book .modal-header h3');
                 if (modalHeader) modalHeader.innerText = 'បន្ថែមសៀវភៅថ្មី';
             }
@@ -7048,12 +9115,35 @@
                 document.getElementById('newsIdInput').value = '';
                 const modalHeader = document.querySelector('#modal-add-news .modal-header h3');
                 if (modalHeader) modalHeader.innerText = 'បន្ថែមព័ត៌មានថ្មី';
+                const submitBtn = document.querySelector('#modal-add-news button[type="submit"]');
+                if (submitBtn) submitBtn.innerText = 'បង្ហោះ';
             }
             if(modalId === 'modal-add-gallery' && !isEdit) {
                 document.getElementById('addGalleryForm').reset();
                 document.getElementById('galleryIdInput').value = '';
+                
+                const singleUrlGroup = document.getElementById('gallerySingleUrlGroup');
+                const multiSection = document.getElementById('galleryMultiUploadSection');
+                if (singleUrlGroup) singleUrlGroup.style.display = 'none';
+                if (multiSection) multiSection.style.display = 'block';
+                
+                const singleInput = document.getElementById('galleryImageInput');
+                if (singleInput) singleInput.value = '';
+                
+                const today = new Date().toISOString().split('T')[0];
+                const dateInput = document.getElementById('galleryDateInput');
+                if (dateInput && !dateInput.value) dateInput.value = today;
+                
+                gallerySelectedPhotos = [];
+                renderGalleryPreviews();
+                switchGalleryTab('files');
+                setupGalleryDragAndDrop();
+                
                 const modalHeader = document.querySelector('#modal-add-gallery .modal-header h3');
-                if (modalHeader) modalHeader.innerText = 'បន្ថែមរូបភាពថ្មី';
+                if (modalHeader) modalHeader.innerHTML = '<i class="fas fa-images" style="color:var(--primary); margin-right:8px;"></i> បន្ថែមអាល់ប៊ុមរូបភាព (Create Album)';
+                
+                const submitBtn = document.getElementById('btnSaveGallery');
+                if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-check"></i> រក្សាទុកអាល់ប៊ុម';
             }
             if(modalId === 'modal-add-lesson' && !isEdit) {
                 document.getElementById('addVideoForm').reset();
@@ -7064,8 +9154,16 @@
             if(modalId === 'modal-add-team' && !isEdit) {
                 document.getElementById('addTeamForm').reset();
                 document.getElementById('teamIdInput').value = '';
+                clearTeamPhoto();
                 const modalHeader = document.querySelector('#modal-add-team .modal-header h3');
                 if (modalHeader) modalHeader.innerText = 'បន្ថែមសមាជិកគណៈគ្រប់គ្រង';
+            }
+            if(modalId === 'modal-add-staff' && !isEdit) {
+                document.getElementById('addStaffForm').reset();
+                document.getElementById('staffIdInput').value = '';
+                clearStaffPhoto();
+                const modalHeader = document.getElementById('modalStaffTitle');
+                if (modalHeader) modalHeader.innerText = 'បន្ថែមបុគ្គលិកថ្មី';
             }
             if(modalId === 'modal-add-slide' && !isEdit) {
                 document.getElementById('addSlideForm').reset();
@@ -7078,6 +9176,14 @@
                 document.getElementById('structureIdInput').value = '';
                 const modalHeader = document.querySelector('#modal-add-structure .modal-header h3');
                 if (modalHeader) modalHeader.innerText = 'បន្ថែមសមាជិករចនាសម្ព័ន្ធ';
+            }
+            if(modalId === 'modal-add-course' && !isEdit) {
+                document.getElementById('addCourseForm').reset();
+                document.getElementById('courseIdInput').value = '';
+                const modalHeader = document.querySelector('#modal-add-course .modal-header h3');
+                if (modalHeader) modalHeader.innerText = 'បន្ថែមវគ្គសិក្សា CPD ថ្មី';
+                const submitBtn = document.getElementById('btn-save-course');
+                if (submitBtn) submitBtn.innerText = 'រក្សាទុក';
             }
             modal.style.display = 'flex'; 
         }
@@ -7114,6 +9220,10 @@
                 "dashboard": "ផ្ទាំងដើម",
                 "library": "គ្រប់គ្រងបណ្ណាល័យ",
                 "news": "គ្រប់គ្រងព័ត៌មាន",
+                "courses": "គ្រប់គ្រងវគ្គសិក្សា CPD",
+                "courses_title": "គ្រប់គ្រងវគ្គសិក្សា CPD",
+                "courses_subtitle": "បញ្ជី និងព័ត៌មានលម្អិតនៃវគ្គសិក្សា CPD និងវគ្គខ្លីៗ",
+                "add_course": "បន្ថែមវគ្គសិក្សាថ្មី",
                 "lessons": "គ្រប់គ្រងវីដេអូ",
                 "messages": "គ្រប់គ្រងការផ្ញើសារ",
                 "personnel": "បុគ្គលិក & រចនាសម្ព័ន្ធ",
@@ -7132,6 +9242,10 @@
                 "dashboard": "Dashboard",
                 "library": "Library",
                 "news": "News",
+                "courses": "CPD Courses",
+                "courses_title": "CPD Courses",
+                "courses_subtitle": "List and details of CPD and short courses",
+                "add_course": "Add New Course",
                 "lessons": "Videos",
                 "messages": "Messages",
                 "personnel": "Personnel & Structure",

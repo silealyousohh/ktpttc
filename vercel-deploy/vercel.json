@@ -1,8 +1,0 @@
-{
-  "version": 2,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.js" },
-    { "source": "/admin", "destination": "/Admin_Index.html" },
-    { "source": "/", "destination": "/Public_Index.html" }
-  ]
-}

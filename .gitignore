@@ -39,6 +39,10 @@ test_image_endpoints.py
 test_image_redirects.py
 scratch/
 
+# Archives
+*.zip
+*.tar.gz
+
 # IDE & Editor files
 .vscode/
 .idea/
