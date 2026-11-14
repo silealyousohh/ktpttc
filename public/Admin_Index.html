@@ -4083,7 +4083,7 @@
             } catch(err) {}
 
             const activePwd = localStorage.getItem('adminPassword') || 'admin123';
-            if (loginSuccess || pwd === activePwd || pwd === 'admin123' || (typeof google !== 'undefined' && google.script)) {
+            if (loginSuccess || pwd === activePwd || pwd === 'admin123') {
                 sessionStorage.setItem('adminLoggedIn', 'true');
                 document.getElementById('login-view').style.display = 'none';
                 document.getElementById('admin-layout').style.display = 'flex';
@@ -4407,14 +4407,6 @@
             };
 
             applyFormValues(settings);
-
-            if (typeof google !== 'undefined' && google.script) {
-                google.script.run.withSuccessHandler(function(serverSettings) {
-                    if (serverSettings) {
-                        applyFormValues({ ...settings, ...serverSettings });
-                    }
-                }).getSchoolSettings();
-            }
         }
 
         // ==========================================
@@ -8522,28 +8514,13 @@
                 }
             } catch(e) {}
 
-            if (typeof google !== 'undefined' && google.script) {
-                google.script.run.withSuccessHandler(function(success) {
-                    msgs.forEach(msg => {
-                        if(success) {
-                            msg.innerText = "បានរក្សាទុកជោគជ័យ!";
-                            msg.style.color = 'var(--success)';
-                            setTimeout(() => msg.style.display = 'none', 3000);
-                        } else {
-                            msg.innerText = "បរាជ័យ!";
-                            msg.style.color = 'var(--danger)';
-                        }
-                    });
-                }).saveSchoolSettings(settingsData);
-            } else {
-                setTimeout(() => {
-                    msgs.forEach(msg => {
-                        msg.innerText = "បានរក្សាទុកជោគជ័យ!";
-                        msg.style.color = 'var(--success)';
-                        setTimeout(() => msg.style.display = 'none', 3000);
-                    });
-                }, 300);
-            }
+            setTimeout(() => {
+                msgs.forEach(msg => {
+                    msg.innerText = "បានរក្សាទុកជោគជ័យ!";
+                    msg.style.color = 'var(--success)';
+                    setTimeout(() => msg.style.display = 'none', 3000);
+                });
+            }, 300);
         }
 
 
