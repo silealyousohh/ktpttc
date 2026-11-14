@@ -123,7 +123,7 @@ app.post('/api/database/sync', async (req, res) => {
 });
 
 // Serve static files (Images, CSS, JS, etc.)
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // ==========================================
 // MONGODB & DATABASE MANAGEMENT
@@ -472,17 +472,23 @@ async function writeDb(data) {
 }
 
 // Routes for HTML Pages
-app.get('/', (req, res) => {
+app.get(['/', '/index.html'], (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
+  const pubPath = path.join(__dirname, 'public', 'Public_Index.html');
+  if (fs.existsSync(pubPath)) return res.sendFile(pubPath);
+  const indPath = path.join(__dirname, 'public', 'index.html');
+  if (fs.existsSync(indPath)) return res.sendFile(indPath);
   res.sendFile(path.join(__dirname, 'Public_Index.html'));
 });
 
-app.get('/admin', (req, res) => {
+app.get(['/admin', '/admin/'], (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
+  const adminPath = path.join(__dirname, 'public', 'Admin_Index.html');
+  if (fs.existsSync(adminPath)) return res.sendFile(adminPath);
   res.sendFile(path.join(__dirname, 'Admin_Index.html'));
 });
 
