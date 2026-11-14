@@ -890,25 +890,82 @@ body.dark-mode .footer {
         font-size: 0.72rem;
     }
     
-    .mobile-menu-btn { display: block; font-size: 1.6rem; }
+    .mobile-menu-btn { 
+        display: block; 
+        font-size: 1.6rem; 
+        cursor: pointer;
+        padding: 6px 10px;
+        color: var(--text-main);
+    }
     
     .nav-links {
-        position: fixed;
-        top: var(--header-total-height);
+        position: fixed !important;
+        top: var(--header-total-height) !important;
         left: -100%;
-        width: 100%;
+        width: 100% !important;
         height: calc(100vh - var(--header-total-height));
-        background: var(--bg-surface);
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 25px 30px;
+        height: calc(100dvh - var(--header-total-height)) !important;
+        max-height: calc(100dvh - var(--header-total-height)) !important;
+        background: var(--bg-surface) !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 16px 22px calc(140px + env(safe-area-inset-bottom, 20px)) 22px !important;
         transition: left var(--transition-normal);
-        overflow-y: auto;
+        overflow-y: scroll !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain !important;
+        touch-action: pan-y !important;
         box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        box-sizing: border-box !important;
+        z-index: 1001 !important;
+        pointer-events: none;
     }
     
     .nav-links.active {
-        left: 0;
+        left: 0 !important;
+        pointer-events: auto !important;
+    }
+
+    /* Mobile Drawer Header */
+    .mobile-drawer-header {
+        display: flex !important;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 12px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+    }
+    .mobile-drawer-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    .mobile-drawer-close {
+        background: none;
+        border: none;
+        font-size: 1.4rem;
+        color: var(--text-main);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 8px;
+        line-height: 1;
+    }
+    .mobile-drawer-close:hover {
+        background: rgba(128,128,128,0.1);
+    }
+
+    /* Lock body background while allowing mobile menu drawer to scroll smoothly */
+    html.mobile-nav-active,
+    body.mobile-nav-active {
+        overflow: hidden !important;
+        touch-action: none;
+    }
+    body.mobile-nav-active .nav-links {
+        overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
     }
 
     .nav-link {
@@ -917,6 +974,19 @@ body.dark-mode .footer {
         padding: 14px 20px !important;
         width: 100%;
         border-bottom: 1px solid rgba(128,128,128,0.1);
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+    
+    .dropdown-arrow {
+        padding: 6px 12px;
+        margin: -6px -12px;
+        cursor: pointer;
+        transition: transform var(--transition-fast);
+    }
+    .dropdown.active .dropdown-arrow {
+        transform: rotate(180deg);
     }
     
     .dropdown-menu {
@@ -3969,11 +4039,18 @@ body.dark-mode .pagination-ellipsis {
                 </div>
                 
                 <nav class="nav-links" id="nav-links">
+                    <div class="mobile-drawer-header">
+                        <span class="mobile-drawer-title" data-lang="navMenu">ម៉ឺនុយ</span>
+                        <button type="button" class="mobile-drawer-close" onclick="toggleMobileMenu()" aria-label="Close Menu">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
                     <a href="#" class="nav-link active" data-page="home" onclick="navigateTo('home')" data-lang="navHome">ទំព័រដើម</a>
                     
                     <div class="dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-page="about" onclick="navigateTo('about')">
-                            <span data-lang="navAbout">អំពីសាលា</span> <i class="fas fa-chevron-down"></i>
+                            <span data-lang="navAbout">អំពីសាលា</span> <i class="fas fa-chevron-down dropdown-arrow" onclick="toggleMobileDropdown(event)"></i>
                         </a>
                         <div class="dropdown-menu">
                             <a href="#" class="dropdown-item" onclick="navigateTo('about', 'history')" data-lang="navHistory">ប្រវត្តិសាលា</a>
@@ -6944,9 +7021,23 @@ function toggleMobileMenu() {
     if (!navLinks) return;
     const isActive = navLinks.classList.toggle('active');
     if (isActive) {
-        document.body.style.overflow = 'hidden';
+        document.body.classList.add('mobile-nav-active');
+        document.documentElement.classList.add('mobile-nav-active');
+        navLinks.scrollTop = 0;
     } else {
-        document.body.style.overflow = '';
+        document.body.classList.remove('mobile-nav-active');
+        document.documentElement.classList.remove('mobile-nav-active');
+    }
+}
+
+function toggleMobileDropdown(event) {
+    if (window.innerWidth <= 1024) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const dropdown = (event && event.currentTarget) ? event.currentTarget.closest('.dropdown') : document.querySelector('.dropdown');
+        if (dropdown) dropdown.classList.toggle('active');
     }
 }
 
@@ -6959,6 +7050,8 @@ function navigateTo(page, subSection = null) {
     if (navLinks) navLinks.classList.remove('active');
     
     // Ensure body scroll is unlocked
+    document.body.classList.remove('mobile-nav-active');
+    document.documentElement.classList.remove('mobile-nav-active');
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
     
