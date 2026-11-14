@@ -6334,15 +6334,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch(err) {}
     }
 
-    if (typeof google !== 'undefined' && google.script) {
-        google.script.run.withSuccessHandler(function(settings) {
-            if (settings) {
-                applySchoolSettings(settings);
-                setLanguage(currentLang);
-            }
-        }).getSchoolSettings();
+    // Auto-navigate to Library if on library subdomain or /library or #library
+    const isLibrarySubdomain = window.location.hostname.startsWith('library.') || 
+                               window.location.hostname.startsWith('elibrary.');
+    const isLibraryPath = window.location.pathname.startsWith('/library') || 
+                          window.location.hash === '#library';
+    if (isLibrarySubdomain || isLibraryPath) {
+        navigateTo('library');
     }
-    
+
     // Setup specific page functionality if Home is loaded first
     if(document.getElementById('public-hero-slider')) {
         fetchSlides();
