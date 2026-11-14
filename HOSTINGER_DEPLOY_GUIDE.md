@@ -53,9 +53,9 @@
 ---
 
 ## 🌐 ៣. ពិនិត្យមើលលទ្ធផល
-* **ទំព័រទូទៅ (Public Website)**: `https://your-domain.com`
-* **ផ្ទាំងគ្រប់គ្រង (Admin Panel)**: `https://your-domain.com/admin`
-* **ពិនិត្យ API Status**: `https://your-domain.com/api/db-status`
+* **ទំព័រទូទៅ (Public Website)**: `https://ktpttc.net`
+* **ផ្ទាំងគ្រប់គ្រង (Admin Panel)**: `https://ktpttc.net/admin`
+* **ពិនិត្យ API Status**: `https://ktpttc.net/api/db-status`
 
 ---
 

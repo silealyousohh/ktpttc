@@ -2,6 +2,8 @@
   "name": "ktpttc-website",
   "version": "1.0.0",
   "description": "Full-Stack Node.js Web Application for Kratie Provincial Teacher Training College",
+  "author": "Sileal Yousoh <sileal.yousohh@gmail.com>",
+  "license": "MIT",
   "main": "server.js",
   "scripts": {
     "dev": "next dev",
