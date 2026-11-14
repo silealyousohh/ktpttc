@@ -4,8 +4,10 @@
   "description": "Full-Stack Node.js Web Application for Kratie Provincial Teacher Training College",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "server": "node server.js",
     "bot": "node bot-polling.js"
   },
   "dependencies": {
@@ -13,6 +15,9 @@
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
-    "mongodb": "^7.5.0"
+    "mongodb": "^7.5.0",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }

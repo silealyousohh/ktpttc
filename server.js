@@ -184,24 +184,22 @@ async function getMongoCollection() {
 
 // Helper: Read local fallback db.json
 function getLocalFileDb() {
-  const possiblePaths = [
-    path.join(__dirname, 'data', 'db.json'),
-    path.join(__dirname, 'db.json'),
-    path.join(process.cwd(), 'data', 'db.json'),
-    path.join(process.cwd(), 'db.json')
-  ];
-  for (const p of possiblePaths) {
-    try {
-      if (fs.existsSync(p)) {
-        const content = fs.readFileSync(p, 'utf8');
-        if (content && content.trim()) {
-          return JSON.parse(content);
-        }
-      }
-    } catch (err) {
-      console.error('Error reading fallback DB path:', p, err.message);
+  const primaryPath = path.join(process.cwd(), 'data', 'db.json');
+  try {
+    if (fs.existsSync(primaryPath)) {
+      const content = fs.readFileSync(primaryPath, 'utf8');
+      if (content && content.trim()) return JSON.parse(content);
     }
-  }
+  } catch (err) {}
+
+  const altPath = path.join(__dirname, 'data', 'db.json');
+  try {
+    if (fs.existsSync(altPath)) {
+      const content = fs.readFileSync(altPath, 'utf8');
+      if (content && content.trim()) return JSON.parse(content);
+    }
+  } catch (err) {}
+
   return {};
 }
 
@@ -1644,6 +1642,6 @@ const startServer = () => {
   });
 };
 
-if (require.main === module || process.env.NODE_ENV === 'production' || process.env.PORT) {
+if (require.main === module) {
   startServer();
 }
