@@ -478,8 +478,6 @@ app.get(['/', '/index.html'], (req, res) => {
   res.set('Expires', '0');
   const pubPath = path.join(__dirname, 'public', 'Public_Index.html');
   if (fs.existsSync(pubPath)) return res.sendFile(pubPath);
-  const indPath = path.join(__dirname, 'public', 'index.html');
-  if (fs.existsSync(indPath)) return res.sendFile(indPath);
   res.sendFile(path.join(__dirname, 'Public_Index.html'));
 });
 
