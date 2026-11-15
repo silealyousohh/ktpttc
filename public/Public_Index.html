@@ -1858,10 +1858,10 @@ body.dark-mode .cpd-badge {
 }
 
 .main-book-cover-wrap {
-    width: 220px;
-    min-width: 200px;
-    height: 310px;
-    border-radius: 12px;
+    width: 260px;
+    min-width: 230px;
+    height: 365px;
+    border-radius: 14px;
     position: relative;
     overflow: hidden;
     box-shadow: 0 15px 30px rgba(0,0,0,0.25);
@@ -2958,49 +2958,49 @@ body.dark-mode .cat-pill.active {
 }
 
 /* ==========================================================================
-   Books Grid (5 Cards a Row on Desktop, Compact 20% Smaller Scale)
+   Books Grid (5 Cards a Row on Desktop, Scaled +20%)
    ========================================================================== */
 .library-page-container {
-    max-width: 1140px !important;
+    max-width: 1400px !important;
 }
 
 .books-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
+    gap: 18px;
 }
 
 @media (max-width: 1200px) {
     .books-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 13px;
+        gap: 16px;
     }
 }
 
 @media (max-width: 992px) {
     .books-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
+        gap: 15px;
     }
 }
 
 @media (max-width: 768px) {
     .books-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        gap: 12px;
     }
 }
 
 @media (max-width: 480px) {
     .books-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
+        gap: 10px;
     }
 }
 
 .book-card {
     background: var(--bg-surface);
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid var(--border);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
@@ -3011,7 +3011,7 @@ body.dark-mode .cat-pill.active {
 }
 
 .book-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-5px);
     box-shadow: var(--shadow-lg);
     border-color: var(--primary-light);
 }
@@ -3046,33 +3046,33 @@ body.dark-mode .book-cover {
 
 .book-category {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 8px;
+    right: 8px;
     background: var(--secondary);
     color: white;
-    font-size: 0.62rem;
-    padding: 2px 7px;
-    border-radius: 16px;
+    font-size: 0.72rem;
+    padding: 3px 9px;
+    border-radius: 20px;
     font-weight: 600;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
     z-index: 2;
-    max-width: 82%;
+    max-width: 80%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .book-info {
-    padding: 10px;
+    padding: 14px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
 }
 
 .book-title {
-    font-size: 0.88rem;
+    font-size: 0.98rem;
     font-weight: 700;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
     color: var(--text-main);
     line-height: 1.45;
     flex-grow: 1;
@@ -3087,15 +3087,15 @@ body.dark-mode .book-cover {
 
 .book-author {
     color: var(--text-muted);
-    font-size: 0.74rem;
-    margin-bottom: 3px;
+    font-size: 0.82rem;
+    margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .book-code {
-    font-size: 0.68rem;
+    font-size: 0.76rem;
     color: var(--primary-light);
     font-weight: 600;
     white-space: nowrap;
@@ -3599,19 +3599,19 @@ body.dark-mode .pagination-ellipsis {
 /* Book Card Action Buttons (Read & Download) */
 .book-card-actions {
     display: flex;
-    gap: 5px;
-    margin-top: 8px;
+    gap: 6px;
+    margin-top: 10px;
     align-items: center;
 }
 .btn-card-read {
     flex: 1;
-    padding: 5px 6px;
-    font-size: 0.74rem;
+    padding: 7px 10px;
+    font-size: 0.82rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    border-radius: 5px;
+    gap: 5px;
+    border-radius: 6px;
     font-weight: 600;
     white-space: nowrap;
     transition: all var(--transition-fast);
@@ -3620,13 +3620,13 @@ body.dark-mode .pagination-ellipsis {
     background: #059669 !important;
     border: 1px solid #059669 !important;
     color: #ffffff !important;
-    padding: 5px 8px;
-    font-size: 0.74rem;
+    padding: 7px 12px;
+    font-size: 0.82rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    border-radius: 5px;
+    gap: 5px;
+    border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
