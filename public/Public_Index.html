@@ -4024,6 +4024,7 @@ body.dark-mode .pagination-ellipsis {
                         </div>
                     </div>
                     
+                    <a href="#" class="nav-link" data-page="cpd" onclick="navigateTo('cpd')" data-lang="navCpd">វគ្គ CPD</a>
                     <a href="#" class="nav-link" data-page="library" onclick="navigateTo('library')" data-lang="navLibrary">បណ្ណាល័យ</a>
                     <a href="#" class="nav-link" data-page="images" onclick="navigateTo('images')" data-lang="navImages">រូបភាព</a>
                     <a href="#" class="nav-link" data-page="videos" onclick="navigateTo('videos')" data-lang="navVideos">វីដេអូ</a>
@@ -4875,6 +4876,34 @@ body.dark-mode .pagination-ellipsis {
 </div>
     </template>
     
+    <template id="tpl-cpd">
+        <!-- CPD Courses Page Content -->
+        <div class="page-header">
+            <div class="container">
+                <h1 data-lang="cpdTitle">វគ្គសិក្សា CPD ដែលមានរបស់យើង</h1>
+                <p class="breadcrumbs">
+                    <a href="#" onclick="navigateTo('home')" data-lang="navHome">ទំព័រដើម</a> / 
+                    <span data-lang="navCpd">វគ្គ CPD</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="container page-content">
+            <section class="cpd-section" style="padding: 10px 0 40px 0; background: transparent;">
+                <div class="cpd-header" style="margin-bottom: 25px;">
+                    <div>
+                        <span class="cpd-badge" data-lang="cpdBadge">វគ្គសិក្សារបស់យើង</span>
+                        <h2 class="cpd-title" data-lang="cpdCoursesList">បញ្ជីវគ្គបណ្តុះបណ្តាល និងអភិវឌ្ឍន៍វិជ្ជាជីវៈ</h2>
+                    </div>
+                </div>
+
+                <div class="cpd-grid">
+                    <!-- Populated dynamically by fetchCourses() -->
+                </div>
+            </section>
+        </div>
+    </template>
+    
     <template id="tpl-library">
         <!-- Library Page Content -->
 
@@ -5123,6 +5152,7 @@ body.dark-mode .pagination-ellipsis {
                 <ul class="footer-links">
                     <li><a href="#" onclick="navigateTo('home')"><i class="fas fa-angle-right"></i> <span data-lang="navHome">ទំព័រដើម</span></a></li>
                     <li><a href="#" onclick="navigateTo('about')"><i class="fas fa-angle-right"></i> <span data-lang="navAbout">អំពីសាលា</span></a></li>
+                    <li><a href="#" onclick="navigateTo('cpd')"><i class="fas fa-angle-right"></i> <span data-lang="navCpd">វគ្គ CPD</span></a></li>
                     <li><a href="#" onclick="navigateTo('library')"><i class="fas fa-angle-right"></i> <span data-lang="navLibrary">បណ្ណាល័យ</span></a></li>
                     <li><a href="#" onclick="navigateTo('contact')"><i class="fas fa-angle-right"></i> <span data-lang="navContact">ទំនាក់ទំនង</span></a></li>
                 </ul>
@@ -5899,6 +5929,8 @@ const i18n = {
         navStructure: "រចនាសម្ព័ន្ធ",
         navTeam: "គណៈគ្រប់គ្រង",
         navStaff: "បុគ្គលិក",
+        navCpd: "វគ្គ CPD",
+        cpdCoursesList: "បញ្ជីវគ្គបណ្តុះបណ្តាល និងអភិវឌ្ឍន៍វិជ្ជាជីវៈ",
         navLibrary: "បណ្ណាល័យ",
         navImages: "រូបភាព",
         navVideos: "វីដេអូ",
@@ -6030,6 +6062,8 @@ const i18n = {
         navStructure: "Structure",
         navTeam: "Management",
         navStaff: "Staff",
+        navCpd: "CPD Courses",
+        cpdCoursesList: "Professional Development & Training Courses",
         navLibrary: "Library",
         navImages: "Images",
         navVideos: "Videos",
@@ -6314,6 +6348,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                           window.location.hash === '#library';
     if (isLibrarySubdomain || isLibraryPath) {
         navigateTo('library');
+    }
+    const isCpdPath = window.location.pathname.startsWith('/cpd') || 
+                      window.location.hash === '#cpd';
+    if (isCpdPath) {
+        navigateTo('cpd');
     }
 
     // Setup specific page functionality if Home is loaded first
@@ -7099,6 +7138,8 @@ function initPageLogic(page, subSection) {
         fetchHomeBooks();
         fetchHomePhotos();
         fetchHomePartners();
+        fetchCourses();
+    } else if (page === 'cpd') {
         fetchCourses();
     } else if (page === 'library') {
         fetchBooks();

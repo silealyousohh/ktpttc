@@ -499,6 +499,15 @@ app.get(['/library', '/library/'], (req, res) => {
   res.sendFile(path.join(__dirname, 'Public_Index.html'));
 });
 
+app.get(['/cpd', '/cpd/'], (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  const pubPath = path.join(__dirname, 'public', 'Public_Index.html');
+  if (fs.existsSync(pubPath)) return res.sendFile(pubPath);
+  res.sendFile(path.join(__dirname, 'Public_Index.html'));
+});
+
 // ==========================================
 // REST API ENDPOINTS
 // ==========================================
