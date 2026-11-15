@@ -3472,13 +3472,13 @@
                         </span>
                     </div>
 
-                    <!-- Visual Original Size Card Preview -->
-                    <div id="slideModalPreviewWrap" style="width: 100%; min-height: 180px; max-height: 420px; border-radius: 12px; border: 2px dashed var(--border-color); background: #0f172a; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3); margin-bottom: 12px;">
+                    <!-- Visual Slide Preview -->
+                    <div id="slideModalPreviewWrap" style="width: 100%; min-height: 180px; max-height: 420px; border-radius: 12px; border: 2px dashed var(--border-color); background: var(--bg-surface, #f8fafc); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
                         <img id="slideModalPreview" src="" alt="Slide Preview" style="width: 100%; max-height: 400px; object-fit: contain; display: none;" onerror="this.style.display='none'; document.getElementById('slideModalPreviewPlaceholder').style.display='flex';">
-                        <div id="slideModalPreviewPlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; text-align: center; padding: 24px;">
+                        <div id="slideModalPreviewPlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); text-align: center; padding: 24px;">
                             <i class="fas fa-cloud-upload-alt" style="font-size: 2.4rem; color: var(--primary); margin-bottom: 8px; opacity: 0.9;"></i>
-                            <div style="font-weight: 600; font-size: 0.95rem; color: #f8fafc;">ជ្រើសរើស ឬ Upload រូបភាពស្លាយផ្ទាល់ពីកុំព្យូទ័រ / ទូរស័ព្ទ</div>
-                            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;"><i class="fas fa-id-card" style="color: #38bdf8; margin-right: 4px;"></i> បង្ហាញទំហំដើមជាក់ស្តែង (Original Size Card / Banner - មិនកាត់ ឬបាត់រូបភាពឡើយ)</div>
+                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">ជ្រើសរើស ឬ Upload រូបភាពស្លាយផ្ទាល់ពីកុំព្យូទ័រ / ទូរស័ព្ទ</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;"><i class="fas fa-image" style="color: var(--primary); margin-right: 4px;"></i> បង្ហាញរូបភាពស្លាយពេញលេញដោយគ្មានផ្ទាំង Background ខ្មៅឡើយ</div>
                         </div>
                         <div id="slideModalDimensionsBadge" style="display: none; position: absolute; bottom: 10px; right: 12px; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); color: #fff; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px; font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
                             <i class="fas fa-expand-arrows-alt" style="margin-right: 4px; color: #38bdf8;"></i> <span id="slideModalDimensionsText">Original Size Card</span>
@@ -8293,11 +8293,8 @@
                     if (cardsContainer) {
                         cardsContainer.innerHTML = localMockSlides.map((slide, idx) => `
                             <div class="data-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: 1px solid var(--border-color); background: var(--bg-card); transition: transform 0.2s ease, box-shadow 0.2s ease;">
-                                <div style="width: 100%; height: 210px; background: #0f172a; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                                    <img src="${getDriveImageUrl(slide.image)}" referrerpolicy="no-referrer" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;" onerror="handleImageFallback(this, 'Slide')">
-                                    <span style="position: absolute; bottom: 8px; right: 10px; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); color: #fff; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; font-weight: 600;">
-                                        <i class="fas fa-id-card" style="color: #38bdf8; margin-right: 4px;"></i> Original Size Card
-                                    </span>
+                                <div style="width: 100%; height: 210px; background: var(--bg-main, #f1f5f9); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                                    <img src="${getDriveImageUrl(slide.image)}" referrerpolicy="no-referrer" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;" onerror="handleImageFallback(this, 'Slide')">
                                 </div>
                                 <div style="padding: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
                                     <div>
@@ -8327,8 +8324,8 @@
                         tbody.innerHTML = localMockSlides.map((slide, idx) => `
                             <tr>
                                 <td>
-                                    <div style="width:120px; height:70px; border-radius:6px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); background:#0f172a; display:flex; align-items:center; justify-content:center;">
-                                        <img src="${getDriveImageUrl(slide.image)}" referrerpolicy="no-referrer" loading="lazy" style="width:100%; height:100%; object-fit:contain;" onerror="handleImageFallback(this, 'Slide')">
+                                    <div style="width:120px; height:70px; border-radius:6px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.06); background:var(--bg-main, #f1f5f9); display:flex; align-items:center; justify-content:center;">
+                                        <img src="${getDriveImageUrl(slide.image)}" referrerpolicy="no-referrer" loading="lazy" style="width:100%; height:100%; object-fit:cover;" onerror="handleImageFallback(this, 'Slide')">
                                     </div>
                                 </td>
                                 <td><strong>${slide.title || '-'}</strong></td>

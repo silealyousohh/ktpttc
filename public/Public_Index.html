@@ -1082,8 +1082,7 @@ body.dark-mode .footer {
     min-height: 350px;
     border-radius: 0 !important;
     overflow: hidden;
-    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.25);
-    background: #0f172a;
+    background: transparent;
     margin: 0 auto;
 }
 
@@ -1093,6 +1092,7 @@ body.dark-mode .footer {
     z-index: 1;
     overflow: hidden;
     border-radius: 0 !important;
+    background: transparent;
 }
 
 .hero-slider .slide {
@@ -1102,29 +1102,22 @@ body.dark-mode .footer {
     animation: fadeSlide 18s infinite linear;
     border-radius: 0 !important;
     overflow: hidden;
+    background: transparent;
 }
 
 .hero-slider .slide img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
-    position: relative;
-    z-index: 2;
+    position: absolute;
+    top: 0;
+    left: 0;
     border-radius: 0 !important;
 }
 
 .hero-slider .slide .slide-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    filter: blur(25px) brightness(0.35);
-    transform: scale(1.15);
-    z-index: 1;
+    display: none !important;
 }
 
 @keyframes fadeSlide {
@@ -4138,7 +4131,7 @@ body.dark-mode .pagination-ellipsis {
         <div class="hero-slider-wrapper">
             <div class="hero-slider" id="public-hero-slider">
                 <div class="slide" style="opacity: 1; animation: none; z-index: 1;">
-                    <img src="/Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2;">
+                    <img src="/Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;">
                 </div>
             </div>
         </div>
@@ -4512,7 +4505,7 @@ body.dark-mode .pagination-ellipsis {
         <div class="hero-slider-wrapper">
             <div class="hero-slider" id="public-hero-slider">
                 <div class="slide" style="opacity: 1; animation: none; z-index: 1;">
-                    <img src="/Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2;">
+                    <img src="/Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;">
                 </div>
             </div>
         </div>
@@ -7363,23 +7356,18 @@ function renderSlides(slidesArray) {
 
         const imageUrl = getDriveImageUrl(slide.image);
 
-        // Ambient blurred backdrop for letterbox areas
-        const backdropDiv = document.createElement('div');
-        backdropDiv.className = 'slide-backdrop';
-        backdropDiv.style.backgroundImage = `url("${imageUrl}")`;
-        slideDiv.appendChild(backdropDiv);
-
-        // Foreground: Original Size Card (100% visible, uncropped)
+        // Slide Image (covers edge-to-edge cleanly without background bars)
         const imgEl = document.createElement('img');
         imgEl.src = imageUrl;
         imgEl.setAttribute('referrerpolicy', 'no-referrer');
         imgEl.alt = slide.title || 'Slide';
         imgEl.style.width = '100%';
         imgEl.style.height = '100%';
-        imgEl.style.objectFit = 'contain';
+        imgEl.style.objectFit = 'cover';
         imgEl.style.objectPosition = 'center';
-        imgEl.style.position = 'relative';
-        imgEl.style.zIndex = '2';
+        imgEl.style.position = 'absolute';
+        imgEl.style.top = '0';
+        imgEl.style.left = '0';
         imgEl.style.borderRadius = '0';
         imgEl.onerror = function() {
             this.onerror = null;
