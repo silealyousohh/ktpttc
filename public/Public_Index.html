@@ -6683,13 +6683,15 @@ function updateHomeMainBook(book) {
     const coverUrl = book.cover ? getDriveImageUrl(book.cover) : '';
     const safeTitle = (book.title || 'សៀវភៅ').replace(/'/g, "\\'");
     const safeLink = (book.link || '#').replace(/'/g, "\\'");
+    const safeBookId = (book.id || book.code || '').replace(/'/g, "\\'");
+    const bookKey = book.id || book.code || '';
     
     const coverDisplayHtml = coverUrl
         ? `<img src="${coverUrl}" class="main-book-cover-img" alt="${book.title || 'Book'}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400';">`
         : `<div class="main-book-cover-placeholder"><i class="fas fa-book-open"></i><span style="font-size: 0.9rem; font-weight: 500;">No Cover</span></div>`;
 
     mainCard.innerHTML = `
-        <div class="main-book-cover-wrap" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read')" title="${t('readBook') || 'អានសៀវភៅ'}">
+        <div class="main-book-cover-wrap" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')" title="${t('readBook') || 'អានសៀវភៅ'}">
             ${coverDisplayHtml}
             <div class="main-book-cover-overlay">
                 <i class="fas fa-book-reader"></i> <span>${t('readBook') || 'អានសៀវភៅ'}</span>
@@ -6710,12 +6712,16 @@ function updateHomeMainBook(book) {
                     <i class="fas fa-barcode"></i> <span><strong>${currentLang === 'en' ? 'Code:' : 'លេខកូដ:'}</strong> ${book.code}</span>
                 </div>
                 ` : ''}
+                <div class="main-book-meta-item" style="gap: 12px;">
+                    <span style="color: #0284c7; font-weight: 600;"><i class="fas fa-eye" style="margin-right: 4px;"></i> <span id="book-reads-${bookKey}">${book.reads || 0}</span> ${currentLang === 'en' ? 'reads' : 'អ្នកអាន'}</span>
+                    <span style="color: #10b981; font-weight: 600;"><i class="fas fa-download" style="margin-right: 4px;"></i> <span id="book-downloads-${bookKey}">${book.downloads || 0}</span> ${currentLang === 'en' ? 'downloads' : 'អ្នកទាញយក'}</span>
+                </div>
             </div>
             <div class="main-book-actions">
-                <button type="button" class="btn btn-primary" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read')">
+                <button type="button" class="btn btn-primary" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')">
                     <i class="fas fa-book-reader"></i> <span>${t('readBook') || 'អានសៀវភៅ'}</span>
                 </button>
-                <button type="button" class="btn btn-home-download" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'download')" title="${t('downloadBook') || 'ទាញយក'}">
+                <button type="button" class="btn btn-home-download" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'download', '${safeBookId}')" title="${t('downloadBook') || 'ទាញយក'}">
                     <i class="fas fa-download"></i> <span>${t('downloadBook') || 'ទាញយក'}</span>
                 </button>
                 <button type="button" class="btn btn-outline" onclick="navigateTo('library')">
@@ -7697,20 +7703,26 @@ function renderBooksPage(shouldScroll = false) {
 
         const safeTitle = (book.title || 'សៀវភៅ').replace(/'/g, "\\'");
         const safeLink = (book.link || '#').replace(/'/g, "\\'");
+        const safeBookId = (book.id || book.code || '').replace(/'/g, "\\'");
+        const bookKey = book.id || book.code || '';
 
         card.innerHTML = `
-            <div class="book-cover" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read')" style="cursor: pointer;" title="${t('readBook') || 'អានសៀវភៅ'}">
+            <div class="book-cover" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')" style="cursor: pointer;" title="${t('readBook') || 'អានសៀវភៅ'}">
                 ${coverHtml}
             </div>
             <div class="book-info">
                 <h3 class="book-title">${book.title || 'សៀវភៅ'}</h3>
                 <p class="book-author"><i class="fas fa-user-edit"></i> ${book.author || 'MoEYS'}</p>
                 <div class="book-code">Code: ${book.code || ''} ${book.grade ? '| ' + book.grade : ''}</div>
+                <div class="book-stats" style="display: flex; gap: 10px; font-size: 0.76rem; color: var(--text-muted); margin-top: 4px; margin-bottom: 6px; font-weight: 600;">
+                    <span title="${currentLang === 'en' ? 'Total Reads' : 'ចំនួនអ្នកអាន'}"><i class="fas fa-eye" style="color: #0284c7; margin-right: 3px;"></i><span id="book-reads-${bookKey}">${book.reads || 0}</span></span>
+                    <span title="${currentLang === 'en' ? 'Total Downloads' : 'ចំនួនអ្នកទាញយក'}"><i class="fas fa-download" style="color: #10b981; margin-right: 3px;"></i><span id="book-downloads-${bookKey}">${book.downloads || 0}</span></span>
+                </div>
                 <div class="book-card-actions">
-                    <button type="button" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read')" class="btn btn-outline btn-card-read">
+                    <button type="button" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')" class="btn btn-outline btn-card-read">
                         <i class="fas fa-book-reader"></i> <span>${t('readBook')}</span>
                     </button>
-                    <button type="button" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'download')" class="btn btn-primary btn-card-download" title="${t('downloadBook')}">
+                    <button type="button" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'download', '${safeBookId}')" class="btn btn-primary btn-card-download" title="${t('downloadBook')}">
                         <i class="fas fa-download"></i> <span>${t('downloadBook')}</span>
                     </button>
                 </div>
@@ -8079,17 +8091,53 @@ function downloadBookFile(title, url) {
     }
 }
 
+// Track Book Action (Read / Download Counter)
+async function trackBookAction(bookIdOrCodeOrLink, action = 'read') {
+    if (!bookIdOrCodeOrLink) return;
+    try {
+        fetch('/api/books/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: bookIdOrCodeOrLink, action })
+        }).then(r => r.json()).then(data => {
+            if (data && data.success) {
+                if (typeof allBooks !== 'undefined' && Array.isArray(allBooks)) {
+                    const b = allBooks.find(item => 
+                        (item.id && String(item.id) === String(data.id)) || 
+                        (item.code && String(item.code) === String(data.code)) ||
+                        (item.link && String(item.link) === String(bookIdOrCodeOrLink))
+                    );
+                    if (b) {
+                        b.reads = data.reads;
+                        b.downloads = data.downloads;
+                    }
+                }
+                const key = data.id || data.code;
+                if (key) {
+                    const rEl = document.getElementById(`book-reads-${key}`);
+                    if (rEl) rEl.innerText = data.reads;
+                    const dEl = document.getElementById(`book-downloads-${key}`);
+                    if (dEl) dEl.innerText = data.downloads;
+                }
+            }
+        }).catch(() => {});
+    } catch(e) {}
+}
+
 // Handle Book Action (Requires Login for both read & download)
-function handleBookAction(title, link, action = 'read') {
+function handleBookAction(title, link, action = 'read', bookIdOrCode = '') {
     const user = isReaderLoggedIn();
     if (!user) {
-        pendingBookAction = { title, link, action };
+        pendingBookAction = { title, link, action, bookIdOrCode };
         openAuthModal(action, title);
         return;
     }
 
+    // Record read/download tracking count
+    trackBookAction(bookIdOrCode || link || title, action);
+
     if (action === 'read') {
-        openBookModal(title, link);
+        openBookModal(title, link, bookIdOrCode);
     } else if (action === 'download') {
         downloadBookFile(title, link);
     }
@@ -8099,23 +8147,29 @@ function handleBookAction(title, link, action = 'read') {
 function handleBookModalDownload() {
     if (!currentReadingBook) return;
     if (!isReaderLoggedIn()) {
-        pendingBookAction = { title: currentReadingBook.title, link: currentReadingBook.link, action: 'download' };
+        pendingBookAction = { 
+            title: currentReadingBook.title, 
+            link: currentReadingBook.link, 
+            action: 'download', 
+            bookIdOrCode: currentReadingBook.bookIdOrCode 
+        };
         openAuthModal('download', currentReadingBook.title);
         return;
     }
+    trackBookAction(currentReadingBook.bookIdOrCode || currentReadingBook.link || currentReadingBook.title, 'download');
     downloadBookFile(currentReadingBook.title, currentReadingBook.link);
 }
 
 // --- Book Reader Modal Functions (Protected) ---
-function openBookModal(title, url) {
+function openBookModal(title, url, bookIdOrCode = '') {
     // Enforce login requirement
     if (!isReaderLoggedIn()) {
-        pendingBookAction = { title, link: url, action: 'read' };
+        pendingBookAction = { title, link: url, action: 'read', bookIdOrCode };
         openAuthModal('read', title);
         return;
     }
 
-    currentReadingBook = { title, link: url };
+    currentReadingBook = { title, link: url, bookIdOrCode };
 
     const modal = document.getElementById('bookReaderModal');
     const iframe = document.getElementById('bookIframe');
@@ -8282,7 +8336,7 @@ async function handleReaderLogin(e) {
                 const actionToRun = pendingBookAction;
                 pendingBookAction = null;
                 setTimeout(() => {
-                    handleBookAction(actionToRun.title, actionToRun.link, actionToRun.action);
+                    handleBookAction(actionToRun.title, actionToRun.link, actionToRun.action, actionToRun.bookIdOrCode);
                 }, 200);
             }
             return;
@@ -8305,7 +8359,7 @@ async function handleReaderLogin(e) {
                 const actionToRun = pendingBookAction;
                 pendingBookAction = null;
                 setTimeout(() => {
-                    handleBookAction(actionToRun.title, actionToRun.link, actionToRun.action);
+                    handleBookAction(actionToRun.title, actionToRun.link, actionToRun.action, actionToRun.bookIdOrCode);
                 }, 200);
             }
             return;
@@ -8355,7 +8409,7 @@ async function handleReaderRegister(e) {
                 const actionToRun = pendingBookAction;
                 pendingBookAction = null;
                 setTimeout(() => {
-                    handleBookAction(actionToRun.title, actionToRun.link, actionToRun.action);
+                    handleBookAction(actionToRun.title, actionToRun.link, actionToRun.action, actionToRun.bookIdOrCode);
                 }, 200);
             }
             return;

@@ -615,6 +615,52 @@ app.delete('/api/books/:id', async (req, res) => {
   res.json({ success: true, books: db.books || [] });
 });
 
+// Track Book Action (Read or Download Counter)
+app.post(['/api/books/:id/track', '/api/books/track'], async (req, res) => {
+  try {
+    const action = req.body && req.body.action ? req.body.action : 'read'; // 'read' or 'download'
+    const targetId = String(req.params.id || (req.body && (req.body.id || req.body.code)) || '').trim();
+
+    if (!targetId) {
+      return res.status(400).json({ success: false, message: 'Missing book id or code' });
+    }
+
+    const db = await readDb();
+    if (!db.books) db.books = [];
+
+    const book = db.books.find((b, idx) => 
+      (b.id && String(b.id) === targetId) || 
+      (b.code && String(b.code) === targetId) || 
+      (b.link && String(b.link) === targetId) ||
+      (b.title && String(b.title) === targetId) ||
+      String(idx) === targetId
+    );
+
+    if (!book) {
+      return res.status(404).json({ success: false, message: 'Book not found' });
+    }
+
+    if (action === 'download') {
+      book.downloads = (Number(book.downloads) || 0) + 1;
+    } else {
+      book.reads = (Number(book.reads) || 0) + 1;
+    }
+
+    await writeDb(db);
+    res.json({
+      success: true,
+      id: book.id,
+      code: book.code,
+      title: book.title,
+      reads: book.reads || 0,
+      downloads: book.downloads || 0
+    });
+  } catch (err) {
+    console.error('Book tracking error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // PDF Direct Upload Endpoint (Hostinger / Server Local Storage)
 app.post('/api/upload/pdf', (req, res) => {
   try {

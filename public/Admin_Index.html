@@ -1648,7 +1648,17 @@
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card"><div class="stat-icon icon-staff"><i class="fas fa-globe"></i></div><div class="stat-info"><p>ចំនួនអ្នកចូលមើលវេបសាយ</p><h3><span id="stat-staff" style="color: #ffc107;">0</span> <span>នាក់</span></h3></div></div>
-                        <div class="stat-card"><div class="stat-icon icon-book"><i class="fas fa-book-open"></i></div><div class="stat-info"><p>ចំនួនសៀវភៅ</p><h3><span id="stat-book" style="color: #dc3545;">0</span> <span>ក្បាល</span></h3></div></div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-book"><i class="fas fa-book-open"></i></div>
+                            <div class="stat-info">
+                                <p>ចំនួនសៀវភៅ</p>
+                                <h3><span id="stat-book" style="color: #dc3545;">0</span> <span>ក្បាល</span></h3>
+                                <div style="display: flex; gap: 8px; font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; font-weight: 600;">
+                                    <span title="ចំនួនអ្នកអាន"><i class="fas fa-eye" style="color: #0284c7;"></i> <span id="stat-book-reads">0</span></span>
+                                    <span title="ចំនួនអ្នកទាញយក"><i class="fas fa-download" style="color: #10b981;"></i> <span id="stat-book-downloads">0</span></span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="stat-card"><div class="stat-icon icon-msg"><i class="fas fa-envelope"></i></div><div class="stat-info"><p>សារបញ្ញើចូល</p><h3><span id="stat-msg" style="color: #28a745;">0</span> <span>សារ</span></h3></div></div>
                         <div class="stat-card"><div class="stat-icon icon-member"><i class="fas fa-video"></i></div><div class="stat-info"><p>ចំនួនមេរៀនវីដេអូ</p><h3><span id="stat-member" style="color: #0d6efd;">0</span> <span>វីដេអូ</span></h3></div></div>
                     </div>
@@ -1731,6 +1741,37 @@
                         </div>
                     </div>
 
+                    <!-- Library Summary Stats -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
+                            <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(37,99,235,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.76rem; color: var(--text-muted); font-weight: 600;">សៀវភៅសរុបក្នុងប្រព័ន្ធ</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);" id="lib-stat-total-books">0</div>
+                            </div>
+                        </div>
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
+                            <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(2,132,199,0.1); color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.76rem; color: var(--text-muted); font-weight: 600;">ចំនួនអ្នកអានសរុប (Reads)</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: #0284c7;" id="lib-stat-total-reads">0</div>
+                            </div>
+                        </div>
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
+                            <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16,185,129,0.1); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.76rem; color: var(--text-muted); font-weight: 600;">ចំនួនអ្នកទាញយកសរុប (Downloads)</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: #10b981;" id="lib-stat-total-downloads">0</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Library Toolbar & Stats -->
                     <div class="library-toolbar">
                         <div class="library-search-wrap">
@@ -1791,6 +1832,7 @@
                                         <th>អ្នកនិពន្ធ</th>
                                         <th>ប្រភេទ</th>
                                         <th>ឯកសារ</th>
+                                        <th style="width: 100px;">ស្ថិតិ (អាន/ទាញយក)</th>
                                         <th style="width: 90px; text-align: center;">សកម្មភាព</th>
                                     </tr>
                                 </thead>
@@ -4241,6 +4283,12 @@
 
                 if (elStaff) elStaff.innerText = visitors;
                 if (elBook) elBook.innerText = books.length;
+                const totalReads = books.reduce((s, b) => s + (Number(b.reads) || 0), 0);
+                const totalDownloads = books.reduce((s, b) => s + (Number(b.downloads) || 0), 0);
+                const elBookReads = document.getElementById('stat-book-reads');
+                if (elBookReads) elBookReads.innerText = totalReads;
+                const elBookDl = document.getElementById('stat-book-downloads');
+                if (elBookDl) elBookDl.innerText = totalDownloads;
                 if (elMsg) elMsg.innerText = inboundMsgs.length;
                 if (elMember) elMember.innerText = vids.length;
 
@@ -6421,6 +6469,14 @@
                             </td>
                             <td style="color:var(--text-muted); font-size:0.9rem;"><i class="fas fa-user-edit" style="font-size:0.8rem; margin-right:4px;"></i>${b.author || 'MoEYS'}</td>
                             <td style="width: 110px;">${linkHtml}</td>
+                            <td style="width: 100px; white-space: nowrap;">
+                                <span style="display: inline-flex; align-items: center; gap: 4px; color: #0284c7; background: rgba(2,132,199,0.08); padding: 2px 7px; border-radius: 5px; font-size: 0.78rem; font-weight: 600;" title="ចំនួនអ្នកអាន">
+                                    <i class="fas fa-eye"></i> ${b.reads || 0}
+                                </span>
+                                <span style="display: inline-flex; align-items: center; gap: 4px; color: #10b981; background: rgba(16,185,129,0.08); padding: 2px 7px; border-radius: 5px; font-size: 0.78rem; font-weight: 600; margin-left: 3px;" title="ចំនួនអ្នកទាញយក">
+                                    <i class="fas fa-download"></i> ${b.downloads || 0}
+                                </span>
+                            </td>
                             <td class="action-icons" style="width: 90px; text-align: center;">
                                 <i class="fas fa-edit" style="color:var(--primary); margin-right:12px; cursor:pointer;" title="កែប្រែ" onclick='openEditBookModal(${JSON.stringify(b).replace(/'/g, "&apos;")}, ${safeIdx})'></i>
                                 <i class="fas fa-trash" style="color:var(--danger); cursor:pointer;" title="លុប" onclick="if(confirm('តើអ្នកពិតជាចង់លុបសៀវភៅ «${(b.title || '').replace(/'/g, "\\'")}» នេះមែនទេ?')) deleteAdminBook('${b.id || b.code || safeIdx}')"></i>
@@ -6461,6 +6517,7 @@
                                             <th>ចំណងជើង និងកម្រិតថ្នាក់</th>
                                             <th>អ្នកនិពន្ធ</th>
                                             <th>ឯកសារ</th>
+                                            <th style="width: 100px;">ស្ថិតិ (អាន/ទាញយក)</th>
                                             <th style="text-align: center;">សកម្មភាព</th>
                                         </tr>
                                     </thead>
@@ -6507,6 +6564,14 @@
                         <td style="color:var(--text-muted); font-size:0.9rem;">${b.author || 'MoEYS'}</td>
                         <td><span class="badge" style="background:${catStyle.bg}; color:${catStyle.color}; padding:3px 8px; border-radius:12px; font-size:0.8rem;"><i class="${catStyle.icon}" style="margin-right:4px;"></i>${b.category || '-'}</span></td>
                         <td>${linkHtml}</td>
+                        <td style="white-space: nowrap;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px; color: #0284c7; background: rgba(2,132,199,0.08); padding: 2px 7px; border-radius: 5px; font-size: 0.78rem; font-weight: 600;" title="ចំនួនអ្នកអាន">
+                                <i class="fas fa-eye"></i> ${b.reads || 0}
+                            </span>
+                            <span style="display: inline-flex; align-items: center; gap: 4px; color: #10b981; background: rgba(16,185,129,0.08); padding: 2px 7px; border-radius: 5px; font-size: 0.78rem; font-weight: 600; margin-left: 3px;" title="ចំនួនអ្នកទាញយក">
+                                <i class="fas fa-download"></i> ${b.downloads || 0}
+                            </span>
+                        </td>
                         <td class="action-icons" style="text-align: center;">
                             <i class="fas fa-edit" style="color:var(--primary); margin-right:12px; cursor:pointer;" title="កែប្រែ" onclick='openEditBookModal(${JSON.stringify(b).replace(/'/g, "&apos;")}, ${safeIdx})'></i>
                             <i class="fas fa-trash" style="color:var(--danger); cursor:pointer;" title="លុប" onclick="if(confirm('តើអ្នកពិតជាចង់លុបសៀវភៅនេះមែនទេ?')) deleteAdminBook('${b.id || b.code || safeIdx}')"></i>
@@ -6516,11 +6581,27 @@
             }).join('');
         }
 
+        function updateAdminBookStatsSummary() {
+            const totalReads = localMockBooks.reduce((acc, b) => acc + (Number(b.reads) || 0), 0);
+            const totalDownloads = localMockBooks.reduce((acc, b) => acc + (Number(b.downloads) || 0), 0);
+            const rEl = document.getElementById('lib-stat-total-reads');
+            if (rEl) rEl.innerText = totalReads;
+            const dEl = document.getElementById('lib-stat-total-downloads');
+            if (dEl) dEl.innerText = totalDownloads;
+            const bEl = document.getElementById('lib-stat-total-books');
+            if (bEl) bEl.innerText = localMockBooks.length;
+            const dashREl = document.getElementById('stat-book-reads');
+            if (dashREl) dashREl.innerText = totalReads;
+            const dashDEl = document.getElementById('stat-book-downloads');
+            if (dashDEl) dashDEl.innerText = totalDownloads;
+        }
+
         function saveLocalMockBooks() {
             try {
                 localStorage.setItem('mockBooks', JSON.stringify(localMockBooks));
                 const statBook = document.getElementById('stat-book');
                 if (statBook) statBook.innerText = localMockBooks.length;
+                updateAdminBookStatsSummary();
                 if (typeof initChart === 'function') initChart();
                 if (typeof renderDashboardRecentBooks === 'function') renderDashboardRecentBooks();
             } catch(e) {}
@@ -6534,12 +6615,14 @@
                     const books = await res.json();
                     localMockBooks = Array.isArray(books) ? books : [];
                     saveLocalMockBooks();
+                    updateAdminBookStatsSummary();
                     renderAdminCategoryPills();
                     renderAdminLibraryViews();
                     return;
                 }
             } catch(e) {}
 
+            updateAdminBookStatsSummary();
             renderAdminCategoryPills();
             renderAdminLibraryViews();
         }

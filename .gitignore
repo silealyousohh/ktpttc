@@ -42,3 +42,14 @@ scratch/
 *.swp
 *.swo
 .vercel
+
+# Uploaded media (hosted directly on Hostinger server/FTP to avoid GitHub 100MB file limit)
+/public/uploads/pdf/*.pdf
+/public/uploads/images/*
+!/public/uploads/pdf/.gitkeep
+!/public/uploads/images/.gitkeep
+
+# Temporary backups & dumps
+/data/live_*.json
+/data/*.backup.*.json
+
