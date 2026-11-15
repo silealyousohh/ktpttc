@@ -145,6 +145,41 @@ app.use('/uploads', express.static(UPLOADS_DIR, {
   }
 }));
 
+// Support Hostinger persistent public_html uploads
+const PUBLIC_HTML_UPLOADS = path.resolve(__dirname, '../../../../public_html/uploads');
+if (fs.existsSync(PUBLIC_HTML_UPLOADS)) {
+  app.use('/uploads', express.static(PUBLIC_HTML_UPLOADS, {
+    maxAge: '7d',
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.pdf')) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline');
+      }
+    }
+  }));
+}
+
+// Fallback robust route for any /uploads/:folder/:file (supports multiple persistent storage locations)
+app.get('/uploads/:folder/:file', (req, res, next) => {
+  const { folder, file } = req.params;
+  const cleanFile = path.basename(file);
+  const candidates = [
+    path.join(__dirname, 'public', 'uploads', folder, cleanFile),
+    path.resolve(__dirname, '../../../../public_html/uploads', folder, cleanFile),
+    path.resolve(__dirname, '../../../../uploads', folder, cleanFile)
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(/*turbopackIgnore: true*/ candidate)) {
+      if (cleanFile.endsWith('.pdf')) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline');
+      }
+      return res.sendFile(candidate);
+    }
+  }
+  next();
+});
+
 // ==========================================
 // MONGODB & DATABASE MANAGEMENT
 // ==========================================
