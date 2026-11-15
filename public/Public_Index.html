@@ -5002,6 +5002,12 @@ body.dark-mode .pagination-ellipsis {
                     <option value="" data-lang="allCats">🏷️ គ្រប់ប្រភេទ</option>
                     <!-- Categories populated by JS -->
                 </select>
+                <select id="bookSort" class="form-control" onchange="searchBooks()" style="width: auto; min-width: 175px; border-radius: 10px; padding: 10px 14px; font-weight: 600;">
+                    <option value="newest">🔥 សៀវភៅថ្មីៗ (Newest)</option>
+                    <option value="popular_reads">👁️ អ្នកអានច្រើន (Most Reads)</option>
+                    <option value="popular_downloads">⬇️ អ្នកទាញយកច្រើន (Most Downloads)</option>
+                    <option value="title_asc">🔤 ចំណងជើង (A - Z)</option>
+                </select>
             </div>
         </div>
 
@@ -7847,6 +7853,15 @@ function searchBooks() {
         
         return matchText && matchCat && matchGrade;
     });
+
+    const sortInput = document.getElementById('bookSort')?.value || 'newest';
+    if (sortInput === 'popular_reads') {
+        currentFilteredBooks.sort((a, b) => (Number(b.reads) || 0) - (Number(a.reads) || 0));
+    } else if (sortInput === 'popular_downloads') {
+        currentFilteredBooks.sort((a, b) => (Number(b.downloads) || 0) - (Number(a.downloads) || 0));
+    } else if (sortInput === 'title_asc') {
+        currentFilteredBooks.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    }
     
     currentBookPage = 1;
     renderBooksPage(false);
