@@ -159,8 +159,26 @@ if (fs.existsSync(PUBLIC_HTML_UPLOADS)) {
   }));
 }
 
-// Fallback robust route for any /uploads/:folder/:file (supports multiple persistent storage locations)
-app.get('/uploads/:folder/:file', (req, res, next) => {
+function streamUrlWithRedirects(targetUrl, maxRedirects = 5) {
+  const https = require('https');
+  const http = require('http');
+  return new Promise((resolve, reject) => {
+    if (maxRedirects < 0) return reject(new Error('Too many redirects'));
+    const mod = targetUrl.startsWith('https') ? https : http;
+    mod.get(targetUrl, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return resolve(streamUrlWithRedirects(res.headers.location, maxRedirects - 1));
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode}`));
+      }
+      resolve(res);
+    }).on('error', reject);
+  });
+}
+
+// Fallback robust route for any /uploads/:folder/:file (supports multiple persistent storage locations + on-demand cache)
+app.get('/uploads/:folder/:file', async (req, res, next) => {
   const { folder, file } = req.params;
   const cleanFile = path.basename(file);
   const candidates = [
@@ -177,6 +195,49 @@ app.get('/uploads/:folder/:file', (req, res, next) => {
       return res.sendFile(candidate);
     }
   }
+
+  // On-Demand fetch and cache from Google Drive if not on disk yet
+  let driveId = null;
+  const pdfMatch = cleanFile.match(/_([a-zA-Z0-9_-]{25,})\.pdf$/i);
+  const imgMatch = cleanFile.match(/([a-zA-Z0-9_-]{25,})\.(jpg|jpeg|png|webp)$/i);
+  if (pdfMatch) {
+    driveId = pdfMatch[1];
+  } else if (imgMatch) {
+    driveId = imgMatch[1];
+  }
+
+  if (driveId) {
+    const targetDir = fs.existsSync(path.resolve(__dirname, '../../../../uploads', folder))
+      ? path.resolve(__dirname, '../../../../uploads', folder)
+      : path.join(__dirname, 'public', 'uploads', folder);
+    
+    if (!fs.existsSync(targetDir)) {
+      try { fs.mkdirSync(targetDir, { recursive: true }); } catch (e) {}
+    }
+    const targetPath = path.join(targetDir, cleanFile);
+    const driveUrl = folder === 'pdf'
+      ? `https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`
+      : `https://lh3.googleusercontent.com/d/${driveId}`;
+
+    try {
+      const stream = await streamUrlWithRedirects(driveUrl);
+      if (cleanFile.endsWith('.pdf')) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline');
+      } else {
+        res.setHeader('Content-Type', stream.headers['content-type'] || 'image/jpeg');
+      }
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+
+      const fileOut = fs.createWriteStream(targetPath);
+      stream.pipe(fileOut);
+      stream.pipe(res);
+      return;
+    } catch (err) {
+      console.error(`[Uploads On-Demand Fetch Error] ${cleanFile}:`, err.message);
+    }
+  }
+
   next();
 });
 
