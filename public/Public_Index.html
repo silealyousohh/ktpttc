@@ -3660,6 +3660,56 @@ body.dark-mode .pagination-ellipsis {
     box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4);
 }
 
+/* ==========================================================================
+   Book Detail Modal Styles (Matching Modern Library UX)
+   ========================================================================== */
+.book-detail-grid {
+    display: grid;
+    grid-template-columns: 330px 1fr;
+    gap: 36px;
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .book-detail-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+.book-detail-cover-card {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(16,185,129,0.15));
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 45px rgba(0,0,0,0.6);
+    position: relative;
+    transition: transform 0.3s ease;
+}
+.book-detail-cover-card:hover {
+    transform: translateY(-4px) scale(1.01);
+}
+.book-topic-pill {
+    background: rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    font-weight: 500;
+}
+.book-topic-pill:hover {
+    background: rgba(37, 99, 235, 0.18);
+    color: #60a5fa;
+    border-color: rgba(37, 99, 235, 0.35);
+}
+.btn-card-quick-read:hover {
+    background: rgba(37,99,235,0.25) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
 /* Reader Modal Download Button */
 .btn-download-modal {
     background: #059669;
@@ -5239,6 +5289,154 @@ body.dark-mode .pagination-ellipsis {
         </div>
     </footer>
 
+    <!-- Book Detail Modal (Rich Interactive Preview & Metadata) -->
+    <div id="bookDetailModal" class="modal-overlay" onclick="if(event.target === this) closeBookDetailModal()" style="display: none; align-items: center; justify-content: center; z-index: 1045; background: rgba(5, 10, 24, 0.88); backdrop-filter: blur(10px);">
+        <div id="bookDetailContainer" class="modal-container" style="max-width: 1080px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; background: #0c1322; border-radius: 18px; overflow: hidden; box-shadow: 0 25px 60px -12px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.08); transition: all 0.25s ease; color: #f8fafc;">
+            
+            <!-- Breadcrumb & Close Bar -->
+            <div class="book-detail-breadcrumb" style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #94a3b8; padding: 16px 26px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; flex-shrink: 0; background: rgba(15, 23, 42, 0.4);">
+                <a href="#" onclick="closeBookDetailModal(); return false;" style="color: #94a3b8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-home"></i> Home</a>
+                <span style="color: #475569;">&gt;</span>
+                <a href="#library" onclick="closeBookDetailModal(); return false;" style="color: #94a3b8; text-decoration: none;">Books</a>
+                <span style="color: #475569;">&gt;</span>
+                <span id="bookDetailBreadcrumbCategory" style="color: #60a5fa; font-weight: 500;">...</span>
+                <span style="color: #475569;">&gt;</span>
+                <span id="bookDetailBreadcrumbTitle" style="color: #e2e8f0; font-weight: 500; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">...</span>
+                <button type="button" onclick="closeBookDetailModal()" style="margin-left: auto; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.2s; line-height: 1;" title="បិទ (Esc)">&times;</button>
+            </div>
+
+            <!-- Scrollable Content Body -->
+            <div style="flex: 1; overflow-y: auto; padding: 32px 36px 36px 36px;">
+                <div class="book-detail-grid">
+                    
+                    <!-- Left: Book Cover Card -->
+                    <div>
+                        <div class="book-detail-cover-card">
+                            <div style="aspect-ratio: 3/4; width: 100%; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                                <img id="bookDetailCoverImg" src="" alt="Book Cover" style="width: 100%; height: 100%; object-fit: cover;" onerror="handleImageFallback(this, 'Book Cover')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Details & Controls -->
+                    <div style="display: flex; flex-direction: column;">
+                        
+                        <!-- Badges Row -->
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+                            <span id="bookDetailCategoryBadge" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;">វិទ្យាសាស្ត្រ</span>
+                            <span id="bookDetailGradeBadge" style="background: rgba(167, 139, 250, 0.12); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.25); padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;">ថ្នាក់ទី១០</span>
+                            <span style="background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; display: inline-block;"></span> Digital
+                            </span>
+                            <span style="background: rgba(255, 255, 255, 0.06); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fas fa-download" style="color: #10b981;"></i> <span id="bookDetailDownloads">0</span> download
+                            </span>
+                            <span id="bookDetailSubscribeBadge" onclick="toggleBookBookmark()" style="background: rgba(255, 255, 255, 0.06); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <i class="far fa-bell" style="color: #facc15;"></i> Subscribe
+                            </span>
+                            <span style="background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                                <i class="fas fa-check-circle"></i> Verified by librarian
+                            </span>
+                        </div>
+
+                        <!-- Rights Statement -->
+                        <div style="font-size: 0.76rem; color: #64748b; display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+                            <i class="fas fa-balance-scale"></i> All Rights Reserved — permission required beyond fair use (សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ)
+                        </div>
+
+                        <!-- Book Title -->
+                        <h1 id="bookDetailTitle" style="font-size: 1.85rem; font-weight: 800; color: #f8fafc; line-height: 1.35; margin: 0 0 8px 0; word-break: break-word;">...</h1>
+
+                        <!-- Author -->
+                        <div style="font-size: 1rem; color: #94a3b8; margin-bottom: 22px; display: flex; align-items: center; gap: 6px;">
+                            <span>by</span> <span id="bookDetailAuthor" style="color: #e2e8f0; font-weight: 600;">...</span>
+                        </div>
+
+                        <!-- Continue reading box -->
+                        <div style="background: rgba(22, 33, 56, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 0.95rem; font-weight: 600; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                                    <span id="bookDetailProgressText">Continue reading — 0% complete</span>
+                                </div>
+                                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">
+                                    Last read <span id="bookDetailLastRead">11/15/2026</span>
+                                </div>
+                                <div style="width: 100%; height: 5px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; margin-top: 8px;">
+                                    <div id="bookDetailProgressBar" style="width: 5%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 3px; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+                            <button id="bookDetailResumeBtn" type="button" onclick="startReadingFromDetail()" style="background: #2563eb; color: #fff; border: none; padding: 9px 24px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35); flex-shrink: 0; transition: all 0.2s;">
+                                <i class="fas fa-play" style="font-size: 0.75rem;"></i> Resume
+                            </button>
+                        </div>
+
+                        <!-- What is this book about? -->
+                        <div style="margin-bottom: 24px;">
+                            <div style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                <i class="fas fa-align-left" style="color: #38bdf8;"></i> WHAT IS THIS BOOK ABOUT?
+                            </div>
+                            <p id="bookDetailDescription" style="font-size: 0.94rem; color: #cbd5e1; line-height: 1.75; margin: 0; text-align: justify;">...</p>
+                        </div>
+
+                        <!-- Metadata Grid Cards -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 26px;">
+                            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 12px 14px;">
+                                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">ISBN</div>
+                                <div id="bookDetailMetaCode" style="font-size: 0.92rem; font-weight: 700; color: #f8fafc; margin-top: 4px;">...</div>
+                            </div>
+                            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 12px 14px;">
+                                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">LANGUAGE</div>
+                                <div id="bookDetailMetaLanguage" style="font-size: 0.92rem; font-weight: 700; color: #f8fafc; margin-top: 4px;">Khmer</div>
+                            </div>
+                            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 12px 14px;">
+                                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">PAGES</div>
+                                <div id="bookDetailMetaPages" style="font-size: 0.92rem; font-weight: 700; color: #f8fafc; margin-top: 4px;">247</div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons Bar -->
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 24px;">
+                            <button id="bookDetailReadBtn" type="button" onclick="startReadingFromDetail()" style="background: #2563eb; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 0.92rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); transition: all 0.2s;">
+                                <i class="fas fa-file-pdf"></i> Continue reading
+                            </button>
+                            <button id="bookDetailDownloadBtn" type="button" onclick="downloadFromDetail()" style="background: rgba(255, 255, 255, 0.06); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.12); padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                                <i class="fas fa-download"></i> Save offline
+                            </button>
+                            <button id="bookDetailBookmarkBtn" type="button" onclick="toggleBookBookmark()" style="background: rgba(255, 255, 255, 0.06); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.12); padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                                <i class="fas fa-bookmark" id="bookDetailBookmarkIcon"></i> <span id="bookDetailBookmarkText">Save resource</span>
+                            </button>
+                            <div style="position: relative; display: inline-block;">
+                                <button type="button" onclick="toggleAddToListMenu()" style="background: rgba(255, 255, 255, 0.06); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.12); padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="far fa-list-alt"></i> Add to list <i class="fas fa-chevron-down" style="font-size: 0.72rem; margin-left: 2px;"></i>
+                                </button>
+                                <div id="addToListDropdown" style="display: none; position: absolute; bottom: 110%; left: 0; background: #1e293b; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 0; min-width: 170px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 10;">
+                                    <a href="#" onclick="addBookToList('អានពេលក្រោយ (Read Later)'); return false;" style="display: block; padding: 8px 16px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem;"><i class="far fa-clock" style="margin-right: 8px; color: #38bdf8;"></i> អានពេលក្រោយ</a>
+                                    <a href="#" onclick="addBookToList('សៀវភៅចូលចិត្ត (Favorites)'); return false;" style="display: block; padding: 8px 16px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem;"><i class="far fa-heart" style="margin-right: 8px; color: #f43f5e;"></i> សៀវភៅចូលចិត្ត</a>
+                                    <a href="#" onclick="addBookToList('សម្រាប់បង្រៀន (Teaching)'); return false;" style="display: block; padding: 8px 16px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem;"><i class="fas fa-graduation-cap" style="margin-right: 8px; color: #10b981;"></i> សម្រាប់បង្រៀន</a>
+                                </div>
+                            </div>
+                            <button id="bookDetailShareBtn" type="button" onclick="shareBookDetail()" style="background: rgba(255, 255, 255, 0.06); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.12); padding: 10px 14px; border-radius: 8px; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;" title="ចែករំលែក">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        </div>
+
+                        <!-- Topics -->
+                        <div>
+                            <div style="font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">
+                                TOPICS
+                            </div>
+                            <div id="bookDetailTopics" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <!-- Dynamic topic pills -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <!-- Book Reader Modal (Powered by Mozilla PDF.js with Fast Range Streaming) -->
     <div id="bookReaderModal" class="modal-overlay" onclick="if(event.target === this) closeBookModal()">
         <div id="bookModalContainer" class="modal-container" style="max-width: 1050px; width: 95%; height: 92vh; display: flex; flex-direction: column; background: #0f172a; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); transition: all 0.25s ease;">
@@ -6782,10 +6980,10 @@ function updateHomeMainBook(book) {
         : `<div class="main-book-cover-placeholder"><i class="fas fa-book-open"></i><span style="font-size: 0.9rem; font-weight: 500;">No Cover</span></div>`;
 
     mainCard.innerHTML = `
-        <div class="main-book-cover-wrap" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')" title="${t('readBook') || 'អានសៀវភៅ'}">
+        <div class="main-book-cover-wrap" onclick="openBookDetailModal('${safeBookId}')" style="cursor: pointer;" title="ចុចមើលព័ត៌មានលម្អិត">
             ${coverDisplayHtml}
             <div class="main-book-cover-overlay">
-                <i class="fas fa-book-reader"></i> <span>${t('readBook') || 'អានសៀវភៅ'}</span>
+                <i class="fas fa-info-circle"></i> <span>មើលលម្អិត</span>
             </div>
         </div>
         <div class="main-book-info">
@@ -6793,7 +6991,7 @@ function updateHomeMainBook(book) {
                 <span class="main-book-badge"><i class="fas fa-bookmark"></i> ${book.category || 'សៀវភៅ'}</span>
                 ${book.grade ? `<span class="main-book-badge secondary"><i class="fas fa-graduation-cap"></i> ${book.grade}</span>` : ''}
             </div>
-            <h3 class="main-book-title">${book.title || 'សៀវភៅ'}</h3>
+            <h3 class="main-book-title" onclick="openBookDetailModal('${safeBookId}')" style="cursor: pointer;" title="ចុចមើលព័ត៌មានលម្អិត">${book.title || 'សៀវភៅ'}</h3>
             <div class="main-book-meta">
                 <div class="main-book-meta-item">
                     <i class="fas fa-user-edit"></i> <span><strong>${currentLang === 'en' ? 'Author:' : 'អ្នកនិពន្ធ/រៀបរៀង:'}</strong> ${book.author || 'MoEYS'}</span>
@@ -6809,6 +7007,9 @@ function updateHomeMainBook(book) {
                 </div>
             </div>
             <div class="main-book-actions">
+                <button type="button" class="btn btn-outline" onclick="openBookDetailModal('${safeBookId}')" title="មើលព័ត៌មានលម្អិត">
+                    <i class="fas fa-info-circle"></i> <span>មើលលម្អិត</span>
+                </button>
                 <button type="button" class="btn btn-primary" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')">
                     <i class="fas fa-book-reader"></i> <span>${t('readBook') || 'អានសៀវភៅ'}</span>
                 </button>
@@ -7800,12 +8001,18 @@ function renderBooksPage(shouldScroll = false) {
         const safeBookId = (book.id || book.code || '').replace(/'/g, "\\'");
         const bookKey = book.id || book.code || '';
 
+        card.style.cursor = 'pointer';
+        card.onclick = function(e) {
+            if (e.target.closest('button')) return;
+            openBookDetailModal('${safeBookId}');
+        };
+
         card.innerHTML = `
-            <div class="book-cover" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')" style="cursor: pointer;" title="${t('readBook') || 'អានសៀវភៅ'}">
+            <div class="book-cover" onclick="openBookDetailModal('${safeBookId}')" style="cursor: pointer;" title="ចុចមើលព័ត៌មានលម្អិត">
                 ${coverHtml}
             </div>
             <div class="book-info">
-                <h3 class="book-title">${book.title || 'សៀវភៅ'}</h3>
+                <h3 class="book-title" onclick="openBookDetailModal('${safeBookId}')" style="cursor: pointer;" title="ចុចមើលព័ត៌មានលម្អិត">${book.title || 'សៀវភៅ'}</h3>
                 <p class="book-author"><i class="fas fa-user-edit"></i> ${book.author || 'MoEYS'}</p>
                 <div class="book-code">Code: ${book.code || ''} ${book.grade ? '| ' + book.grade : ''}</div>
                 <div class="book-stats" style="display: flex; gap: 10px; font-size: 0.76rem; color: var(--text-muted); margin-top: 4px; margin-bottom: 6px; font-weight: 600;">
@@ -7813,10 +8020,13 @@ function renderBooksPage(shouldScroll = false) {
                     <span title="${currentLang === 'en' ? 'Total Downloads' : 'ចំនួនអ្នកទាញយក'}"><i class="fas fa-download" style="color: #10b981; margin-right: 3px;"></i><span id="book-downloads-${bookKey}">${book.downloads || 0}</span></span>
                 </div>
                 <div class="book-card-actions">
-                    <button type="button" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')" class="btn btn-outline btn-card-read">
-                        <i class="fas fa-book-reader"></i> <span>${t('readBook')}</span>
+                    <button type="button" onclick="openBookDetailModal('${safeBookId}')" class="btn btn-outline btn-card-read" style="flex: 1;" title="មើលព័ត៌មានលម្អិត">
+                        <i class="fas fa-info-circle"></i> <span>មើលលម្អិត</span>
                     </button>
-                    <button type="button" onclick="handleBookAction('${safeTitle}', '${safeLink}', 'download', '${safeBookId}')" class="btn btn-primary btn-card-download" title="${t('downloadBook')}">
+                    <button type="button" onclick="event.stopPropagation(); handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')" class="btn btn-card-quick-read" style="background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); color: #60a5fa; padding: 7px 10px; font-size: 0.82rem; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;" title="អានសៀវភៅភ្លាមៗ">
+                        <i class="fas fa-book-reader"></i>
+                    </button>
+                    <button type="button" onclick="event.stopPropagation(); handleBookAction('${safeTitle}', '${safeLink}', 'download', '${safeBookId}')" class="btn btn-primary btn-card-download" title="${t('downloadBook')}">
                         <i class="fas fa-download"></i> <span>${t('downloadBook')}</span>
                     </button>
                 </div>
@@ -8227,6 +8437,250 @@ async function trackBookAction(bookIdOrCodeOrLink, action = 'read') {
     } catch(e) {}
 }
 
+// ==========================================
+// Book Detail Modal Logic (Modern UX)
+// ==========================================
+let currentDetailBook = null;
+
+function openBookDetailModal(bookOrId) {
+    let book = null;
+    if (typeof bookOrId === 'object' && bookOrId !== null) {
+        book = bookOrId;
+    } else if (bookOrId) {
+        const idStr = String(bookOrId).trim();
+        if (typeof allBooks !== 'undefined' && Array.isArray(allBooks)) {
+            book = allBooks.find(b => b && (String(b.id) === idStr || String(b.code) === idStr || String(b.link) === idStr));
+        }
+        if (!book && typeof currentFilteredBooks !== 'undefined' && Array.isArray(currentFilteredBooks)) {
+            book = currentFilteredBooks.find(b => b && (String(b.id) === idStr || String(b.code) === idStr || String(b.link) === idStr));
+        }
+    }
+
+    if (!book) return;
+    currentDetailBook = book;
+
+    const modal = document.getElementById('bookDetailModal');
+    if (!modal) return;
+
+    // Breadcrumbs
+    const catEl = document.getElementById('bookDetailBreadcrumbCategory');
+    const titleEl = document.getElementById('bookDetailBreadcrumbTitle');
+    if (catEl) catEl.textContent = book.category || 'Books';
+    if (titleEl) titleEl.textContent = book.title || 'សៀវភៅ';
+
+    // Cover Image
+    const coverEl = document.getElementById('bookDetailCoverImg');
+    if (coverEl) {
+        coverEl.src = book.cover ? getDriveImageUrl(book.cover) : '/Background.jpg';
+    }
+
+    // Badges
+    const catBadge = document.getElementById('bookDetailCategoryBadge');
+    if (catBadge) catBadge.textContent = book.category || 'ទូទៅ';
+    const gradeBadge = document.getElementById('bookDetailGradeBadge');
+    if (gradeBadge) {
+        if (book.grade) {
+            gradeBadge.textContent = book.grade;
+            gradeBadge.style.display = 'inline-block';
+        } else {
+            gradeBadge.style.display = 'none';
+        }
+    }
+
+    // Reads and Downloads
+    const dlEl = document.getElementById('bookDetailDownloads');
+    if (dlEl) dlEl.textContent = book.downloads || 0;
+
+    // Title & Author
+    const mainTitle = document.getElementById('bookDetailTitle');
+    if (mainTitle) mainTitle.textContent = book.title || 'សៀវភៅ';
+    const authorEl = document.getElementById('bookDetailAuthor');
+    if (authorEl) authorEl.textContent = book.author || 'ក្រសួងអប់រំ យុវជន និងកីឡា';
+
+    // Reading Progress Tracking
+    const bookKey = book.id || book.code || '';
+    let savedProgress = null;
+    try {
+        const raw = localStorage.getItem('ktpttc_reading_progress_' + bookKey);
+        if (raw) savedProgress = JSON.parse(raw);
+    } catch(e) {}
+
+    const progressText = document.getElementById('bookDetailProgressText');
+    const lastReadEl = document.getElementById('bookDetailLastRead');
+    const progressBar = document.getElementById('bookDetailProgressBar');
+    const resumeBtn = document.getElementById('bookDetailResumeBtn');
+
+    if (savedProgress && savedProgress.percent) {
+        if (progressText) progressText.textContent = `Continue reading — ${savedProgress.percent}% complete`;
+        if (lastReadEl) lastReadEl.textContent = `${savedProgress.date || 'ថ្មីៗ'} (ទំព័រ ${savedProgress.page || 1}/${savedProgress.total || '...'})`;
+        if (progressBar) progressBar.style.width = `${Math.min(100, Math.max(3, savedProgress.percent))}%`;
+        if (resumeBtn) resumeBtn.innerHTML = '<i class="fas fa-play" style="font-size:0.75rem;"></i> Resume';
+    } else {
+        if (progressText) progressText.textContent = `Start reading — 0% complete`;
+        if (lastReadEl) lastReadEl.textContent = `មិនទាន់បានអាន`;
+        if (progressBar) progressBar.style.width = `0%`;
+        if (resumeBtn) resumeBtn.innerHTML = '<i class="fas fa-book-reader" style="font-size:0.75rem;"></i> Read Now';
+    }
+
+    // Book Description
+    const descEl = document.getElementById('bookDetailDescription');
+    if (descEl) {
+        if (book.description && book.description.trim()) {
+            descEl.textContent = book.description;
+        } else {
+            descEl.textContent = `សៀវភៅណែនាំ និងឯកសារជំនួយស្មារតីផ្នែក «${book.title}» ត្រូវបានចងក្រងឡើងដើម្បីបម្រើដល់ការសិក្សាស្រាវជ្រាវ ការបង្រៀន និងការរៀនរបស់គរុសិស្ស លោកគ្រូ-អ្នកគ្រូ និងសាធារណជនទូទៅ។ ខ្លឹមសារសៀវភៅផ្តោតសំខាន់លើការពង្រឹងសមត្ថភាពវិជ្ជាជីវៈគរុកោសល្យ និងវិធីសាស្ត្របង្រៀនតាមបែបនវានុវត្តន៍ទំនើប ស្របតាមស្តង់ដារកម្មវិធីអប់រំជាតិ។`;
+        }
+    }
+
+    // Metadata Grid
+    const metaCode = document.getElementById('bookDetailMetaCode');
+    if (metaCode) metaCode.textContent = book.isbn || book.code || (book.id ? `BK-${book.id.slice(-4)}` : '978-9924-627-15-9');
+    const metaPages = document.getElementById('bookDetailMetaPages');
+    if (metaPages) metaPages.textContent = book.pages || (savedProgress && savedProgress.total ? savedProgress.total : '247');
+
+    // Bookmark state
+    updateBookmarkButtonState(bookKey);
+
+    // Topics Tags
+    const topicsContainer = document.getElementById('bookDetailTopics');
+    if (topicsContainer) {
+        const topics = [];
+        if (book.category) topics.push(book.category);
+        if (book.grade) topics.push(book.grade);
+        topics.push('គរុកោសល្យ');
+        topics.push('ឯកសារជំនួយ');
+        topics.push('KTPTTC');
+
+        topicsContainer.innerHTML = topics.map(t => `<span class="book-topic-pill" onclick="filterByTopic('${t.replace(/'/g, "\\'")}')">${t}</span>`).join('');
+    }
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBookDetailModal() {
+    const modal = document.getElementById('bookDetailModal');
+    if (modal) modal.style.display = 'none';
+    const dropdown = document.getElementById('addToListDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function startReadingFromDetail() {
+    if (!currentDetailBook) return;
+    const book = currentDetailBook;
+    closeBookDetailModal();
+    handleBookAction(book.title, book.link, 'read', book.id || book.code);
+}
+
+function downloadFromDetail() {
+    if (!currentDetailBook) return;
+    const book = currentDetailBook;
+    handleBookAction(book.title, book.link, 'download', book.id || book.code);
+}
+
+function toggleBookBookmark() {
+    if (!currentDetailBook) return;
+    const key = currentDetailBook.id || currentDetailBook.code || '';
+    if (!key) return;
+
+    let bookmarks = [];
+    try {
+        bookmarks = JSON.parse(localStorage.getItem('ktpttc_book_bookmarks') || '[]');
+    } catch(e) {}
+
+    const index = bookmarks.indexOf(key);
+    if (index >= 0) {
+        bookmarks.splice(index, 1);
+        showToast('បានដកចេញពីបញ្ជីចំណាំ (Removed from saved resources)', 'info');
+    } else {
+        bookmarks.push(key);
+        showToast('បានរក្សាទុកក្នុងបញ្ជីចំណាំ (Saved to resources)!', 'success');
+    }
+    localStorage.setItem('ktpttc_book_bookmarks', JSON.stringify(bookmarks));
+    updateBookmarkButtonState(key);
+}
+
+function updateBookmarkButtonState(key) {
+    const btn = document.getElementById('bookDetailBookmarkBtn');
+    const icon = document.getElementById('bookDetailBookmarkIcon');
+    const text = document.getElementById('bookDetailBookmarkText');
+    if (!btn || !icon || !text) return;
+
+    let bookmarks = [];
+    try {
+        bookmarks = JSON.parse(localStorage.getItem('ktpttc_book_bookmarks') || '[]');
+    } catch(e) {}
+
+    const isBookmarked = bookmarks.includes(key);
+    if (isBookmarked) {
+        btn.style.background = 'rgba(234, 179, 8, 0.15)';
+        btn.style.color = '#facc15';
+        btn.style.borderColor = 'rgba(234, 179, 8, 0.3)';
+        icon.className = 'fas fa-bookmark';
+        text.textContent = 'Saved';
+    } else {
+        btn.style.background = 'rgba(255, 255, 255, 0.06)';
+        btn.style.color = '#cbd5e1';
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+        icon.className = 'far fa-bookmark';
+        text.textContent = 'Save resource';
+    }
+}
+
+function toggleAddToListMenu() {
+    const dropdown = document.getElementById('addToListDropdown');
+    if (dropdown) {
+        dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
+    }
+}
+
+function addBookToList(listName) {
+    const dropdown = document.getElementById('addToListDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    showToast(`បានបញ្ចូលទៅក្នុងបញ្ជី «${listName}» ដោយជោគជ័យ!`, 'success');
+}
+
+function shareBookDetail() {
+    if (!currentDetailBook) return;
+    const shareUrl = window.location.origin + window.location.pathname + '#book-' + (currentDetailBook.id || currentDetailBook.code);
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            showToast('បានចម្លងតំណភ្ជាប់សៀវភៅ (Link copied to clipboard)!', 'success');
+        }).catch(() => {
+            prompt('ចម្លងតំណភ្ជាប់សៀវភៅ:', shareUrl);
+        });
+    } else {
+        prompt('ចម្លងតំណភ្ជាប់សៀវភៅ:', shareUrl);
+    }
+}
+
+function filterByTopic(topic) {
+    closeBookDetailModal();
+    navigateTo('library');
+    setTimeout(() => {
+        const searchInput = document.getElementById('bookSearchInput');
+        if (searchInput) {
+            searchInput.value = topic;
+            searchBooks();
+        }
+    }, 200);
+}
+
+function saveReadingProgress(bookId, page, total) {
+    if (!bookId || !total) return;
+    try {
+        const percent = Math.min(100, Math.max(1, Math.round((page / total) * 100)));
+        const data = {
+            page,
+            total,
+            percent,
+            date: new Date().toLocaleDateString('en-US')
+        };
+        localStorage.setItem('ktpttc_reading_progress_' + bookId, JSON.stringify(data));
+    } catch(e) {}
+}
+
 // Handle Book Action (Requires Login for both read & download)
 function handleBookAction(title, link, action = 'read', bookIdOrCode = '') {
     const user = isReaderLoggedIn();
@@ -8446,6 +8900,10 @@ function handlePdfScroll() {
             const nextBtn = document.getElementById('pdfNextBtn');
             if (prevBtn) prevBtn.disabled = (currentVisiblePage <= 1);
             if (nextBtn) nextBtn.disabled = (currentVisiblePage >= pdfTotalPagesCount);
+
+            if (currentReadingBook && currentReadingBook.bookIdOrCode && pdfTotalPagesCount > 0) {
+                saveReadingProgress(currentReadingBook.bookIdOrCode, currentVisiblePage, pdfTotalPagesCount);
+            }
         }
     });
 }
@@ -8458,6 +8916,10 @@ function scrollToPage(pageNum, smooth = true) {
     pdfCurrentPageNum = pageNum;
     const pageInput = document.getElementById('pdfCurrentPageInput');
     if (pageInput) pageInput.value = pageNum;
+
+    if (currentReadingBook && currentReadingBook.bookIdOrCode && pdfTotalPagesCount > 0) {
+        saveReadingProgress(currentReadingBook.bookIdOrCode, pageNum, pdfTotalPagesCount);
+    }
 
     slot.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
 
@@ -8635,8 +9097,13 @@ function switchToIframeReaderFallback() {
     }
 }
 
-// Global Keyboard Navigation for PDF Reader
+// Global Keyboard Navigation for PDF Reader & Detail Modal
 window.addEventListener('keydown', function(event) {
+    const detailModal = document.getElementById('bookDetailModal');
+    if (detailModal && detailModal.style.display === 'flex' && event.key === 'Escape') {
+        closeBookDetailModal();
+        return;
+    }
     const modal = document.getElementById('bookReaderModal');
     if (!modal || modal.style.display !== 'flex') return;
 
