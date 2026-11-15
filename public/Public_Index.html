@@ -927,35 +927,6 @@ body.dark-mode .footer {
         pointer-events: auto !important;
     }
 
-    /* Mobile Drawer Header */
-    .mobile-drawer-header {
-        display: flex !important;
-        width: 100%;
-        align-items: center;
-        justify-content: space-between;
-        padding-bottom: 12px;
-        margin-bottom: 8px;
-        border-bottom: 1px solid var(--border);
-    }
-    .mobile-drawer-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: var(--primary);
-    }
-    .mobile-drawer-close {
-        background: none;
-        border: none;
-        font-size: 1.4rem;
-        color: var(--text-main);
-        cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 8px;
-        line-height: 1;
-    }
-    .mobile-drawer-close:hover {
-        background: rgba(128,128,128,0.1);
-    }
-
     /* Lock body background while allowing mobile menu drawer to scroll smoothly */
     html.mobile-nav-active,
     body.mobile-nav-active {
@@ -4039,13 +4010,6 @@ body.dark-mode .pagination-ellipsis {
                 </div>
                 
                 <nav class="nav-links" id="nav-links">
-                    <div class="mobile-drawer-header">
-                        <span class="mobile-drawer-title" data-lang="navMenu">ម៉ឺនុយ</span>
-                        <button type="button" class="mobile-drawer-close" onclick="toggleMobileMenu()" aria-label="Close Menu">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-
                     <a href="#" class="nav-link active" data-page="home" onclick="navigateTo('home')" data-lang="navHome">ទំព័រដើម</a>
                     
                     <div class="dropdown">
@@ -7018,8 +6982,15 @@ function t(key) {
 // --- Navigation & Routing (SPA approach) ---
 function toggleMobileMenu() {
     const navLinks = document.getElementById('nav-links');
+    const menuBtn = document.getElementById('mobile-menu-btn');
     if (!navLinks) return;
     const isActive = navLinks.classList.toggle('active');
+    if (menuBtn) {
+        const icon = menuBtn.querySelector('i');
+        if (icon) {
+            icon.className = isActive ? 'fas fa-times' : 'fas fa-bars';
+        }
+    }
     if (isActive) {
         document.body.classList.add('mobile-nav-active');
         document.documentElement.classList.add('mobile-nav-active');
@@ -7047,7 +7018,12 @@ function navigateTo(page, subSection = null) {
     
     // Close mobile menu if open
     const navLinks = document.getElementById('nav-links');
+    const menuBtn = document.getElementById('mobile-menu-btn');
     if (navLinks) navLinks.classList.remove('active');
+    if (menuBtn) {
+        const icon = menuBtn.querySelector('i');
+        if (icon) icon.className = 'fas fa-bars';
+    }
     
     // Ensure body scroll is unlocked
     document.body.classList.remove('mobile-nav-active');
