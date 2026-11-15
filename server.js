@@ -859,6 +859,105 @@ app.delete('/api/upload/pdf', (req, res) => {
   }
 });
 
+// Image Direct Upload Endpoint (Hostinger / Server Local Storage)
+app.post('/api/upload/image', (req, res) => {
+  try {
+    const uploadDir = path.join(__dirname, 'public', 'uploads', 'images');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    let rawFilename = req.query.filename || req.headers['x-filename'] || 'image.jpg';
+    try {
+      rawFilename = decodeURIComponent(rawFilename);
+    } catch (e) {}
+
+    const ext = path.extname(rawFilename) || '.jpg';
+    const baseName = path.basename(rawFilename, ext)
+      .replace(/[^a-zA-Z0-9_\-\u1780-\u17FF]/g, '_')
+      .substring(0, 60);
+    const uniqueSuffix = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+    const finalFilename = `img_${baseName || 'upload'}_${uniqueSuffix}${ext}`;
+    const targetFilePath = path.join(uploadDir, finalFilename);
+
+    // Hostinger persistent sync paths
+    const publicHtmlUploads = path.resolve(__dirname, '../../../../public_html/uploads/images');
+    const domainRootUploads = path.resolve(__dirname, '../../../../uploads/images');
+
+    // Case 1: Body parsed as JSON base64
+    if (req.body && (req.body.data || req.body.base64 || req.body.image)) {
+      const rawData = req.body.data || req.body.base64 || req.body.image;
+      const base64Data = rawData.replace(/^data:image\/[a-z0-9\-+.]+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      fs.writeFileSync(targetFilePath, buffer);
+      
+      try {
+        if (fs.existsSync(path.dirname(publicHtmlUploads))) {
+          if (!fs.existsSync(publicHtmlUploads)) fs.mkdirSync(publicHtmlUploads, { recursive: true });
+          fs.writeFileSync(path.join(publicHtmlUploads, finalFilename), buffer);
+        }
+      } catch (e) {}
+
+      try {
+        if (fs.existsSync(path.dirname(domainRootUploads))) {
+          if (!fs.existsSync(domainRootUploads)) fs.mkdirSync(domainRootUploads, { recursive: true });
+          fs.writeFileSync(path.join(domainRootUploads, finalFilename), buffer);
+        }
+      } catch (e) {}
+
+      return res.json({
+        success: true,
+        url: `/uploads/images/${finalFilename}`,
+        filename: finalFilename,
+        size: buffer.length,
+        message: 'Upload រូបភាពចូល Hostinger Server ជោគជ័យ'
+      });
+    }
+
+    // Case 2: Binary stream directly piped to disk
+    const writeStream = fs.createWriteStream(targetFilePath);
+    req.pipe(writeStream);
+
+    writeStream.on('finish', () => {
+      try {
+        if (fs.existsSync(path.dirname(publicHtmlUploads))) {
+          if (!fs.existsSync(publicHtmlUploads)) fs.mkdirSync(publicHtmlUploads, { recursive: true });
+          fs.copyFileSync(targetFilePath, path.join(publicHtmlUploads, finalFilename));
+        }
+      } catch (e) {}
+
+      try {
+        if (fs.existsSync(path.dirname(domainRootUploads))) {
+          if (!fs.existsSync(domainRootUploads)) fs.mkdirSync(domainRootUploads, { recursive: true });
+          fs.copyFileSync(targetFilePath, path.join(domainRootUploads, finalFilename));
+        }
+      } catch (e) {}
+
+      res.json({
+        success: true,
+        url: `/uploads/images/${finalFilename}`,
+        filename: finalFilename,
+        size: writeStream.bytesWritten,
+        message: 'Upload រូបភាពចូល Hostinger Server ជោគជ័យ'
+      });
+    });
+
+    writeStream.on('error', (err) => {
+      console.error('[Image Upload Error]:', err);
+      res.status(500).json({ success: false, message: 'កំហុសរក្សាទុករូបភាព: ' + err.message });
+    });
+
+    req.on('error', (err) => {
+      console.error('[Image Upload Request Error]:', err);
+      res.status(500).json({ success: false, message: 'កំហុស Request: ' + err.message });
+    });
+
+  } catch (err) {
+    console.error('[Image Upload Catch Error]:', err);
+    res.status(500).json({ success: false, message: 'កំហុស Server: ' + err.message });
+  }
+});
+
 // 4. Structure (Organization Chart) API
 app.get('/api/structure-image', async (req, res) => {
   const settings = await readDbField('settings');

@@ -2219,7 +2219,7 @@
                                 </div>
 
                                 <div class="form-group" style="margin-bottom: 8px;">
-                                    <label class="form-label" style="font-weight: 600; font-size: 0.85rem;"><i class="fas fa-link" style="color: var(--primary); margin-right: 4px;"></i> តំណភ្ជាប់រូបភាព (Image URL / Google Drive / Base64)</label>
+                                    <label class="form-label" style="font-weight: 600; font-size: 0.85rem;"><i class="fas fa-link" style="color: var(--primary); margin-right: 4px;"></i> តំណភ្ជាប់រូបភាព (Image URL / Local Server / Base64)</label>
                                     <input type="text" id="adminStructureImageUrl" class="form-control" placeholder="https://... ឬចុចប៊ូតុង «Upload រូបភាពរចនាសម្ព័ន្ធផ្ទាល់» ខាងលើ" style="padding: 10px 14px; font-size: 0.9rem;" oninput="handleStructureUrlInput(this.value)">
                                 </div>
                                 <small style="color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
@@ -3155,7 +3155,68 @@
         </div>
     </div>
     
-    <div id="modal-add-news" class="modal"><div class="modal-content modal-lg"><div class="modal-header"><h3>បន្ថែមព័ត៌មានថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-news')"></i></div><form id="addNewsForm" onsubmit="saveNewNews(event)"><input type="hidden" id="newsIdInput"><label class="form-label">ចំណងជើង</label><input type="text" id="newsTitleInput" class="form-control" required><label class="form-label">តំណភ្ជាប់រូបភាព (Image URL)</label><input type="url" id="newsUrlInput" class="form-control" required><label class="form-label">ខ្លឹមសារ</label><textarea id="newsContentInput" class="form-control" rows="5"></textarea><div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;"><button type="button" class="btn btn-outline" onclick="closeModal('modal-add-news')">បោះបង់</button><button type="submit" id="btn-save-news" class="btn btn-success" style="width:auto;">បង្ហោះ</button></div></form></div></div>
+    <div id="modal-add-news" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="modalNewsTitle">បន្ថែមព័ត៌មានថ្មី</h3>
+                <i class="fas fa-times close-modal" onclick="closeModal('modal-add-news')"></i>
+            </div>
+            <form id="addNewsForm" onsubmit="saveNewNews(event)">
+                <input type="hidden" id="newsIdInput">
+                
+                <div style="margin-bottom: 12px;">
+                    <label class="form-label" style="font-weight: 600;">ចំណងជើងព័ត៌មាន *</label>
+                    <input type="text" id="newsTitleInput" class="form-control" placeholder="ឧ. ពិធីបើកបវេសនកាលឆ្នាំសិក្សាថ្មី..." required>
+                </div>
+
+                <!-- News Image Upload & Live Preview -->
+                <div style="margin-bottom: 12px; background: rgba(0, 0, 0, 0.02); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <label class="form-label" style="margin: 0; font-weight: 700; display: flex; align-items: center; gap: 5px;">
+                            <i class="fas fa-image" style="color: var(--primary);"></i> រូបភាពព័ត៌មាន (News Image)
+                        </label>
+                        <span id="newsImageStatusBadge" style="display: none; font-size: 0.78rem; font-weight: 700; align-items: center; gap: 4px; color: #059669;">
+                            <i class="fas fa-check-circle"></i> បានភ្ជាប់រូបភាពរួចរាល់
+                        </span>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <div id="newsModalPreviewWrap" style="width: 120px; height: 80px; border-radius: 8px; border: 1px dashed var(--border-color); background: #0f172a; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative;">
+                            <img id="newsModalPreview" src="" alt="News Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;" onerror="this.style.display='none'; document.getElementById('newsModalPreviewPlaceholder').style.display='flex';">
+                            <div id="newsModalPreviewPlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.75rem;">
+                                <i class="fas fa-camera" style="font-size: 1.3rem; color: var(--primary); margin-bottom: 3px;"></i>
+                                <span>Preview</span>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                <input type="file" id="newsImageFileInput" accept="image/*" style="display: none;" onchange="handleNewsImageSelected(this.files)">
+                                <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('newsImageFileInput').click()" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 7px; font-weight: 600; font-size: 0.85rem;">
+                                    <i class="fas fa-upload"></i> Upload រូបភាពផ្ទាល់
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="clearNewsImage()" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); border-radius: 7px; padding: 6px 10px; font-size: 0.82rem;" title="លុបរូបភាព">
+                                    <i class="fas fa-trash-alt"></i> លុប
+                                </button>
+                                <span id="newsUploadProgressText" style="font-size: 0.78rem; color: var(--text-muted);"></span>
+                            </div>
+                            <input type="text" id="newsUrlInput" class="form-control" placeholder="/uploads/images/... ឬតំណភ្ជាប់រូបភាព" required style="margin-bottom: 0; font-size: 0.82rem; padding: 6px 10px;" oninput="updateNewsModalPreview(this.value)">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label class="form-label" style="font-weight: 600;">ខ្លឹមសារព័ត៌មាន</label>
+                    <textarea id="newsContentInput" class="form-control" rows="5" placeholder="សរសេរខ្លឹមសារព័ត៌មានលម្អិតទីនេះ..."></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-news')">បោះបង់</button>
+                    <button type="submit" id="btn-save-news" class="btn btn-success" style="width:auto;"><i class="fas fa-paper-plane"></i> បង្ហោះ</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div id="modal-add-course" class="modal">
         <div class="modal-content modal-lg">
@@ -3170,7 +3231,7 @@
                 <input type="text" id="courseTitleInput" class="form-control" required placeholder="ឧ. ប្រកាសស្តីពីការជ្រើសរើស «គរុកោសល្យ និងវគ្គបណ្តុះបណ្តាលបែបថ្មី» ជំនាន់ទី១២">
                 
                 <label class="form-label">តំណភ្ជាប់រូបភាព Poster (Image URL)</label>
-                <input type="text" id="courseImageUrlInput" class="form-control" required placeholder="./cpd-p1.jpg ឬ Google Drive Link ឬ Web URL">
+                <input type="text" id="courseImageUrlInput" class="form-control" required placeholder="./cpd-p1.jpg ឬ Web URL">
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
@@ -3362,7 +3423,83 @@
         </div>
     </div>
 
-    <div id="modal-add-slide" class="modal"><div class="modal-content"><div class="modal-header"><h3>បន្ថែមស្លាយផ្សព្វផ្សាយថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-slide')"></i></div><form id="addSlideForm" onsubmit="saveNewSlide(event)"><input type="hidden" id="slideIdInput"><label class="form-label">ចំណងជើង</label><input type="text" id="slideTitleInput" class="form-control" placeholder="ឧ. ស្វាគមន៍ឆ្នាំសិក្សាថ្មី" required><label class="form-label">តំណភ្ជាប់រូបភាព (Image URL / Google Drive)</label><input type="url" id="slideImageInput" class="form-control" placeholder="https://..." required><small style="color:var(--text-muted); display:block; margin-top:-5px; margin-bottom:12px;"><i class="fas fa-info-circle"></i> ទំហំរូបភាពណែនាំ៖ <strong>1920 x 600 px</strong></small><label class="form-label">តំណភ្ជាប់ទំព័រគោលដៅ (Target URL - ជម្រើស)</label><input type="url" id="slideTargetInput" class="form-control" placeholder="https://..."><div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;"><button type="button" class="btn btn-outline" onclick="closeModal('modal-add-slide')">បោះបង់</button><button type="submit" class="btn btn-success" style="width:auto;"><i class="fas fa-save"></i> រក្សាទុក</button></div></form></div></div>
+    <!-- Modal: Add / Edit Slide (Direct Upload & Live Banner Preview) -->
+    <div id="modal-add-slide" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="modalSlideTitle">បន្ថែមស្លាយផ្សព្វផ្សាយថ្មី</h3>
+                <i class="fas fa-times close-modal" onclick="closeModal('modal-add-slide')"></i>
+            </div>
+            <form id="addSlideForm" onsubmit="saveNewSlide(event)">
+                <input type="hidden" id="slideIdInput">
+                
+                <div style="margin-bottom: 14px;">
+                    <label class="form-label" style="font-weight: 600;">ចំណងជើងស្លាយ *</label>
+                    <input type="text" id="slideTitleInput" class="form-control" placeholder="ឧ. ស្វាគមន៍ឆ្នាំសិក្សាថ្មី" required>
+                </div>
+
+                <!-- Slide Banner Upload & Preview Subsection -->
+                <div style="margin-bottom: 14px; background: rgba(0, 0, 0, 0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <label class="form-label" style="margin: 0; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-image" style="color: var(--primary);"></i> រូបភាពស្លាយផ្សព្វផ្សាយ (Slide Banner)
+                        </label>
+                        <span id="slideImageStatusBadge" style="display: none; font-size: 0.8rem; font-weight: 700; align-items: center; gap: 4px; color: #059669;">
+                            <i class="fas fa-check-circle"></i> បានភ្ជាប់រូបភាពរួចរាល់
+                        </span>
+                    </div>
+
+                    <!-- Visual Banner Preview (1920x600 px banner aspect) -->
+                    <div id="slideModalPreviewWrap" style="width: 100%; height: 160px; border-radius: 10px; border: 2px dashed var(--border-color); background: #0f172a; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 6px rgba(0,0,0,0.3); margin-bottom: 12px;">
+                        <img id="slideModalPreview" src="" alt="Slide Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;" onerror="this.style.display='none'; document.getElementById('slideModalPreviewPlaceholder').style.display='flex';">
+                        <div id="slideModalPreviewPlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; text-align: center; padding: 15px;">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 2.2rem; color: var(--primary); margin-bottom: 8px; opacity: 0.9;"></i>
+                            <div style="font-weight: 600; font-size: 0.92rem; color: #f8fafc;">ជ្រើសរើស ឬ Upload រូបភាពស្លាយផ្ទាល់ពីកុំព្យូទ័រ / ទូរស័ព្ទ</div>
+                            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 3px;">ទំហំរូបភាពណែនាំ៖ <strong>1920 x 600 px</strong> (រូបភាពផ្តេក HD)</div>
+                        </div>
+                        <div id="slideModalDimensionsBadge" style="display: none; position: absolute; bottom: 8px; right: 10px; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); color: #fff; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 600;">
+                            <i class="fas fa-expand"></i> 1920 × 600
+                        </div>
+                    </div>
+
+                    <!-- Direct Upload Actions & Progress -->
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="slideImageFileInput" accept="image/*" style="display: none;" onchange="handleSlideImageSelected(this.files)">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('slideImageFileInput').click()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25);">
+                                <i class="fas fa-upload"></i> Upload រូបភាពផ្ទាល់
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline" onclick="clearSlideImage()" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 7px 12px; font-size: 0.85rem;" title="លុបរូបភាព">
+                                <i class="fas fa-trash-alt"></i> លុប
+                            </button>
+                            <span id="slideUploadProgressText" style="font-size: 0.8rem; color: var(--text-muted); margin-left: auto;"></span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div id="slideUploadProgressBarWrap" style="display: none; width: 100%; height: 5px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                            <div id="slideUploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0284c7, #10b981); transition: width 0.3s ease;"></div>
+                        </div>
+
+                        <input type="text" id="slideImageInput" class="form-control" placeholder="/uploads/images/... ឬ Paste Web URL ទីនេះ" style="margin-bottom: 0; font-size: 0.85rem; padding: 7px 12px; border-radius: 8px;" required oninput="updateSlideModalPreview(this.value)">
+                        
+                        <small style="color: var(--text-muted); font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+                            <i class="fas fa-check-circle" style="color: #059669;"></i> Upload រូបភាពផ្ទាល់ចូល Server ស្វ័យប្រវត្តិ • គាំទ្រ JPG, PNG, WebP
+                        </small>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label class="form-label">តំណភ្ជាប់ទំព័រគោលដៅ (Target URL - ជម្រើស)</label>
+                    <input type="url" id="slideTargetInput" class="form-control" placeholder="https://... ឬទំព័រដែលចង់ឱ្យអ្នកមើលចុចចូលទៅកាន់">
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-slide')">បោះបង់</button>
+                    <button type="submit" id="btn-submit-slide" class="btn btn-success" style="width:auto;"><i class="fas fa-save"></i> រក្សាទុក</button>
+                </div>
+            </form>
+        </div>
+    </div>
     
     <div id="modal-add-team" class="modal"><div class="modal-content"><div class="modal-header"><h3>បន្ថែមសមាជិកគណៈគ្រប់គ្រងថ្មី</h3><i class="fas fa-times close-modal" onclick="closeModal('modal-add-team')"></i></div><form id="addTeamForm" onsubmit="submitTeam(event)"><input type="hidden" id="teamIdInput"><label class="form-label">ឈ្មោះ</label><input type="text" id="teamName" class="form-control" required><label class="form-label">តួនាទី</label><input type="text" id="teamRole" class="form-control" required><label class="form-label">ការពិពណ៌នាខ្លី (កម្រិតវប្បធម៌ ឬបទពិសោធន៍)</label><input type="text" id="teamDesc" class="form-control">
         <div style="margin-top: 15px; margin-bottom: 12px;">
@@ -3503,8 +3640,8 @@
 
                 <div class="form-row">
                     <div>
-                        <label class="form-label">តំណភ្ជាប់រូបភាព (Image URL / Google Drive)</label>
-                        <input type="url" id="structurePhotoInput" class="form-control" placeholder="https://...">
+                        <label class="form-label">តំណភ្ជាប់រូបភាព (Image URL / Server)</label>
+                        <input type="text" id="structurePhotoInput" class="form-control" placeholder="https://... ឬ /uploads/images/...">
                     </div>
                     <div>
                         <label class="form-label">លេខលំដាប់បង្ហាញ (Order)</label>
@@ -3560,8 +3697,8 @@
 
                 <div class="form-row">
                     <div>
-                        <label class="form-label">តំណភ្ជាប់រូបភាព (Image URL / Google Drive)</label>
-                        <input type="url" id="editStructurePhotoInput" class="form-control">
+                        <label class="form-label">តំណភ្ជាប់រូបភាព (Image URL / Server)</label>
+                        <input type="text" id="editStructurePhotoInput" class="form-control" placeholder="https://... ឬ /uploads/images/...">
                     </div>
                     <div>
                         <label class="form-label">លេខលំដាប់បង្ហាញ (Order)</label>
@@ -3632,8 +3769,8 @@
 
                     <!-- Tab Pane 2: URLs Paste -->
                     <div id="galleryTabPaneUrls" style="display: none;">
-                        <textarea id="galleryMultiUrlsInput" class="form-control" rows="3" placeholder="https://drive.google.com/file/d/...\nhttps://example.com/photo2.jpg\n(បិទភ្ជាប់ Link រូបភាព ១ ឬច្រើន ដោយចុះបន្ទាត់)" oninput="handleGalleryUrlsInput(this.value)"></textarea>
-                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">គាំទ្រទាំង Google Drive link និង direct image URL</div>
+                        <textarea id="galleryMultiUrlsInput" class="form-control" rows="3" placeholder="/uploads/images/photo1.jpg&#10;https://example.com/photo2.jpg&#10;(បិទភ្ជាប់ Link រូបភាព ១ ឬច្រើន ដោយចុះបន្ទាត់)" oninput="handleGalleryUrlsInput(this.value)"></textarea>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">គាំទ្រទាំង local image path (/uploads/images/...) និង direct image URL</div>
                     </div>
 
                     <!-- Live Image Previews Grid -->
@@ -6060,6 +6197,67 @@
             }
         }
 
+        // =======================
+        // Universal Image Compression & Local Server Upload Helpers
+        // =======================
+        function compressImageFile(file, maxWidth = 1920, quality = 0.85) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth || height > maxWidth) {
+                            if (width > height) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            } else {
+                                width = Math.round((width * maxWidth) / height);
+                                height = maxWidth;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        const isPng = file && file.type === 'image/png';
+                        if (!isPng) {
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, width, height);
+                        }
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const mime = isPng ? 'image/png' : 'image/jpeg';
+                        resolve(canvas.toDataURL(mime, quality));
+                    };
+                    img.onerror = () => resolve(event.target.result);
+                };
+                reader.onerror = () => resolve('');
+            });
+        }
+
+        async function uploadImageToServer(file, maxWidth = 1920, quality = 0.85) {
+            const dataUrl = await compressImageFile(file, maxWidth, quality);
+            try {
+                const res = await fetch('/api/upload/image?filename=' + encodeURIComponent(file.name), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ base64: dataUrl })
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.success && json.url) {
+                        return { url: json.url, isServer: true };
+                    }
+                }
+            } catch (err) {
+                console.warn('[uploadImageToServer] Server upload error, using local fallback:', err);
+            }
+            return { url: dataUrl, isServer: false };
+        }
+
         /* Cover Image Selection & Local Compression */
         function updateBookCoverPreview(url) {
             const wrap = document.getElementById('bookCoverPreviewWrap');
@@ -6082,9 +6280,11 @@
             if (!files || files.length === 0) return;
             const file = files[0];
             try {
-                const compressedBase64 = await compressImageFile(file, 800, 0.82);
-                document.getElementById('bookCoverInput').value = compressedBase64;
-                updateBookCoverPreview(compressedBase64);
+                const res = await uploadImageToServer(file, 800, 0.82);
+                if (res && res.url) {
+                    document.getElementById('bookCoverInput').value = res.url;
+                    updateBookCoverPreview(res.url);
+                }
             } catch (err) {
                 console.error('Book cover compression error:', err);
                 const reader = new FileReader();
@@ -6806,15 +7006,15 @@
             const badge = document.getElementById('teamPhotoStatusBadge');
             if (badge) {
                 badge.style.display = 'inline-flex';
-                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងបង្ហាប់រូបថត...';
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងបង្ហាប់ និង Upload...';
                 badge.style.color = 'var(--primary)';
             }
             try {
-                const dataUrl = await compressImageFile(file, 600, 0.85);
-                if (dataUrl) {
+                const res = await uploadImageToServer(file, 600, 0.85);
+                if (res && res.url) {
                     const inputEl = document.getElementById('teamPhoto');
-                    if (inputEl) inputEl.value = dataUrl;
-                    updateTeamModalPreview(dataUrl);
+                    if (inputEl) inputEl.value = res.url;
+                    updateTeamModalPreview(res.url);
                 }
             } catch (err) {
                 console.error('handleTeamPhotoSelected error:', err);
@@ -6980,15 +7180,15 @@
             const badge = document.getElementById('staffPhotoStatusBadge');
             if (badge) {
                 badge.style.display = 'inline-flex';
-                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងបង្ហាប់រូបថត...';
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងបង្ហាប់ និង Upload...';
                 badge.style.color = 'var(--primary)';
             }
             try {
-                const dataUrl = await compressImageFile(file, 600, 0.85);
-                if (dataUrl) {
+                const res = await uploadImageToServer(file, 600, 0.85);
+                if (res && res.url) {
                     const inputEl = document.getElementById('staffPhoto');
-                    if (inputEl) inputEl.value = dataUrl;
-                    updateStaffModalPreview(dataUrl);
+                    if (inputEl) inputEl.value = res.url;
+                    updateStaffModalPreview(res.url);
                 }
             } catch (err) {
                 console.error('handleStaffPhotoSelected error:', err);
@@ -7531,6 +7731,69 @@
             if (placeholder) placeholder.style.display = 'block';
         }
 
+        function updateNewsModalPreview(url) {
+            const img = document.getElementById('newsModalPreview');
+            const placeholder = document.getElementById('newsModalPreviewPlaceholder');
+            const badge = document.getElementById('newsImageStatusBadge');
+            const wrap = document.getElementById('newsModalPreviewWrap');
+            if (!img || !placeholder) return;
+            if (url && url.trim()) {
+                img.src = getDriveImageUrl(url.trim());
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+                if (badge) {
+                    badge.style.display = 'inline-flex';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> បានភ្ជាប់រូបភាពរួចរាល់';
+                    badge.style.color = '#059669';
+                }
+                if (wrap) wrap.style.borderStyle = 'solid';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                placeholder.style.display = 'flex';
+                if (badge) badge.style.display = 'none';
+                if (wrap) wrap.style.borderStyle = 'dashed';
+            }
+        }
+
+        async function handleNewsImageSelected(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            const badge = document.getElementById('newsImageStatusBadge');
+            const progressText = document.getElementById('newsUploadProgressText');
+            if (badge) {
+                badge.style.display = 'inline-flex';
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុង Upload...';
+                badge.style.color = 'var(--primary)';
+            }
+            if (progressText) progressText.innerText = 'កំពុងបង្ហាប់ និង Upload...';
+
+            try {
+                const result = await uploadImageToServer(file, 1400, 0.85);
+                const input = document.getElementById('newsUrlInput');
+                if (input) input.value = result.url;
+                updateNewsModalPreview(result.url);
+
+                if (progressText) progressText.innerText = result.isServer ? 'Upload ជោគជ័យ! ✅' : 'ផ្ទុករូបភាពរួចរាល់! ✅';
+                setTimeout(() => {
+                    if (progressText) progressText.innerText = '';
+                }, 2500);
+            } catch (err) {
+                console.error('News upload error:', err);
+                alert('កំហុសក្នុងការ Upload រូបភាព៖ ' + err.message);
+                if (badge) badge.style.display = 'none';
+                if (progressText) progressText.innerText = '';
+            }
+        }
+
+        function clearNewsImage() {
+            const input = document.getElementById('newsUrlInput');
+            const fileInput = document.getElementById('newsImageFileInput');
+            if (input) input.value = '';
+            if (fileInput) fileInput.value = '';
+            updateNewsModalPreview('');
+        }
+
         async function saveNewNews(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-save-news') || e.target.querySelector('button[type="submit"]');
@@ -7574,6 +7837,7 @@
                     closeModal('modal-add-news');
                     document.getElementById('addNewsForm').reset();
                     document.getElementById('newsIdInput').value = '';
+                    clearNewsImage();
                     await loadAdminNews();
                     return;
                 }
@@ -7647,6 +7911,7 @@
             
             const urlInput = document.getElementById('newsUrlInput');
             if (urlInput) urlInput.value = n.image || '';
+            updateNewsModalPreview(n.image || '');
             
             const contentInput = document.getElementById('newsContentInput');
             if (contentInput) contentInput.value = n.content || '';
@@ -7997,15 +8262,96 @@
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">មិនមានទិន្នន័យទេ</td></tr>';
         }
 
+
+        function updateSlideModalPreview(url) {
+            const img = document.getElementById('slideModalPreview');
+            const placeholder = document.getElementById('slideModalPreviewPlaceholder');
+            const badge = document.getElementById('slideImageStatusBadge');
+            const dimBadge = document.getElementById('slideModalDimensionsBadge');
+            const wrap = document.getElementById('slideModalPreviewWrap');
+            if (!img || !placeholder) return;
+            if (url && url.trim()) {
+                img.src = getDriveImageUrl(url.trim());
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+                if (badge) {
+                    badge.style.display = 'inline-flex';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> បានភ្ជាប់រូបភាពរួចរាល់';
+                    badge.style.color = '#059669';
+                }
+                if (dimBadge) dimBadge.style.display = 'block';
+                if (wrap) wrap.style.borderStyle = 'solid';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                placeholder.style.display = 'flex';
+                if (badge) badge.style.display = 'none';
+                if (dimBadge) dimBadge.style.display = 'none';
+                if (wrap) wrap.style.borderStyle = 'dashed';
+            }
+        }
+
+        async function handleSlideImageSelected(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            const badge = document.getElementById('slideImageStatusBadge');
+            const progressWrap = document.getElementById('slideUploadProgressBarWrap');
+            const progressBar = document.getElementById('slideUploadProgressBar');
+            const progressText = document.getElementById('slideUploadProgressText');
+            
+            if (badge) {
+                badge.style.display = 'inline-flex';
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុង Upload...';
+                badge.style.color = 'var(--primary)';
+            }
+            if (progressWrap) progressWrap.style.display = 'block';
+            if (progressBar) progressBar.style.width = '30%';
+            if (progressText) progressText.innerText = 'កំពុងបង្ហាប់រូបភាព HD...';
+
+            try {
+                if (progressBar) progressBar.style.width = '65%';
+                if (progressText) progressText.innerText = 'កំពុង Upload ផ្ទាល់ចូល Server...';
+
+                const result = await uploadImageToServer(file, 1920, 0.88);
+                const input = document.getElementById('slideImageInput');
+                if (input) input.value = result.url;
+                updateSlideModalPreview(result.url);
+
+                if (progressBar) progressBar.style.width = '100%';
+                if (progressText) progressText.innerText = result.isServer ? 'Upload ចូល Server ជោគជ័យ! ✅' : 'ផ្ទុករូបភាពរួចរាល់! ✅';
+                setTimeout(() => {
+                    if (progressWrap) progressWrap.style.display = 'none';
+                    if (progressText) progressText.innerText = '';
+                }, 2500);
+
+            } catch (err) {
+                console.error('Slide upload error:', err);
+                alert('កំហុសក្នុងការ Upload រូបភាព៖ ' + err.message);
+                if (badge) badge.style.display = 'none';
+                if (progressWrap) progressWrap.style.display = 'none';
+                if (progressText) progressText.innerText = '';
+            }
+        }
+
+        function clearSlideImage() {
+            const input = document.getElementById('slideImageInput');
+            const fileInput = document.getElementById('slideImageFileInput');
+            if (input) input.value = '';
+            if (fileInput) fileInput.value = '';
+            updateSlideModalPreview('');
+        }
+
         function openEditSlideModal(slide, idx) {
             document.getElementById('slideIdInput').value = slide.id || (typeof idx === 'number' ? idx : '');
             document.getElementById('slideTitleInput').value = slide.title || '';
-            document.getElementById('slideImageInput').value = slide.image || '';
+            const imgVal = slide.image || '';
+            document.getElementById('slideImageInput').value = imgVal;
             document.getElementById('slideTargetInput').value = slide.target || '';
             
             const modalHeader = document.querySelector('#modal-add-slide .modal-header h3');
             if (modalHeader) modalHeader.innerText = 'កែប្រែស្លាយផ្សព្វផ្សាយ';
             
+            updateSlideModalPreview(imgVal);
             openModal('modal-add-slide', true);
         }
 
@@ -8037,6 +8383,7 @@
                     closeModal('modal-add-slide');
                     document.getElementById('addSlideForm').reset();
                     document.getElementById('slideIdInput').value = '';
+                    clearSlideImage();
                     await loadAdminSlides();
                     return;
                 }
@@ -8092,37 +8439,6 @@
             }
         }
 
-        function compressImageFile(file, maxWidth = 1400, quality = 0.82) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = event => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > maxWidth || height > maxWidth) {
-                            if (width > height) {
-                                height = Math.round((height * maxWidth) / width);
-                                width = maxWidth;
-                            } else {
-                                width = Math.round((width * maxWidth) / height);
-                                height = maxWidth;
-                            }
-                        }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
-                    };
-                    img.onerror = () => resolve(event.target.result);
-                };
-                reader.onerror = () => resolve('');
-            });
-        }
 
         async function handleGalleryFilesSelected(files) {
             if (!files || files.length === 0) return;
@@ -9272,6 +9588,7 @@
             if(modalId === 'modal-add-news' && !isEdit) {
                 document.getElementById('addNewsForm').reset();
                 document.getElementById('newsIdInput').value = '';
+                clearNewsImage();
                 const modalHeader = document.querySelector('#modal-add-news .modal-header h3');
                 if (modalHeader) modalHeader.innerText = 'បន្ថែមព័ត៌មានថ្មី';
                 const submitBtn = document.querySelector('#modal-add-news button[type="submit"]');
@@ -9327,6 +9644,7 @@
             if(modalId === 'modal-add-slide' && !isEdit) {
                 document.getElementById('addSlideForm').reset();
                 document.getElementById('slideIdInput').value = '';
+                clearSlideImage();
                 const modalHeader = document.querySelector('#modal-add-slide .modal-header h3');
                 if (modalHeader) modalHeader.innerText = 'បន្ថែមស្លាយផ្សព្វផ្សាយថ្មី';
             }
