@@ -136,32 +136,148 @@ if (!fs.existsSync(PDF_UPLOADS_DIR)) {
   try { fs.mkdirSync(PDF_UPLOADS_DIR, { recursive: true }); } catch (e) {}
 }
 
-app.use('/uploads', express.static(UPLOADS_DIR, {
-  maxAge: '30d',
-  setHeaders: (res, filePath) => {
-    res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-    if (filePath.endsWith('.pdf')) {
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'inline');
+// Helper: Discover all persistent upload directories across Hostinger structure
+function getUploadDirectories(folder) {
+  const dirs = new Set();
+  dirs.add(path.join(__dirname, 'public', 'uploads', folder));
+  
+  const relativeBases = [
+    path.resolve(__dirname, '../../../uploads', folder),
+    path.resolve(__dirname, '../../../../uploads', folder),
+    path.resolve(__dirname, '../../../public_html/uploads', folder),
+    path.resolve(__dirname, '../../../../public_html/uploads', folder)
+  ];
+  
+  try {
+    const real = fs.realpathSync(__dirname);
+    relativeBases.push(
+      path.resolve(real, '../../../uploads', folder),
+      path.resolve(real, '../../../../uploads', folder),
+      path.resolve(real, '../../../public_html/uploads', folder),
+      path.resolve(real, '../../../../public_html/uploads', folder)
+    );
+  } catch (e) {}
+
+  for (const b of relativeBases) {
+    if (fs.existsSync(/*turbopackIgnore: true*/ b) || fs.existsSync(/*turbopackIgnore: true*/ path.dirname(b))) {
+      dirs.add(b);
     }
   }
-}));
 
-// Support Hostinger persistent public_html uploads
-const PUBLIC_HTML_UPLOADS = path.resolve(__dirname, '../../../../public_html/uploads');
-if (fs.existsSync(PUBLIC_HTML_UPLOADS)) {
-  app.use('/uploads', express.static(PUBLIC_HTML_UPLOADS, {
-    maxAge: '30d',
-    setHeaders: (res, filePath) => {
-      res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-      if (filePath.endsWith('.pdf')) {
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'inline');
+  return Array.from(dirs);
+}
+
+// Helper: Auto-recover files that were uploaded in previous build versions
+function findInHistoricalBuilds(folder, cleanFile) {
+  try {
+    const versionsDirs = [
+      path.resolve(__dirname, '../../versions'),
+      path.resolve(__dirname, '../../../versions')
+    ];
+    try {
+      const real = fs.realpathSync(__dirname);
+      versionsDirs.push(
+        path.resolve(real, '../../versions'),
+        path.resolve(real, '../../../versions')
+      );
+    } catch (e) {}
+
+    for (const vDir of versionsDirs) {
+      if (!fs.existsSync(/*turbopackIgnore: true*/ vDir)) continue;
+      const verNames = fs.readdirSync(/*turbopackIgnore: true*/ vDir);
+      for (const ver of verNames) {
+        const filePath = path.join(vDir, ver, 'nodejs', 'public', 'uploads', folder, cleanFile);
+        if (fs.existsSync(/*turbopackIgnore: true*/ filePath)) {
+          console.log(`[Auto-Recovery] Found ${cleanFile} in previous build version: ${ver}`);
+          return filePath;
+        }
       }
     }
-  }));
+  } catch (e) {}
+  return null;
+}
+
+// Sync historical uploads to permanent domain storage on startup
+function syncHistoricalUploadsToPersistent() {
+  try {
+    const folders = ['pdf', 'images'];
+    const versionsDirs = [
+      path.resolve(__dirname, '../../versions'),
+      path.resolve(__dirname, '../../../versions')
+    ];
+    try {
+      const real = fs.realpathSync(__dirname);
+      versionsDirs.push(
+        path.resolve(real, '../../versions'),
+        path.resolve(real, '../../../versions')
+      );
+    } catch (e) {}
+
+    for (const folder of folders) {
+      const persistentDirs = getUploadDirectories(folder);
+      const primaryPersistent = persistentDirs.find(d => d.includes('/uploads/' + folder) && !d.includes('nodejs')) || persistentDirs[0];
+      if (!primaryPersistent) continue;
+      if (!fs.existsSync(/*turbopackIgnore: true*/ primaryPersistent)) {
+        try { fs.mkdirSync(primaryPersistent, { recursive: true }); } catch (e) {}
+      }
+
+      for (const vDir of versionsDirs) {
+        if (!fs.existsSync(/*turbopackIgnore: true*/ vDir)) continue;
+        const verNames = fs.readdirSync(/*turbopackIgnore: true*/ vDir);
+        for (const ver of verNames) {
+          const vFolder = path.join(vDir, ver, 'nodejs', 'public', 'uploads', folder);
+          if (!fs.existsSync(/*turbopackIgnore: true*/ vFolder)) continue;
+          const files = fs.readdirSync(/*turbopackIgnore: true*/ vFolder);
+          for (const f of files) {
+            if (f === '.gitkeep' || f === '.DS_Store') continue;
+            const src = path.join(vFolder, f);
+            const dst = path.join(primaryPersistent, f);
+            if (!fs.existsSync(/*turbopackIgnore: true*/ dst) && fs.statSync(src).isFile()) {
+              try {
+                fs.copyFileSync(src, dst);
+                console.log(`[Startup Sync] Preserved ${folder}/${f} into persistent storage!`);
+              } catch (e) {}
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[Startup Historical Sync Error]:', e.message);
+  }
+}
+setTimeout(syncHistoricalUploadsToPersistent, 3000);
+
+// Register all existing static upload roots for high-performance direct serving
+const staticUploadRoots = new Set([
+  UPLOADS_DIR,
+  path.resolve(__dirname, '../../../uploads'),
+  path.resolve(__dirname, '../../../../uploads'),
+  path.resolve(__dirname, '../../../public_html/uploads'),
+  path.resolve(__dirname, '../../../../public_html/uploads')
+]);
+try {
+  const real = fs.realpathSync(__dirname);
+  staticUploadRoots.add(path.resolve(real, '../../../uploads'));
+  staticUploadRoots.add(path.resolve(real, '../../../../uploads'));
+  staticUploadRoots.add(path.resolve(real, '../../../public_html/uploads'));
+  staticUploadRoots.add(path.resolve(real, '../../../../public_html/uploads'));
+} catch (e) {}
+
+for (const sRoot of staticUploadRoots) {
+  if (fs.existsSync(sRoot)) {
+    app.use('/uploads', express.static(sRoot, {
+      maxAge: '30d',
+      setHeaders: (res, filePath) => {
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+        if (filePath.endsWith('.pdf')) {
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', 'inline');
+        }
+      }
+    }));
+  }
 }
 
 function streamUrlWithRedirects(targetUrl, maxRedirects = 5) {
@@ -186,20 +302,19 @@ function streamUrlWithRedirects(targetUrl, maxRedirects = 5) {
 app.get('/uploads/:folder/:file', async (req, res, next) => {
   const { folder, file } = req.params;
   const cleanFile = path.basename(file);
-  const candidates = [
-    path.join(__dirname, 'public', 'uploads', folder, cleanFile),
-    path.resolve(__dirname, '../../../../public_html/uploads', folder, cleanFile),
-    path.resolve(__dirname, '../../../../uploads', folder, cleanFile)
-  ];
-  for (const candidate of candidates) {
-    if (fs.existsSync(/*turbopackIgnore: true*/ candidate)) {
+  
+  // 1. Check all candidate persistent & local directories
+  const candidateDirs = getUploadDirectories(folder);
+  for (const dir of candidateDirs) {
+    const targetFile = path.join(dir, cleanFile);
+    if (fs.existsSync(/*turbopackIgnore: true*/ targetFile)) {
       res.setHeader('Accept-Ranges', 'bytes');
       res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
       if (cleanFile.endsWith('.pdf')) {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'inline');
       }
-      return res.sendFile(candidate, {
+      return res.sendFile(targetFile, {
         acceptRanges: true,
         cacheControl: true,
         maxAge: 2592000000,
@@ -208,7 +323,34 @@ app.get('/uploads/:folder/:file', async (req, res, next) => {
     }
   }
 
-  // On-Demand fetch and cache from Google Drive if not on disk yet
+  // 2. Check historical build versions (Auto-Recovery across versions)
+  const historicalPath = findInHistoricalBuilds(folder, cleanFile);
+  if (historicalPath) {
+    for (const dir of candidateDirs) {
+      try {
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        const copyDst = path.join(dir, cleanFile);
+        if (!fs.existsSync(copyDst)) {
+          fs.copyFileSync(historicalPath, copyDst);
+        }
+      } catch (e) {}
+    }
+
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    if (cleanFile.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline');
+    }
+    return res.sendFile(historicalPath, {
+      acceptRanges: true,
+      cacheControl: true,
+      maxAge: 2592000000,
+      immutable: true
+    });
+  }
+
+  // 3. On-Demand fetch and cache from Google Drive if not on disk yet
   let driveId = null;
   const pdfMatch = cleanFile.match(/_([a-zA-Z0-9_-]{25,})\.pdf$/i);
   const imgMatch = cleanFile.match(/([a-zA-Z0-9_-]{25,})\.(jpg|jpeg|png|webp)$/i);
@@ -219,11 +361,9 @@ app.get('/uploads/:folder/:file', async (req, res, next) => {
   }
 
   if (driveId) {
-    const targetDir = fs.existsSync(path.resolve(__dirname, '../../../../uploads', folder))
-      ? path.resolve(__dirname, '../../../../uploads', folder)
-      : path.join(__dirname, 'public', 'uploads', folder);
+    const targetDir = candidateDirs.find(d => fs.existsSync(/*turbopackIgnore: true*/ d)) || path.join(__dirname, 'public', 'uploads', folder);
     
-    if (!fs.existsSync(targetDir)) {
+    if (!fs.existsSync(/*turbopackIgnore: true*/ targetDir)) {
       try { fs.mkdirSync(targetDir, { recursive: true }); } catch (e) {}
     }
     const targetPath = path.join(targetDir, cleanFile);
@@ -834,12 +974,17 @@ app.post('/api/upload/pdf', (req, res) => {
       const base64Data = (req.body.data || req.body.base64).replace(/^data:application\/pdf;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
       fs.writeFileSync(targetFilePath, buffer);
-      try {
-        if (fs.existsSync(path.dirname(publicHtmlUploads))) {
-          if (!fs.existsSync(publicHtmlUploads)) fs.mkdirSync(publicHtmlUploads, { recursive: true });
-          fs.writeFileSync(path.join(publicHtmlUploads, finalFilename), buffer);
-        }
-      } catch (e) {}
+      
+      const persistentDirs = getUploadDirectories('pdf');
+      for (const pDir of persistentDirs) {
+        try {
+          if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
+          const dstPath = path.join(pDir, finalFilename);
+          if (dstPath !== targetFilePath) {
+            fs.writeFileSync(dstPath, buffer);
+          }
+        } catch (e) {}
+      }
 
       return res.json({
         success: true,
@@ -855,12 +1000,16 @@ app.post('/api/upload/pdf', (req, res) => {
     req.pipe(writeStream);
 
     writeStream.on('finish', () => {
-      try {
-        if (fs.existsSync(path.dirname(publicHtmlUploads))) {
-          if (!fs.existsSync(publicHtmlUploads)) fs.mkdirSync(publicHtmlUploads, { recursive: true });
-          fs.copyFileSync(targetFilePath, path.join(publicHtmlUploads, finalFilename));
-        }
-      } catch (e) {}
+      const persistentDirs = getUploadDirectories('pdf');
+      for (const pDir of persistentDirs) {
+        try {
+          if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
+          const dstPath = path.join(pDir, finalFilename);
+          if (dstPath !== targetFilePath) {
+            fs.copyFileSync(targetFilePath, dstPath);
+          }
+        } catch (e) {}
+      }
 
       res.json({
         success: true,
@@ -939,19 +1088,16 @@ app.post('/api/upload/image', (req, res) => {
       const buffer = Buffer.from(base64Data, 'base64');
       fs.writeFileSync(targetFilePath, buffer);
       
-      try {
-        if (fs.existsSync(path.dirname(publicHtmlUploads))) {
-          if (!fs.existsSync(publicHtmlUploads)) fs.mkdirSync(publicHtmlUploads, { recursive: true });
-          fs.writeFileSync(path.join(publicHtmlUploads, finalFilename), buffer);
-        }
-      } catch (e) {}
-
-      try {
-        if (fs.existsSync(path.dirname(domainRootUploads))) {
-          if (!fs.existsSync(domainRootUploads)) fs.mkdirSync(domainRootUploads, { recursive: true });
-          fs.writeFileSync(path.join(domainRootUploads, finalFilename), buffer);
-        }
-      } catch (e) {}
+      const persistentDirs = getUploadDirectories('images');
+      for (const pDir of persistentDirs) {
+        try {
+          if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
+          const dstPath = path.join(pDir, finalFilename);
+          if (dstPath !== targetFilePath) {
+            fs.writeFileSync(dstPath, buffer);
+          }
+        } catch (e) {}
+      }
 
       return res.json({
         success: true,
@@ -967,19 +1113,16 @@ app.post('/api/upload/image', (req, res) => {
     req.pipe(writeStream);
 
     writeStream.on('finish', () => {
-      try {
-        if (fs.existsSync(path.dirname(publicHtmlUploads))) {
-          if (!fs.existsSync(publicHtmlUploads)) fs.mkdirSync(publicHtmlUploads, { recursive: true });
-          fs.copyFileSync(targetFilePath, path.join(publicHtmlUploads, finalFilename));
-        }
-      } catch (e) {}
-
-      try {
-        if (fs.existsSync(path.dirname(domainRootUploads))) {
-          if (!fs.existsSync(domainRootUploads)) fs.mkdirSync(domainRootUploads, { recursive: true });
-          fs.copyFileSync(targetFilePath, path.join(domainRootUploads, finalFilename));
-        }
-      } catch (e) {}
+      const persistentDirs = getUploadDirectories('images');
+      for (const pDir of persistentDirs) {
+        try {
+          if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
+          const dstPath = path.join(pDir, finalFilename);
+          if (dstPath !== targetFilePath) {
+            fs.copyFileSync(targetFilePath, dstPath);
+          }
+        } catch (e) {}
+      }
 
       res.json({
         success: true,
