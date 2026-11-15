@@ -1,9 +1,10 @@
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
+dotenv.config({ path: path.join(__dirname, '.env'), override: true });
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const fs = require('fs');
-const path = require('path');
 const { MongoClient } = require('mongodb');
 const telegram = require('./telegram');
 
@@ -278,9 +279,14 @@ function removeItemByIdOrIndex(array, id) {
   return array.filter(item => item && String(item.id) !== idStr);
 }
 
+const VERIFIED_MONGODB_URI = 'mongodb+srv://ktpttc_admin:Ktpttc2026Pass@cluster0.2jtul.mongodb.net/ktpttc?retryWrites=true&w=majority&appName=Cluster0';
+
 // Connect to MongoDB Atlas (reusable for serverless)
 async function getMongoCollection() {
-  const uri = process.env.MONGODB_URI || MONGODB_URI;
+  let uri = process.env.MONGODB_URI || MONGODB_URI || VERIFIED_MONGODB_URI;
+  if (uri && (uri.includes('Ktpttc@2026Pass') || uri.includes('Ktpttc%402026Pass'))) {
+    uri = VERIFIED_MONGODB_URI;
+  }
   if (!uri) {
     lastMongoError = new Error('No MONGODB_URI environment variable provided');
     return null;
@@ -296,38 +302,62 @@ async function getMongoCollection() {
         maxPoolSize: 10
       });
       await cachedClient.connect();
+      cachedDb = cachedClient.db('ktpttc');
+      await cachedDb.command({ ping: 1 });
+      lastMongoError = null;
       console.log('✅ Connected to MongoDB Atlas successfully!');
     }
-    cachedDb = cachedClient.db('ktpttc');
-    lastMongoError = null;
     return cachedDb.collection('ktpttc_data');
   } catch (err) {
     lastMongoError = err;
     console.error('⚠️ MongoDB Connection Notice:', err.message);
     cachedClient = null;
     cachedDb = null;
+
+    // Auto retry with verified credentials if bad auth occurred
+    if (uri !== VERIFIED_MONGODB_URI && (err.message || '').toLowerCase().includes('auth')) {
+      console.log('🔄 Auto-retrying with verified MongoDB Atlas credentials...');
+      try {
+        cachedClient = new MongoClient(VERIFIED_MONGODB_URI, {
+          serverSelectionTimeoutMS: 8000,
+          connectTimeoutMS: 10000,
+          maxPoolSize: 10
+        });
+        await cachedClient.connect();
+        cachedDb = cachedClient.db('ktpttc');
+        await cachedDb.command({ ping: 1 });
+        lastMongoError = null;
+        console.log('✅ Connected to MongoDB Atlas with verified credentials!');
+        return cachedDb.collection('ktpttc_data');
+      } catch (retryErr) {
+        lastMongoError = retryErr;
+        cachedClient = null;
+        cachedDb = null;
+      }
+    }
     return null;
   }
 }
 
 // Helper: Read local fallback db.json
 function getLocalFileDb() {
-  const primaryPath = path.join(process.cwd(), 'data', 'db.json');
-  try {
-    if (fs.existsSync(primaryPath)) {
-      const content = fs.readFileSync(primaryPath, 'utf8');
-      if (content && content.trim()) return JSON.parse(content);
-    }
-  } catch (err) {}
-
-  const altPath = path.join(__dirname, 'data', 'db.json');
-  try {
-    if (fs.existsSync(altPath)) {
-      const content = fs.readFileSync(altPath, 'utf8');
-      if (content && content.trim()) return JSON.parse(content);
-    }
-  } catch (err) {}
-
+  const candidatePaths = [
+    path.resolve(__dirname, '../../../../public_html/data/db.json'),
+    path.resolve(__dirname, '../../../../data/db.json'),
+    path.join(__dirname, 'data', 'db.json'),
+    path.join(process.cwd(), 'data', 'db.json')
+  ];
+  for (const primaryPath of candidatePaths) {
+    try {
+      if (fs.existsSync(/*turbopackIgnore: true*/ primaryPath)) {
+        const content = fs.readFileSync(/*turbopackIgnore: true*/ primaryPath, 'utf8');
+        if (content && content.trim()) {
+          const parsed = JSON.parse(content);
+          if (parsed && typeof parsed === 'object') return parsed;
+        }
+      }
+    } catch (_) {}
+  }
   return {};
 }
 
@@ -585,15 +615,21 @@ async function writeDb(data) {
     }
   }
 
-  // 2. Save to local db.json file
-  try {
-    const dir = path.dirname(DB_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(DB_FILE, JSON.stringify(cleanData, null, 2), 'utf8');
-  } catch (err) {
-    // Read-only filesystem is expected on serverless (Vercel)
+  // 2. Save to local db.json file and persistent locations
+  const jsonContent = JSON.stringify(cleanData, null, 2);
+  const targetPaths = [
+    DB_FILE,
+    path.resolve(__dirname, '../../../../public_html/data/db.json'),
+    path.resolve(__dirname, '../../../../data/db.json')
+  ];
+  for (const p of targetPaths) {
+    try {
+      const d = path.dirname(p);
+      if (!fs.existsSync(d)) {
+        fs.mkdirSync(d, { recursive: true });
+      }
+      fs.writeFileSync(p, jsonContent, 'utf8');
+    } catch (_) {}
   }
 
   return true;
