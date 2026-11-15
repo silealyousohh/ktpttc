@@ -8441,6 +8441,8 @@
             
             const modalHeader = document.querySelector('#modal-add-slide .modal-header h3');
             if (modalHeader) modalHeader.innerText = 'កែប្រែស្លាយផ្សព្វផ្សាយ';
+            const submitBtn = document.getElementById('btn-submit-slide');
+            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> រក្សាទុកការកែប្រែ';
             
             updateSlideModalPreview(imgVal);
             openModal('modal-add-slide', true);
@@ -9738,6 +9740,8 @@
                 clearSlideImage();
                 const modalHeader = document.querySelector('#modal-add-slide .modal-header h3');
                 if (modalHeader) modalHeader.innerText = 'បន្ថែមស្លាយផ្សព្វផ្សាយថ្មី';
+                const submitBtn = document.getElementById('btn-submit-slide');
+                if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> រក្សាទុក';
             }
             if(modalId === 'modal-add-structure' && !isEdit) {
                 document.getElementById('addStructureForm').reset();

@@ -5273,6 +5273,19 @@ body.dark-mode .pagination-ellipsis {
                         <i class="fas fa-times"></i> បិទផ្ទាំងនេះ
                     </button>
                 </div>
+                <!-- Loading State Indicator while streaming/downloading large PDF -->
+                <div id="bookIframeLoader" style="display: none; position: absolute; inset: 0; z-index: 5; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; text-align: center; padding: 25px;">
+                    <div style="width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px;"></div>
+                    <h4 style="margin: 0 0 8px 0; color: #1e293b; font-size: 1.1rem; font-weight: 700;">កំពុងទាញយក និងបើកសៀវភៅ...</h4>
+                    <p style="color: #64748b; font-size: 0.9rem; max-width: 440px; margin: 0 0 16px 0; line-height: 1.5;">
+                        ឯកសារសៀវភៅទំហំធំអាចចំណាយពេលពីរបីវិនាទីក្នុងការទាញយក និងបើកបង្ហាញ។ សូមរង់ចាំមួយភ្លែត...
+                    </p>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
+                        <a id="bookLoaderDirectLink" href="#" target="_blank" class="btn btn-outline" style="font-size: 0.85rem; padding: 6px 14px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-external-link-alt"></i> បើកក្នុង Tab ថ្មី (New Tab)
+                        </a>
+                    </div>
+                </div>
                 <iframe id="bookIframe" src="" width="100%" height="100%" style="border: none; background: white;"></iframe>
             </div>
         </div>
@@ -8248,6 +8261,16 @@ function openBookModal(title, url, bookIdOrCode = '') {
         }
         if (iframe) iframe.style.display = 'block';
         if (noticeEl) noticeEl.style.display = 'none';
+
+        const loaderEl = document.getElementById('bookIframeLoader');
+        const directLinkEl = document.getElementById('bookLoaderDirectLink');
+        if (loaderEl) {
+            loaderEl.style.display = 'flex';
+            if (directLinkEl) directLinkEl.href = embedUrl;
+        }
+        iframe.onload = function() {
+            if (loaderEl) loaderEl.style.display = 'none';
+        };
     }
     
     iframe.src = embedUrl;
@@ -8259,8 +8282,13 @@ function closeBookModal() {
     const modal = document.getElementById('bookReaderModal');
     const iframe = document.getElementById('bookIframe');
     const noticeEl = document.getElementById('bookNoLinkNotice');
+    const loaderEl = document.getElementById('bookIframeLoader');
     modal.style.display = 'none';
+    if (loaderEl) {
+        loaderEl.style.display = 'none';
+    }
     if (iframe) {
+        iframe.onload = null;
         iframe.src = '';
         iframe.style.display = 'block';
     }

@@ -136,8 +136,10 @@ if (!fs.existsSync(PDF_UPLOADS_DIR)) {
 }
 
 app.use('/uploads', express.static(UPLOADS_DIR, {
-  maxAge: '7d',
+  maxAge: '30d',
   setHeaders: (res, filePath) => {
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
     if (filePath.endsWith('.pdf')) {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline');
@@ -149,8 +151,10 @@ app.use('/uploads', express.static(UPLOADS_DIR, {
 const PUBLIC_HTML_UPLOADS = path.resolve(__dirname, '../../../../public_html/uploads');
 if (fs.existsSync(PUBLIC_HTML_UPLOADS)) {
   app.use('/uploads', express.static(PUBLIC_HTML_UPLOADS, {
-    maxAge: '7d',
+    maxAge: '30d',
     setHeaders: (res, filePath) => {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
       if (filePath.endsWith('.pdf')) {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'inline');
@@ -188,11 +192,18 @@ app.get('/uploads/:folder/:file', async (req, res, next) => {
   ];
   for (const candidate of candidates) {
     if (fs.existsSync(/*turbopackIgnore: true*/ candidate)) {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
       if (cleanFile.endsWith('.pdf')) {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'inline');
       }
-      return res.sendFile(candidate);
+      return res.sendFile(candidate, {
+        acceptRanges: true,
+        cacheControl: true,
+        maxAge: 2592000000,
+        immutable: true
+      });
     }
   }
 
@@ -221,13 +232,14 @@ app.get('/uploads/:folder/:file', async (req, res, next) => {
 
     try {
       const stream = await streamUrlWithRedirects(driveUrl);
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
       if (cleanFile.endsWith('.pdf')) {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'inline');
       } else {
         res.setHeader('Content-Type', stream.headers['content-type'] || 'image/jpeg');
       }
-      res.setHeader('Cache-Control', 'public, max-age=604800');
 
       const fileOut = fs.createWriteStream(targetPath);
       stream.pipe(fileOut);
