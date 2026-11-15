@@ -1106,12 +1106,24 @@ body.dark-mode .footer {
 .hero-slider .slide img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
+    position: relative;
+    z-index: 2;
+    border-radius: 0 !important;
+}
+
+.hero-slider .slide .slide-backdrop {
     position: absolute;
     top: 0;
     left: 0;
-    border-radius: 0 !important;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(25px) brightness(0.35);
+    transform: scale(1.15);
+    z-index: 1;
 }
 
 @keyframes fadeSlide {
@@ -4125,7 +4137,7 @@ body.dark-mode .pagination-ellipsis {
         <div class="hero-slider-wrapper">
             <div class="hero-slider" id="public-hero-slider">
                 <div class="slide" style="opacity: 1; animation: none; z-index: 1;">
-                    <img src="Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2;">
                 </div>
             </div>
         </div>
@@ -4499,7 +4511,7 @@ body.dark-mode .pagination-ellipsis {
         <div class="hero-slider-wrapper">
             <div class="hero-slider" id="public-hero-slider">
                 <div class="slide" style="opacity: 1; animation: none; z-index: 1;">
-                    <img src="Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="Background.jpg" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" style="width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2;">
                 </div>
             </div>
         </div>
@@ -7269,17 +7281,25 @@ function renderSlides(slidesArray) {
             slideDiv.style.animationDelay = `${idx * 6}s`;
         }
 
+        const imageUrl = getDriveImageUrl(slide.image);
+
+        // Ambient blurred backdrop for letterbox areas
+        const backdropDiv = document.createElement('div');
+        backdropDiv.className = 'slide-backdrop';
+        backdropDiv.style.backgroundImage = `url("${imageUrl}")`;
+        slideDiv.appendChild(backdropDiv);
+
+        // Foreground: Original Size Card (100% visible, uncropped)
         const imgEl = document.createElement('img');
-        imgEl.src = getDriveImageUrl(slide.image);
+        imgEl.src = imageUrl;
         imgEl.setAttribute('referrerpolicy', 'no-referrer');
         imgEl.alt = slide.title || 'Slide';
         imgEl.style.width = '100%';
         imgEl.style.height = '100%';
-        imgEl.style.objectFit = 'cover';
+        imgEl.style.objectFit = 'contain';
         imgEl.style.objectPosition = 'center';
-        imgEl.style.position = 'absolute';
-        imgEl.style.top = '0';
-        imgEl.style.left = '0';
+        imgEl.style.position = 'relative';
+        imgEl.style.zIndex = '2';
         imgEl.style.borderRadius = '0';
         imgEl.onerror = function() {
             this.onerror = null;
