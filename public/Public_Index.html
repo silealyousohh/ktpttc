@@ -5245,23 +5245,76 @@ body.dark-mode .pagination-ellipsis {
         </div>
     </footer>
 
-    <!-- Book Reader Modal -->
+    <!-- Book Reader Modal (Powered by Mozilla PDF.js with Fast Range Streaming) -->
     <div id="bookReaderModal" class="modal-overlay" onclick="if(event.target === this) closeBookModal()">
-        <div class="modal-container" style="max-width: 900px; width: 92%; height: 85vh; display: flex; flex-direction: column;">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                <h2 id="bookModalTitle" style="font-size: 1.1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%;" data-lang="readBook">អានសៀវភៅ</h2>
+        <div id="bookModalContainer" class="modal-container" style="max-width: 1050px; width: 95%; height: 92vh; display: flex; flex-direction: column; background: #0f172a; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); transition: all 0.25s ease;">
+            
+            <!-- Modal Header -->
+            <div class="modal-header" style="background: #1e293b; color: #fff; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                    <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(37,99,235,0.2); border: 1px solid rgba(37,99,235,0.4); display: flex; align-items: center; justify-content: center; color: #60a5fa; flex-shrink: 0;">
+                        <i class="fas fa-book-reader" style="font-size: 1.1rem;"></i>
+                    </div>
+                    <div style="min-width: 0;">
+                        <h2 id="bookModalTitle" style="font-size: 1rem; margin: 0; color: #f8fafc; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" data-lang="readBook">អានសៀវភៅ</h2>
+                        <div id="bookModalSubtitle" style="font-size: 0.73rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px; color: #34d399;"><i class="fas fa-bolt"></i> Mozilla PDF.js Streaming Engine</span>
+                        </div>
+                    </div>
+                </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button id="bookModalDownloadBtn" type="button" onclick="handleBookModalDownload()" class="btn btn-download-modal" title="ទាញយក">
+                    <button id="bookModalDownloadBtn" type="button" onclick="handleBookModalDownload()" class="btn btn-download-modal" style="background: #2563eb; color: #fff; border: none; padding: 6px 14px; font-size: 0.85rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;" title="ទាញយកសៀវភៅ">
                         <i class="fas fa-download"></i> <span data-lang="downloadBook">ទាញយក</span>
                     </button>
-                    <a id="bookModalExternalLink" href="#" target="_blank" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem; text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
-                        <i class="fas fa-external-link-alt"></i> <span data-lang="openInNewTab">បើកក្នុង Tab ថ្មី</span>
+                    <a id="bookModalExternalLink" href="#" target="_blank" class="btn" style="background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); padding: 6px 12px; font-size: 0.85rem; text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;" title="បើកក្នុង Tab ថ្មី">
+                        <i class="fas fa-external-link-alt"></i> <span class="hide-mobile" data-lang="openInNewTab">Tab ថ្មី</span>
                     </a>
-                    <button class="btn-close" onclick="closeBookModal()">&times;</button>
+                    <button type="button" class="btn-close" onclick="closeBookModal()" style="color: #94a3b8; font-size: 1.5rem; background: transparent; border: none; cursor: pointer; padding: 0 4px; line-height: 1;" title="បិទ (Esc)">&times;</button>
                 </div>
             </div>
-            <div class="modal-body" style="flex: 1; padding: 0; position: relative; min-height: 400px;">
-                <div id="bookNoLinkNotice" style="display: none; position: absolute; inset: 0; z-index: 10; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 35px 25px; background: #ffffff;">
+
+            <!-- PDF.js Interactive Control Toolbar -->
+            <div id="pdfjsToolbar" style="background: #0f172a; border-bottom: 1px solid #1e293b; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: #e2e8f0; font-size: 0.86rem; flex-shrink: 0; user-select: none;">
+                <!-- Left: Page Navigation -->
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" id="pdfPrevBtn" onclick="pdfPrevPage()" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s;" title="ទំព័រមុន (Left Arrow / PgUp)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 5px; font-weight: 500; font-size: 0.85rem; padding: 0 4px;">
+                        <span>ទំព័រ</span>
+                        <input type="number" id="pdfCurrentPageInput" value="1" min="1" max="1" style="width: 52px; text-align: center; background: #1e293b; color: #f8fafc; border: 1px solid #475569; border-radius: 6px; padding: 4px; font-size: 0.85rem; font-weight: 600;" onchange="pdfGoToPage(this.value)" onkeydown="if(event.key==='Enter') pdfGoToPage(this.value)">
+                        <span style="color: #94a3b8;">/ <span id="pdfTotalPages">--</span></span>
+                    </div>
+                    <button type="button" id="pdfNextBtn" onclick="pdfNextPage()" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s;" title="ទំព័របន្ទាប់ (Right Arrow / PgDn / Space)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Right: Zoom & View Controls -->
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" onclick="pdfZoomOut()" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" title="បង្រួម (Zoom Out)">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button type="button" id="pdfZoomResetBtn" onclick="pdfResetZoom()" style="background: #1e293b; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 4px 10px; height: 32px; font-size: 0.82rem; font-weight: 600; cursor: pointer; min-width: 54px;" title="កំណត់កម្រិតពង្រីកដើម">
+                        <span id="pdfZoomPercentText">100%</span>
+                    </button>
+                    <button type="button" onclick="pdfZoomIn()" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" title="ពង្រីក (Zoom In)">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button type="button" onclick="pdfFitWidth()" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; padding: 4px 10px; height: 32px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;" title="ពង្រីកឱ្យពេញទទឹងអេក្រង់ (Fit to Width)">
+                        <i class="fas fa-arrows-alt-h"></i> <span class="hide-mobile">ពេញទទឹង</span>
+                    </button>
+                    <button type="button" id="pdfFullscreenBtn" onclick="togglePdfModalFullscreen()" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" title="ពង្រីកពេញអេក្រង់ (Fullscreen)">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body (Canvas Viewer Scroll Wrap) -->
+            <div class="modal-body" style="flex: 1; padding: 0; position: relative; overflow: hidden; background: #334155;">
+                
+                <!-- Notice when no link -->
+                <div id="bookNoLinkNotice" style="display: none; position: absolute; inset: 0; z-index: 25; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 35px 25px; background: #ffffff;">
                     <div style="width: 76px; height: 76px; border-radius: 50%; background: #fee2e2; display: flex; align-items: center; justify-content: center; margin-bottom: 18px; box-shadow: 0 4px 12px rgba(239,68,68,0.15);">
                         <i class="fas fa-file-pdf" style="font-size: 2.4rem; color: #ef4444;"></i>
                     </div>
@@ -5269,24 +5322,34 @@ body.dark-mode .pagination-ellipsis {
                     <p style="color: #64748b; font-size: 0.95rem; max-width: 480px; margin: 0 0 22px 0; line-height: 1.6;">
                         សៀវភៅនេះមិនទាន់ត្រូវបានបញ្ចូលតំណភ្ជាប់ PDF ឬ Upload ឯកសារឡើយ។ សូមទាក់ទងមកកាន់អ្នកគ្រប់គ្រងបណ្ណាល័យ ឬ Admin ដើម្បីបន្ថែមឯកសារ។
                     </p>
-                    <button type="button" onclick="closeBookModal()" style="background: #2563eb; color: #ffffff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(37,99,235,0.3); transition: all 0.2s ease;">
+                    <button type="button" onclick="closeBookModal()" style="background: #2563eb; color: #ffffff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
                         <i class="fas fa-times"></i> បិទផ្ទាំងនេះ
                     </button>
                 </div>
-                <!-- Loading State Indicator while streaming/downloading large PDF -->
-                <div id="bookIframeLoader" style="display: none; position: absolute; inset: 0; z-index: 5; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; text-align: center; padding: 25px;">
-                    <div style="width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px;"></div>
-                    <h4 style="margin: 0 0 8px 0; color: #1e293b; font-size: 1.1rem; font-weight: 700;">កំពុងទាញយក និងបើកសៀវភៅ...</h4>
-                    <p style="color: #64748b; font-size: 0.9rem; max-width: 440px; margin: 0 0 16px 0; line-height: 1.5;">
-                        ឯកសារសៀវភៅទំហំធំអាចចំណាយពេលពីរបីវិនាទីក្នុងការទាញយក និងបើកបង្ហាញ។ សូមរង់ចាំមួយភ្លែត...
+
+                <!-- Fast Loading Overlay -->
+                <div id="pdfLoadingIndicator" style="display: none; position: absolute; inset: 0; z-index: 20; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(6px); flex-direction: column; align-items: center; justify-content: center; color: white; padding: 25px; text-align: center;">
+                    <div style="width: 50px; height: 50px; border: 4px solid #334155; border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.75s linear infinite; margin-bottom: 16px;"></div>
+                    <h4 id="pdfLoadingTitle" style="margin: 0 0 6px 0; color: #f8fafc; font-size: 1.15rem; font-weight: 700;">កំពុងផ្ទុកទំព័រសៀវភៅ...</h4>
+                    <p id="pdfLoadingDesc" style="color: #94a3b8; font-size: 0.88rem; max-width: 420px; margin: 0 0 18px 0; line-height: 1.5;">
+                        Mozilla PDF.js Streaming Engine កំពុងទាញយកទំព័រនេះដោយផ្ទាល់ពី Server...
                     </p>
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
-                        <a id="bookLoaderDirectLink" href="#" target="_blank" class="btn btn-outline" style="font-size: 0.85rem; padding: 6px 14px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                            <i class="fas fa-external-link-alt"></i> បើកក្នុង Tab ថ្មី (New Tab)
-                        </a>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button type="button" onclick="switchToIframeReaderFallback()" class="btn btn-sm btn-outline" style="border-color: #475569; color: #cbd5e1; font-size: 0.82rem; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-sync-alt"></i> ប្តូរទៅរបៀបទូទៅ (Fallback)
+                        </button>
                     </div>
                 </div>
-                <iframe id="bookIframe" src="" width="100%" height="100%" style="border: none; background: white;"></iframe>
+
+                <!-- Primary: PDF.js High-Definition Canvas Viewer Container -->
+                <div id="pdfViewerScrollWrap" style="width: 100%; height: 100%; overflow: auto; background: #334155; display: flex; flex-direction: column; align-items: center; padding: 20px 10px; -webkit-overflow-scrolling: touch;">
+                    <div id="pdfCanvasWrap" style="position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; background: white; margin-bottom: 30px; transition: transform 0.15s ease;">
+                        <canvas id="pdfCanvas" style="display: block; max-width: 100%; height: auto;"></canvas>
+                    </div>
+                </div>
+
+                <!-- Secondary Fallback: Iframe for external/unsupported links -->
+                <iframe id="bookIframe" src="" width="100%" height="100%" style="border: none; background: white; display: none; position: absolute; inset: 0; z-index: 10;"></iframe>
             </div>
         </div>
     </div>
@@ -5460,6 +5523,9 @@ body.dark-mode .pagination-ellipsis {
             <div id="imagePreviewThumbStrip" style="display: none; background: #070d18; border-top: 1px solid rgba(255,255,255,0.1); padding: 8px 12px; gap: 8px; overflow-x: auto; flex-shrink: 0; justify-content: center; align-items: center; white-space: nowrap;"></div>
         </div>
     </div>
+
+    <!-- Mozilla PDF.js Library (Self-Hosted for Fast Progressive PDF Streaming) -->
+    <script src="vendor/pdfjs/pdf.min.js"></script>
 
     <!-- Load JavaScript -->
     <script>
@@ -8208,6 +8274,251 @@ function handleBookModalDownload() {
     downloadBookFile(currentReadingBook.title, currentReadingBook.link);
 }
 
+// ==========================================
+// Mozilla PDF.js Custom High-Speed Reader Engine
+// ==========================================
+let pdfDocInstance = null;
+let pdfCurrentPageNum = 1;
+let pdfTotalPagesCount = 0;
+let pdfCurrentScale = 1.25;
+let isPdfPageRendering = false;
+let pdfPendingPageNum = null;
+let currentLoadedPdfUrl = '';
+let isPdfModalFullscreen = false;
+
+function initPdfJsEngine() {
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdfjs/pdf.worker.min.js';
+    }
+}
+
+async function renderPdfPage(pageNum) {
+    if (!pdfDocInstance) return;
+    isPdfPageRendering = true;
+
+    try {
+        const page = await pdfDocInstance.getPage(pageNum);
+        const canvas = document.getElementById('pdfCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        // HiDPI / Retina Crisp Rendering
+        const dpr = window.devicePixelRatio || 1;
+        const viewport = page.getViewport({ scale: pdfCurrentScale });
+
+        canvas.width = Math.floor(viewport.width * dpr);
+        canvas.height = Math.floor(viewport.height * dpr);
+        canvas.style.width = Math.floor(viewport.width) + 'px';
+        canvas.style.height = Math.floor(viewport.height) + 'px';
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+
+        const renderTask = page.render(renderContext);
+        await renderTask.promise;
+
+        isPdfPageRendering = false;
+        if (pdfPendingPageNum !== null) {
+            const next = pdfPendingPageNum;
+            pdfPendingPageNum = null;
+            renderPdfPage(next);
+        }
+
+        // Update UI counters
+        const pageInput = document.getElementById('pdfCurrentPageInput');
+        if (pageInput) pageInput.value = pageNum;
+        pdfCurrentPageNum = pageNum;
+
+        // Auto-scroll viewer container to top on page change
+        const scrollWrap = document.getElementById('pdfViewerScrollWrap');
+        if (scrollWrap) scrollWrap.scrollTop = 0;
+
+        // Update button states
+        const prevBtn = document.getElementById('pdfPrevBtn');
+        const nextBtn = document.getElementById('pdfNextBtn');
+        if (prevBtn) prevBtn.disabled = (pageNum <= 1);
+        if (nextBtn) nextBtn.disabled = (pageNum >= pdfTotalPagesCount);
+
+    } catch (err) {
+        console.error('Error rendering PDF page:', err);
+        isPdfPageRendering = false;
+    }
+}
+
+function queuePdfRenderPage(pageNum) {
+    if (isPdfPageRendering) {
+        pdfPendingPageNum = pageNum;
+    } else {
+        renderPdfPage(pageNum);
+    }
+}
+
+function pdfPrevPage() {
+    if (pdfCurrentPageNum <= 1) return;
+    pdfCurrentPageNum--;
+    queuePdfRenderPage(pdfCurrentPageNum);
+}
+
+function pdfNextPage() {
+    if (pdfCurrentPageNum >= pdfTotalPagesCount) return;
+    pdfCurrentPageNum++;
+    queuePdfRenderPage(pdfCurrentPageNum);
+}
+
+function pdfGoToPage(val) {
+    const num = parseInt(val, 10);
+    if (!isNaN(num) && num >= 1 && num <= pdfTotalPagesCount) {
+        pdfCurrentPageNum = num;
+        queuePdfRenderPage(pdfCurrentPageNum);
+    } else {
+        const pageInput = document.getElementById('pdfCurrentPageInput');
+        if (pageInput) pageInput.value = pdfCurrentPageNum;
+    }
+}
+
+function pdfZoomIn() {
+    if (pdfCurrentScale >= 3.0) return;
+    pdfCurrentScale = Math.min(3.0, +(pdfCurrentScale + 0.2).toFixed(2));
+    updatePdfZoomDisplay();
+    queuePdfRenderPage(pdfCurrentPageNum);
+}
+
+function pdfZoomOut() {
+    if (pdfCurrentScale <= 0.6) return;
+    pdfCurrentScale = Math.max(0.6, +(pdfCurrentScale - 0.2).toFixed(2));
+    updatePdfZoomDisplay();
+    queuePdfRenderPage(pdfCurrentPageNum);
+}
+
+function pdfResetZoom() {
+    pdfCurrentScale = 1.0;
+    updatePdfZoomDisplay();
+    queuePdfRenderPage(pdfCurrentPageNum);
+}
+
+async function pdfFitWidth() {
+    if (!pdfDocInstance) return;
+    try {
+        const page = await pdfDocInstance.getPage(pdfCurrentPageNum);
+        const container = document.getElementById('pdfViewerScrollWrap');
+        const availableWidth = (container ? container.clientWidth : window.innerWidth) - 40;
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        pdfCurrentScale = Math.min(Math.max(availableWidth / unscaledViewport.width, 0.5), 2.5);
+        updatePdfZoomDisplay();
+        queuePdfRenderPage(pdfCurrentPageNum);
+    } catch(e) {}
+}
+
+function updatePdfZoomDisplay() {
+    const el = document.getElementById('pdfZoomPercentText');
+    if (el) el.textContent = Math.round(pdfCurrentScale * 100) + '%';
+}
+
+function togglePdfModalFullscreen() {
+    const modalContainer = document.getElementById('bookModalContainer');
+    const btn = document.getElementById('pdfFullscreenBtn');
+    isPdfModalFullscreen = !isPdfModalFullscreen;
+    if (modalContainer) {
+        if (isPdfModalFullscreen) {
+            modalContainer.style.maxWidth = '100vw';
+            modalContainer.style.width = '100vw';
+            modalContainer.style.height = '100vh';
+            modalContainer.style.borderRadius = '0';
+            if (btn) btn.innerHTML = '<i class="fas fa-compress"></i>';
+        } else {
+            modalContainer.style.maxWidth = '1050px';
+            modalContainer.style.width = '95%';
+            modalContainer.style.height = '92vh';
+            modalContainer.style.borderRadius = '12px';
+            if (btn) btn.innerHTML = '<i class="fas fa-expand"></i>';
+        }
+    }
+    setTimeout(pdfFitWidth, 120);
+}
+
+async function loadBookWithPdfJs(url) {
+    initPdfJsEngine();
+    const loader = document.getElementById('pdfLoadingIndicator');
+    const scrollWrap = document.getElementById('pdfViewerScrollWrap');
+    const iframe = document.getElementById('bookIframe');
+    const toolbar = document.getElementById('pdfjsToolbar');
+
+    if (iframe) iframe.style.display = 'none';
+    if (scrollWrap) scrollWrap.style.display = 'flex';
+    if (toolbar) toolbar.style.display = 'flex';
+    if (loader) loader.style.display = 'flex';
+
+    currentLoadedPdfUrl = url;
+
+    try {
+        if (typeof pdfjsLib === 'undefined') {
+            throw new Error('PDF.js library is not loaded');
+        }
+
+        // Fast Byte-Range Streaming via HTTP 206 Partial Content
+        const loadingTask = pdfjsLib.getDocument({
+            url: url,
+            rangeChunkSize: 65536, // 64 KB chunks
+            disableAutoFetch: true, // Prevents loading full 400MB up front!
+            disableStream: false
+        });
+
+        pdfDocInstance = await loadingTask.promise;
+        pdfTotalPagesCount = pdfDocInstance.numPages;
+
+        const totalEl = document.getElementById('pdfTotalPages');
+        if (totalEl) totalEl.textContent = pdfTotalPagesCount;
+        const pageInput = document.getElementById('pdfCurrentPageInput');
+        if (pageInput) {
+            pageInput.max = pdfTotalPagesCount;
+            pageInput.value = 1;
+        }
+
+        pdfCurrentPageNum = 1;
+        await pdfFitWidth(); // Automatically compute scale to fit screen
+
+        if (loader) loader.style.display = 'none';
+    } catch (err) {
+        console.warn('PDF.js streaming encountered error, switching to fallback reader:', err);
+        switchToIframeReaderFallback();
+    }
+}
+
+function switchToIframeReaderFallback() {
+    const loader = document.getElementById('pdfLoadingIndicator');
+    const scrollWrap = document.getElementById('pdfViewerScrollWrap');
+    const iframe = document.getElementById('bookIframe');
+    const toolbar = document.getElementById('pdfjsToolbar');
+
+    if (loader) loader.style.display = 'none';
+    if (scrollWrap) scrollWrap.style.display = 'none';
+    if (toolbar) toolbar.style.display = 'none';
+    if (iframe) {
+        iframe.style.display = 'block';
+        iframe.src = currentLoadedPdfUrl;
+    }
+}
+
+// Global Keyboard Navigation for PDF Reader
+window.addEventListener('keydown', function(event) {
+    const modal = document.getElementById('bookReaderModal');
+    if (!modal || modal.style.display !== 'flex') return;
+
+    if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+        event.preventDefault();
+        pdfPrevPage();
+    } else if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+        event.preventDefault();
+        pdfNextPage();
+    } else if (event.key === 'Escape') {
+        closeBookModal();
+    }
+});
+
 // --- Book Reader Modal Functions (Protected) ---
 function openBookModal(title, url, bookIdOrCode = '') {
     // Enforce login requirement
@@ -8220,33 +8531,32 @@ function openBookModal(title, url, bookIdOrCode = '') {
     currentReadingBook = { title, link: url, bookIdOrCode };
 
     const modal = document.getElementById('bookReaderModal');
-    const iframe = document.getElementById('bookIframe');
     const titleEl = document.getElementById('bookModalTitle');
     const extBtn = document.getElementById('bookModalExternalLink');
     const dlBtn = document.getElementById('bookModalDownloadBtn');
-    
-    titleEl.textContent = title;
-    
     const noticeEl = document.getElementById('bookNoLinkNotice');
-    let embedUrl = getDriveEmbedUrl(url);
+    
+    if (titleEl) titleEl.textContent = title;
 
     const isTruncatedDirectPdf = url && typeof url === 'string' && url.startsWith('data:application/pdf') && url.length >= 500000;
 
     if (!url || url === '#' || url === '' || isTruncatedDirectPdf) {
-        embedUrl = 'about:blank';
         if (extBtn) extBtn.style.display = 'none';
         if (dlBtn) dlBtn.style.display = 'none';
-        if (iframe) iframe.style.display = 'none';
+        const toolbar = document.getElementById('pdfjsToolbar');
+        const scrollWrap = document.getElementById('pdfViewerScrollWrap');
+        if (toolbar) toolbar.style.display = 'none';
+        if (scrollWrap) scrollWrap.style.display = 'none';
         if (noticeEl) {
             noticeEl.style.display = 'flex';
             const titleNode = noticeEl.querySelector('h3');
             const descNode = noticeEl.querySelector('p');
             if (isTruncatedDirectPdf) {
-                titleEl.textContent += " (ឯកសារ Direct Upload មិនពេញលេញ)";
+                if (titleEl) titleEl.textContent += " (ឯកសារ Direct Upload មិនពេញលេញ)";
                 if (titleNode) titleNode.textContent = "ឯកសារ PDF នេះត្រូវបានកាត់ផ្តាច់ទិន្នន័យ (Truncate)";
-                if (descNode) descNode.innerHTML = `ឯកសារ PDF នេះត្រូវបាន Upload ដោយវិធី <strong>Direct Upload</strong> ដែលត្រូវបានកាត់ផ្តាច់ទិន្នន័យត្រឹម 512KB ដោយសារដែនកំណត់ Browser ធ្វើឱ្យឯកសារខូចមិនអាចអានបាន។<br><br><span style="color: #059669; font-weight: 600;">ដំណោះស្រាយ៖</span> សូម Admin ចូលទៅកាន់ <strong>ផ្ទាំង Admin ➡️ បញ្ជីសៀវភៅ ➡️ កែប្រែសៀវភៅនេះ</strong> រួចជ្រើសរើសឯកសារ និងចុចប៊ូតុង <strong>«Upload ចូល Google Drive (Folder សាលា)»</strong> ម្តងទៀត ដើម្បីទទួលបានឯកសារពេញលេញ 100%!`;
+                if (descNode) descNode.innerHTML = `ឯកសារ PDF នេះត្រូវបាន Upload ដោយវិធី <strong>Direct Upload</strong> ដែលត្រូវបានកាត់ផ្តាច់ទិន្នន័យត្រឹម 512KB ដោយសារដែនកំណត់ Browser ធ្វើឱ្យឯកសារខូចមិនអាចអានបាន។<br><br><span style="color: #059669; font-weight: 600;">ដំណោះស្រាយ៖</span> សូម Admin ចូលទៅកាន់ <strong>ផ្ទាំង Admin ➡️ បញ្ជីសៀវភៅ ➡️ កែប្រែសៀវភៅនេះ</strong> ដើម្បី Upload ឯកសារពេញលេញ 100%!`;
             } else {
-                titleEl.textContent += " (មិនមានតំណភ្ជាប់សៀវភៅ)";
+                if (titleEl) titleEl.textContent += " (មិនមានតំណភ្ជាប់សៀវភៅ)";
                 if (titleNode) titleNode.textContent = "មិនទាន់មានតំណភ្ជាប់ឯកសារសៀវភៅនៅឡើយទេ";
                 if (descNode) descNode.textContent = "សៀវភៅនេះមិនទាន់ត្រូវបានបញ្ចូលតំណភ្ជាប់ PDF ឬ Upload ឯកសារឡើយ។ សូមទាក់ទងមកកាន់អ្នកគ្រប់គ្រងបណ្ណាល័យ ឬ Admin ដើម្បីបន្ថែមឯកសារ។";
             }
@@ -8259,21 +8569,12 @@ function openBookModal(title, url, bookIdOrCode = '') {
         if (dlBtn) {
             dlBtn.style.display = 'inline-flex';
         }
-        if (iframe) iframe.style.display = 'block';
         if (noticeEl) noticeEl.style.display = 'none';
 
-        const loaderEl = document.getElementById('bookIframeLoader');
-        const directLinkEl = document.getElementById('bookLoaderDirectLink');
-        if (loaderEl) {
-            loaderEl.style.display = 'flex';
-            if (directLinkEl) directLinkEl.href = embedUrl;
-        }
-        iframe.onload = function() {
-            if (loaderEl) loaderEl.style.display = 'none';
-        };
+        // Direct PDF or server upload -> Open with Mozilla PDF.js fast streaming engine!
+        loadBookWithPdfJs(url);
     }
     
-    iframe.src = embedUrl;
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
 }
@@ -8282,23 +8583,31 @@ function closeBookModal() {
     const modal = document.getElementById('bookReaderModal');
     const iframe = document.getElementById('bookIframe');
     const noticeEl = document.getElementById('bookNoLinkNotice');
-    const loaderEl = document.getElementById('bookIframeLoader');
+    const loader = document.getElementById('pdfLoadingIndicator');
+    
     modal.style.display = 'none';
-    if (loaderEl) {
-        loaderEl.style.display = 'none';
-    }
+    if (loader) loader.style.display = 'none';
     if (iframe) {
-        iframe.onload = null;
         iframe.src = '';
-        iframe.style.display = 'block';
+        iframe.style.display = 'none';
     }
     if (noticeEl) {
         noticeEl.style.display = 'none';
-        const titleNode = noticeEl.querySelector('h3');
-        const descNode = noticeEl.querySelector('p');
-        if (titleNode) titleNode.textContent = "មិនទាន់មានតំណភ្ជាប់ឯកសារសៀវភៅនៅឡើយទេ";
-        if (descNode) descNode.textContent = "សៀវភៅនេះមិនទាន់ត្រូវបានបញ្ចូលតំណភ្ជាប់ PDF ឬ Upload ឯកសារឡើយ។ សូមទាក់ទងមកកាន់អ្នកគ្រប់គ្រងបណ្ណាល័យ ឬ Admin ដើម្បីបន្ថែមឯកសារ។";
     }
+    
+    // Clean up PDF.js memory
+    if (pdfDocInstance) {
+        try { pdfDocInstance.destroy(); } catch(e) {}
+        pdfDocInstance = null;
+    }
+    const canvas = document.getElementById('pdfCanvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.width = 0;
+        canvas.height = 0;
+    }
+    
     document.body.style.overflow = '';
 }
 
