@@ -3009,50 +3009,35 @@
                             </div>
                         </div>
 
-                        <!-- RIGHT COLUMN: Google Drive PDF Upload Box -->
+                        <!-- RIGHT COLUMN: Direct PDF Upload Box -->
                         <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <div style="background: rgba(15, 157, 88, 0.04); border: 1px solid rgba(15, 157, 88, 0.28); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="background: rgba(2, 132, 199, 0.04); border: 1px solid rgba(2, 132, 199, 0.22); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
                                 
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-weight: 700; color: #0f9d58; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px;">
-                                        <i class="fab fa-google-drive" style="font-size: 1.1rem;"></i> ឯកសារ PDF (Google Drive)
+                                    <span style="font-weight: 700; color: #0284c7; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fas fa-file-pdf" style="color: #ef4444; font-size: 1.1rem;"></i> ឯកសារសៀវភៅ PDF (PDF Document)
                                     </span>
-                                    <div id="bookDriveStatusPill" style="display: inline-flex; align-items: center; cursor: pointer;" onclick="connectGoogleDriveAccount()">
-                                        <!-- Rendered by updateGoogleDriveUI() -->
+                                    <!-- Compact Tab Toggle -->
+                                    <div style="display: flex; gap: 6px;">
+                                        <button type="button" class="btn btn-sm" id="btnTabBookPdfUpload" onclick="switchBookPdfTab('upload')" style="border-radius: 5px; font-size: 0.76rem; padding: 3px 10px; background: #0284c7; color: #fff; font-weight: 600; border: none;">
+                                            <i class="fas fa-upload" style="margin-right: 4px;"></i> Upload ឯកសារ
+                                        </button>
+                                        <button type="button" class="btn btn-sm" id="btnTabBookPdfUrl" onclick="switchBookPdfTab('url')" style="border-radius: 5px; font-size: 0.76rem; padding: 3px 10px; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); font-weight: 600;">
+                                            <i class="fas fa-link" style="margin-right: 4px;"></i> បញ្ចូល Link
+                                        </button>
                                     </div>
-                                </div>
-
-                                <!-- Compact Status Banner -->
-                                <div id="bookDriveStatusCard" style="border-radius: 6px; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.22);">
-                                    <div style="font-weight: 600; color: #059669; font-size: 0.78rem; display: flex; align-items: center; gap: 5px;">
-                                        <i class="fab fa-google-drive"></i> <span id="bookDriveStatusCardTitle">Google Drive: បានភ្ជាប់រួចរាល់</span>
-                                    </div>
-                                    <div id="bookDriveStatusCardSub" style="display: none;"></div>
-                                    <button type="button" class="btn btn-sm" id="btnBookDriveAction" onclick="connectGoogleDriveAccount(true)" style="background: #059669; color: #fff; font-weight: 600; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; border: none; cursor: pointer;">
-                                        ប្តូរគណនី
-                                    </button>
-                                </div>
-
-                                <!-- Compact Tab Toggle -->
-                                <div style="display: flex; gap: 6px;">
-                                    <button type="button" class="btn btn-sm" id="btnTabBookPdfUpload" onclick="switchBookPdfTab('upload')" style="border-radius: 5px; font-size: 0.78rem; padding: 4px 10px; background: #0284c7; color: #fff; font-weight: 600; border: none;">
-                                        <i class="fas fa-server" style="margin-right: 4px;"></i> Upload ចូល Hostinger Server
-                                    </button>
-                                    <button type="button" class="btn btn-sm" id="btnTabBookPdfUrl" onclick="switchBookPdfTab('url')" style="border-radius: 5px; font-size: 0.78rem; padding: 4px 10px; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); font-weight: 600;">
-                                        <i class="fas fa-link" style="margin-right: 4px;"></i> បញ្ចូល Link ដោយដៃ
-                                    </button>
                                 </div>
 
                                 <!-- Pane 1: Direct Dropzone -->
                                 <div id="paneBookPdfUpload">
                                     <input type="file" id="bookPdfFileInput" accept="application/pdf" style="display: none;" onchange="handleBookPdfSelected(this.files)">
-                                    <div id="bookPdfDropzone" class="multi-upload-dropzone" onclick="document.getElementById('bookPdfFileInput').click()" style="padding: 16px 10px; margin-bottom: 0; background: rgba(2, 132, 199, 0.04); border: 2px dashed #0284c7; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
-                                        <i class="fas fa-file-pdf" style="font-size: 1.8rem; color: #ef4444; margin-bottom: 5px; display: inline-block;"></i>
-                                        <div id="bookPdfDropText" style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); margin-bottom: 2px;">
-                                            ចុចទីនេះ ដើម្បីជ្រើសរើសឯកសារ PDF
+                                    <div id="bookPdfDropzone" class="multi-upload-dropzone" onclick="document.getElementById('bookPdfFileInput').click()" style="padding: 24px 10px; margin-bottom: 0; background: #ffffff; border: 2px dashed #0284c7; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+                                        <i class="fas fa-file-pdf" style="font-size: 2.2rem; color: #ef4444; margin-bottom: 6px; display: inline-block;"></i>
+                                        <div id="bookPdfDropText" style="font-weight: 700; font-size: 0.92rem; color: var(--text-main); margin-bottom: 3px;">
+                                            ចុចទីនេះ ដើម្បីជ្រើសរើសឯកសារ PDF ឬអូសទម្លាក់ចូល
                                         </div>
                                         <div style="font-size: 0.74rem; color: var(--text-muted);">
-                                            ឬអូសទម្លាក់ចូល • Upload ផ្ទាល់ចូល Hostinger Server (មិនបាច់ប្រើ Google Drive)
+                                            Upload ផ្ទាល់ចូល Server ភ្លាមៗ (Direct Upload) • គាំទ្រឯកសារគ្រប់ទំហំ
                                         </div>
                                     </div>
 
@@ -3073,10 +3058,10 @@
                                         <div id="bookPdfProgressWrap" style="display: none;">
                                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.78rem;">
                                                 <span id="bookPdfStatusMsg" style="font-size: 0.74rem; color: var(--text-muted);"></span>
-                                                <span id="bookPdfProgressPercent" style="font-weight: 700; color: #0f9d58;">0%</span>
+                                                <span id="bookPdfProgressPercent" style="font-weight: 700; color: #0284c7;">0%</span>
                                             </div>
                                             <div style="background: rgba(0,0,0,0.08); border-radius: 8px; height: 8px; overflow: hidden;">
-                                                <div id="bookPdfProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #0f9d58); transition: width 0.2s ease;"></div>
+                                                <div id="bookPdfProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0284c7, #10b981); transition: width 0.2s ease;"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -3086,10 +3071,10 @@
                                 <div id="paneBookPdfUrl" style="display: none;">
                                     <div style="position: relative;">
                                         <i class="fas fa-link" style="position: absolute; left: 10px; top: 9px; color: var(--text-muted); font-size: 0.82rem;"></i>
-                                        <input type="url" id="bookUrlInput" class="form-control" placeholder="https://drive.google.com/file/d/..." style="padding-left: 32px; font-size: 0.82rem; padding-top: 6px; padding-bottom: 6px;">
+                                        <input type="url" id="bookUrlInput" class="form-control" placeholder="https://..." style="padding-left: 32px; font-size: 0.82rem; padding-top: 6px; padding-bottom: 6px;">
                                     </div>
                                     <small style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: block;">
-                                        បញ្ចូលតំណភ្ជាប់ PDF ពី Google Drive ឬប្រភពផ្សេងទៀត
+                                        បញ្ចូលតំណភ្ជាប់ឯកសារ PDF (URL)
                                     </small>
                                 </div>
 
@@ -3101,8 +3086,8 @@
 
                 <!-- Modal Footer (Always Visible at 100% Zoom) -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color); flex-shrink: 0;">
-                    <div style="font-size: 0.76rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
-                        <i class="fas fa-folder" style="color: #0f9d58;"></i> Folder សាលា ៖ <span style="font-family: monospace; font-weight: 600;">1lLjZ...khmsQ</span>
+                    <div style="font-size: 0.76rem; color: #059669; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-check-circle"></i> រក្សាទុកឯកសារក្នុង Server ស្វ័យប្រវត្តិ
                     </div>
                     <div style="display: flex; gap: 8px;">
                         <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('modal-add-book')" style="padding: 6px 14px; font-size: 0.85rem; border-radius: 6px;">
@@ -5736,31 +5721,22 @@
             const actionBtns = document.getElementById('bookPdfActionButtons');
             if (!actionBtns) return;
 
-            const isServerStorage = link && (link.startsWith('/uploads/') || link.includes('/uploads/'));
-            const storageLabel = isServerStorage ? 'Hostinger Server' : 'Google Drive';
-
             if (isUploaded && link) {
                 actionBtns.innerHTML = `
                     <span style="color: #059669; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
-                        <i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ (${storageLabel})!
+                        <i class="fas fa-check-circle"></i> Upload ជោគជ័យ!
                     </span>
-                    <a href="${link}" target="_blank" class="btn btn-sm btn-outline" style="font-size: 0.78rem; padding: 4px 8px; border-radius: 6px; text-decoration: none; color: #0284c7; border-color: rgba(2,132,199,0.35);" title="បើកមើលឯកសារ PDF">
+                    <a href="${link}" target="_blank" class="btn btn-sm btn-outline" style="font-size: 0.78rem; padding: 4px 10px; border-radius: 6px; text-decoration: none; color: #0284c7; border-color: rgba(2,132,199,0.35);" title="បើកមើលឯកសារ PDF">
                         <i class="fas fa-eye"></i> មើល
                     </a>
-                    <button type="button" class="btn btn-sm btn-outline" onclick="connectAndUploadBookPdf()" style="font-size: 0.78rem; padding: 4px 8px; border-radius: 6px; color: #0f9d58; border-color: rgba(15,157,88,0.35);" title="ប្តូរទៅ Upload ចូល Google Drive វិញ">
-                        <i class="fab fa-google-drive"></i> ចូល Drive
-                    </button>
                     <button type="button" class="btn btn-outline btn-sm" onclick="clearSelectedBookPdf()" style="font-size: 0.78rem; padding: 4px 8px; color: var(--danger); border-color: rgba(239,68,68,0.3); border-radius: 6px;" title="ជ្រើសរើសឯកសារផ្សេង">
-                        <i class="fas fa-times"></i> ប្តូរ
+                        <i class="fas fa-times"></i> ប្តូរឯកសារ
                     </button>
                 `;
             } else {
                 actionBtns.innerHTML = `
                     <button type="button" class="btn btn-sm" onclick="startDirectServerPdfUpload(selectedBookPdfFile)" style="background: #0284c7; color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 6px; box-shadow: 0 2px 8px rgba(2,132,199,0.35); display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem;">
-                        <i class="fas fa-server"></i> Upload ចូល Hostinger Server 🚀
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline" onclick="connectAndUploadBookPdf()" style="color: #0f9d58; border-color: rgba(15,157,88,0.35); border-radius: 6px; font-size: 0.82rem;" title="Upload ចូល Google Drive ជំនួសវិញ">
-                        <i class="fab fa-google-drive"></i> Google Drive
+                        <i class="fas fa-cloud-upload-alt"></i> Upload ឯកសារ PDF 🚀
                     </button>
                     <button type="button" class="btn btn-sm btn-outline" onclick="clearSelectedBookPdf()" style="color: var(--danger); border-color: rgba(239,68,68,0.3); border-radius: 6px;" title="បោះបង់">
                         <i class="fas fa-times"></i>
@@ -5785,7 +5761,7 @@
                 barEl.style.width = '0%';
                 barEl.style.background = 'linear-gradient(90deg, #0284c7, #10b981)';
             }
-            if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុង Upload ចូល Hostinger Server...';
+            if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុង Upload ឯកសារ PDF...';
 
             try {
                 const uploadedResult = await new Promise((resolve, reject) => {
@@ -5800,7 +5776,7 @@
                             const pct = Math.round((e.loaded / e.total) * 100);
                             if (percentEl) percentEl.innerText = pct + '%';
                             if (barEl) barEl.style.width = pct + '%';
-                            if (statusEl) statusEl.innerHTML = `<i class="fas fa-arrow-up"></i> កំពុង Upload ចូល Server... ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
+                            if (statusEl) statusEl.innerHTML = `<i class="fas fa-arrow-up"></i> កំពុង Upload... ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
                         }
                     };
 
@@ -5832,7 +5808,7 @@
                 if (statusEl) {
                     statusEl.innerHTML = `
                         <div style="color: #059669; font-weight: 700; line-height: 1.5;">
-                            <div><i class="fas fa-check-circle"></i> Upload ចូល Hostinger Server ជោគជ័យ!</div>
+                            <div><i class="fas fa-check-circle"></i> Upload ឯកសារ PDF ជោគជ័យ!</div>
                             <div style="font-size: 0.74rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">
                                 តំណភ្ជាប់៖ <a href="${serverUrl}" target="_blank" style="color: #0284c7; text-decoration: underline;">${serverUrl}</a>
                             </div>
