@@ -5341,10 +5341,10 @@ body.dark-mode .pagination-ellipsis {
                     </div>
                 </div>
 
-                <!-- Primary: PDF.js High-Definition Canvas Viewer Container -->
-                <div id="pdfViewerScrollWrap" style="width: 100%; height: 100%; overflow: auto; background: #334155; display: flex; flex-direction: column; align-items: center; padding: 20px 10px; -webkit-overflow-scrolling: touch;">
-                    <div id="pdfCanvasWrap" style="position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; background: white; margin-bottom: 30px; transition: transform 0.15s ease;">
-                        <canvas id="pdfCanvas" style="display: block; max-width: 100%; height: auto;"></canvas>
+                <!-- Primary: PDF.js Continuous Vertical Scroll Container -->
+                <div id="pdfViewerScrollWrap" style="width: 100%; height: 100%; overflow-y: auto; overflow-x: auto; background: #1e293b; display: flex; flex-direction: column; align-items: center; padding: 24px 12px; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;" onscroll="handlePdfScroll()">
+                    <div id="pdfPagesContainer" style="display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; min-height: 100%;">
+                        <!-- Dynamic page slots rendered here -->
                     </div>
                 </div>
 
@@ -8275,16 +8275,20 @@ function handleBookModalDownload() {
 }
 
 // ==========================================
-// Mozilla PDF.js Custom High-Speed Reader Engine
+// Mozilla PDF.js Continuous Vertical Scroll Engine
 // ==========================================
 let pdfDocInstance = null;
 let pdfCurrentPageNum = 1;
 let pdfTotalPagesCount = 0;
-let pdfCurrentScale = 1.25;
-let isPdfPageRendering = false;
-let pdfPendingPageNum = null;
+let pdfCurrentScale = 1.0;
 let currentLoadedPdfUrl = '';
 let isPdfModalFullscreen = false;
+let pdfPageObserver = null;
+let pdfBaseViewport = null;
+const renderedPageSlots = new Set();
+const renderingPageSlots = new Set();
+let isUserProgrammaticScroll = false;
+let scrollThrottleTimer = null;
 
 function initPdfJsEngine() {
     if (typeof pdfjsLib !== 'undefined') {
@@ -8292,25 +8296,31 @@ function initPdfJsEngine() {
     }
 }
 
-async function renderPdfPage(pageNum) {
-    if (!pdfDocInstance) return;
-    isPdfPageRendering = true;
+async function renderPageSlot(pageNum, slot) {
+    if (renderedPageSlots.has(pageNum) || renderingPageSlots.has(pageNum) || !pdfDocInstance) return;
+    renderingPageSlots.add(pageNum);
 
     try {
         const page = await pdfDocInstance.getPage(pageNum);
-        const canvas = document.getElementById('pdfCanvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
+        const canvas = slot.querySelector('canvas.pdf-page-canvas');
+        const placeholder = slot.querySelector('.pdf-page-placeholder');
+        if (!canvas) {
+            renderingPageSlots.delete(pageNum);
+            return;
+        }
 
-        // HiDPI / Retina Crisp Rendering
         const dpr = window.devicePixelRatio || 1;
         const viewport = page.getViewport({ scale: pdfCurrentScale });
 
+        slot.style.width = Math.round(viewport.width) + 'px';
+        slot.style.height = Math.round(viewport.height) + 'px';
+
         canvas.width = Math.floor(viewport.width * dpr);
         canvas.height = Math.floor(viewport.height * dpr);
-        canvas.style.width = Math.floor(viewport.width) + 'px';
-        canvas.style.height = Math.floor(viewport.height) + 'px';
+        canvas.style.width = Math.round(viewport.width) + 'px';
+        canvas.style.height = Math.round(viewport.height) + 'px';
 
+        const ctx = canvas.getContext('2d');
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         const renderContext = {
@@ -8318,99 +8328,230 @@ async function renderPdfPage(pageNum) {
             viewport: viewport
         };
 
-        const renderTask = page.render(renderContext);
-        await renderTask.promise;
+        await page.render(renderContext).promise;
 
-        isPdfPageRendering = false;
-        if (pdfPendingPageNum !== null) {
-            const next = pdfPendingPageNum;
-            pdfPendingPageNum = null;
-            renderPdfPage(next);
-        }
+        if (placeholder) placeholder.style.display = 'none';
+        canvas.style.display = 'block';
 
-        // Update UI counters
-        const pageInput = document.getElementById('pdfCurrentPageInput');
-        if (pageInput) pageInput.value = pageNum;
-        pdfCurrentPageNum = pageNum;
-
-        // Auto-scroll viewer container to top on page change
-        const scrollWrap = document.getElementById('pdfViewerScrollWrap');
-        if (scrollWrap) scrollWrap.scrollTop = 0;
-
-        // Update button states
-        const prevBtn = document.getElementById('pdfPrevBtn');
-        const nextBtn = document.getElementById('pdfNextBtn');
-        if (prevBtn) prevBtn.disabled = (pageNum <= 1);
-        if (nextBtn) nextBtn.disabled = (pageNum >= pdfTotalPagesCount);
-
+        renderingPageSlots.delete(pageNum);
+        renderedPageSlots.add(pageNum);
     } catch (err) {
-        console.error('Error rendering PDF page:', err);
-        isPdfPageRendering = false;
+        console.error(`Error rendering page ${pageNum}:`, err);
+        renderingPageSlots.delete(pageNum);
     }
 }
 
-function queuePdfRenderPage(pageNum) {
-    if (isPdfPageRendering) {
-        pdfPendingPageNum = pageNum;
-    } else {
-        renderPdfPage(pageNum);
+async function initContinuousPages(pdfDoc) {
+    const pagesContainer = document.getElementById('pdfPagesContainer');
+    if (!pagesContainer) return;
+    pagesContainer.innerHTML = '';
+    renderedPageSlots.clear();
+    renderingPageSlots.clear();
+
+    // Measure base dimensions from Page 1
+    const firstPage = await pdfDoc.getPage(1);
+    pdfBaseViewport = firstPage.getViewport({ scale: 1 });
+
+    // Initial scale calculation (Fit to Width)
+    const scrollWrap = document.getElementById('pdfViewerScrollWrap');
+    const availableWidth = Math.max((scrollWrap ? scrollWrap.clientWidth : window.innerWidth) - 50, 320);
+    pdfCurrentScale = Math.min(Math.max(+(availableWidth / pdfBaseViewport.width).toFixed(2), 0.5), 2.2);
+    updatePdfZoomDisplay();
+
+    const slotWidth = Math.round(pdfBaseViewport.width * pdfCurrentScale);
+    const slotHeight = Math.round(pdfBaseViewport.height * pdfCurrentScale);
+
+    const fragment = document.createDocumentFragment();
+    for (let i = 1; i <= pdfTotalPagesCount; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'pdf-page-slot';
+        slot.id = `pdfPageSlot_${i}`;
+        slot.setAttribute('data-page-num', i);
+        slot.style.width = slotWidth + 'px';
+        slot.style.height = slotHeight + 'px';
+        slot.style.minHeight = '180px';
+        slot.style.position = 'relative';
+        slot.style.background = '#ffffff';
+        slot.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+        slot.style.borderRadius = '4px';
+        slot.style.overflow = 'hidden';
+        slot.style.display = 'flex';
+        slot.style.alignItems = 'center';
+        slot.style.justifyContent = 'center';
+        slot.style.flexShrink = '0';
+        slot.style.transition = 'width 0.15s ease, height 0.15s ease';
+
+        slot.innerHTML = `
+            <div class="pdf-page-placeholder" style="display:flex; flex-direction:column; align-items:center; gap:8px; color:#94a3b8; font-size:0.85rem;">
+                <div style="width:28px; height:28px; border:3px solid #334155; border-top-color:#38bdf8; border-radius:50%; animation:spin 0.75s linear infinite;"></div>
+                <span>ទំព័រទី ${i}...</span>
+            </div>
+            <canvas class="pdf-page-canvas" style="display:none; width:100%; height:100%;"></canvas>
+            <div style="position:absolute; bottom:8px; right:10px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); color:#fff; font-size:0.72rem; padding:2px 8px; border-radius:4px; pointer-events:none; font-weight:600; z-index:2;">
+                ${i} / ${pdfTotalPagesCount}
+            </div>
+        `;
+        fragment.appendChild(slot);
     }
+    pagesContainer.appendChild(fragment);
+
+    // Setup IntersectionObserver for smooth on-scroll progressive rendering
+    if (pdfPageObserver) {
+        pdfPageObserver.disconnect();
+    }
+
+    const observerOptions = {
+        root: document.getElementById('pdfViewerScrollWrap'),
+        rootMargin: '600px 0px 600px 0px', // Preload pages 600px ahead of view
+        threshold: 0.01
+    };
+
+    pdfPageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const num = parseInt(entry.target.getAttribute('data-page-num'), 10);
+                renderPageSlot(num, entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.pdf-page-slot').forEach(slot => {
+        pdfPageObserver.observe(slot);
+    });
+
+    // Render Page 1 immediately
+    const firstSlot = document.getElementById('pdfPageSlot_1');
+    if (firstSlot) {
+        renderPageSlot(1, firstSlot);
+    }
+}
+
+// Scroll Spy: Synchronize Toolbar Page Number as user scrolls
+function handlePdfScroll() {
+    if (scrollThrottleTimer || isUserProgrammaticScroll) return;
+    scrollThrottleTimer = requestAnimationFrame(() => {
+        scrollThrottleTimer = null;
+        const scrollWrap = document.getElementById('pdfViewerScrollWrap');
+        if (!scrollWrap) return;
+
+        const wrapRect = scrollWrap.getBoundingClientRect();
+        const centerY = wrapRect.top + wrapRect.height / 3;
+
+        const slots = document.querySelectorAll('.pdf-page-slot');
+        let currentVisiblePage = pdfCurrentPageNum;
+
+        for (let i = 0; i < slots.length; i++) {
+            const rect = slots[i].getBoundingClientRect();
+            if (rect.top <= centerY && rect.bottom >= centerY) {
+                currentVisiblePage = parseInt(slots[i].getAttribute('data-page-num'), 10);
+                break;
+            }
+        }
+
+        if (currentVisiblePage !== pdfCurrentPageNum) {
+            pdfCurrentPageNum = currentVisiblePage;
+            const pageInput = document.getElementById('pdfCurrentPageInput');
+            if (pageInput) pageInput.value = currentVisiblePage;
+
+            const prevBtn = document.getElementById('pdfPrevBtn');
+            const nextBtn = document.getElementById('pdfNextBtn');
+            if (prevBtn) prevBtn.disabled = (currentVisiblePage <= 1);
+            if (nextBtn) nextBtn.disabled = (currentVisiblePage >= pdfTotalPagesCount);
+        }
+    });
+}
+
+function scrollToPage(pageNum, smooth = true) {
+    const slot = document.getElementById(`pdfPageSlot_${pageNum}`);
+    if (!slot) return;
+
+    isUserProgrammaticScroll = true;
+    pdfCurrentPageNum = pageNum;
+    const pageInput = document.getElementById('pdfCurrentPageInput');
+    if (pageInput) pageInput.value = pageNum;
+
+    slot.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+
+    // Trigger immediate render of target page
+    renderPageSlot(pageNum, slot);
+
+    setTimeout(() => {
+        isUserProgrammaticScroll = false;
+    }, smooth ? 600 : 50);
 }
 
 function pdfPrevPage() {
     if (pdfCurrentPageNum <= 1) return;
-    pdfCurrentPageNum--;
-    queuePdfRenderPage(pdfCurrentPageNum);
+    scrollToPage(pdfCurrentPageNum - 1, true);
 }
 
 function pdfNextPage() {
     if (pdfCurrentPageNum >= pdfTotalPagesCount) return;
-    pdfCurrentPageNum++;
-    queuePdfRenderPage(pdfCurrentPageNum);
+    scrollToPage(pdfCurrentPageNum + 1, true);
 }
 
 function pdfGoToPage(val) {
     const num = parseInt(val, 10);
     if (!isNaN(num) && num >= 1 && num <= pdfTotalPagesCount) {
-        pdfCurrentPageNum = num;
-        queuePdfRenderPage(pdfCurrentPageNum);
+        scrollToPage(num, true);
     } else {
         const pageInput = document.getElementById('pdfCurrentPageInput');
         if (pageInput) pageInput.value = pdfCurrentPageNum;
     }
 }
 
-function pdfZoomIn() {
-    if (pdfCurrentScale >= 3.0) return;
-    pdfCurrentScale = Math.min(3.0, +(pdfCurrentScale + 0.2).toFixed(2));
+function applyPdfZoom() {
     updatePdfZoomDisplay();
-    queuePdfRenderPage(pdfCurrentPageNum);
+    renderedPageSlots.clear();
+    renderingPageSlots.clear();
+
+    if (!pdfBaseViewport) return;
+    const newWidth = Math.round(pdfBaseViewport.width * pdfCurrentScale);
+    const newHeight = Math.round(pdfBaseViewport.height * pdfCurrentScale);
+
+    document.querySelectorAll('.pdf-page-slot').forEach(slot => {
+        slot.style.width = newWidth + 'px';
+        slot.style.height = newHeight + 'px';
+        const canvas = slot.querySelector('canvas.pdf-page-canvas');
+        const placeholder = slot.querySelector('.pdf-page-placeholder');
+        if (canvas) canvas.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'flex';
+    });
+
+    if (pdfPageObserver) {
+        document.querySelectorAll('.pdf-page-slot').forEach(slot => {
+            pdfPageObserver.unobserve(slot);
+            pdfPageObserver.observe(slot);
+        });
+    }
+
+    // Scroll to retain current page in view
+    scrollToPage(pdfCurrentPageNum, false);
+}
+
+function pdfZoomIn() {
+    if (pdfCurrentScale >= 2.8) return;
+    pdfCurrentScale = Math.min(2.8, +(pdfCurrentScale + 0.15).toFixed(2));
+    applyPdfZoom();
 }
 
 function pdfZoomOut() {
-    if (pdfCurrentScale <= 0.6) return;
-    pdfCurrentScale = Math.max(0.6, +(pdfCurrentScale - 0.2).toFixed(2));
-    updatePdfZoomDisplay();
-    queuePdfRenderPage(pdfCurrentPageNum);
+    if (pdfCurrentScale <= 0.5) return;
+    pdfCurrentScale = Math.max(0.5, +(pdfCurrentScale - 0.15).toFixed(2));
+    applyPdfZoom();
 }
 
 function pdfResetZoom() {
     pdfCurrentScale = 1.0;
-    updatePdfZoomDisplay();
-    queuePdfRenderPage(pdfCurrentPageNum);
+    applyPdfZoom();
 }
 
-async function pdfFitWidth() {
-    if (!pdfDocInstance) return;
-    try {
-        const page = await pdfDocInstance.getPage(pdfCurrentPageNum);
-        const container = document.getElementById('pdfViewerScrollWrap');
-        const availableWidth = (container ? container.clientWidth : window.innerWidth) - 40;
-        const unscaledViewport = page.getViewport({ scale: 1 });
-        pdfCurrentScale = Math.min(Math.max(availableWidth / unscaledViewport.width, 0.5), 2.5);
-        updatePdfZoomDisplay();
-        queuePdfRenderPage(pdfCurrentPageNum);
-    } catch(e) {}
+function pdfFitWidth() {
+    if (!pdfBaseViewport) return;
+    const scrollWrap = document.getElementById('pdfViewerScrollWrap');
+    const availableWidth = Math.max((scrollWrap ? scrollWrap.clientWidth : window.innerWidth) - 50, 320);
+    pdfCurrentScale = Math.min(Math.max(+(availableWidth / pdfBaseViewport.width).toFixed(2), 0.5), 2.5);
+    applyPdfZoom();
 }
 
 function updatePdfZoomDisplay() {
@@ -8459,7 +8600,7 @@ async function loadBookWithPdfJs(url) {
             throw new Error('PDF.js library is not loaded');
         }
 
-        // Fast Byte-Range Streaming via HTTP 206 Partial Content
+        // Fast Byte-Range Partial Streaming via HTTP 206 Partial Content
         const loadingTask = pdfjsLib.getDocument({
             url: url,
             rangeChunkSize: 65536, // 64 KB chunks
@@ -8479,7 +8620,9 @@ async function loadBookWithPdfJs(url) {
         }
 
         pdfCurrentPageNum = 1;
-        await pdfFitWidth(); // Automatically compute scale to fit screen
+
+        // Initialize Continuous Scroll page list
+        await initContinuousPages(pdfDocInstance);
 
         if (loader) loader.style.display = 'none';
     } catch (err) {
@@ -8595,17 +8738,20 @@ function closeBookModal() {
         noticeEl.style.display = 'none';
     }
     
-    // Clean up PDF.js memory
+    // Clean up Continuous Scroll Observer & PDF.js memory
+    if (pdfPageObserver) {
+        pdfPageObserver.disconnect();
+        pdfPageObserver = null;
+    }
+    renderedPageSlots.clear();
+    renderingPageSlots.clear();
+    
+    const pagesContainer = document.getElementById('pdfPagesContainer');
+    if (pagesContainer) pagesContainer.innerHTML = '';
+    
     if (pdfDocInstance) {
         try { pdfDocInstance.destroy(); } catch(e) {}
         pdfDocInstance = null;
-    }
-    const canvas = document.getElementById('pdfCanvas');
-    if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.width = 0;
-        canvas.height = 0;
     }
     
     document.body.style.overflow = '';
