@@ -2951,10 +2951,45 @@ body.dark-mode .cat-pill.active {
     }
 }
 
+/* ==========================================================================
+   Books Grid (5 Cards a Row on Desktop)
+   ========================================================================== */
+.library-page-container {
+    max-width: 1400px !important;
+}
+
 .books-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 18px;
+}
+
+@media (max-width: 1200px) {
+    .books-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 992px) {
+    .books-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .books-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .books-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
 }
 
 .book-card {
@@ -2966,6 +3001,7 @@ body.dark-mode .cat-pill.active {
     transition: all var(--transition-normal);
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .book-card:hover {
@@ -2983,6 +3019,7 @@ body.dark-mode .cat-pill.active {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    aspect-ratio: 3/4;
 }
 
 body.dark-mode .book-cover {
@@ -2991,55 +3028,69 @@ body.dark-mode .book-cover {
 
 .book-cover-img {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
-    object-fit: contain;
+    object-fit: cover;
     transition: transform var(--transition-normal);
 }
 
 .book-card:hover .book-cover-img {
-    transform: scale(1.02);
+    transform: scale(1.03);
 }
 
 .book-category {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
     background: var(--secondary);
     color: white;
-    font-size: 0.72rem;
-    padding: 4px 10px;
+    font-size: 0.68rem;
+    padding: 3px 8px;
     border-radius: 20px;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0,0,0,0.25);
     z-index: 2;
+    max-width: 80%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .book-info {
-    padding: 20px;
+    padding: 12px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
 }
 
 .book-title {
-    font-size: 1.1rem;
-    margin-bottom: 10px;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
     color: var(--text-main);
-    line-height: 1.4;
+    line-height: 1.35;
     flex-grow: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .book-author {
     color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-bottom: 5px;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .book-code {
-    font-size: 0.8rem;
+    font-size: 0.74rem;
     color: var(--primary-light);
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ==========================================================================
@@ -3538,35 +3589,37 @@ body.dark-mode .pagination-ellipsis {
 /* Book Card Action Buttons (Read & Download) */
 .book-card-actions {
     display: flex;
-    gap: 8px;
-    margin-top: 15px;
+    gap: 6px;
+    margin-top: 10px;
     align-items: center;
 }
 .btn-card-read {
     flex: 1;
-    padding: 8px 10px;
-    font-size: 0.85rem;
+    padding: 6px 8px;
+    font-size: 0.8rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    border-radius: 8px;
+    gap: 5px;
+    border-radius: 6px;
     font-weight: 600;
+    white-space: nowrap;
     transition: all var(--transition-fast);
 }
 .btn-card-download {
     background: #059669 !important;
     border: 1px solid #059669 !important;
     color: #ffffff !important;
-    padding: 8px 14px;
-    font-size: 0.85rem;
+    padding: 6px 10px;
+    font-size: 0.8rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    border-radius: 8px;
+    gap: 5px;
+    border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
     transition: all var(--transition-fast);
 }
 .btn-card-download:hover {
@@ -4917,9 +4970,7 @@ body.dark-mode .pagination-ellipsis {
     </div>
 </div>
 
-<div class="container page-content">
-    
-    <!-- Search & Filter Area -->
+<div class="container page-content library-page-container">
     <div class="library-controls card" style="display: flex; flex-direction: column; gap: 15px; padding: 20px; border-radius: 14px; background: var(--bg-surface); box-shadow: var(--shadow-md); margin-bottom: 30px;">
         <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: space-between; width: 100%;">
             <div class="search-box" style="flex: 1; min-width: 240px; position: relative;">
@@ -7433,8 +7484,8 @@ function renderPublicCoursesGrid(courses) {
     });
 }
 
-// Global books variable and pagination state
-const BOOKS_PER_PAGE = 12;
+// Global books variable and pagination state (15 books per page = 3 full rows of 5 cards)
+const BOOKS_PER_PAGE = 15;
 let allBooks = [];
 let currentFilteredBooks = [];
 let currentBookPage = 1;
