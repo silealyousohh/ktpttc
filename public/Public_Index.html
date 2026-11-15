@@ -3600,37 +3600,65 @@ body.dark-mode .pagination-ellipsis {
 .book-card-actions {
     display: flex;
     gap: 6px;
-    margin-top: 10px;
+    margin-top: 8px;
     align-items: center;
+    width: 100%;
 }
 .btn-card-read {
-    flex: 1;
-    padding: 7px 10px;
-    font-size: 0.82rem;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 4px 6px;
+    font-size: 0.74rem;
+    height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 4px;
     border-radius: 6px;
     font-weight: 600;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: all var(--transition-fast);
 }
+.btn-card-read i {
+    font-size: 0.72rem;
+    flex-shrink: 0;
+}
+.btn-card-read span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .btn-card-download {
+    flex: 1 1 0;
+    min-width: 0;
     background: #059669 !important;
     border: 1px solid #059669 !important;
     color: #ffffff !important;
-    padding: 7px 12px;
-    font-size: 0.82rem;
+    padding: 4px 6px;
+    font-size: 0.74rem;
+    height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 4px;
     border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: all var(--transition-fast);
+}
+.btn-card-download i {
+    font-size: 0.72rem;
+    flex-shrink: 0;
+}
+.btn-card-download span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .btn-card-download:hover {
     background: #047857 !important;
@@ -3703,11 +3731,6 @@ body.dark-mode .pagination-ellipsis {
     background: rgba(37, 99, 235, 0.18);
     color: #60a5fa;
     border-color: rgba(37, 99, 235, 0.35);
-}
-.btn-card-quick-read:hover {
-    background: rgba(37,99,235,0.25) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
 /* Reader Modal Download Button */
@@ -8020,11 +8043,8 @@ function renderBooksPage(shouldScroll = false) {
                     <span title="${currentLang === 'en' ? 'Total Downloads' : 'ចំនួនអ្នកទាញយក'}"><i class="fas fa-download" style="color: #10b981; margin-right: 3px;"></i><span id="book-downloads-${bookKey}">${book.downloads || 0}</span></span>
                 </div>
                 <div class="book-card-actions">
-                    <button type="button" onclick="openBookDetailModal('${safeBookId}')" class="btn btn-outline btn-card-read" style="flex: 1;" title="មើលព័ត៌មានលម្អិត">
-                        <i class="fas fa-info-circle"></i> <span>មើលលម្អិត</span>
-                    </button>
-                    <button type="button" onclick="event.stopPropagation(); handleBookAction('${safeTitle}', '${safeLink}', 'read', '${safeBookId}')" class="btn btn-card-quick-read" style="background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); color: #60a5fa; padding: 7px 10px; font-size: 0.82rem; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;" title="អានសៀវភៅភ្លាមៗ">
-                        <i class="fas fa-book-reader"></i>
+                    <button type="button" onclick="event.stopPropagation(); openBookDetailModal('${safeBookId}')" class="btn btn-outline btn-card-read" title="${t('readBook')}">
+                        <i class="fas fa-book-reader"></i> <span>${t('readBook')}</span>
                     </button>
                     <button type="button" onclick="event.stopPropagation(); handleBookAction('${safeTitle}', '${safeLink}', 'download', '${safeBookId}')" class="btn btn-primary btn-card-download" title="${t('downloadBook')}">
                         <i class="fas fa-download"></i> <span>${t('downloadBook')}</span>
