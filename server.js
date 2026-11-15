@@ -125,6 +125,26 @@ app.post('/api/database/sync', async (req, res) => {
 // Serve static files (Images, CSS, JS, etc.)
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
+// Serve static uploads directory with inline disposition for PDF viewing
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  try { fs.mkdirSync(UPLOADS_DIR, { recursive: true }); } catch (e) {}
+}
+const PDF_UPLOADS_DIR = path.join(UPLOADS_DIR, 'pdf');
+if (!fs.existsSync(PDF_UPLOADS_DIR)) {
+  try { fs.mkdirSync(PDF_UPLOADS_DIR, { recursive: true }); } catch (e) {}
+}
+
+app.use('/uploads', express.static(UPLOADS_DIR, {
+  maxAge: '7d',
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline');
+    }
+  }
+}));
+
 // ==========================================
 // MONGODB & DATABASE MANAGEMENT
 // ==========================================
@@ -593,6 +613,108 @@ app.delete('/api/books/:id', async (req, res) => {
     await writeDb(db);
   }
   res.json({ success: true, books: db.books || [] });
+});
+
+// PDF Direct Upload Endpoint (Hostinger / Server Local Storage)
+app.post('/api/upload/pdf', (req, res) => {
+  try {
+    const uploadDir = path.join(__dirname, 'public', 'uploads', 'pdf');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    let rawFilename = req.query.filename || req.headers['x-filename'] || 'document.pdf';
+    try {
+      rawFilename = decodeURIComponent(rawFilename);
+    } catch (e) {}
+
+    const ext = path.extname(rawFilename) || '.pdf';
+    const baseName = path.basename(rawFilename, ext)
+      .replace(/[^a-zA-Z0-9_\-\u1780-\u17FF]/g, '_')
+      .substring(0, 80);
+    const uniqueSuffix = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+    const finalFilename = `${baseName || 'book'}_${uniqueSuffix}${ext}`;
+    const targetFilePath = path.join(uploadDir, finalFilename);
+
+    // Hostinger public_html sync path
+    const publicHtmlUploads = path.resolve(__dirname, '../../../../public_html/uploads/pdf');
+
+    // Case 1: Body parsed as JSON base64
+    if (req.body && (req.body.data || req.body.base64)) {
+      const base64Data = (req.body.data || req.body.base64).replace(/^data:application\/pdf;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      fs.writeFileSync(targetFilePath, buffer);
+      try {
+        if (fs.existsSync(path.dirname(publicHtmlUploads))) {
+          if (!fs.existsSync(publicHtmlUploads)) fs.mkdirSync(publicHtmlUploads, { recursive: true });
+          fs.writeFileSync(path.join(publicHtmlUploads, finalFilename), buffer);
+        }
+      } catch (e) {}
+
+      return res.json({
+        success: true,
+        url: `/uploads/pdf/${finalFilename}`,
+        filename: finalFilename,
+        size: buffer.length,
+        message: 'Upload ចូល Hostinger Server ជោគជ័យ'
+      });
+    }
+
+    // Case 2: Binary stream directly piped to disk
+    const writeStream = fs.createWriteStream(targetFilePath);
+    req.pipe(writeStream);
+
+    writeStream.on('finish', () => {
+      try {
+        if (fs.existsSync(path.dirname(publicHtmlUploads))) {
+          if (!fs.existsSync(publicHtmlUploads)) fs.mkdirSync(publicHtmlUploads, { recursive: true });
+          fs.copyFileSync(targetFilePath, path.join(publicHtmlUploads, finalFilename));
+        }
+      } catch (e) {}
+
+      res.json({
+        success: true,
+        url: `/uploads/pdf/${finalFilename}`,
+        filename: finalFilename,
+        size: writeStream.bytesWritten,
+        message: 'Upload ចូល Hostinger Server ជោគជ័យ'
+      });
+    });
+
+    writeStream.on('error', (err) => {
+      console.error('[PDF Upload Error]:', err);
+      res.status(500).json({ success: false, message: 'កំហុសរក្សាទុកឯកសារ: ' + err.message });
+    });
+
+    req.on('error', (err) => {
+      console.error('[PDF Upload Request Error]:', err);
+      res.status(500).json({ success: false, message: 'កំហុស Request: ' + err.message });
+    });
+
+  } catch (err) {
+    console.error('[PDF Upload Catch Error]:', err);
+    res.status(500).json({ success: false, message: 'កំហុស Server: ' + err.message });
+  }
+});
+
+// PDF Delete Endpoint
+app.delete('/api/upload/pdf', (req, res) => {
+  try {
+    const filename = req.query.filename || (req.body && req.body.filename);
+    if (!filename) return res.status(400).json({ success: false, message: 'Missing filename' });
+    const cleanFilename = path.basename(filename);
+    const targetFilePath = path.join(__dirname, 'public', 'uploads', 'pdf', cleanFilename);
+    if (fs.existsSync(targetFilePath)) {
+      fs.unlinkSync(targetFilePath);
+    }
+    const publicHtmlUploads = path.resolve(__dirname, '../../../../public_html/uploads/pdf', cleanFilename);
+    if (fs.existsSync(publicHtmlUploads)) {
+      try { fs.unlinkSync(publicHtmlUploads); } catch (e) {}
+    }
+    res.json({ success: true, message: 'បានលុបឯកសារជោគជ័យ' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // 4. Structure (Organization Chart) API

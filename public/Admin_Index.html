@@ -3035,8 +3035,8 @@
 
                                 <!-- Compact Tab Toggle -->
                                 <div style="display: flex; gap: 6px;">
-                                    <button type="button" class="btn btn-sm" id="btnTabBookPdfUpload" onclick="switchBookPdfTab('upload')" style="border-radius: 5px; font-size: 0.78rem; padding: 4px 10px; background: #0f9d58; color: #fff; font-weight: 600; border: none;">
-                                        <i class="fas fa-cloud-upload-alt" style="margin-right: 4px;"></i> Upload ចូល Drive
+                                    <button type="button" class="btn btn-sm" id="btnTabBookPdfUpload" onclick="switchBookPdfTab('upload')" style="border-radius: 5px; font-size: 0.78rem; padding: 4px 10px; background: #0284c7; color: #fff; font-weight: 600; border: none;">
+                                        <i class="fas fa-server" style="margin-right: 4px;"></i> Upload ចូល Hostinger Server
                                     </button>
                                     <button type="button" class="btn btn-sm" id="btnTabBookPdfUrl" onclick="switchBookPdfTab('url')" style="border-radius: 5px; font-size: 0.78rem; padding: 4px 10px; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); font-weight: 600;">
                                         <i class="fas fa-link" style="margin-right: 4px;"></i> បញ្ចូល Link ដោយដៃ
@@ -3046,13 +3046,13 @@
                                 <!-- Pane 1: Direct Dropzone -->
                                 <div id="paneBookPdfUpload">
                                     <input type="file" id="bookPdfFileInput" accept="application/pdf" style="display: none;" onchange="handleBookPdfSelected(this.files)">
-                                    <div id="bookPdfDropzone" class="multi-upload-dropzone" onclick="document.getElementById('bookPdfFileInput').click()" style="padding: 16px 10px; margin-bottom: 0; background: rgba(15, 157, 88, 0.04); border: 2px dashed #0f9d58; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+                                    <div id="bookPdfDropzone" class="multi-upload-dropzone" onclick="document.getElementById('bookPdfFileInput').click()" style="padding: 16px 10px; margin-bottom: 0; background: rgba(2, 132, 199, 0.04); border: 2px dashed #0284c7; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
                                         <i class="fas fa-file-pdf" style="font-size: 1.8rem; color: #ef4444; margin-bottom: 5px; display: inline-block;"></i>
                                         <div id="bookPdfDropText" style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); margin-bottom: 2px;">
                                             ចុចទីនេះ ដើម្បីជ្រើសរើសឯកសារ PDF
                                         </div>
                                         <div style="font-size: 0.74rem; color: var(--text-muted);">
-                                            ឬអូសទម្លាក់ចូល • Upload ចូល Google Drive សាលាស្វ័យប្រវត្តិ
+                                            ឬអូសទម្លាក់ចូល • Upload ផ្ទាល់ចូល Hostinger Server (មិនបាច់ប្រើ Google Drive)
                                         </div>
                                     </div>
 
@@ -5719,7 +5719,6 @@
             const actionBox = document.getElementById('bookPdfFileActionBox');
             const pickedName = document.getElementById('bookPdfPickedName');
             const pickedSize = document.getElementById('bookPdfPickedSize');
-            const actionBtns = document.getElementById('bookPdfActionButtons');
             const progressWrap = document.getElementById('bookPdfProgressWrap');
 
             if (actionBox) actionBox.style.display = 'block';
@@ -5729,46 +5728,132 @@
 
             renderBookPdfActionButtons();
 
-            // Auto-upload to Google Drive if already connected!
-            if (isGoogleDriveConnected()) {
-                startBookPdfUpload(file);
-            }
+            // Auto-upload direct to Hostinger Server immediately! (Option 1)
+            startDirectServerPdfUpload(file);
         }
 
         function renderBookPdfActionButtons(isUploaded = false, link = '') {
             const actionBtns = document.getElementById('bookPdfActionButtons');
             if (!actionBtns) return;
 
+            const isServerStorage = link && (link.startsWith('/uploads/') || link.includes('/uploads/'));
+            const storageLabel = isServerStorage ? 'Hostinger Server' : 'Google Drive';
+
             if (isUploaded && link) {
                 actionBtns.innerHTML = `
                     <span style="color: #059669; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
-                        <i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ PDF រួចរាល់!
+                        <i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ (${storageLabel})!
                     </span>
-                    <button type="button" class="btn btn-sm btn-outline" onclick="connectAndUploadBookPdf()" style="font-size: 0.78rem; padding: 4px 10px; border-radius: 6px; color: #0f9d58; border-color: rgba(15,157,88,0.35);" title="ប្តូរទៅ Upload ចូល Google Drive វិញ">
-                        <i class="fab fa-google-drive"></i> Upload ចូល Google Drive ម្តងទៀត
+                    <a href="${link}" target="_blank" class="btn btn-sm btn-outline" style="font-size: 0.78rem; padding: 4px 8px; border-radius: 6px; text-decoration: none; color: #0284c7; border-color: rgba(2,132,199,0.35);" title="បើកមើលឯកសារ PDF">
+                        <i class="fas fa-eye"></i> មើល
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="connectAndUploadBookPdf()" style="font-size: 0.78rem; padding: 4px 8px; border-radius: 6px; color: #0f9d58; border-color: rgba(15,157,88,0.35);" title="ប្តូរទៅ Upload ចូល Google Drive វិញ">
+                        <i class="fab fa-google-drive"></i> ចូល Drive
                     </button>
                     <button type="button" class="btn btn-outline btn-sm" onclick="clearSelectedBookPdf()" style="font-size: 0.78rem; padding: 4px 8px; color: var(--danger); border-color: rgba(239,68,68,0.3); border-radius: 6px;" title="ជ្រើសរើសឯកសារផ្សេង">
                         <i class="fas fa-times"></i> ប្តូរ
                     </button>
                 `;
-            } else if (isGoogleDriveConnected()) {
-                actionBtns.innerHTML = `
-                    <button type="button" class="btn btn-sm" onclick="startBookPdfUpload(selectedBookPdfFile)" style="background: #0f9d58; color: #fff; font-weight: 700; border: none; padding: 7px 16px; border-radius: 6px; box-shadow: 0 2px 8px rgba(15,157,88,0.35); display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem;">
-                        <i class="fab fa-google-drive"></i> Upload ចូល Google Drive (Folder សាលា) 🚀
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline" onclick="clearSelectedBookPdf()" style="color: var(--danger); border-color: rgba(239,68,68,0.3); border-radius: 6px;" title="បោះបង់">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
             } else {
                 actionBtns.innerHTML = `
-                    <button type="button" class="btn btn-sm" onclick="connectAndUploadBookPdf()" style="background: #0f9d58; color: #fff; font-weight: 700; border: none; padding: 7px 16px; border-radius: 6px; box-shadow: 0 2px 8px rgba(15,157,88,0.35); display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem;">
-                        <i class="fab fa-google-drive"></i> ភ្ជាប់ & Upload ចូល Google Drive (Folder សាលា) 🚀
+                    <button type="button" class="btn btn-sm" onclick="startDirectServerPdfUpload(selectedBookPdfFile)" style="background: #0284c7; color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 6px; box-shadow: 0 2px 8px rgba(2,132,199,0.35); display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem;">
+                        <i class="fas fa-server"></i> Upload ចូល Hostinger Server 🚀
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="connectAndUploadBookPdf()" style="color: #0f9d58; border-color: rgba(15,157,88,0.35); border-radius: 6px; font-size: 0.82rem;" title="Upload ចូល Google Drive ជំនួសវិញ">
+                        <i class="fab fa-google-drive"></i> Google Drive
                     </button>
                     <button type="button" class="btn btn-sm btn-outline" onclick="clearSelectedBookPdf()" style="color: var(--danger); border-color: rgba(239,68,68,0.3); border-radius: 6px;" title="បោះបង់">
                         <i class="fas fa-times"></i>
                     </button>
                 `;
+            }
+        }
+
+        async function startDirectServerPdfUpload(file) {
+            if (!file) return;
+            if (isUploadingBookPdf) return;
+            isUploadingBookPdf = true;
+
+            const progressWrap = document.getElementById('bookPdfProgressWrap');
+            const percentEl = document.getElementById('bookPdfProgressPercent');
+            const barEl = document.getElementById('bookPdfProgressBar');
+            const statusEl = document.getElementById('bookPdfStatusMsg');
+
+            if (progressWrap) progressWrap.style.display = 'block';
+            if (percentEl) percentEl.innerText = '0%';
+            if (barEl) {
+                barEl.style.width = '0%';
+                barEl.style.background = 'linear-gradient(90deg, #0284c7, #10b981)';
+            }
+            if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុង Upload ចូល Hostinger Server...';
+
+            try {
+                const uploadedResult = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    const cleanName = encodeURIComponent(file.name);
+                    xhr.open('POST', `/api/upload/pdf?filename=${cleanName}`, true);
+                    xhr.setRequestHeader('Content-Type', 'application/pdf');
+                    xhr.setRequestHeader('X-Filename', cleanName);
+
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const pct = Math.round((e.loaded / e.total) * 100);
+                            if (percentEl) percentEl.innerText = pct + '%';
+                            if (barEl) barEl.style.width = pct + '%';
+                            if (statusEl) statusEl.innerHTML = `<i class="fas fa-arrow-up"></i> កំពុង Upload ចូល Server... ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                resolve(JSON.parse(xhr.responseText));
+                            } catch (e) {
+                                reject(new Error('Invalid response from server: ' + xhr.responseText));
+                            }
+                        } else {
+                            reject(new Error(`Upload failed HTTP ${xhr.status}: ${xhr.responseText}`));
+                        }
+                    };
+
+                    xhr.onerror = () => reject(new Error('Network error during upload to server'));
+                    xhr.send(file);
+                });
+
+                if (!uploadedResult.success || !uploadedResult.url) {
+                    throw new Error(uploadedResult.message || 'Server upload failed');
+                }
+
+                const serverUrl = uploadedResult.url;
+                document.getElementById('bookUrlInput').value = serverUrl;
+
+                if (percentEl) percentEl.innerText = '100%';
+                if (barEl) barEl.style.width = '100%';
+                if (statusEl) {
+                    statusEl.innerHTML = `
+                        <div style="color: #059669; font-weight: 700; line-height: 1.5;">
+                            <div><i class="fas fa-check-circle"></i> Upload ចូល Hostinger Server ជោគជ័យ!</div>
+                            <div style="font-size: 0.74rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">
+                                តំណភ្ជាប់៖ <a href="${serverUrl}" target="_blank" style="color: #0284c7; text-decoration: underline;">${serverUrl}</a>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                renderBookPdfActionButtons(true, serverUrl);
+
+                const dropText = document.getElementById('bookPdfDropText');
+                if (dropText) dropText.innerHTML = `ឯកសារ៖ <strong style="color: #0284c7;">${file.name}</strong> (ចុចដើម្បីប្តូរ)`;
+
+            } catch (err) {
+                console.error('Direct server upload error:', err);
+                if (statusEl) {
+                    statusEl.innerHTML = `<span style="color: var(--danger); font-weight: 600;"><i class="fas fa-exclamation-triangle"></i> បរាជ័យ៖ ${err.message}</span>`;
+                }
+                if (barEl) barEl.style.background = 'var(--danger)';
+                alert('កំហុស Upload ចូល Server ៖\n\n' + err.message);
+            } finally {
+                isUploadingBookPdf = false;
             }
         }
 
@@ -5779,52 +5864,6 @@
             }
             pendingUploadAfterAuth = () => startBookPdfUpload(selectedBookPdfFile);
             connectGoogleDriveAccount(true);
-        }
-
-        async function uploadPdfAsDirectFile(file) {
-            if (!file) return;
-            if (file.size > 350000) {
-                alert('ឯកសារ PDF នេះមានទំហំធំ (' + formatBytes(file.size) + ') មិនអាច Upload ផ្ទាល់បានឡើយ ពីព្រោះកម្មវិធី Browser នឹងកាត់ផ្តាច់ទិន្នន័យ (Truncate) ដែលបណ្តាលឱ្យសៀវភៅខូចមិនអាចអានបាន។\n\nសូមចុចប៊ូតុងពណ៌បៃតង «Upload ចូល Google Drive» ដើម្បីបញ្ជូនឯកសារពេញលេញ 100% ទៅកាន់ Folder របស់សាលា!');
-                return;
-            }
-            const progressWrap = document.getElementById('bookPdfProgressWrap');
-            const percentEl = document.getElementById('bookPdfProgressPercent');
-            const barEl = document.getElementById('bookPdfProgressBar');
-            const statusEl = document.getElementById('bookPdfStatusMsg');
-
-            if (progressWrap) progressWrap.style.display = 'block';
-            if (percentEl) percentEl.innerText = '50%';
-            if (barEl) {
-                barEl.style.width = '50%';
-                barEl.style.background = 'linear-gradient(90deg, #10b981, #0284c7)';
-            }
-            if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងអាន និង Upload ឯកសារផ្ទាល់...';
-
-            try {
-                const reader = new FileReader();
-                reader.onprogress = (e) => {
-                    if (e.lengthComputable) {
-                        const pct = Math.round((e.loaded / e.total) * 100);
-                        if (percentEl) percentEl.innerText = pct + '%';
-                        if (barEl) barEl.style.width = pct + '%';
-                    }
-                };
-                reader.onload = (e) => {
-                    const dataUrl = e.target.result;
-                    document.getElementById('bookUrlInput').value = dataUrl;
-                    if (percentEl) percentEl.innerText = '100%';
-                    if (barEl) barEl.style.width = '100%';
-                    if (statusEl) statusEl.innerHTML = '<span style="color: #059669; font-weight: 700;"><i class="fas fa-check-circle"></i> បាន Upload ផ្ទាល់រួចរាល់!</span>';
-                    renderBookPdfActionButtons(true, dataUrl);
-                };
-                reader.onerror = () => {
-                    throw new Error('មិនអាចអានឯកសារ PDF បានឡើយ');
-                };
-                reader.readAsDataURL(file);
-            } catch (err) {
-                alert('កំហុស Upload ផ្ទាល់៖ ' + err.message);
-                if (statusEl) statusEl.innerHTML = `<span style="color: var(--danger);"><i class="fas fa-times"></i> ${err.message}</span>`;
-            }
         }
 
         function clearSelectedBookPdf() {

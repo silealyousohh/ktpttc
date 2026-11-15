@@ -8053,8 +8053,8 @@ function downloadBookFile(title, url) {
 
     showToast((t('downloadStarting') || 'កំពុងចាប់ផ្តើមទាញយក...') + ` ${title}`, 'success');
 
-    // For data: or blob: URLs, use link trigger directly
-    if (downloadUrl.startsWith('data:application/pdf') || downloadUrl.startsWith('blob:')) {
+    // For data:, blob:, or direct server /uploads/ URLs, use direct download trigger
+    if (downloadUrl.startsWith('data:application/pdf') || downloadUrl.startsWith('blob:') || downloadUrl.startsWith('/uploads/') || downloadUrl.includes('/uploads/')) {
         const a = document.createElement('a');
         a.href = downloadUrl;
         a.download = (title || 'Book') + '.pdf';
