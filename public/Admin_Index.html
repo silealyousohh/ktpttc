@@ -2921,7 +2921,7 @@
                 <i class="fas fa-times close-modal" onclick="closeModal('modal-add-book')"></i>
             </div>
             
-            <form id="addBookForm" onsubmit="saveNewBook(event)" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+            <form id="addBookForm" novalidate onsubmit="saveNewBook(event)" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                 <input type="hidden" id="bookIdInput">
                 
                 <div class="modal-body-scroll" style="overflow-y: auto; flex: 1; min-height: 0; padding-right: 6px;">
@@ -3003,7 +3003,7 @@
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </div>
-                                        <input type="url" id="bookCoverInput" class="form-control" placeholder="https://... ឬជ្រើសរូបភាពខាងលើ" style="font-size: 0.78rem; padding: 4px 8px;" oninput="updateBookCoverPreview(this.value)">
+                                        <input type="text" id="bookCoverInput" class="form-control" placeholder="https://... ឬជ្រើសរូបភាពខាងលើ" style="font-size: 0.78rem; padding: 4px 8px;" oninput="updateBookCoverPreview(this.value)">
                                     </div>
                                 </div>
                             </div>
@@ -3071,7 +3071,7 @@
                                 <div id="paneBookPdfUrl" style="display: none;">
                                     <div style="position: relative;">
                                         <i class="fas fa-link" style="position: absolute; left: 10px; top: 9px; color: var(--text-muted); font-size: 0.82rem;"></i>
-                                        <input type="url" id="bookUrlInput" class="form-control" placeholder="https://..." style="padding-left: 32px; font-size: 0.82rem; padding-top: 6px; padding-bottom: 6px;">
+                                        <input type="text" id="bookUrlInput" class="form-control" placeholder="https://... ឬ /uploads/pdf/..." style="padding-left: 32px; font-size: 0.82rem; padding-top: 6px; padding-bottom: 6px;">
                                     </div>
                                     <small style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: block;">
                                         បញ្ចូលតំណភ្ជាប់ឯកសារ PDF (URL)
@@ -6092,42 +6092,56 @@
         }
 
         async function saveNewBook(event) {
-            event.preventDefault();
-            const btn = event.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
+            if (event && event.preventDefault) event.preventDefault();
+            const form = document.getElementById('addBookForm');
+            const btn = (event && event.target && event.target.querySelector) ? event.target.querySelector('button[type="submit"]') : (form ? form.querySelector('button[type="submit"]') : null);
+            const originalText = btn ? btn.innerHTML : '<i class="fas fa-save"></i> រក្សាទុក';
 
-            let urlVal = document.getElementById('bookUrlInput').value.trim();
+            // Explicit Field Validations
+            const catInput = document.getElementById('bookCategoryInput');
+            const categoryVal = (catInput ? catInput.value : '').trim();
+            if (!categoryVal) {
+                alert('សូមជ្រើសរើសប្រភេទសៀវភៅ!');
+                if (catInput) catInput.focus();
+                return;
+            }
+
+            const titleInput = document.getElementById('bookTitleInput');
+            const titleVal = (titleInput ? titleInput.value : '').trim();
+            if (!titleVal) {
+                alert('សូមបញ្ចូលចំណងជើងសៀវភៅ!');
+                if (titleInput) titleInput.focus();
+                return;
+            }
+
+            let urlVal = (document.getElementById('bookUrlInput') ? document.getElementById('bookUrlInput').value : '').trim();
             if (!urlVal) {
                 if (isUploadingBookPdf) {
-                    alert('ឯកសារ PDF កំពុង Upload ចូល Google Drive... សូមរង់ចាំមួយភ្លែតរហូតដល់ចប់ 100%!');
+                    alert('ឯកសារ PDF កំពុង Upload... សូមរង់ចាំមួយភ្លែតរហូតដល់ចប់ 100%!');
                     return;
                 }
                 if (selectedBookPdfFile) {
-                    if (isGoogleDriveConnected()) {
-                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុង Upload ចូល Google Drive...';
+                    if (btn) {
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុង Upload ឯកសារ PDF...';
                         btn.disabled = true;
-                        try {
-                            await startBookPdfUpload(selectedBookPdfFile);
-                        } catch (uploadErr) {
+                    }
+                    try {
+                        await startDirectServerPdfUpload(selectedBookPdfFile);
+                    } catch (uploadErr) {
+                        if (btn) {
                             btn.innerHTML = originalText;
                             btn.disabled = false;
-                            alert('ការ Upload បរាជ័យ៖ ' + uploadErr.message);
-                            return;
                         }
-                        urlVal = document.getElementById('bookUrlInput').value.trim();
-                        if (!urlVal) {
+                        alert('ការ Upload បរាជ័យ៖ ' + (uploadErr.message || uploadErr));
+                        return;
+                    }
+                    urlVal = (document.getElementById('bookUrlInput') ? document.getElementById('bookUrlInput').value : '').trim();
+                    if (!urlVal) {
+                        if (btn) {
                             btn.innerHTML = originalText;
                             btn.disabled = false;
-                            return;
                         }
-                    } else {
-                        // Google Drive not connected yet: prompt auth, then auto-upload and auto-save!
-                        pendingUploadAfterAuth = async () => {
-                            await startBookPdfUpload(selectedBookPdfFile);
-                            const submitBtn = document.querySelector('#addBookForm button[type="submit"]');
-                            if (submitBtn) submitBtn.click();
-                        };
-                        connectGoogleDriveAccount(true);
+                        alert('មិនទាន់ទទួលបានតំណភ្ជាប់ឯកសារ PDF ទេ!');
                         return;
                     }
                 } else {
@@ -6136,18 +6150,20 @@
                 }
             }
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> រក្សាទុក...';
-            btn.disabled = true;
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងរក្សាទុក...';
+                btn.disabled = true;
+            }
 
-            const idVal = document.getElementById('bookIdInput').value;
+            const idVal = document.getElementById('bookIdInput') ? document.getElementById('bookIdInput').value : '';
             const bookData = {
-                code: document.getElementById('bookCodeInput').value,
-                category: document.getElementById('bookCategoryInput').value,
-                title: document.getElementById('bookTitleInput').value,
-                grade: document.getElementById('bookGradeInput').value,
-                author: document.getElementById('bookAuthorInput').value,
-                link: document.getElementById('bookUrlInput').value,
-                cover: document.getElementById('bookCoverInput').value
+                code: (document.getElementById('bookCodeInput') ? document.getElementById('bookCodeInput').value : '') || `BK-${Math.floor(1000 + Math.random() * 9000)}`,
+                category: categoryVal,
+                title: titleVal,
+                grade: document.getElementById('bookGradeInput') ? document.getElementById('bookGradeInput').value : '',
+                author: document.getElementById('bookAuthorInput') ? document.getElementById('bookAuthorInput').value : '',
+                link: urlVal,
+                cover: document.getElementById('bookCoverInput') ? document.getElementById('bookCoverInput').value : ''
             };
             if (idVal) {
                 bookData.id = idVal;
@@ -6160,21 +6176,33 @@
                     body: JSON.stringify(bookData)
                 });
                 if (res.ok) {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
+                    if (btn) {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
                     alert(idVal ? "បានកែប្រែព័ត៌មានសៀវភៅដោយជោគជ័យ!" : "បានរក្សាទុកសៀវភៅថ្មីដោយជោគជ័យ!");
                     closeModal('modal-add-book');
-                    document.getElementById('addBookForm').reset();
-                    document.getElementById('bookIdInput').value = '';
+                    if (form) form.reset();
+                    if (document.getElementById('bookIdInput')) document.getElementById('bookIdInput').value = '';
+                    clearBookCover();
+                    clearSelectedBookPdf();
                     await loadAdminBooks();
-                    loadDashboardStats();
+                    if (typeof loadDashboardStats === 'function') loadDashboardStats();
                     return;
+                } else {
+                    const errText = await res.text();
+                    console.error('Server save error:', res.status, errText);
+                    alert("មានបញ្ហាក្នុងការរក្សាទុកសៀវភៅ (Server Error): " + errText);
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error('Save book error:', e);
+                alert("មានបញ្ហាក្នុងការរក្សាទុកសៀវភៅ៖ " + e.message);
+            }
 
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            alert("មានបញ្ហាក្នុងការរក្សាទុកសៀវភៅ!");
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
 
         let localMockBooks = [];
