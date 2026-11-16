@@ -812,6 +812,18 @@ app.get(['/cpd', '/cpd/'], (req, res) => {
   res.sendFile(path.join(__dirname, 'Public_Index.html'));
 });
 
+// TeacherGuideApp & KruSmart Routes
+const TEACHER_GUIDE_DIR = path.join(__dirname, 'TeacherGuideApp');
+app.use('/TeacherGuideApp', express.static(TEACHER_GUIDE_DIR, { index: 'index.html' }));
+app.use('/krusmart', express.static(TEACHER_GUIDE_DIR, { index: 'index.html' }));
+
+app.get(['/teacher-guide', '/teacher-guide/', '/TeacherGuideApp', '/TeacherGuideApp/', '/krusmart', '/krusmart/'], (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  const tgPath = path.join(TEACHER_GUIDE_DIR, 'index.html');
+  if (fs.existsSync(tgPath)) return res.sendFile(tgPath);
+  res.sendFile(path.join(__dirname, 'public', 'Public_Index.html'));
+});
+
 // ==========================================
 // REST API ENDPOINTS
 // ==========================================
