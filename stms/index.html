@@ -149,12 +149,12 @@
     }
 
     function openUserMenuModal() {
-      const activeUser = (window.stmsData?.users || []).find(u => u.role === window.currentRole) || {};
+      const activeUser = window.currentUser || (window.stmsData?.users || []).find(u => u.role === window.currentRole) || {};
       const modalHtml = `
         <div class="stms-modal-backdrop" id="userMenuModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
           <div class="stms-modal-window" style="max-width:440px;">
             <div class="modal-header-bar">
-              <div class="modal-header-title"><i class="fas fa-user-circle"></i> ព័ត៌មានអ្នកប្រើប្រាស់</div>
+              <div class="modal-header-title"><i class="fas fa-user-circle"></i> ព័ត៌មានគណនីផ្ទាល់ខ្លួន</div>
               <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
             </div>
             <div class="modal-body-scroll" style="text-align:center; padding:24px 16px;">
@@ -165,16 +165,22 @@
                 <span class="badge badge-primary" style="font-size:0.85rem; padding:4px 12px;">${activeUser.roleLabel || window.currentRole}</span>
               </div>
               <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; font-size:0.82rem; text-align:left; color:#475569; margin-bottom:18px;">
+                <div><strong>ឈ្មោះគណនី (Username)៖</strong> <code>${activeUser.username || '-'}</code></div>
                 <div><strong>សាលារៀន៖</strong> សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
                 <div><strong>កម្រិតសិទ្ធិ៖</strong> ${window.currentRole === 'admin' ? 'គ្រប់គ្រងពេញលេញ (Admin Access)' : window.currentRole === 'trainer' ? 'គ្រូឧទ្ទេសបង្រៀន (Trainer Access)' : 'គរុសនិស្សិត (Trainee Portal)'}</div>
-                <div><strong>ស្ថានភាពប្រព័ន្ធ៖</strong> Active / Secure Session</div>
+                <div><strong>ស្ថានភាពគណនី៖</strong> សកម្ម (Active Session)</div>
               </div>
               <div style="display:flex; flex-direction:column; gap:8px;">
-                <button class="btn btn-outline" style="width:100%; justify-content:center;" onclick="closeStmsModal(); navigateView('backup');">
-                  <i class="fas fa-database"></i> បម្រុងទុក ឬស្តារទិន្នន័យ (Backup / Restore)
-                </button>
-                <button class="btn btn-danger" style="width:100%; justify-content:center;" onclick="closeStmsModal(); resetStmsDatabase();">
-                  <i class="fas fa-sync-alt"></i> កំណត់ទិន្នន័យដើមឡើងវិញ (Reset to Seed)
+                ${activeUser.role === 'admin' ? `
+                  <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="closeStmsModal(); navigateView('rbac');">
+                    <i class="fas fa-users-cog"></i> គ្រប់គ្រងគណនី &amp; ពាក្យសម្ងាត់
+                  </button>
+                  <button class="btn btn-outline" style="width:100%; justify-content:center;" onclick="closeStmsModal(); navigateView('backup');">
+                    <i class="fas fa-database"></i> បម្រុងទុក ឬស្តារទិន្នន័យ (Backup / Restore)
+                  </button>
+                ` : ''}
+                <button class="btn btn-danger" style="width:100%; justify-content:center;" onclick="closeStmsModal(); handleLogout();">
+                  <i class="fas fa-sign-out-alt"></i> ចាកចេញពីប្រព័ន្ធ (Log Out)
                 </button>
               </div>
             </div>
@@ -185,8 +191,92 @@
     }
   </script>
 
+  <!-- Mandatory Login Screen (Displayed when user is not logged in) -->
+  <div id="stmsLoginScreen" class="stms-login-overlay" style="display:none;">
+    <div class="login-container-card">
+      
+      <!-- Left Column: Branding & Features -->
+      <div class="login-left-brand">
+        <div class="login-logo-circle">
+          <img src="assets/ktpttc-logo.png" alt="KTPTTC Logo" onerror="this.src='assets/logo.png'">
+        </div>
+        <div class="login-brand-inst-kh">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
+        <div class="login-brand-inst-en">Regional Teacher Training Center Kratie (KPTTC)</div>
+        <h2 class="login-main-heading">ចូលគណនីប្រព័ន្ធ</h2>
+        <div class="login-brand-sub">ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត KPTTC PMS</div>
+
+        <div class="login-feature-list">
+          <div><i class="fas fa-user-shield" style="color:#60a5fa; width:16px;"></i> <strong>ម៉ូឌុល ១៖</strong> រដ្ឋបាល &amp; គរុសនិស្សិត</div>
+          <div><i class="fas fa-calendar-alt" style="color:#38bdf8; width:16px;"></i> <strong>ម៉ូឌុល ២៖</strong> កាលវិភាគ &amp; ការសិក្សា</div>
+          <div><i class="fas fa-calendar-check" style="color:#34d399; width:16px;"></i> <strong>ម៉ូឌុល ៣៖</strong> គ្រប់គ្រងវត្តមាន</div>
+          <div><i class="fas fa-calculator" style="color:#fbbf24; width:16px;"></i> <strong>ម៉ូឌុល ៤៖</strong> ពិន្ទុ &amp; ការវាយតម្លៃ</div>
+        </div>
+      </div>
+
+      <!-- Right Column: Login Form -->
+      <div class="login-right-form">
+        
+        <!-- Fast Demo Credentials Helper -->
+        <div class="login-quick-roles">
+          <div class="login-quick-roles-title">
+            <i class="fas fa-key" style="color:#38bdf8;"></i> ចុចដើម្បីបំពេញគណនីសាកល្បង (Quick Fill):
+          </div>
+          <div class="quick-role-badges">
+            <button type="button" class="quick-role-btn" onclick="quickFillLogin('admin', 'admin123')">
+              <i class="fas fa-shield-alt" style="color:#60a5fa;"></i> Admin
+            </button>
+            <button type="button" class="quick-role-btn" onclick="quickFillLogin('trainer', 'trainer123')">
+              <i class="fas fa-chalkboard-teacher" style="color:#34d399;"></i> Trainer
+            </button>
+            <button type="button" class="quick-role-btn" onclick="quickFillLogin('trainee', 'trainee123')">
+              <i class="fas fa-user-graduate" style="color:#fbbf24;"></i> Trainee
+            </button>
+          </div>
+        </div>
+
+        <div class="login-form-divider">
+          <span>ឬ វាយបញ្ចូល Username &amp; Password</span>
+        </div>
+
+        <form id="stmsLoginForm" onsubmit="event.preventDefault(); handleLoginSubmit();">
+          <div class="login-input-group">
+            <label for="loginUsername">ឈ្មោះគណនី (Username)*</label>
+            <div class="login-input-wrapper">
+              <i class="fas fa-user input-icon"></i>
+              <input type="text" id="loginUsername" class="login-input" placeholder="ឈ្មោះគណនី (Username ឧ. admin)..." required autocomplete="username">
+            </div>
+          </div>
+
+          <div class="login-input-group">
+            <label for="loginPassword">ពាក្យសម្ងាត់ (Password)*</label>
+            <div class="login-input-wrapper">
+              <i class="fas fa-lock input-icon"></i>
+              <input type="password" id="loginPassword" class="login-input" placeholder="វាយបញ្ចូលពាក្យសម្ងាត់..." required autocomplete="current-password">
+              <button type="button" class="password-toggle-btn" id="btnTogglePassword" onclick="toggleLoginPassword()">
+                <i class="fas fa-eye" id="eyeIcon"></i> <span id="eyeText">បង្ហាញ</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="loginErrorMessage" style="display:none; color:#f87171; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:8px 12px; font-size:0.8rem; margin-bottom:12px;">
+            <i class="fas fa-exclamation-circle"></i> <span id="loginErrorText"></span>
+          </div>
+
+          <button type="submit" class="btn-login-submit" id="btnLoginSubmit">
+            <i class="fas fa-sign-in-alt"></i> ចូលគណនី
+          </button>
+        </form>
+
+        <div style="font-size:0.75rem; color:#64748b; text-align:center; margin-top:16px; line-height:1.5;">
+          <i class="fas fa-shield-alt"></i> ឈ្មោះគណនី និងពាក្យសម្ងាត់ ត្រូវបានចុះឈ្មោះ និងកំណត់ដោយ Admin សិក្សាធិការ
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Application Core Scripts -->
-  <script src="data.js?v=2.3"></script>
-  <script src="app.js?v=2.3"></script>
+  <script src="data.js?v=2.4"></script>
+  <script src="app.js?v=2.4"></script>
 </body>
 </html>

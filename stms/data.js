@@ -71,9 +71,12 @@ const KTPTTC_INITIAL_DATA = {
       nameKh: "លោក ឈន ប៊ុនថន",
       nameEn: "Chhorn Bunthon",
       username: "admin",
+      password: "admin123",
       role: "admin", // Administrator
       roleLabel: "អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ",
       email: "admin@ktpttc.edu.kh",
+      phone: "012 888 777",
+      status: "active",
       avatar: "👨‍💼"
     },
     {
@@ -81,10 +84,13 @@ const KTPTTC_INITIAL_DATA = {
       nameKh: "សាស្ត្រាចារ្យ ហេង សំណាង",
       nameEn: "Heng Samnang",
       username: "trainer",
+      password: "trainer123",
       role: "trainer", // Trainer / Teacher
       roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
       email: "samnang.heng@ktpttc.edu.kh",
+      phone: "016 777 888",
       subject: "PED-101",
+      status: "active",
       avatar: "👨‍🏫"
     },
     {
@@ -92,10 +98,13 @@ const KTPTTC_INITIAL_DATA = {
       nameKh: "លោកស្រី ជា រចនា",
       nameEn: "Chea Rachana",
       username: "rachana",
+      password: "rachana123",
       role: "trainer",
       roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
       email: "rachana.chea@ktpttc.edu.kh",
+      phone: "017 666 555",
       subject: "KHM-104",
+      status: "active",
       avatar: "👩‍🏫"
     },
     {
@@ -104,11 +113,14 @@ const KTPTTC_INITIAL_DATA = {
       nameEn: "Trainee Portal",
       studentId: "",
       username: "trainee",
+      password: "trainee123",
       role: "trainee",
       roleLabel: "គរុសនិស្សិត",
       email: "portal@student.ktpttc.edu.kh",
-      className: "",
-      cohort: "",
+      phone: "097 555 1234",
+      className: "ថ្នាក់បឋម ១២+២",
+      cohort: "ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤",
+      status: "active",
       avatar: "👨‍🎓"
     }
   ],

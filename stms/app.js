@@ -6,15 +6,15 @@
 
 // Global State
 let stmsData = {};
+let currentUser = null; // Active authenticated user object
 let currentRole = 'admin'; // 'admin' | 'trainer' | 'trainee'
 let currentView = 'flow';
 let currentTraineeUser = null; // When in trainee role
 
-// Initialize Application
+// Initialize Application - Enforce Mandatory Login Gate
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
-  initRoleState();
-  renderApp();
+  initAuth();
 });
 
 // Load from LocalStorage or Clean Config (No Auto Student Generation)
@@ -27,6 +27,17 @@ function loadData() {
       if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
       if (!Array.isArray(stmsData.attendanceSessions)) stmsData.attendanceSessions = [];
       if (!Array.isArray(stmsData.profileRequests)) stmsData.profileRequests = [];
+      if (!Array.isArray(stmsData.users) || stmsData.users.length === 0) {
+        stmsData.users = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA?.users || []));
+      } else {
+        // Guarantee every user has username & password defined by Admin
+        stmsData.users.forEach(u => {
+          if (!u.password) {
+            u.password = u.username === 'admin' ? 'admin123' : u.username === 'trainer' ? 'trainer123' : u.username === 'rachana' ? 'rachana123' : 'trainee123';
+          }
+          if (!u.status) u.status = 'active';
+        });
+      }
     } else {
       stmsData = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
       if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
@@ -73,34 +84,196 @@ function showToast(message, type = 'info') {
   }, 3500);
 }
 
-// Role-Based Access Control (RBAC) Switcher
-function initRoleState() {
-  const savedRole = localStorage.getItem('ktpttc_stms_role') || 'admin';
-  switchRole(savedRole, false);
+// ==========================================================================
+// AUTHENTICATION & LOGIN GATE CONTROLLER
+// ==========================================================================
+function initAuth() {
+  let savedUser = null;
+  try {
+    const raw = sessionStorage.getItem('ktpttc_current_user') || localStorage.getItem('ktpttc_current_user');
+    if (raw) savedUser = JSON.parse(raw);
+  } catch (e) {}
+
+  if (savedUser && savedUser.username) {
+    const freshUser = (stmsData.users || []).find(u => u.username.toLowerCase() === savedUser.username.toLowerCase());
+    if (freshUser && freshUser.status !== 'disabled') {
+      loginSuccess(freshUser, false);
+      return;
+    }
+  }
+
+  showLoginScreen();
 }
 
+function showLoginScreen() {
+  const loginOverlay = document.getElementById('stmsLoginScreen');
+  const navbar = document.getElementById('stmsNavbar');
+  const layout = document.getElementById('stmsAppLayout');
+
+  if (loginOverlay) loginOverlay.style.display = 'flex';
+  if (navbar) navbar.style.display = 'none';
+  if (layout) layout.style.display = 'none';
+
+  const uInput = document.getElementById('loginUsername');
+  const pInput = document.getElementById('loginPassword');
+  const errBox = document.getElementById('loginErrorMessage');
+  if (uInput) uInput.value = '';
+  if (pInput) pInput.value = '';
+  if (errBox) errBox.style.display = 'none';
+}
+
+function handleLoginSubmit() {
+  const uInput = document.getElementById('loginUsername');
+  const pInput = document.getElementById('loginPassword');
+  const errBox = document.getElementById('loginErrorMessage');
+  const errText = document.getElementById('loginErrorText');
+
+  const username = uInput ? uInput.value.trim().toLowerCase() : '';
+  const password = pInput ? pInput.value : '';
+
+  if (!username || !password) {
+    if (errBox && errText) {
+      errText.textContent = 'សូមបញ្ចូលឈ្មោះគណនី (Username) និងពាក្យសម្ងាត់ (Password)!';
+      errBox.style.display = 'block';
+    }
+    return;
+  }
+
+  const user = (stmsData.users || []).find(u => 
+    (u.username.toLowerCase() === username || (u.email && u.email.toLowerCase() === username)) &&
+    String(u.password) === String(password)
+  );
+
+  if (!user) {
+    if (errBox && errText) {
+      errText.textContent = 'ឈ្មោះគណនី ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវឡើយ! សូមទាក់ទង Admin ដើម្បីកំណត់ពាក្យសម្ងាត់។';
+      errBox.style.display = 'block';
+    }
+    return;
+  }
+
+  if (user.status === 'disabled') {
+    if (errBox && errText) {
+      errText.textContent = 'គណនីនេះត្រូវបានផ្អាកដំណើរការដោយ Admin សិក្សាធិការ!';
+      errBox.style.display = 'block';
+    }
+    return;
+  }
+
+  if (errBox) errBox.style.display = 'none';
+  loginSuccess(user, true);
+}
+
+function quickFillLogin(username, password) {
+  const uInput = document.getElementById('loginUsername');
+  const pInput = document.getElementById('loginPassword');
+  if (uInput) uInput.value = username;
+  if (pInput) pInput.value = password;
+  handleLoginSubmit();
+}
+
+function loginSuccess(user, notify = true) {
+  currentUser = user;
+  currentRole = user.role;
+  localStorage.setItem('ktpttc_current_user', JSON.stringify(user));
+  sessionStorage.setItem('ktpttc_current_user', JSON.stringify(user));
+
+  const loginOverlay = document.getElementById('stmsLoginScreen');
+  const navbar = document.getElementById('stmsNavbar');
+  const layout = document.getElementById('stmsAppLayout');
+
+  if (loginOverlay) loginOverlay.style.display = 'none';
+  if (navbar) navbar.style.display = 'flex';
+  if (layout) layout.style.display = 'flex';
+
+  // Update Navbar Profile Details
+  const nameEl = document.getElementById('navbarUserName');
+  const roleEl = document.getElementById('navbarUserRole');
+  const avatarEl = document.getElementById('navbarUserAvatar');
+  if (nameEl) nameEl.textContent = user.nameKh;
+  if (roleEl) roleEl.textContent = user.roleLabel || user.role;
+  if (avatarEl) avatarEl.textContent = user.avatar || (user.role === 'trainer' ? '👨‍🏫' : user.role === 'trainee' ? '👨‍🎓' : '👨‍💼');
+
+  // Center Role Switcher: Visible ONLY to Administrator for role preview
+  const navCenterRole = document.getElementById('navCenterRole');
+  if (navCenterRole) {
+    navCenterRole.style.display = user.role === 'admin' ? 'flex' : 'none';
+    document.querySelectorAll('.role-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.role === user.role);
+    });
+  }
+
+  // Set default starting view
+  if (user.role === 'trainee') {
+    currentTraineeUser = (stmsData.trainees || []).find(t => t.id === user.studentId) || stmsData.trainees[0] || user;
+    currentView = 'trainee-portal';
+  } else {
+    currentView = 'flow';
+  }
+
+  renderSidebar();
+  renderView(currentView);
+  updateAlertBadge();
+
+  if (notify) {
+    showToast(`សូមស្វាគមន៍លោក/លោកស្រី «${user.nameKh}» មកកាន់ប្រព័ន្ធ STMS!`, 'success');
+  }
+}
+
+function handleLogout() {
+  if (confirm('តើលោកអ្នកពិតជាចង់ចាកចេញពីប្រព័ន្ធ STMS មែនទេ?')) {
+    localStorage.removeItem('ktpttc_current_user');
+    sessionStorage.removeItem('ktpttc_current_user');
+    currentUser = null;
+    showLoginScreen();
+    showToast('បានចាកចេញពីប្រព័ន្ធដោយជោគជ័យ!', 'info');
+  }
+}
+
+function toggleLoginPassword() {
+  const pInput = document.getElementById('loginPassword');
+  const eyeIcon = document.getElementById('eyeIcon');
+  const eyeText = document.getElementById('eyeText');
+  if (!pInput) return;
+
+  if (pInput.type === 'password') {
+    pInput.type = 'text';
+    if (eyeIcon) { eyeIcon.classList.remove('fa-eye'); eyeIcon.classList.add('fa-eye-slash'); }
+    if (eyeText) eyeText.textContent = 'លាក់';
+  } else {
+    pInput.type = 'password';
+    if (eyeIcon) { eyeIcon.classList.remove('fa-eye-slash'); eyeIcon.classList.add('fa-eye'); }
+    if (eyeText) eyeText.textContent = 'បង្ហាញ';
+  }
+}
+
+// Role Preview Switcher for Administrator
 function switchRole(role, notify = true) {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('មានតែ Administrator ប៉ុណ្ណោះដែលអាចប្តូរទៅមើលសិទ្ធិផ្សេងៗបាន!', 'warning');
+    return;
+  }
+
   currentRole = role;
-  localStorage.setItem('ktpttc_stms_role', role);
 
   // Update Top Role Switcher Pills
   document.querySelectorAll('.role-tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.role === role);
   });
 
-  // Assign Mock Active User Profile based on Role
-  const user = stmsData.users.find(u => u.role === role) || stmsData.users[0];
+  // Assign Active User Profile preview based on Role
+  const previewUser = stmsData.users.find(u => u.role === role) || currentUser;
   const nameEl = document.getElementById('navbarUserName');
   const roleEl = document.getElementById('navbarUserRole');
   const avatarEl = document.getElementById('navbarUserAvatar');
 
-  if (nameEl) nameEl.textContent = user.nameKh;
-  if (roleEl) roleEl.textContent = user.roleLabel;
-  if (avatarEl) avatarEl.textContent = user.avatar;
+  if (nameEl) nameEl.textContent = previewUser.nameKh;
+  if (roleEl) roleEl.textContent = `${previewUser.roleLabel} (Admin Preview)`;
+  if (avatarEl) avatarEl.textContent = previewUser.avatar;
 
-  // Set default Trainee if Trainee role
+  // Set default view for role
   if (role === 'trainee') {
-    currentTraineeUser = stmsData.trainees[0];
+    currentTraineeUser = stmsData.trainees[0] || previewUser;
     currentView = 'trainee-portal';
   } else {
     currentView = 'flow';
@@ -110,7 +283,7 @@ function switchRole(role, notify = true) {
   renderView(currentView);
 
   if (notify) {
-    showToast(`បានប្ដូរទៅកាន់តួនាទី៖ ${user.roleLabel}`, 'success');
+    showToast(`កំពុងមើលក្នុងនាម៖ ${previewUser.roleLabel}`, 'info');
   }
 }
 
@@ -728,6 +901,28 @@ function openEnrollModal() {
               </div>
             </div>
 
+            <!-- Trainee Login Credentials Setup (Admin issues Username & Password) -->
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:14px; margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h4 style="color:#166534; font-size:0.85rem; font-weight:700;">
+                  <i class="fas fa-key"></i> កំណត់គណនី Login សម្រាប់គរុសនិស្សិត (កំណត់ដោយ Admin)
+                </h4>
+                <label style="font-size:0.8rem; color:#15803d; cursor:pointer; font-weight:600;">
+                  <input type="checkbox" id="enrollCreateAccount" checked onchange="document.getElementById('enrollAccountFields').style.display=this.checked?'grid':'none'"> បង្កើតគណនីភ្លាមៗ
+                </label>
+              </div>
+              <div class="form-grid-2" id="enrollAccountFields">
+                <div>
+                  <label class="form-label">ឈ្មោះគណនី (Username)*</label>
+                  <input type="text" id="enrollUsername" class="form-input" value="${autoId}">
+                </div>
+                <div>
+                  <label class="form-label">ពាក្យសម្ងាត់ដំបូង (Initial Password)*</label>
+                  <input type="text" id="enrollPassword" class="form-input" value="ktpttc123">
+                </div>
+              </div>
+            </div>
+
             <div class="modal-footer-bar" style="padding:0; background:none; border:none;">
               <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
               <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> រក្សាទុក & បង្កើតអត្តលេខ</button>
@@ -748,6 +943,8 @@ function updateGeneratedId() {
   const nextIdx = stmsData.trainees.length + 1;
   if (idEl) {
     idEl.value = `KTPTTC-2026-${code}-${String(nextIdx).padStart(3, '0')}`;
+    const uEl = document.getElementById('enrollUsername');
+    if (uEl) uEl.value = idEl.value;
   }
 }
 
@@ -799,9 +996,38 @@ function submitEnrollForm() {
   };
 
   stmsData.trainees.push(newTrainee);
+
+  // Auto-Provision Trainee User Account if checked
+  const createAccount = document.getElementById('enrollCreateAccount')?.checked;
+  const username = document.getElementById('enrollUsername')?.value.trim().toLowerCase() || id.toLowerCase();
+  const password = document.getElementById('enrollPassword')?.value.trim() || 'ktpttc123';
+
+  if (createAccount) {
+    if (!Array.isArray(stmsData.users)) stmsData.users = [];
+    const exists = stmsData.users.some(u => u.username.toLowerCase() === username);
+    if (!exists) {
+      stmsData.users.push({
+        id: `USR-STU-${String(stmsData.users.length + 1).padStart(3, '0')}`,
+        nameKh,
+        nameEn,
+        studentId: id,
+        username,
+        password,
+        role: "trainee",
+        roleLabel: "គរុសនិស្សិត",
+        email: phone ? `${username}@student.ktpttc.edu.kh` : "portal@student.ktpttc.edu.kh",
+        phone,
+        className,
+        cohort: newTrainee.cohort,
+        status: "active",
+        avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
+      });
+    }
+  }
+
   saveData();
   closeStmsModal();
-  showToast(`បានចុះឈ្មោះគរុសនិស្សិត «${nameKh}» អត្តលេខ ${id} ដោយជោគជ័យ!`, 'success');
+  showToast(`បានចុះឈ្មោះគរុសនិស្សិត «${nameKh}» (${id}) ព្រមទាំងបង្កើតគណនី Login ដោយជោគជ័យ!`, 'success');
   renderView('trainees');
 }
 
@@ -1923,54 +2149,505 @@ function renderCohortsView(container) {
   `;
 }
 
+// ==========================================================================
+// 8. USER ACCOUNTS & CREDENTIALS MANAGEMENT (RBAC & Passwords set by Admin)
+// ==========================================================================
 function renderRBACView(container) {
+  const users = stmsData.users || [];
+  const adminCount = users.filter(u => u.role === 'admin').length;
+  const trainerCount = users.filter(u => u.role === 'trainer').length;
+  const traineeCount = users.filter(u => u.role === 'trainee').length;
+
   container.innerHTML = `
     <div class="view-header">
       <div class="view-title-group">
-        <h2><i class="fas fa-user-shield"></i> ការគ្រប់គ្រងតួនាទី និងសិទ្ធិអំណាច (RBAC)</h2>
-        <p>ស្តង់ដារ ៣ កម្រិត៖ Administrator, Trainer/Teacher, Trainee Teacher</p>
+        <h2><i class="fas fa-users-cog"></i> ការគ្រប់គ្រងគណនីអ្នកប្រើប្រាស់ &amp; ពាក្យសម្ងាត់ (User Management &amp; Passwords)</h2>
+        <p>Admin ជាអ្នកចុះឈ្មោះគណនីថ្មី កំណត់ Username, Password, និងតួនាទីសិទ្ធិអំណាចគ្រប់ User ទាំងអស់</p>
+      </div>
+      <div class="view-actions-group">
+        <button class="btn btn-primary" onclick="openRegisterUserModal()">
+          <i class="fas fa-user-plus"></i> ចុះឈ្មោះគណនីថ្មី
+        </button>
+        <button class="btn btn-success" onclick="exportUserCredentialsExcel()">
+          <i class="fas fa-file-excel"></i> ទាញយកបញ្ជីគណនី
+        </button>
       </div>
     </div>
 
+    <!-- Security Policy Banner -->
+    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:14px; box-shadow:0 2px 6px rgba(37,99,235,0.08);">
+      <div style="width:44px; height:44px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; color:#1d4ed8; font-size:1.3rem; flex-shrink:0;">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <div style="font-size:0.85rem; color:#1e40af; line-height:1.6;">
+        <strong>គោលការណ៍សុវត្ថិភាពចូលប្រើប្រព័ន្ធ៖</strong> គ្រប់ user ទាំងអស់ (Admin, គ្រូឧទ្ទេស, និងគរុសនិស្សិត) ត្រូវមានគណនី Username និង Password ដែលបានចុះឈ្មោះ និងកំណត់ដោយ Admin សិក្សាធិការ ដើម្បីអាច Login ចូលប្រើប្រាស់មុខងារតាមសិទ្ធិអំណាចរៀងខ្លួន។
+      </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:20px;">
+      <div style="background:#fff; border:1px solid var(--border-color); border-radius:8px; padding:12px 16px;">
+        <div style="font-size:0.75rem; color:#64748b;">គណនីសរុប (Total Users)</div>
+        <div style="font-size:1.4rem; font-weight:800; color:#1e3a8a;">${users.length} គណនី</div>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border-color); border-radius:8px; padding:12px 16px;">
+        <div style="font-size:0.75rem; color:#64748b;">អ្នកគ្រប់គ្រង (Admins)</div>
+        <div style="font-size:1.4rem; font-weight:800; color:#2563eb;">${adminCount} នាក់</div>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border-color); border-radius:8px; padding:12px 16px;">
+        <div style="font-size:0.75rem; color:#64748b;">គ្រូឧទ្ទេស (Trainers)</div>
+        <div style="font-size:1.4rem; font-weight:800; color:#10b981;">${trainerCount} នាក់</div>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border-color); border-radius:8px; padding:12px 16px;">
+        <div style="font-size:0.75rem; color:#64748b;">គរុសនិស្សិត (Trainees)</div>
+        <div style="font-size:1.4rem; font-weight:800; color:#d97706;">${traineeCount} នាក់</div>
+      </div>
+    </div>
+
+    <!-- Users Table Card -->
     <div class="table-card">
+      <div class="table-toolbar">
+        <strong style="color:#1e3a8a; font-size:0.95rem;">
+          <i class="fas fa-list"></i> បញ្ជីគណនីអ្នកប្រើប្រាស់ និងពាក្យសម្ងាត់ (${users.length})
+        </strong>
+        <span style="font-size:0.8rem; color:#64748b;">Admin អាចកែសម្រួល Username និងកំណត់ពាក្យសម្ងាត់ឡើងវិញបានគ្រប់ពេល</span>
+      </div>
+
       <div class="data-table-responsive">
         <table class="stms-table">
           <thead>
             <tr>
+              <th>ល.រ</th>
               <th>អត្តលេខគណនី</th>
               <th>ឈ្មោះអ្នកប្រើប្រាស់</th>
+              <th>ឈ្មោះគណនី (Username)</th>
+              <th>ពាក្យសម្ងាត់ (Password)</th>
               <th>តួនាទី (Role)</th>
-              <th>សិទ្ធិអំណាចសំខាន់ៗ</th>
+              <th>ទំនាក់ទំនង</th>
               <th>ស្ថានភាព</th>
+              <th>សកម្មភាព</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><code>USR-ADM-001</code></td>
-              <td><strong>លោក ឈន ប៊ុនថន</strong> (admin)</td>
-              <td><span class="badge badge-published">Administrator</span></td>
-              <td>គ្រប់គ្រងគណនី, បង្កើតឆ្នាំសិក្សា, កំណត់មេគុណពិន្ទុ, បម្រុងទុកទិន្នន័យ</td>
-              <td><span class="badge badge-present">សកម្ម</span></td>
-            </tr>
-            <tr>
-              <td><code>USR-TRN-001</code></td>
-              <td><strong>សាស្ត្រាចារ្យ ហេង សំណាង</strong> (trainer)</td>
-              <td><span class="badge badge-permission">Trainer / Teacher</span></td>
-              <td>ស្រង់វត្តមាន, បញ្ចូលពិន្ទុមុខវិជ្ជា, មើលកាលវិភាគបង្រៀន</td>
-              <td><span class="badge badge-present">សកម្ម</span></td>
-            </tr>
-            <tr>
-              <td><code>USR-STU-001</code></td>
-              <td><strong>គរុសនិស្សិតទូទៅ</strong> (trainee)</td>
-              <td><span class="badge badge-late">Trainee Teacher</span></td>
-              <td>មើលប្រវត្តិរូប, ពិនិត្យវត្តមានផ្ទាល់ខ្លួន, មើលពិន្ទុដែលបាន Publish, ទាញយកកាលវិភាគ</td>
-              <td><span class="badge badge-present">សកម្ម</span></td>
-            </tr>
+            ${users.map((u, idx) => {
+              const roleBadge = u.role === 'admin' 
+                ? 'badge-published' 
+                : u.role === 'trainer' 
+                ? 'badge-permission' 
+                : 'badge-late';
+              
+              const isSelf = currentUser && currentUser.username === u.username;
+              const isMainAdmin = u.id === 'USR-ADM-001';
+
+              return `
+                <tr id="userRow-${u.id}">
+                  <td>${idx + 1}</td>
+                  <td><code>${u.id}</code></td>
+                  <td>
+                    <strong>${u.avatar || '👤'} ${u.nameKh}</strong>
+                    ${u.nameEn ? `<div style="font-size:0.72rem; color:#64748b;">${u.nameEn}</div>` : ''}
+                    ${isSelf ? `<span style="font-size:0.65rem; background:#eff6ff; color:#2563eb; padding:1px 5px; border-radius:3px;">(គណនីបច្ចុប្បន្ន)</span>` : ''}
+                  </td>
+                  <td>
+                    <code style="font-weight:700; color:#1e3a8a; font-size:0.9rem;">${u.username}</code>
+                  </td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span id="pwdText-${u.id}" style="font-family:monospace; font-size:0.85rem; letter-spacing:1px; background:#f1f5f9; padding:2px 8px; border-radius:4px;">••••••••</span>
+                      <button type="button" class="btn btn-outline" style="height:24px; padding:0 6px; font-size:0.7rem;" onclick="togglePasswordVisibility('${u.id}', '${u.password}')" title="បង្ហាញ/លាក់">
+                        <i class="fas fa-eye" id="pwdEye-${u.id}"></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge ${roleBadge}">
+                      ${u.roleLabel || (u.role === 'admin' ? 'Administrator' : u.role === 'trainer' ? 'Trainer / Teacher' : 'Trainee Teacher')}
+                    </span>
+                    ${u.subject ? `<div style="font-size:0.7rem; color:#64748b; margin-top:2px;">មុខវិជ្ជា៖ ${u.subject}</div>` : ''}
+                    ${u.className ? `<div style="font-size:0.7rem; color:#64748b; margin-top:2px;">ថ្នាក់៖ ${u.className}</div>` : ''}
+                  </td>
+                  <td style="font-size:0.78rem;">
+                    <div>${u.email || '-'}</div>
+                    <div style="color:#64748b;">${u.phone || '-'}</div>
+                  </td>
+                  <td>
+                    <span class="badge ${u.status === 'disabled' ? 'badge-danger' : 'badge-present'}">
+                      ${u.status === 'disabled' ? 'ផ្អាក' : 'សកម្ម'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style="display:flex; gap:5px;">
+                      <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem;" onclick="openEditUserModal('${u.id}')" title="កែប្រែ & ប្តូរពាក្យសម្ងាត់">
+                        <i class="fas fa-key"></i> កែប្រែ
+                      </button>
+                      ${!isMainAdmin ? `
+                        <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:${u.status === 'disabled' ? '#10b981' : '#f59e0b'};" onclick="toggleUserStatus('${u.id}')" title="${u.status === 'disabled' ? 'បើកដំណើរការឡើងវិញ' : 'ផ្អាកគណនី'}">
+                          <i class="fas ${u.status === 'disabled' ? 'fa-user-check' : 'fa-user-slash'}"></i>
+                        </button>
+                        <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:#ef4444;" onclick="deleteUserAccount('${u.id}')" title="លុបគណនី">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
     </div>
   `;
+}
+
+// Toggle password text visibility in the table
+function togglePasswordVisibility(userId, plainPassword) {
+  const span = document.getElementById(`pwdText-${userId}`);
+  const eye = document.getElementById(`pwdEye-${userId}`);
+  if (!span) return;
+
+  if (span.textContent === '••••••••') {
+    span.textContent = plainPassword;
+    span.style.background = '#e0f2fe';
+    span.style.color = '#0369a1';
+    span.style.fontWeight = '700';
+    if (eye) { eye.classList.remove('fa-eye'); eye.classList.add('fa-eye-slash'); }
+  } else {
+    span.textContent = '••••••••';
+    span.style.background = '#f1f5f9';
+    span.style.color = 'inherit';
+    span.style.fontWeight = 'normal';
+    if (eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
+  }
+}
+
+// Modal: Register New User (Admin sets Username & Password)
+function openRegisterUserModal() {
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="regUserModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:680px;">
+        <div class="modal-header-bar">
+          <div class="modal-header-title">
+            <i class="fas fa-user-plus"></i> ចុះឈ្មោះគណនីថ្មី &amp; កំណត់ពាក្យសម្ងាត់ (Register User &amp; Set Password)
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:22px;">
+          <form id="registerUserForm" onsubmit="event.preventDefault(); submitRegisterUser();">
+            
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:0.82rem; color:#1e40af;">
+              <i class="fas fa-info-circle"></i> Administrator ជាអ្នកកំណត់ឈ្មោះគណនី (Username) និងពាក្យសម្ងាត់ (Password) សម្រាប់ប្រគល់ជូនអ្នកប្រើប្រាស់ចូលប្រើប្រព័ន្ធ។
+            </div>
+
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">គោត្តនាម-នាម (ខ្មែរ)*</label>
+                <input type="text" id="regNameKh" class="form-input" placeholder="ឧ. ឡាយ សុជាតិ" required>
+              </div>
+              <div>
+                <label class="form-label">ឈ្មោះជាអក្សរឡាតាំង</label>
+                <input type="text" id="regNameEn" class="form-input" placeholder="ឧ. Lay Socheat">
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">កម្រិតតួនាទីក្នុងប្រព័ន្ធ (Role)*</label>
+                <select id="regRole" class="form-input" required onchange="handleRegRoleChange(this.value)">
+                  <option value="trainer">Trainer / Teacher (គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន)</option>
+                  <option value="trainee">Trainee Teacher (គរុសនិស្សិត)</option>
+                  <option value="admin">Administrator (អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ)</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">ឈ្មោះគណនីចូលប្រព័ន្ធ (Username)*</label>
+                <input type="text" id="regUsername" class="form-input" placeholder="ឧ. socheat (អក្សរតូច គ្មានដកឃ្លា)" required autocomplete="off">
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">ពាក្យសម្ងាត់ដំបូង (Initial Password)*</label>
+                <input type="text" id="regPassword" class="form-input" placeholder="ឧ. socheat123" required autocomplete="off" value="ktpttc123">
+              </div>
+              <div>
+                <label class="form-label">លេខទូរស័ព្ទ (Phone)</label>
+                <input type="tel" id="regPhone" class="form-input" placeholder="ឧ. 012 345 678">
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">អ៊ីមែល (Email)</label>
+                <input type="email" id="regEmail" class="form-input" placeholder="ឧ. socheat@ktpttc.edu.kh">
+              </div>
+              <div id="regExtraFieldWrap">
+                <label class="form-label" id="regExtraLabel">មុខវិជ្ជាទទួលបន្ទុក</label>
+                <select id="regExtraValue" class="form-input">
+                  ${stmsData.subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <div class="modal-footer-bar" style="padding:16px 0 0 0; background:none; border:none; margin-top:14px;">
+              <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> រក្សាទុក &amp; បង្កើតគណនី
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function handleRegRoleChange(role) {
+  const wrap = document.getElementById('regExtraFieldWrap');
+  const label = document.getElementById('regExtraLabel');
+  const select = document.getElementById('regExtraValue');
+  if (!wrap || !label || !select) return;
+
+  if (role === 'trainer') {
+    wrap.style.display = 'block';
+    label.textContent = 'មុខវិជ្ជាទទួលបន្ទុក (Subject)';
+    select.innerHTML = stmsData.subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh}</option>`).join('');
+  } else if (role === 'trainee') {
+    wrap.style.display = 'block';
+    label.textContent = 'ថ្នាក់បណ្តុះបណ្តាល (Class)';
+    select.innerHTML = `
+      <option value="ថ្នាក់បឋម ១២+២ ក្រុម ក">ថ្នាក់បឋម ១២+២ ក្រុម ក</option>
+      <option value="ថ្នាក់បឋម ១២+២ ក្រុម ខ">ថ្នាក់បឋម ១២+២ ក្រុម ខ</option>
+      <option value="ថ្នាក់មត្តេយ្យ ១២+២">ថ្នាក់មត្តេយ្យ ១២+២</option>
+      <option value="ថ្នាក់វិក្រឹតការ វគ្គ១">ថ្នាក់វិក្រឹតការ វគ្គ១</option>
+    `;
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function submitRegisterUser() {
+  const nameKh = document.getElementById('regNameKh').value.trim();
+  const nameEn = document.getElementById('regNameEn').value.trim();
+  const role = document.getElementById('regRole').value;
+  const username = document.getElementById('regUsername').value.trim().toLowerCase();
+  const password = document.getElementById('regPassword').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const extraVal = document.getElementById('regExtraValue')?.value || '';
+
+  if (!username || !password) {
+    showToast('សូមបំពេញ Username និង Password ឱ្យបានពេញលេញ!', 'error');
+    return;
+  }
+
+  // Check if username already exists
+  const exists = (stmsData.users || []).some(u => u.username.toLowerCase() === username);
+  if (exists) {
+    showToast(`ឈ្មោះគណនី «${username}» មានក្នុងប្រព័ន្ធរួចហើយ! សូមជ្រើសរើស Username ផ្សេង។`, 'error');
+    return;
+  }
+
+  const rolePrefix = role === 'admin' ? 'USR-ADM' : role === 'trainer' ? 'USR-TRN' : 'USR-STU';
+  const roleLabel = role === 'admin' ? 'អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ' : role === 'trainer' ? 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន' : 'គរុសនិស្សិត';
+  const newId = `${rolePrefix}-${String((stmsData.users || []).length + 1).padStart(3, '0')}`;
+
+  const newUser = {
+    id: newId,
+    nameKh,
+    nameEn,
+    username,
+    password,
+    role,
+    roleLabel,
+    email: email || `${username}@ktpttc.edu.kh`,
+    phone,
+    status: 'active',
+    avatar: role === 'admin' ? '👨‍💼' : role === 'trainer' ? '👨‍🏫' : '👨‍🎓'
+  };
+
+  if (role === 'trainer') newUser.subject = extraVal;
+  if (role === 'trainee') newUser.className = extraVal;
+
+  stmsData.users.push(newUser);
+  saveData();
+  closeStmsModal();
+  renderRBACView(document.getElementById('mainContentArea'));
+  showToast(`បានចុះឈ្មោះគណនី «${username}» ដោយជោគជ័យ!`, 'success');
+}
+
+// Modal: Edit User & Reset Password (Admin updates Username/Password)
+function openEditUserModal(userId) {
+  const user = (stmsData.users || []).find(u => u.id === userId);
+  if (!user) return;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="editUserModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:580px;">
+        <div class="modal-header-bar">
+          <div class="modal-header-title">
+            <i class="fas fa-key"></i> កែប្រែគណនី &amp; កំណត់ពាក្យសម្ងាត់៖ ${user.nameKh}
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:22px;">
+          <form id="editUserForm" onsubmit="event.preventDefault(); submitEditUser('${user.id}');">
+            
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">ឈ្មោះគណនី (Username)*</label>
+                <input type="text" id="editUsername" class="form-input" value="${user.username}" required>
+              </div>
+              <div>
+                <label class="form-label">ពាក្យសម្ងាត់ថ្មី (New Password)*</label>
+                <input type="text" id="editPassword" class="form-input" value="${user.password}" required>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">គោត្តនាម-នាម (ខ្មែរ)*</label>
+                <input type="text" id="editNameKh" class="form-input" value="${user.nameKh}" required>
+              </div>
+              <div>
+                <label class="form-label">ឈ្មោះឡាតាំង</label>
+                <input type="text" id="editNameEn" class="form-input" value="${user.nameEn || ''}">
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">តួនាទី (Role)</label>
+                <select id="editRole" class="form-input" ${user.id === 'USR-ADM-001' ? 'disabled' : ''}>
+                  <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Administrator</option>
+                  <option value="trainer" ${user.role === 'trainer' ? 'selected' : ''}>Trainer / Teacher</option>
+                  <option value="trainee" ${user.role === 'trainee' ? 'selected' : ''}>Trainee Teacher</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">ស្ថានភាពគណនី (Status)</label>
+                <select id="editStatus" class="form-input" ${user.id === 'USR-ADM-001' ? 'disabled' : ''}>
+                  <option value="active" ${user.status !== 'disabled' ? 'selected' : ''}>សកម្ម (Active)</option>
+                  <option value="disabled" ${user.status === 'disabled' ? 'selected' : ''}>ផ្អាកដំណើរការ (Suspended)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">អ៊ីមែល (Email)</label>
+                <input type="email" id="editEmail" class="form-input" value="${user.email || ''}">
+              </div>
+              <div>
+                <label class="form-label">លេខទូរស័ព្ទ (Phone)</label>
+                <input type="tel" id="editPhone" class="form-input" value="${user.phone || ''}">
+              </div>
+            </div>
+
+            <div class="modal-footer-bar" style="padding:16px 0 0 0; background:none; border:none; margin-top:14px;">
+              <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> រក្សាទុកការផ្លាស់ប្តូរ
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function submitEditUser(userId) {
+  const user = (stmsData.users || []).find(u => u.id === userId);
+  if (!user) return;
+
+  const newUsername = document.getElementById('editUsername').value.trim().toLowerCase();
+  const newPassword = document.getElementById('editPassword').value.trim();
+  const newNameKh = document.getElementById('editNameKh').value.trim();
+  const newNameEn = document.getElementById('editNameEn').value.trim();
+  const newRole = document.getElementById('editRole').value;
+  const newStatus = document.getElementById('editStatus').value;
+  const newEmail = document.getElementById('editEmail').value.trim();
+  const newPhone = document.getElementById('editPhone').value.trim();
+
+  // If username changed, check for conflict
+  if (newUsername !== user.username) {
+    const exists = stmsData.users.some(u => u.id !== userId && u.username.toLowerCase() === newUsername);
+    if (exists) {
+      showToast(`ឈ្មោះគណនី «${newUsername}» ត្រូវបានប្រើរួចហើយ!`, 'error');
+      return;
+    }
+  }
+
+  user.username = newUsername;
+  user.password = newPassword;
+  user.nameKh = newNameKh;
+  user.nameEn = newNameEn;
+  if (user.id !== 'USR-ADM-001') {
+    user.role = newRole;
+    user.status = newStatus;
+  }
+  user.email = newEmail;
+  user.phone = newPhone;
+
+  // If editing self, update current session
+  if (currentUser && currentUser.id === userId) {
+    currentUser = user;
+    localStorage.setItem('ktpttc_current_user', JSON.stringify(user));
+    sessionStorage.setItem('ktpttc_current_user', JSON.stringify(user));
+  }
+
+  saveData();
+  closeStmsModal();
+  renderRBACView(document.getElementById('mainContentArea'));
+  showToast(`បានកែសម្រួលគណនី និងពាក្យសម្ងាត់សម្រាប់ «${newNameKh}» ដោយជោគជ័យ!`, 'success');
+}
+
+// Toggle User Active / Disabled status
+function toggleUserStatus(userId) {
+  const user = (stmsData.users || []).find(u => u.id === userId);
+  if (!user || user.id === 'USR-ADM-001') return;
+
+  user.status = user.status === 'disabled' ? 'active' : 'disabled';
+  saveData();
+  renderRBACView(document.getElementById('mainContentArea'));
+  showToast(`បានប្តូរស្ថានភាពគណនី «${user.username}» ទៅជា៖ ${user.status === 'disabled' ? 'ផ្អាក' : 'សកម្ម'}`, 'info');
+}
+
+// Delete User Account
+function deleteUserAccount(userId) {
+  const user = (stmsData.users || []).find(u => u.id === userId);
+  if (!user || user.id === 'USR-ADM-001') {
+    showToast('មិនអាចលុបគណនី Administrator ចម្បងបានឡើយ!', 'error');
+    return;
+  }
+
+  if (confirm(`តើអ្នកពិតជាចង់លុបគណនី «${user.nameKh}» (${user.username}) នេះមែនទេ?`)) {
+    stmsData.users = stmsData.users.filter(u => u.id !== userId);
+    saveData();
+    renderRBACView(document.getElementById('mainContentArea'));
+    showToast(`បានលុបគណនី «${user.username}» ដោយជោគជ័យ!`, 'success');
+  }
+}
+
+// Export All User Credentials to CSV / Excel
+function exportUserCredentialsExcel() {
+  const users = stmsData.users || [];
+  const headers = ['អត្តលេខគណនី', 'ឈ្មោះពេញ', 'ឈ្មោះឡាតាំង', 'Username', 'Password', 'តួនាទី (Role)', 'អ៊ីមែល', 'លេខទូរស័ព្ទ', 'ស្ថានភាព'];
+  const rows = users.map(u => [u.id, `"${u.nameKh}"`, `"${u.nameEn || ''}"`, u.username, `"${u.password}"`, u.role, u.email || '', u.phone || '', u.status]);
+  const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `KTPTTC_User_Credentials_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('បានទាញយកបញ្ជីគណនី និងពាក្យសម្ងាត់រួចរាល់!', 'success');
 }
 
 function renderBackupView(container) {
