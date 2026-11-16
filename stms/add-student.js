@@ -79,13 +79,16 @@ function initStudentIdSuggestion() {
   }
 }
 
-// Setup Class Selector dropdown
+// Setup Class Selector dropdown (2-way sync with regClass)
 function setupClassSelector() {
   const sel = document.getElementById('classSelector');
   const classInput = document.getElementById('regClass');
   if (sel && classInput) {
     sel.addEventListener('change', (e) => {
       classInput.value = e.target.value;
+    });
+    classInput.addEventListener('change', (e) => {
+      sel.value = e.target.value;
     });
   }
 }
@@ -109,7 +112,8 @@ function checkEditMode() {
     idInput.readOnly = true;
   }
 
-  if (document.getElementById('regClass')) document.getElementById('regClass').value = s.className || 'ថ្នាក់ទី ៧ក';
+  if (document.getElementById('regClass')) document.getElementById('regClass').value = s.className || '១២+២';
+  if (document.getElementById('classSelector')) document.getElementById('classSelector').value = s.className || '១២+២';
   if (document.getElementById('regNameKh')) document.getElementById('regNameKh').value = s.nameKh || '';
   if (document.getElementById('regNameEn')) document.getElementById('regNameEn').value = s.nameEn || '';
   if (document.getElementById('regGender')) document.getElementById('regGender').value = s.gender || 'ប្រុស';
@@ -315,7 +319,7 @@ function copyBirthplaceToAddress() {
 // Save Student Form
 function handleSaveStudent() {
   const id = document.getElementById('regStuId')?.value?.trim();
-  const className = document.getElementById('regClass')?.value?.trim() || 'ថ្នាក់ទី ៧ក';
+  const className = document.getElementById('regClass')?.value?.trim() || '១២+២';
   const nameKh = document.getElementById('regNameKh')?.value?.trim();
   const nameEn = document.getElementById('regNameEn')?.value?.trim() || '';
   const gender = document.getElementById('regGender')?.value;
@@ -429,8 +433,8 @@ function handleSaveStudent() {
       phone: parentPhone,
       parentPhone,
       className,
-      cohort: className.includes('បឋម') ? "ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤" : className.includes('មត្តេយ្យ') ? "ថ្នាក់មត្តេយ្យសិក្សា ១២+២ ជំនាន់ទី ៣៤" : "ថ្នាក់វិក្រឹតការគ្រូបង្រៀន និងនាយកសាលា",
-      trainingType: className.includes('មត្តេយ្យ') ? "12+2 (មត្តេយ្យ)" : className.includes('វិក្រឹតការ') ? "វិក្រឹតការ" : "12+2 (បឋមសិក្សា)",
+      cohort: className.includes('១២+៤') ? "ថ្នាក់គរុកោសល្យ ១២+៤ ជំនាន់ទី ១" : className.includes('បរិញ្ញា') ? "ថ្នាក់បរិញ្ញាបត្រ+១ ជំនាន់ទី ១" : "ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤",
+      trainingType: className.includes('១២+៤') ? "12+4" : className.includes('បរិញ្ញា') ? "បរិញ្ញាបត្រ+១" : "12+2 (បឋមសិក្សា)",
       status: "កំពុងសិក្សា",
       avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
       photo: currentPhotoData || '',
@@ -521,7 +525,9 @@ function resetFormForNextStudent(nextRoll) {
   if (idInput) idInput.value = `KTPTTC-2026-12P2-${String(nextRoll).padStart(3, '0')}`;
   
   const classInput = document.getElementById('regClass');
-  if (classInput) classInput.value = 'ថ្នាក់បឋម ១២+២ ក្រុម ក';
+  if (classInput) classInput.value = '១២+២';
+  const sel = document.getElementById('classSelector');
+  if (sel) sel.value = '១២+២';
 
   // Reset photo
   currentPhotoData = '';
@@ -556,12 +562,12 @@ function downloadExcelTemplate() {
   ];
 
   const sampleRow1 = [
-    'STU-001',
-    'ថ្នាក់ទី ៧ក',
+    'KTPTTC-2026-12P2-001',
+    '១២+២',
     'កែវ វិសាល',
     'Keo Visal',
     'ប្រុស',
-    '2013-05-12',
+    '2005-05-12',
     '012345678',
     'ខេត្តក្រចេះ',
     'ក្រុងក្រចេះ',
@@ -575,8 +581,8 @@ function downloadExcelTemplate() {
   ];
 
   const sampleRow2 = [
-    'STU-002',
-    'ថ្នាក់ទី ៧ក',
+    'KTPTTC-2026-12P2-002',
+    '១២+៤',
     'ចាន់ សុគន្ធា',
     'Chan Sokunthea',
     'ស្រី',
