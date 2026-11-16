@@ -8,6 +8,7 @@ let currentPhotoData = '';
 document.addEventListener('DOMContentLoaded', () => {
   initStudentIdSuggestion();
   setupClassSelector();
+  initCambodiaGeo();
   checkEditMode();
 });
 
@@ -222,6 +223,11 @@ function checkEditMode() {
     if (document.getElementById('curProvince')) document.getElementById('curProvince').value = curAddr;
   }
 
+  // Pre-populate cascading geo dropdowns for this student
+  setTimeout(() => {
+    syncAllGeoFields();
+  }, 50);
+
   if (s.status && typeof s.status === 'object') {
     if (document.getElementById('statusNew')) document.getElementById('statusNew').value = s.status.isNew || 'បាទ/ចាស';
     if (document.getElementById('statusRepeater')) document.getElementById('statusRepeater').value = s.status.isRepeater || 'ទេ';
@@ -400,12 +406,179 @@ function setPhotoPreview(src) {
   }
 }
 
+// ==========================================================================
+// CAMBODIA ADMINISTRATIVE DIVISIONS (CASCADING GEO SELECTOR)
+// ==========================================================================
+function initCambodiaGeo() {
+  const geo = window.CAMBODIA_GEO_DATA;
+  if (!geo) {
+    console.warn('CAMBODIA_GEO_DATA not loaded');
+    return;
+  }
+
+  const provList = Object.keys(geo);
+
+  // Setup Province Datalists
+  setupDatalist('pobProvinceList', provList);
+  setupDatalist('curProvinceList', provList);
+
+  // Attach change/input listeners for Birthplace
+  attachGeoListeners('pobProvince', 'pobDistrict', 'pobCommune', 'pobVillage',
+                     'pobDistrictList', 'pobCommuneList', 'pobVillageList');
+
+  // Attach change/input listeners for Current Address
+  attachGeoListeners('curProvince', 'curDistrict', 'curCommune', 'curVillage',
+                     'curDistrictList', 'curCommuneList', 'curVillageList');
+}
+
+function setupDatalist(listId, items) {
+  const el = document.getElementById(listId);
+  if (!el) return;
+  el.innerHTML = (items || []).map(item => `<option value="${item}">${item}</option>`).join('');
+}
+
+function normalizeGeoName(str) {
+  return (str || '').trim().replace(/^(ខេត្ត|រាជធានី|ស្រុក|ក្រុង|ខណ្ឌ|ឃុំ|សង្កាត់|ភូមិ)\s*/, '');
+}
+
+function findMatchingProvince(inputVal) {
+  const geo = window.CAMBODIA_GEO_DATA;
+  if (!geo || !inputVal) return null;
+  const raw = inputVal.trim();
+  const clean = normalizeGeoName(raw);
+  for (const p in geo) {
+    if (p === raw || normalizeGeoName(p) === clean || p.includes(clean)) {
+      return { name: p, districts: geo[p] };
+    }
+  }
+  return null;
+}
+
+function findMatchingDistrict(districtsObj, inputVal) {
+  if (!districtsObj || !inputVal) return null;
+  const raw = inputVal.trim();
+  const clean = normalizeGeoName(raw);
+  for (const d in districtsObj) {
+    if (d === raw || normalizeGeoName(d) === clean || d.includes(clean)) {
+      return { name: d, communes: districtsObj[d] };
+    }
+  }
+  return null;
+}
+
+function findMatchingCommune(communesObj, inputVal) {
+  if (!communesObj || !inputVal) return null;
+  const raw = inputVal.trim();
+  const clean = normalizeGeoName(raw);
+  for (const c in communesObj) {
+    if (c === raw || normalizeGeoName(c) === clean || c.includes(clean)) {
+      return { name: c, villages: communesObj[c] };
+    }
+  }
+  return null;
+}
+
+function attachGeoListeners(provId, distId, commId, villId, distListId, commListId, villListId) {
+  const provEl = document.getElementById(provId);
+  const distEl = document.getElementById(distId);
+  const commEl = document.getElementById(commId);
+  const villEl = document.getElementById(villId);
+
+  if (!provEl || !distEl || !commEl || !villEl) return;
+
+  function onProvinceChange(force = false) {
+    const provMatch = findMatchingProvince(provEl.value);
+    if (provMatch) {
+      const districts = Object.keys(provMatch.districts);
+      setupDatalist(distListId, districts);
+      distEl.placeholder = 'វាយបញ្ចូល ឬជ្រើសរើស...';
+      
+      // If current district value doesn't belong to new province, clear it
+      if (!districts.includes(distEl.value) && !force) {
+        distEl.value = '';
+        commEl.value = '';
+        villEl.value = '';
+        setupDatalist(commListId, []);
+        setupDatalist(villListId, []);
+        commEl.placeholder = 'ជ្រើសរើសស្រុកជាមុន...';
+        villEl.placeholder = 'ជ្រើសរើសឃុំជាមុន...';
+      } else if (distEl.value) {
+        onDistrictChange(force);
+      }
+    } else {
+      setupDatalist(distListId, []);
+      setupDatalist(commListId, []);
+      setupDatalist(villListId, []);
+      distEl.placeholder = 'ជ្រើសរើសខេត្តជាមុន...';
+      commEl.placeholder = 'ជ្រើសរើសស្រុកជាមុន...';
+      villEl.placeholder = 'ជ្រើសរើសឃុំជាមុន...';
+    }
+  }
+
+  function onDistrictChange(force = false) {
+    const provMatch = findMatchingProvince(provEl.value);
+    if (!provMatch) return;
+    const distMatch = findMatchingDistrict(provMatch.districts, distEl.value);
+    if (distMatch) {
+      const communes = Object.keys(distMatch.communes);
+      setupDatalist(commListId, communes);
+      commEl.placeholder = 'វាយបញ្ចូល ឬជ្រើសរើស...';
+
+      if (!communes.includes(commEl.value) && !force) {
+        commEl.value = '';
+        villEl.value = '';
+        setupDatalist(villListId, []);
+        villEl.placeholder = 'ជ្រើសរើសឃុំជាមុន...';
+      } else if (commEl.value) {
+        onCommuneChange();
+      }
+    } else {
+      setupDatalist(commListId, []);
+      setupDatalist(villListId, []);
+      commEl.placeholder = 'ជ្រើសរើសស្រុកជាមុន...';
+      villEl.placeholder = 'ជ្រើសរើសឃុំជាមុន...';
+    }
+  }
+
+  function onCommuneChange() {
+    const provMatch = findMatchingProvince(provEl.value);
+    if (!provMatch) return;
+    const distMatch = findMatchingDistrict(provMatch.districts, distEl.value);
+    if (!distMatch) return;
+    const commMatch = findMatchingCommune(distMatch.communes, commEl.value);
+    if (commMatch) {
+      const villages = commMatch.villages;
+      setupDatalist(villListId, villages);
+      villEl.placeholder = 'វាយបញ្ចូល ឬជ្រើសរើស...';
+    } else {
+      setupDatalist(villListId, []);
+      villEl.placeholder = 'ជ្រើសរើសឃុំជាមុន...';
+    }
+  }
+
+  provEl.addEventListener('input', () => onProvinceChange(false));
+  provEl.addEventListener('change', () => onProvinceChange(false));
+  distEl.addEventListener('input', () => onDistrictChange(false));
+  distEl.addEventListener('change', () => onDistrictChange(false));
+  commEl.addEventListener('input', onCommuneChange);
+  commEl.addEventListener('change', onCommuneChange);
+
+  // Store trigger helper on element
+  provEl._syncGeo = (force) => onProvinceChange(force);
+}
+
+function syncAllGeoFields() {
+  document.getElementById('pobProvince')?._syncGeo?.(true);
+  document.getElementById('curProvince')?._syncGeo?.(true);
+}
+
 // Copy Birthplace fields to Current Address
 function copyBirthplaceToAddress() {
   document.getElementById('curProvince').value = document.getElementById('pobProvince').value;
   document.getElementById('curDistrict').value = document.getElementById('pobDistrict').value;
   document.getElementById('curCommune').value = document.getElementById('pobCommune').value;
   document.getElementById('curVillage').value = document.getElementById('pobVillage').value;
+  syncAllGeoFields();
   showToast('បានចម្លងទីកន្លែងកំណើតទៅអាសយដ្ឋានបច្ចុប្បន្ន', 'info');
 }
 

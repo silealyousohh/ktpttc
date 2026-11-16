@@ -637,25 +637,30 @@
         </div>
 
         <!-- Section: ទីកន្លែងកំណើត (Place of Birth) -->
+        <!-- Section: ទីកន្លែងកំណើត (Place of Birth) -->
         <div class="section-title section-birthplace">
           <i class="fas fa-shield-alt"></i> <span>ទីកន្លែងកំណើត</span>
         </div>
         <div class="fields-grid-4">
           <div class="form-group">
             <label class="form-label">រាជធានី/ខេត្ត</label>
-            <input type="text" id="pobProvince" class="form-control" placeholder="វាយបញ្ចូល ឬជ្រើសរើស..." list="cambodiaProvinces">
+            <input type="text" id="pobProvince" class="form-control" placeholder="វាយបញ្ចូល ឬជ្រើសរើស..." list="pobProvinceList" autocomplete="off">
+            <datalist id="pobProvinceList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ក្រុង/ស្រុក/ខណ្ឌ</label>
-            <input type="text" id="pobDistrict" class="form-control" placeholder="ជ្រើសរើសខេត្តជាមុន...">
+            <input type="text" id="pobDistrict" class="form-control" placeholder="ជ្រើសរើសខេត្តជាមុន..." list="pobDistrictList" autocomplete="off">
+            <datalist id="pobDistrictList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ឃុំ/សង្កាត់</label>
-            <input type="text" id="pobCommune" class="form-control" placeholder="ជ្រើសរើសស្រុកជាមុន...">
+            <input type="text" id="pobCommune" class="form-control" placeholder="ជ្រើសរើសស្រុកជាមុន..." list="pobCommuneList" autocomplete="off">
+            <datalist id="pobCommuneList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ភូមិ</label>
-            <input type="text" id="pobVillage" class="form-control" placeholder="ជ្រើសរើសឃុំជាមុន...">
+            <input type="text" id="pobVillage" class="form-control" placeholder="ជ្រើសរើសឃុំជាមុន..." list="pobVillageList" autocomplete="off">
+            <datalist id="pobVillageList"></datalist>
           </div>
         </div>
 
@@ -671,19 +676,23 @@
         <div class="fields-grid-4" style="margin-top: 12px;">
           <div class="form-group">
             <label class="form-label">រាជធានី/ខេត្ត</label>
-            <input type="text" id="curProvince" class="form-control" placeholder="វាយបញ្ចូល ឬជ្រើសរើស..." list="cambodiaProvinces">
+            <input type="text" id="curProvince" class="form-control" placeholder="វាយបញ្ចូល ឬជ្រើសរើស..." list="curProvinceList" autocomplete="off">
+            <datalist id="curProvinceList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ក្រុង/ស្រុក/ខណ្ឌ</label>
-            <input type="text" id="curDistrict" class="form-control" placeholder="ជ្រើសរើសខេត្តជាមុន...">
+            <input type="text" id="curDistrict" class="form-control" placeholder="ជ្រើសរើសខេត្តជាមុន..." list="curDistrictList" autocomplete="off">
+            <datalist id="curDistrictList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ឃុំ/សង្កាត់</label>
-            <input type="text" id="curCommune" class="form-control" placeholder="ជ្រើសរើសស្រុកជាមុន...">
+            <input type="text" id="curCommune" class="form-control" placeholder="ជ្រើសរើសស្រុកជាមុន..." list="curCommuneList" autocomplete="off">
+            <datalist id="curCommuneList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ភូមិ</label>
-            <input type="text" id="curVillage" class="form-control" placeholder="ជ្រើសរើសឃុំជាមុន...">
+            <input type="text" id="curVillage" class="form-control" placeholder="ជ្រើសរើសឃុំជាមុន..." list="curVillageList" autocomplete="off">
+            <datalist id="curVillageList"></datalist>
           </div>
         </div>
 
@@ -838,40 +847,12 @@
     </div>
   </main>
 
-  <!-- Datalist for Cambodia Provinces -->
-  <datalist id="cambodiaProvinces">
-    <option value="រាជធានីភ្នំពេញ"></option>
-    <option value="ខេត្តក្រចេះ"></option>
-    <option value="ខេត្តកណ្តាល"></option>
-    <option value="ខេត្តកំពង់ចាម"></option>
-    <option value="ខេត្តកំពង់ឆ្នាំង"></option>
-    <option value="ខេត្តកំពង់ស្ពឺ"></option>
-    <option value="ខេត្តកំពង់ធំ"></option>
-    <option value="ខេត្តកំពត"></option>
-    <option value="ខេត្តកោះកុង"></option>
-    <option value="ខេត្តកែប"></option>
-    <option value="ខេត្តតាកែវ"></option>
-    <option value="ខេត្តត្បូងឃ្មុំ"></option>
-    <option value="ខេត្តបន្ទាយមានជ័យ"></option>
-    <option value="ខេត្តបាត់ដំបង"></option>
-    <option value="ខេត្តប៉ៃលិន"></option>
-    <option value="ខេត្តពោធិ៍សាត់"></option>
-    <option value="ខេត្តព្រៃវែង"></option>
-    <option value="ខេត្តព្រះវិហារ"></option>
-    <option value="ខេត្តព្រះសីហនុ"></option>
-    <option value="ខេត្តមណ្ឌលគិរី"></option>
-    <option value="ខេត្តរតនគិរី"></option>
-    <option value="ខេត្តសៀមរាប"></option>
-    <option value="ខេត្តស្ទឹងត្រែង"></option>
-    <option value="ខេត្តស្វាយរៀង"></option>
-    <option value="ខេត្តឧត្តរមានជ័យ"></option>
-  </datalist>
-
   <!-- Toast Notification Container -->
   <div id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="data.js"></script>
+  <script src="cambodia-geo.js?v=2.5"></script>
+  <script src="data.js?v=2.5"></script>
   <script src="add-student.js?v=2.5"></script>
 </body>
 
