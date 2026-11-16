@@ -812,21 +812,32 @@ app.get(['/cpd', '/cpd/'], (req, res) => {
   res.sendFile(path.join(__dirname, 'Public_Index.html'));
 });
 
-// TeacherGuideApp & KruSmart Routes (and stms.ktpttc.net subdomain support)
+// STMS (Student & Teacher Management System - KTPTTC) & TeacherGuideApp Routes
+const STMS_DIR = path.join(__dirname, 'stms');
 const TEACHER_GUIDE_DIR = path.join(__dirname, 'TeacherGuideApp');
 
 app.use((req, res, next) => {
   const host = (req.headers.host || '').toLowerCase();
   if (host.startsWith('stms.') || host.startsWith('stms:')) {
-    return express.static(TEACHER_GUIDE_DIR, { index: 'index.html' })(req, res, () => {
-      const tgPath = path.join(TEACHER_GUIDE_DIR, 'index.html');
-      if (fs.existsSync(tgPath)) return res.sendFile(tgPath);
+    return express.static(STMS_DIR, { index: 'index.html' })(req, res, () => {
+      const stmsPath = path.join(STMS_DIR, 'index.html');
+      if (fs.existsSync(stmsPath)) return res.sendFile(stmsPath);
       next();
     });
   }
   next();
 });
 
+// Explicit Static Routing for /stms
+app.use('/stms', express.static(STMS_DIR, { index: 'index.html' }));
+app.get(['/stms', '/stms/'], (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  const stmsPath = path.join(STMS_DIR, 'index.html');
+  if (fs.existsSync(stmsPath)) return res.sendFile(stmsPath);
+  res.sendFile(path.join(__dirname, 'public', 'Public_Index.html'));
+});
+
+// Explicit Static Routing for TeacherGuideApp & KruSmart
 app.use('/TeacherGuideApp', express.static(TEACHER_GUIDE_DIR, { index: 'index.html' }));
 app.use('/krusmart', express.static(TEACHER_GUIDE_DIR, { index: 'index.html' }));
 
@@ -837,10 +848,12 @@ app.get(['/teacher-guide', '/teacher-guide/', '/TeacherGuideApp', '/TeacherGuide
   res.sendFile(path.join(__dirname, 'public', 'Public_Index.html'));
 });
 
-app.get(['/add-student', '/add-student.html', '/TeacherGuideApp/add-student', '/TeacherGuideApp/add-student.html', '/krusmart/add-student'], (req, res) => {
+app.get(['/add-student', '/add-student.html', '/TeacherGuideApp/add-student', '/TeacherGuideApp/add-student.html', '/krusmart/add-student', '/stms/add-student', '/stms/add-student.html'], (req, res) => {
+  const stmsAdd = path.join(STMS_DIR, 'add-student.html');
+  if (fs.existsSync(stmsAdd)) return res.sendFile(stmsAdd);
   const addPath = path.join(TEACHER_GUIDE_DIR, 'add-student.html');
   if (fs.existsSync(addPath)) return res.sendFile(addPath);
-  res.redirect('/TeacherGuideApp');
+  res.redirect('/stms');
 });
 
 // ==========================================

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ដំណើរការប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត | សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC - STMS)</title>
+  <link rel="icon" type="image/png" href="assets/ktpttc-logo.png">
+
+  <!-- Google Fonts for Khmer & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Moul&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- STMS Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top App Navigation Bar -->
+  <header class="stms-navbar">
+    <div class="brand-section" onclick="navigateView('dashboard')" title="ទំព័រដើមប្រព័ន្ធ STMS">
+      <img src="assets/ktpttc-logo.png" alt="KTPTTC Logo" class="brand-logo" onerror="this.src='assets/logo.png'">
+      <div class="brand-text">
+        <h1>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KPTTC)</h1>
+        <p>ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត &bull; Student &amp; Teacher Management System (STMS)</p>
+      </div>
+    </div>
+
+    <!-- Center: Role-Based Access Control Switcher -->
+    <div class="nav-center-role" role="tablist" aria-label="Role Switcher">
+      <button type="button" class="role-tab-btn active" data-role="admin" onclick="switchRole('admin')" title="សិទ្ធិគ្រប់គ្រងប្រព័ន្ធ បង្កើតឆ្នាំសិក្សា &amp; បម្រុងទុកទិន្នន័យ">
+        <i class="fas fa-shield-alt"></i>
+        <span>Administrator</span>
+      </button>
+      <button type="button" class="role-tab-btn" data-role="trainer" onclick="switchRole('trainer')" title="សិទ្ធិគ្រូឧទ្ទេស៖ ស្រង់វត្តមាន បញ្ចូលពិន្ទុ &amp; មើលកាលវិភាគ">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <span>Trainer / Teacher</span>
+      </button>
+      <button type="button" class="role-tab-btn" data-role="trainee" onclick="switchRole('trainee')" title="សិទ្ធិគរុសនិស្សិត៖ មើលប្រវត្តិរូប វត្តមាន ពិន្ទុ &amp; កាលវិភាគ">
+        <i class="fas fa-user-graduate"></i>
+        <span>Trainee Teacher</span>
+      </button>
+    </div>
+
+    <!-- Right Controls: Disciplinary Alerts & Active User Widget -->
+    <div class="nav-right-controls">
+      <button type="button" class="alert-bell-btn" id="btnAlertBell" onclick="openAlertsModal()" title="ការជូនដំណឹង &amp; ករណីព្រមានវិន័យអវត្តមាន">
+        <i class="fas fa-bell"></i>
+        <span class="alert-badge" id="topAlertBadge" style="display:none;">0</span>
+      </button>
+
+      <div class="user-profile-widget" onclick="openUserMenuModal()" title="ព័ត៌មានគណនីបច្ចុប្បន្ន">
+        <div class="user-avatar-circle" id="navbarUserAvatar">👨‍💼</div>
+        <div class="user-info-text">
+          <div class="user-info-name" id="navbarUserName">លោក ហ៊ន ពិសិដ្ឋ</div>
+          <div class="user-info-role" id="navbarUserRole">ប្រធានផ្នែកបច្ចេកវិទ្យា &amp; ប្រព័ន្ធ</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- App Main Layout: Sidebar Navigation + Content Viewport -->
+  <div class="stms-app-layout">
+    <aside class="stms-sidebar" aria-label="Menu Navigation">
+      <ul class="sidebar-menu" id="sidebarNavMenu">
+        <!-- Dynamically populated based on active RBAC role -->
+      </ul>
+
+      <div class="sidebar-footer">
+        <div style="font-weight:600; color:#cbd5e1; margin-bottom:2px;">KTPTTC &copy; 2026-2027</div>
+        <div>ជំនាន់ស្តង់ដារ STMS v2.0 &bull; Kratie</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area where views render -->
+    <main class="stms-content-viewport" id="mainContentArea" role="main">
+      <div style="display:flex; justify-content:center; align-items:center; height:60vh; color:#64748b;">
+        <i class="fas fa-spinner fa-spin fa-2x"></i>
+        <span style="margin-left:12px; font-size:1rem;">កំពុងផ្ទុកប្រព័ន្ធ...</span>
+      </div>
+    </main>
+  </div>
+
+  <!-- Global Toast Notifications Container -->
+  <div id="toast-container" class="stms-toast-container"></div>
+
+  <!-- Auxiliary Modal Helper Functions -->
+  <script>
+    function openAlertsModal() {
+      const struggling = (window.stmsData?.trainees || []).filter(t => (t.attendanceSummary?.absent || 0) > 3);
+      const pendingRequests = (window.stmsData?.profileRequests || []).filter(r => r.status === 'pending');
+
+      const modalHtml = `
+        <div class="stms-modal-backdrop" id="alertsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+          <div class="stms-modal-window" style="max-width:650px;">
+            <div class="modal-header-bar" style="background:#fee2e2; border-bottom:1px solid #fecaca;">
+              <div class="modal-header-title" style="color:#b91c1c;">
+                <i class="fas fa-exclamation-triangle"></i> ការជូនដំណឹង និងការព្រមានវិន័យ (Disciplinary Alerts)
+              </div>
+              <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
+            </div>
+            <div class="modal-body-scroll" style="padding:20px;">
+              <h4 style="color:#1e3a8a; font-size:0.95rem; margin-bottom:10px;">
+                <i class="fas fa-user-times" style="color:#ef4444;"></i> គរុសនិស្សិតមានអវត្តមានគ្មានច្បាប់លើស ៣ លើក (${struggling.length} នាក់)
+              </h4>
+              ${struggling.length === 0 ? '<p style="color:#64748b; font-size:0.85rem;">ពុំមានករណីអវត្តមានលើសកម្រិតវិន័យឡើយ។</p>' : `
+                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
+                  ${struggling.map(s => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff1f2; border:1px solid #ffe4e6; border-radius:8px;">
+                      <div>
+                        <strong style="color:#9f1239;">${s.nameKh}</strong> (${s.id}) &bull; <span style="font-size:0.82rem; color:#64748b;">${s.className}</span>
+                      </div>
+                      <span class="badge badge-danger">អវត្តមាន ${s.attendanceSummary?.absent} លើក</span>
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+
+              <h4 style="color:#1e3a8a; font-size:0.95rem; margin-bottom:10px; margin-top:16px;">
+                <i class="fas fa-user-edit" style="color:#3b82f6;"></i> សំណើស្នើសុំកែប្រែព័ត៌មានរង់ចាំការអនុម័ត (${pendingRequests.length} ករណី)
+              </h4>
+              ${pendingRequests.length === 0 ? '<p style="color:#64748b; font-size:0.85rem;">ពុំមានសំណើរង់ចាំការត្រួតពិនិត្យឡើយ។</p>' : `
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  ${pendingRequests.map(r => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#f0f9ff; border:1px solid #e0f2fe; border-radius:8px;">
+                      <div>
+                        <strong style="color:#0369a1;">${r.traineeNameKh}</strong> &bull; កែប្រែ៖ <code>${r.fieldName}</code>
+                        <div style="font-size:0.8rem; color:#64748b;">តម្លៃថ្មី៖ ${r.newValue} | មូលហេតុ៖ ${r.reason}</div>
+                      </div>
+                      <span class="badge badge-warning">រង់ចាំអនុម័ត</span>
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+            <div class="modal-footer-bar">
+              <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+              <button class="btn btn-primary" onclick="closeStmsModal(); if(currentRole==='admin'){navigateView('requests');}else{navigateView('attendance');}">
+                <i class="fas fa-arrow-right"></i> ទៅកាន់ផ្ទាំងគ្រប់គ្រង
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function openUserMenuModal() {
+      const activeUser = (window.stmsData?.users || []).find(u => u.role === window.currentRole) || {};
+      const modalHtml = `
+        <div class="stms-modal-backdrop" id="userMenuModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+          <div class="stms-modal-window" style="max-width:440px;">
+            <div class="modal-header-bar">
+              <div class="modal-header-title"><i class="fas fa-user-circle"></i> ព័ត៌មានអ្នកប្រើប្រាស់</div>
+              <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
+            </div>
+            <div class="modal-body-scroll" style="text-align:center; padding:24px 16px;">
+              <div style="font-size:3rem; margin-bottom:8px;">${activeUser.avatar || '👨‍💼'}</div>
+              <h3 style="font-size:1.15rem; color:#1e3a8a; margin-bottom:4px;">${activeUser.nameKh || 'អ្នកប្រើប្រាស់'}</h3>
+              <p style="font-size:0.85rem; color:#64748b; margin-bottom:12px;">${activeUser.nameEn || ''} &bull; ${activeUser.email || ''}</p>
+              <div style="margin-bottom:16px;">
+                <span class="badge badge-primary" style="font-size:0.85rem; padding:4px 12px;">${activeUser.roleLabel || window.currentRole}</span>
+              </div>
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; font-size:0.82rem; text-align:left; color:#475569; margin-bottom:18px;">
+                <div><strong>សាលារៀន៖</strong> សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
+                <div><strong>កម្រិតសិទ្ធិ៖</strong> ${window.currentRole === 'admin' ? 'គ្រប់គ្រងពេញលេញ (Admin Access)' : window.currentRole === 'trainer' ? 'គ្រូឧទ្ទេសបង្រៀន (Trainer Access)' : 'គរុសនិស្សិត (Trainee Portal)'}</div>
+                <div><strong>ស្ថានភាពប្រព័ន្ធ៖</strong> Active / Secure Session</div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <button class="btn btn-outline" style="width:100%; justify-content:center;" onclick="closeStmsModal(); navigateView('backup');">
+                  <i class="fas fa-database"></i> បម្រុងទុក ឬស្តារទិន្នន័យ (Backup / Restore)
+                </button>
+                <button class="btn btn-danger" style="width:100%; justify-content:center;" onclick="closeStmsModal(); resetStmsDatabase();">
+                  <i class="fas fa-sync-alt"></i> កំណត់ទិន្នន័យដើមឡើងវិញ (Reset to Seed)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+  </script>
+
+  <!-- Application Core Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

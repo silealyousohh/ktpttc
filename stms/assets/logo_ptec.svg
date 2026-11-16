@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="80" height="80">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+    <linearGradient id="blueRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fef9c3"/>
+      <stop offset="70%" stop-color="#fde047"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </radialGradient>
+  </defs>
+  <!-- Outer Blue Ring -->
+  <circle cx="100" cy="100" r="95" fill="none" stroke="url(#blueRing)" stroke-width="8"/>
+  <circle cx="100" cy="100" r="90" fill="#ffffff" stroke="url(#goldGrad)" stroke-width="3"/>
+  <circle cx="100" cy="100" r="74" fill="none" stroke="url(#goldGrad)" stroke-width="2" stroke-dasharray="3,3"/>
+  
+  <!-- Radiating Sun Rays in Center -->
+  <g transform="translate(100, 92)">
+    <circle cx="0" cy="0" r="32" fill="url(#sunGlow)"/>
+    <!-- Sun Rays -->
+    <path d="M0 -38 L3 -32 L-3 -32 Z" fill="#eab308"/>
+    <path d="M27 -27 L22 -24 L25 -19 Z" fill="#eab308"/>
+    <path d="M38 0 L32 3 L32 -3 Z" fill="#eab308"/>
+    <path d="M27 27 L25 21 L20 25 Z" fill="#eab308"/>
+    <path d="M0 38 L-3 32 L3 32 Z" fill="#eab308"/>
+    <path d="M-27 27 L-21 25 L-24 20 Z" fill="#eab308"/>
+    <path d="M-38 0 L-32 -3 L-32 3 Z" fill="#eab308"/>
+    <path d="M-27 -27 L-24 -21 L-19 -24 Z" fill="#eab308"/>
+  </g>
+  
+  <!-- Open Book of Wisdom -->
+  <path d="M72,102 Q100,94 100,108 Q100,94 128,102 L124,124 Q100,116 100,126 Q100,116 76,124 Z" fill="#ffffff" stroke="#1e3a8a" stroke-width="3"/>
+  <!-- Book Pages lines -->
+  <path d="M80,108 Q100,102 100,113 M100,113 Q100,102 120,108" fill="none" stroke="#93c5fd" stroke-width="1.5"/>
+  <path d="M80,114 Q100,108 100,119 M100,119 Q100,108 120,114" fill="none" stroke="#93c5fd" stroke-width="1.5"/>
+  <line x1="100" y1="102" x2="100" y2="128" stroke="#1e3a8a" stroke-width="2"/>
+  
+  <!-- Flaming Torch Behind Book -->
+  <path d="M96,72 Q100,60 100,52 Q100,60 104,72 Q106,80 100,86 Q94,80 96,72 Z" fill="#ef4444"/>
+  <path d="M98,72 Q100,64 100,58 Q100,64 102,72 Q103,78 100,82 Q97,78 98,72 Z" fill="#fbbf24"/>
+  
+  <!-- Wreath / Leaves Garland -->
+  <path d="M60,110 Q54,126 62,142 Q72,152 86,156 Q100,158 114,156 Q128,152 138,142 Q146,126 140,110" fill="none" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round"/>
+  
+  <!-- Star at Top -->
+  <polygon points="100,22 103,30 111,30 105,35 107,43 100,38 93,43 95,35 89,30 97,30" fill="url(#goldGrad)"/>
+</svg>
