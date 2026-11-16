@@ -3158,63 +3158,6 @@ function renderSystemFlowView(container) {
           </div>
         </div>
 
-        <!-- Central System Screen (Computer Monitor Representation) -->
-        <div class="system-monitor-device">
-          <div class="monitor-screen-inner">
-            
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:6px; margin-bottom:8px;">
-              <span style="font-weight:700; color:#38bdf8; font-size:0.75rem;"><i class="fas fa-desktop"></i> KTPTTC STMS Live Monitor</span>
-              <span style="background:#0369a1; color:#ffffff; font-size:0.6rem; padding:2px 8px; border-radius:10px;">Connected v2.0</span>
-            </div>
-
-            <!-- Library Management Block (matching bottom right of diagram) -->
-            <div style="background:#0f172a; border:1px solid #1e293b; border-radius:6px; padding:8px; margin-bottom:8px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <strong style="color:#f8fafc; font-size:0.72rem;"><i class="fas fa-book"></i> បណ្ណាល័យ Management</strong>
-                <a href="/library" target="_blank" style="color:#38bdf8; font-size:0.65rem; text-decoration:none;">បើកបណ្ណាល័យ →</a>
-              </div>
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; text-align:center;">
-                <div style="background:#1e293b; padding:4px; border-radius:4px;">
-                  <div style="font-size:0.6rem; color:#94a3b8;">Total Books</div>
-                  <strong style="color:#38bdf8; font-size:0.78rem;">1,485</strong>
-                </div>
-                <div style="background:#1e293b; padding:4px; border-radius:4px;">
-                  <div style="font-size:0.6rem; color:#94a3b8;">Issue/Return</div>
-                  <strong style="color:#f59e0b; font-size:0.78rem;">124 / 110</strong>
-                </div>
-                <div style="background:#1e293b; padding:4px; border-radius:4px;">
-                  <div style="font-size:0.6rem; color:#94a3b8;">Available</div>
-                  <strong style="color:#10b981; font-size:0.78rem;">1,361</strong>
-                </div>
-              </div>
-            </div>
-
-            <!-- User Roles Tree Diagram (matching diagram) -->
-            <div style="background:#0f172a; border:1px solid #1e293b; border-radius:6px; padding:8px;">
-              <div style="font-size:0.7rem; font-weight:700; color:#f8fafc; margin-bottom:6px;">
-                <i class="fas fa-users-cog"></i> User Roles &amp; RBAC Hierarchy
-              </div>
-              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:0.65rem;">
-                <div style="background:#1e3a8a; color:#fff; padding:3px 12px; border-radius:12px; font-weight:700; border:1px solid #3b82f6; cursor:pointer;" onclick="switchRole('admin')">
-                  <i class="fas fa-shield-alt"></i> Administrator (គ្រប់គ្រងប្រព័ន្ធ)
-                </div>
-                <div style="color:#64748b; font-size:0.7rem;">↓</div>
-                <div style="background:#0369a1; color:#fff; padding:3px 12px; border-radius:12px; font-weight:700; border:1px solid #38bdf8; cursor:pointer;" onclick="switchRole('trainer')">
-                  <i class="fas fa-chalkboard-teacher"></i> Trainer / Teacher (គ្រូឧទ្ទេស)
-                </div>
-                <div style="color:#64748b; font-size:0.7rem;">↓</div>
-                <div style="background:#047857; color:#fff; padding:3px 12px; border-radius:12px; font-weight:700; border:1px solid #10b981; cursor:pointer;" onclick="switchRole('trainee')">
-                  <i class="fas fa-user-graduate"></i> Trainee Teacher (គរុសនិស្សិត)
-                </div>
-              </div>
-            </div>
-
-          </div>
-          <!-- Monitor stand -->
-          <div class="monitor-stand"></div>
-          <div class="monitor-base"></div>
-        </div>
-
       </div>
 
     </div>
