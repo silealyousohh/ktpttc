@@ -1,5 +1,5 @@
 /**
- * STMS - Student & Teacher Management System (ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត)
+ * STMS - Student & Teacher Management System (ប្រព័ន្ធគ្រប់គ្រងគរុនិស្សិត)
  * សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC - Kratie Provincial Teacher Training Center)
  * Initial Seed Data & MoEYS Standard Configurations
  */
@@ -10,7 +10,7 @@ const KTPTTC_INITIAL_DATA = {
     nameEn: "Kratie Provincial Teacher Training Center (KTPTTC)",
     abbreviation: "KTPTTC",
     location: "ភូមិអូរឫស្សី២ សង្កាត់អូរឫស្សី ក្រុងក្រចេះ ខេត្តក្រចេះ",
-    contact: "072 971 234 / info@ktpttc.edu.kh",
+    contact: "072 971 234 / info@ktpttc.net",
     website: "https://stms.ktpttc.net",
     ministry: "ក្រសួងអប់រំ យុវជន និងកីឡា (MoEYS)"
   },
@@ -429,7 +429,39 @@ const KTPTTC_INITIAL_DATA = {
       status: "pending", // 'pending', 'approved', 'rejected'
       requestedAt: "2026-11-15T10:30:00Z"
     }
-  ]
+  ],
+
+  // Library Management (បណ្ណាល័យ Management as shown on central screen)
+  library: {
+    totalBooks: 1485,
+    issuedBooks: 124,
+    returnedBooks: 110,
+    availableBooks: 1361,
+    recentBorrows: [
+      { id: "BK-3065", title: "សុខភាពនៅក្នុងដៃរបស់យើង សម្រាប់វិទ្យាសាស្ត្រជីវវិទ្យា", borrower: "សុខ ចិន្តា", date: "2026-11-15", returnDate: "2026-11-22", status: "borrowed" },
+      { id: "BK-5646", title: "សៀវភៅជំនួយភាសាខ្មែរ ថ្នាក់ទី៣", borrower: "ចាន់ វាសនា", date: "2026-11-14", returnDate: "2026-11-21", status: "borrowed" },
+      { id: "BK-3109", title: "សិល្បៈចម្លាក់ស្បែក", borrower: "កែវ ពិសិដ្ឋ", date: "2026-11-10", returnDate: "2026-11-16", status: "returned" }
+    ]
+  },
+
+  // Daily Attendance Statistics (for Module 3 Bar Chart)
+  dailyAttendanceStats: [
+    { day: "ចន្ទ", fullDay: "ចន្ទ (Mon)", present: 96, absent: 2, permission: 2, late: 1 },
+    { day: "អង្គារ", fullDay: "អង្គារ (Tue)", present: 98, absent: 1, permission: 1, late: 0 },
+    { day: "ពុធ", fullDay: "ពុធ (Wed)", present: 93, absent: 4, permission: 3, late: 2 },
+    { day: "ព្រហស្បតិ៍", fullDay: "ព្រហស្បតិ៍ (Thu)", present: 97, absent: 1, permission: 2, late: 1 },
+    { day: "សុក្រ", fullDay: "សុក្រ (Fri)", present: 95, absent: 2, permission: 3, late: 2 }
+  ],
+
+  // Grade Distribution (for Module 4 Donut Chart)
+  gradeDistribution: {
+    A: { count: 18, pct: 41, color: '#3b82f6' },
+    B: { count: 11, pct: 25, color: '#f97316' },
+    C: { count: 7, pct: 16, color: '#eab308' },
+    D: { count: 4, pct: 9, color: '#8b5cf6' },
+    E: { count: 3, pct: 6, color: '#06b6d4' },
+    F: { count: 1, pct: 3, color: '#ef4444' }
+  }
 };
 
 // Export for browser & Node

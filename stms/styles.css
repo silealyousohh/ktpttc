@@ -792,6 +792,432 @@ body {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* ==========================================================================
+   SYSTEM FLOW & INFOGRAPHIC BLUEPRINT STYLES (KTPTTC PMS / STMS)
+   ========================================================================== */
+.system-flow-wrapper {
+  background: radial-gradient(circle at 50% 20%, #eff6ff 0%, #f8fafc 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  padding: 24px 20px;
+  box-shadow: 0 8px 30px rgba(30, 58, 138, 0.08);
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.system-flow-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #dbeafe;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.system-flow-title h2 {
+  font-family: var(--font-moul);
+  color: #1e3a8a;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.system-flow-title p {
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.kpttc-pms-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  padding: 6px 14px;
+  border-radius: 12px;
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.kpttc-pms-badge img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.kpttc-pms-text h3 {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #1e3a8a;
+  line-height: 1;
+}
+
+.kpttc-pms-text span {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #059669;
+  letter-spacing: 1px;
+}
+
+/* Master Flow Grid: 4 Core Modules */
+.flow-modules-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.flow-modules-row-2 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.flow-module-box {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.flow-module-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(30, 58, 138, 0.12);
+  border-color: #3b82f6;
+}
+
+.flow-module-header {
+  background: #0f2b5c;
+  color: #ffffff;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  letter-spacing: 0.3px;
+}
+
+.flow-module-body {
+  padding: 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #ffffff;
+}
+
+/* Action Buttons Under Modules */
+.flow-action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.flow-action-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.flow-action-btn:hover {
+  background: #e2e8f0;
+  color: #1e3a8a;
+}
+
+.flow-action-btn i {
+  font-size: 0.85rem;
+  color: #2563eb;
+}
+
+/* Trainee Mini Profile Card */
+.profile-preview-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  gap: 12px;
+  background: #fcfdfe;
+}
+
+.trainee-passport-photo {
+  width: 58px;
+  height: 72px;
+  background: #2563eb;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.8rem;
+  border: 1px solid #1d4ed8;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.profile-card-details {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: #1e293b;
+}
+
+.profile-card-details strong {
+  color: #0f172a;
+}
+
+/* Enrollment Flowchart Steps */
+.flowchart-chain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.flowchart-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.flowchart-step-item i {
+  font-size: 1.05rem;
+  color: #2563eb;
+}
+
+.flowchart-arrow {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* Mini Timetable Table */
+.flow-timetable-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+.flow-timetable-table th {
+  background: #e2e8f0;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-weight: 700;
+}
+
+.flow-timetable-table td {
+  padding: 5px 3px;
+  border: 1px solid #cbd5e1;
+  font-weight: 600;
+}
+
+.tt-pedagogy { background: #dcfce7; color: #15803d; }
+.tt-math { background: #dbeafe; color: #1d4ed8; }
+.tt-khmer { background: #ffe4e6; color: #be123c; }
+.tt-psych { background: #f3e8ff; color: #7e22ce; }
+.tt-ict { background: #ccfbf1; color: #0f766e; }
+
+/* Attendance Chart & Matrix in Flow */
+.attendance-flow-split {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 10px;
+}
+
+.daily-attendance-barchart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 90px;
+  padding: 6px 4px 0 4px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.chart-day-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.chart-bar-stack {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 65px;
+}
+
+.bar-present { width: 5px; background: #10b981; border-radius: 2px 2px 0 0; }
+.bar-absent { width: 5px; background: #ef4444; border-radius: 2px 2px 0 0; }
+.bar-permission { width: 5px; background: #f59e0b; border-radius: 2px 2px 0 0; }
+
+.chart-day-label {
+  font-size: 0.6rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Module 4: Score Matrix & Grade Donut */
+.grading-flow-split {
+  display: grid;
+  grid-template-columns: 140px 1fr 130px;
+  gap: 12px;
+  align-items: center;
+}
+
+.mini-score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.65rem;
+}
+
+.mini-score-table th {
+  background: #1e3a8a;
+  color: #ffffff;
+  padding: 4px 6px;
+  text-align: center;
+  border: 1px solid #1e40af;
+}
+
+.mini-score-table td {
+  padding: 4px 6px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+/* Donut Chart Component */
+.donut-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.donut-legend {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  font-size: 0.6rem;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+/* Computer Monitor Mockup (Live System Screen) */
+.system-monitor-device {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 10px 10px 6px 10px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.25);
+  border: 3px solid #334155;
+  color: #ffffff;
+  position: relative;
+}
+
+.monitor-screen-inner {
+  background: #090d16;
+  border-radius: 6px;
+  padding: 10px;
+  overflow: hidden;
+  font-size: 0.72rem;
+}
+
+.monitor-stand {
+  width: 50px;
+  height: 18px;
+  background: #475569;
+  margin: 0 auto;
+}
+
+.monitor-base {
+  width: 110px;
+  height: 8px;
+  background: #64748b;
+  margin: 0 auto;
+  border-radius: 4px 4px 0 0;
+}
+
+/* Certificate Modal & Styles */
+.certificate-print-sheet {
+  background: #ffffff;
+  border: 12px double #1e3a8a;
+  padding: 30px;
+  position: relative;
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+  color: #0f172a;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.cert-cambodia-header h3 {
+  font-family: var(--font-moul);
+  color: #1e3a8a;
+  font-size: 1.15rem;
+  margin-bottom: 2px;
+}
+
+.cert-cambodia-header p {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.cert-title-badge {
+  font-family: var(--font-moul);
+  color: #b45309;
+  font-size: 1.5rem;
+  margin: 16px 0 6px 0;
+  text-transform: uppercase;
+}
+
+.cert-recipient-name {
+  font-family: var(--font-moul);
+  font-size: 1.6rem;
+  color: #1e3a8a;
+  margin: 12px 0 8px 0;
+  border-bottom: 2px dashed #cbd5e1;
+  display: inline-block;
+  padding: 0 30px 4px 30px;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .stms-sidebar { width: 70px; padding: 10px 6px; }
@@ -799,4 +1225,5 @@ body {
   .sidebar-item-link { justify-content: center; padding: 12px 0; }
   .brand-text, .user-info-text { display: none; }
   .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+  .flow-modules-row, .flow-modules-row-2 { grid-template-columns: 1fr; }
 }
