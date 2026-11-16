@@ -17,26 +17,32 @@ document.addEventListener('DOMContentLoaded', () => {
   renderApp();
 });
 
-// Load from LocalStorage or Seed Data
+// Load from LocalStorage or Clean Config (No Auto Student Generation)
 function loadData() {
   try {
-    const saved = localStorage.getItem('ktpttc_stms_data_v1');
+    localStorage.removeItem('ktpttc_stms_data_v1'); // Purge legacy auto-seeded mock data
+    const saved = localStorage.getItem('ktpttc_stms_data_v2');
     if (saved) {
       stmsData = JSON.parse(saved);
+      if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+      if (!Array.isArray(stmsData.attendanceSessions)) stmsData.attendanceSessions = [];
+      if (!Array.isArray(stmsData.profileRequests)) stmsData.profileRequests = [];
     } else {
       stmsData = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
+      if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
       saveData();
     }
   } catch (e) {
     console.error('Failed to load storage, using seed data:', e);
     stmsData = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
+    if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
   }
 }
 
 // Persist to LocalStorage
 function saveData() {
   try {
-    localStorage.setItem('ktpttc_stms_data_v1', JSON.stringify(stmsData));
+    localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsData));
     updateAlertBadge();
   } catch (e) {
     console.error('Failed to save data:', e);
@@ -374,7 +380,16 @@ function renderDashboardView(container) {
               </tr>
             </thead>
             <tbody>
-              ${stmsData.trainees.slice(0, 5).map(t => `
+              ${stmsData.trainees.length === 0 ? `
+                <tr>
+                  <td colspan="6" style="text-align:center; padding:35px 15px; color:#64748b;">
+                    <i class="fas fa-inbox fa-2x" style="color:#cbd5e1; margin-bottom:8px; display:block;"></i>
+                    <div style="font-weight:700; color:#1e3a8a; font-size:0.95rem;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតទេ</div>
+                    <p style="font-size:0.8rem; color:#94a3b8; margin:4px 0 10px 0;">ប្រព័ន្ធរង់ចាំការបញ្ចូលព័ត៌មានពីគ្រូបង្រៀន ឬរដ្ឋបាល</p>
+                    <button class="btn btn-primary" style="padding:4px 12px; font-size:0.75rem;" onclick="openEnrollModal()"><i class="fas fa-plus"></i> ចុះឈ្មោះថ្មី</button>
+                  </td>
+                </tr>
+              ` : stmsData.trainees.slice(0, 5).map(t => `
                 <tr>
                   <td><code>${t.id}</code></td>
                   <td><strong>${t.avatar} ${t.nameKh}</strong></td>
@@ -470,7 +485,7 @@ function renderTraineesView(container) {
       <div class="view-actions-group">
         <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> បង្កើតគណនី</button>
         <button class="btn btn-outline" onclick="exportTraineeRosterExcel()"><i class="fas fa-print"></i> បោះពុម្ពព័ត៌មាន</button>
-        <button class="btn btn-outline" onclick="viewTraineeCard('KTPTTC-2026-12P2-001')"><i class="fas fa-id-card"></i> បោះពុម្ពអត្តសញ្ញាណប័ណ្ណ</button>
+        <button class="btn btn-outline" onclick="viewTraineeCard()"><i class="fas fa-id-card"></i> បោះពុម្ពអត្តសញ្ញាណប័ណ្ណ</button>
         <button class="btn btn-success" onclick="exportTraineeRosterExcel()"><i class="fas fa-file-excel"></i> ទាញយក Excel</button>
       </div>
     </div>
@@ -492,7 +507,7 @@ function renderTraineesView(container) {
           <span>Document<br>Verification</span>
         </div>
         <div class="flowchart-arrow">➔</div>
-        <div class="flowchart-step-item" onclick="viewTraineeCard('KTPTTC-2026-12P2-001')" title="បង្កើតលេខសម្គាល់ស្វ័យប្រវត្តិ">
+        <div class="flowchart-step-item" onclick="viewTraineeCard()" title="បង្កើតលេខសម្គាល់ស្វ័យប្រវត្តិ">
           <i class="fas fa-id-badge"></i>
           <span>ID<br>Generation</span>
         </div>
@@ -537,7 +552,18 @@ function renderTraineesView(container) {
             </tr>
           </thead>
           <tbody>
-            ${stmsData.trainees.map((t, idx) => `
+            ${stmsData.trainees.length === 0 ? `
+              <tr>
+                <td colspan="10" style="text-align:center; padding:55px 20px; color:#64748b;">
+                  <i class="fas fa-user-graduate fa-3x" style="color:#cbd5e1; margin-bottom:14px; display:block;"></i>
+                  <div style="font-size:1.1rem; font-weight:700; color:#1e3a8a; margin-bottom:8px;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតនៅឡើយទេ</div>
+                  <p style="font-size:0.875rem; color:#94a3b8; max-width:520px; margin:0 auto 18px auto; line-height:1.6;">
+                    ប្រព័ន្ធត្រូវបានរៀបចំទទេស្អាត (Clean State) ដោយមិនមានទិន្នន័យសិស្សស្វ័យប្រវត្តិឡើយ ទុកជូនលោកគ្រូ-អ្នកគ្រូ និងរដ្ឋបាលបញ្ចូលផ្ទាល់។
+                  </p>
+                  <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិតដំបូង</button>
+                </td>
+              </tr>
+            ` : stmsData.trainees.map((t, idx) => `
               <tr data-trainee-row="${t.id}" data-cohort="${t.cohort}">
                 <td>${idx + 1}</td>
                 <td><code>${t.id}</code></td>
@@ -781,8 +807,18 @@ function submitEnrollForm() {
 
 // Digital Trainee Card Modal
 function viewTraineeCard(id) {
-  const t = stmsData.trainees.find(x => x.id === id);
-  if (!t) return;
+  let t = null;
+  if (id) {
+    t = stmsData.trainees.find(x => x.id === id);
+  }
+  if (!t) {
+    if (stmsData.trainees.length > 0) {
+      t = stmsData.trainees[0];
+    } else {
+      showToast('មិនទាន់មានទិន្នន័យគរុសនិស្សិតដើម្បីបង្ហាញប័ណ្ណសម្គាល់ខ្លួនទេ។ សូមចុះឈ្មោះគរុសនិស្សិតជាមុន!', 'warning');
+      return;
+    }
+  }
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="cardModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -967,40 +1003,34 @@ function renderAttendanceView(container) {
       </div>
 
     </div>
-          ${stmsData.subjects.map(s => `<option value="${s.code}" ${currentAttendanceSession.subjectCode===s.code?'selected':''}>${s.code} - ${s.nameKh}</option>`).join('')}
-        </select>
-      </div>
-
-      <div style="width:180px;">
-        <label class="form-label">កាលបរិច្ឆេទ</label>
-        <input type="date" class="form-input" value="${currentAttendanceSession.date}" onchange="currentAttendanceSession.date=this.value">
-      </div>
-    </div>
-
-    <!-- Attendance Live Statistics Pills -->
-    <div style="display:flex; gap:12px; margin-bottom:18px; flex-wrap:wrap;">
-      <span class="badge badge-present" style="font-size:0.85rem; padding:6px 14px;"><i class="fas fa-check-circle"></i> វត្តមាន (Present): <strong>${countP}</strong></span>
-      <span class="badge badge-permission" style="font-size:0.85rem; padding:6px 14px;"><i class="fas fa-clock"></i> មានច្បាប់ (Permission): <strong>${countPA}</strong></span>
-      <span class="badge badge-late" style="font-size:0.85rem; padding:6px 14px;"><i class="fas fa-hourglass-half"></i> យឺត (Late): <strong>${countL}</strong></span>
-      <span class="badge badge-absent" style="font-size:0.85rem; padding:6px 14px;"><i class="fas fa-times-circle"></i> អវត្តមានឥតច្បាប់ (Absent): <strong>${countA}</strong></span>
-    </div>
 
     <!-- Interactive Grid Cards (click to toggle state) -->
-    <div class="attendance-grid">
-      ${classTrainees.map(t => {
-        const st = currentAttendanceSession.records[t.id] || 'present';
-        const label = st==='present'?'វត្តមាន':st==='absent'?'ឥតច្បាប់':st==='permission'?'មានច្បាប់':'មកយឺត';
-        const badgeCls = st==='present'?'badge-present':st==='absent'?'badge-absent':st==='permission'?'badge-permission':'badge-late';
-        return `
-          <div class="attendance-card ${st}" onclick="toggleTraineeAttendance('${t.id}')">
-            <div style="font-size:1.8rem; margin-bottom:4px;">${t.avatar}</div>
-            <div style="font-weight:700; color:#0f172a; font-size:0.9rem;">${t.nameKh}</div>
-            <div style="font-size:0.75rem; color:#64748b; margin-bottom:8px;"><code>${t.id}</code></div>
-            <span class="badge ${badgeCls}">${label}</span>
-          </div>
-        `;
-      }).join('')}
-    </div>
+    ${classTrainees.length === 0 ? `
+      <div style="text-align:center; padding:45px 20px; background:#fff; border-radius:10px; border:1px solid var(--border-color); color:#64748b;">
+        <i class="fas fa-users-slash fa-3x" style="color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <h4 style="color:#1e3a8a; font-size:1.05rem; margin-bottom:6px;">មិនទាន់មានគរុសនិស្សិតក្នុងថ្នាក់នេះនៅឡើយទេ</h4>
+        <p style="font-size:0.85rem; color:#94a3b8; max-width:500px; margin:0 auto 16px auto; line-height:1.6;">
+          សូមបញ្ចូលគរុសនិស្សិតចូលក្នុងថ្នាក់រៀនជាមុនសិន ដើម្បីចាប់ផ្តើមស្រង់វត្តមាន។
+        </p>
+        <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិត</button>
+      </div>
+    ` : `
+      <div class="attendance-grid">
+        ${classTrainees.map(t => {
+          const st = currentAttendanceSession.records[t.id] || 'present';
+          const label = st==='present'?'វត្តមាន':st==='absent'?'ឥតច្បាប់':st==='permission'?'មានច្បាប់':'មកយឺត';
+          const badgeCls = st==='present'?'badge-present':st==='absent'?'badge-absent':st==='permission'?'badge-permission':'badge-late';
+          return `
+            <div class="attendance-card ${st}" onclick="toggleTraineeAttendance('${t.id}')">
+              <div style="font-size:1.8rem; margin-bottom:4px;">${t.avatar}</div>
+              <div style="font-weight:700; color:#0f172a; font-size:0.9rem;">${t.nameKh}</div>
+              <div style="font-size:0.75rem; color:#64748b; margin-bottom:8px;"><code>${t.id}</code></div>
+              <span class="badge ${badgeCls}">${label}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `}
   `;
 
   container.innerHTML = html;
@@ -1176,7 +1206,18 @@ function renderGradingView(container) {
             </tr>
           </thead>
           <tbody>
-            ${classTrainees.map((t, idx) => {
+            ${classTrainees.length === 0 ? `
+              <tr>
+                <td colspan="11" style="text-align:center; padding:50px 20px; color:#64748b;">
+                  <i class="fas fa-clipboard-list fa-3x" style="color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+                  <div style="font-size:1.05rem; font-weight:700; color:#1e3a8a; margin-bottom:6px;">មិនទាន់មានគរុសនិស្សិតក្នុងថ្នាក់នេះនៅឡើយទេ</div>
+                  <p style="font-size:0.85rem; color:#94a3b8; max-width:480px; margin:0 auto 16px auto; line-height:1.6;">
+                    សូមចុះឈ្មោះគរុសនិស្សិតចូលក្នុងថ្នាក់រៀនជាមុនសិន ដើម្បីគ្រូឧទ្ទេសអាចបញ្ចូលពិន្ទុ និងគណនាលទ្ធផលស្វ័យប្រវត្តិ។
+                  </p>
+                  <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិត</button>
+                </td>
+              </tr>
+            ` : classTrainees.map((t, idx) => {
               const sc = t.scores?.[currentGradingSubject] || { homework: 8, attendance: 9, monthly: 24, semester: 42, total: 83, grade: "B", status: "draft" };
               return `
                 <tr data-student-id="${t.id}">
@@ -1453,7 +1494,26 @@ function submitAddSlot() {
 // 6. TRAINEE PORTAL VIEW (ផតថលផ្ទាល់ខ្លួនគរុសនិស្សិត)
 // ==========================================================================
 function renderTraineePortalView(container) {
-  const t = currentTraineeUser || stmsData.trainees[0];
+  const t = currentTraineeUser || (stmsData.trainees.length > 0 ? stmsData.trainees[0] : null);
+  if (!t) {
+    container.innerHTML = `
+      <div class="view-header">
+        <div class="view-title-group">
+          <h2><i class="fas fa-id-badge"></i> ផតថលផ្ទាល់ខ្លួនរបស់គរុសនិស្សិត</h2>
+          <p>ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</p>
+        </div>
+      </div>
+      <div style="background:#ffffff; border-radius:12px; border:1px solid var(--border-color); padding:50px 20px; text-align:center;">
+        <i class="fas fa-user-clock fa-3x" style="color:#cbd5e1; margin-bottom:14px; display:block;"></i>
+        <h3 style="color:#1e3a8a; font-size:1.15rem; margin-bottom:8px;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតនៅក្នុងប្រព័ន្ធនៅឡើយទេ</h3>
+        <p style="font-size:0.88rem; color:#64748b; max-width:500px; margin:0 auto 18px auto; line-height:1.6;">
+          ប្រព័ន្ធត្រូវបានកំណត់ទទេស្អាតតាមការណែនាំ ដោយមិនមានទិន្នន័យសិស្សស្វ័យប្រវត្តិឡើយ ដើម្បីរង់ចាំគ្រូបង្រៀន ឬរដ្ឋបាលបញ្ចូលទិន្នន័យគរុសនិស្សិតពិតប្រាកដ។
+        </p>
+        <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិតដំបូង</button>
+      </div>
+    `;
+    return;
+  }
 
   let html = `
     <div class="view-header">
@@ -1540,7 +1600,24 @@ function renderTraineePortalView(container) {
 }
 
 function renderTraineeAttendanceView(container) {
-  const t = currentTraineeUser || stmsData.trainees[0];
+  const t = currentTraineeUser || (stmsData.trainees.length > 0 ? stmsData.trainees[0] : null);
+  if (!t) {
+    container.innerHTML = `
+      <div class="view-header">
+        <div class="view-title-group">
+          <h2><i class="fas fa-user-check"></i> កំណត់ត្រាវត្តមានផ្ទាល់ខ្លួន</h2>
+          <p>ពិនិត្យវត្តមាន និងអវត្តមានប្រចាំឆមាស</p>
+        </div>
+        <button class="btn btn-outline" onclick="navigateView('trainee-portal')">← ត្រឡប់ក្រោយ</button>
+      </div>
+      <div style="background:#fff; border-radius:10px; border:1px solid var(--border-color); padding:40px; text-align:center; color:#64748b;">
+        <i class="fas fa-inbox fa-3x" style="color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <h4 style="color:#1e3a8a;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតនៅឡើយទេ</h4>
+        <p style="font-size:0.85rem; color:#94a3b8; margin-top:6px;">សូមចុះឈ្មោះគរុសនិស្សិតជាមុនសិន។</p>
+      </div>
+    `;
+    return;
+  }
   container.innerHTML = `
     <div class="view-header">
       <div class="view-title-group">
@@ -1590,7 +1667,24 @@ function renderTraineeAttendanceView(container) {
 }
 
 function renderTraineeGradesView(container) {
-  const t = currentTraineeUser || stmsData.trainees[0];
+  const t = currentTraineeUser || (stmsData.trainees.length > 0 ? stmsData.trainees[0] : null);
+  if (!t) {
+    container.innerHTML = `
+      <div class="view-header">
+        <div class="view-title-group">
+          <h2><i class="fas fa-award"></i> លទ្ធផលសិក្សា និងពិន្ទុផ្លូវការ</h2>
+          <p>ពិន្ទុដែលបានផ្ទៀងផ្ទាត់ និងផ្សព្វផ្សាយដោយការិយាល័យសិក្សាធិការ KTPTTC</p>
+        </div>
+        <button class="btn btn-outline" onclick="navigateView('trainee-portal')">← ត្រឡប់ក្រោយ</button>
+      </div>
+      <div style="background:#fff; border-radius:10px; border:1px solid var(--border-color); padding:40px; text-align:center; color:#64748b;">
+        <i class="fas fa-inbox fa-3x" style="color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <h4 style="color:#1e3a8a;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតនៅឡើយទេ</h4>
+        <p style="font-size:0.85rem; color:#94a3b8; margin-top:6px;">សូមចុះឈ្មោះគរុសនិស្សិតជាមុនសិន។</p>
+      </div>
+    `;
+    return;
+  }
   container.innerHTML = `
     <div class="view-header">
       <div class="view-title-group">
@@ -1641,7 +1735,24 @@ function renderTraineeGradesView(container) {
 }
 
 function renderTraineeRequestView(container) {
-  const t = currentTraineeUser || stmsData.trainees[0];
+  const t = currentTraineeUser || (stmsData.trainees.length > 0 ? stmsData.trainees[0] : null);
+  if (!t) {
+    container.innerHTML = `
+      <div class="view-header">
+        <div class="view-title-group">
+          <h2><i class="fas fa-paper-plane"></i> ស្នើសុំកែប្រែព័ត៌មានផ្ទាល់ខ្លួន</h2>
+          <p>សំណើនឹងត្រូវត្រួតពិនិត្យ និងអនុម័តដោយការិយាល័យរដ្ឋបាល/សិក្សាធិការ</p>
+        </div>
+        <button class="btn btn-outline" onclick="navigateView('trainee-portal')">← ត្រឡប់ក្រោយ</button>
+      </div>
+      <div style="background:#fff; border-radius:10px; border:1px solid var(--border-color); padding:40px; text-align:center; color:#64748b;">
+        <i class="fas fa-inbox fa-3x" style="color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <h4 style="color:#1e3a8a;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតនៅឡើយទេ</h4>
+        <p style="font-size:0.85rem; color:#94a3b8; margin-top:6px;">សូមចុះឈ្មោះគរុសនិស្សិតជាមុនសិន។</p>
+      </div>
+    `;
+    return;
+  }
   container.innerHTML = `
     <div class="view-header">
       <div class="view-title-group">
@@ -1850,7 +1961,7 @@ function renderRBACView(container) {
             </tr>
             <tr>
               <td><code>USR-STU-001</code></td>
-              <td><strong>កែវ វិសាល</strong> (trainee)</td>
+              <td><strong>គរុសនិស្សិតទូទៅ</strong> (trainee)</td>
               <td><span class="badge badge-late">Trainee Teacher</span></td>
               <td>មើលប្រវត្តិរូប, ពិនិត្យវត្តមានផ្ទាល់ខ្លួន, មើលពិន្ទុដែលបាន Publish, ទាញយកកាលវិភាគ</td>
               <td><span class="badge badge-present">សកម្ម</span></td>
@@ -1924,6 +2035,10 @@ function importDatabaseJson(input) {
 
 // Excel Export Helpers
 function exportTraineeRosterExcel() {
+  if (stmsData.trainees.length === 0) {
+    showToast('ពុំទាន់មានទិន្នន័យគរុសនិស្សិតសម្រាប់ទាញយកទេ។ សូមបញ្ចូលទិន្នន័យជាមុន!', 'warning');
+    return;
+  }
   const headers = ['អត្តលេខ', 'គោត្តនាម-នាម', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'ថ្នាក់រៀន', 'ជំនាន់', 'លេខទូរស័ព្ទ', 'ទីកន្លែងកំណើត', 'ស្ថានភាព'];
   const rows = stmsData.trainees.map(t => [t.id, t.nameKh, t.gender, t.dob, t.className, t.cohort, t.phone, `"${t.pob}"`, t.status]);
   const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
@@ -1938,6 +2053,10 @@ function exportTraineeRosterExcel() {
 }
 
 function exportAttendanceExcel() {
+  if (stmsData.attendanceSessions.length === 0) {
+    showToast('ពុំទាន់មានទិន្នន័យកំណត់ត្រាវត្តមានសម្រាប់ទាញយកទេ។ សូមស្រង់វត្តមានជាមុន!', 'warning');
+    return;
+  }
   const headers = ['កាលបរិច្ឆេទ', 'ថ្នាក់រៀន', 'មុខវិជ្ជា', 'អត្តលេខសិស្ស', 'ឈ្មោះគរុសនិស្សិត', 'ស្ថានភាពវត្តមាន'];
   const rows = [];
   stmsData.attendanceSessions.forEach(sess => {
@@ -1973,13 +2092,14 @@ function renderApp() {
   updateAlertBadge();
 }
 
-// Reset STMS to initial seed data
+// Reset STMS to initial clean data
 function resetStmsDatabase() {
-  if (confirm('តើអ្នកពិតជាចង់កំណត់ទិន្នន័យប្រព័ន្ធទៅជាស្ថានភាពដើមវិញមែនទេ? ទិន្នន័យបន្ថែមថ្មីនឹងត្រូវកំណត់ឡើងវិញ។')) {
+  if (confirm('តើអ្នកពិតជាចង់កំណត់ទិន្នន័យប្រព័ន្ធទៅជាស្ថានភាពដើមវិញមែនទេ? (ទិន្នន័យគរុសនិស្សិតទាំងអស់នឹងត្រូវជម្រះទទេស្អាត)')) {
     localStorage.removeItem('ktpttc_stms_data_v1');
+    localStorage.removeItem('ktpttc_stms_data_v2');
     loadData();
     renderApp();
-    showToast('បានកំណត់ទិន្នន័យប្រព័ន្ធដើមឡើងវិញជោគជ័យ!', 'success');
+    showToast('បានកំណត់ទិន្នន័យប្រព័ន្ធដើមឡើងវិញជោគជ័យ (ទិន្នន័យគរុសនិស្សិតទទេស្អាត)!', 'success');
   }
 }
 
@@ -1989,13 +2109,13 @@ function resetStmsDatabase() {
 // ==========================================================================
 function renderSystemFlowView(container) {
   const sampleTrainee = stmsData.trainees[0] || {
-    id: "122123220",
-    nameKh: "សុខ សុវណ្ណារ៉ា",
-    nameEn: "SOK SOVANNARA",
-    gender: "ប្រុស (M)",
-    dob: "05/08/2004",
-    className: "Class 12+2",
-    cardNo: "S20210005531"
+    id: "KTPTTC-2026-12P2-001",
+    nameKh: "(រង់ចាំការបញ្ចូល)",
+    nameEn: "Awaiting Entry",
+    gender: "---",
+    dob: "--/--/----",
+    className: "ថ្នាក់បឋម ១២+២",
+    cardNo: "---"
   };
 
   const attendanceStats = stmsData.dailyAttendanceStats || [
@@ -2233,7 +2353,11 @@ function renderSystemFlowView(container) {
                       </tr>
                     </thead>
                     <tbody>
-                      ${stmsData.trainees.slice(0, 3).map((t, idx) => `
+                      ${stmsData.trainees.length === 0 ? `
+                        <tr>
+                          <td colspan="5" style="padding:10px; color:#94a3b8; font-size:0.6rem; text-align:center;">រង់ចាំការបញ្ចូលគរុសនិស្សិត</td>
+                        </tr>
+                      ` : stmsData.trainees.slice(0, 3).map((t, idx) => `
                         <tr style="border-bottom:1px solid #e2e8f0; text-align:center;">
                           <td style="padding:3px; text-align:left; font-weight:600;">${t.avatar} ${t.nameKh.split(' ')[1] || t.nameKh}</td>
                           <td style="padding:3px; color:#64748b;">7:30</td>
@@ -2326,7 +2450,11 @@ function renderSystemFlowView(container) {
                       </tr>
                     </thead>
                     <tbody>
-                      ${stmsData.trainees.slice(0, 5).map((t, idx) => {
+                      ${stmsData.trainees.length === 0 ? `
+                        <tr>
+                          <td colspan="9" style="padding:12px; color:#94a3b8; font-size:0.65rem; text-align:center;">មិនទាន់មានទិន្នន័យពិន្ទុ (រង់ចាំការបញ្ចូល)</td>
+                        </tr>
+                      ` : stmsData.trainees.slice(0, 5).map((t, idx) => {
                         const sc = t.scores['PED-101'] || { homework: 9, attendance: 10, monthly: 28, semester: 45, total: 92, grade: 'A' };
                         return `
                           <tr>
