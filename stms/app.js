@@ -8,7 +8,7 @@
 let stmsData = {};
 let currentUser = null; // Active authenticated user object
 let currentRole = 'admin'; // 'admin' | 'trainer' | 'trainee'
-let currentView = 'flow';
+let currentView = 'dashboard';
 let currentTraineeUser = null; // When in trainee role
 
 // Initialize Application - Enforce Mandatory Login Gate
@@ -27,6 +27,21 @@ function loadData() {
       if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
       if (!Array.isArray(stmsData.attendanceSessions)) stmsData.attendanceSessions = [];
       if (!Array.isArray(stmsData.profileRequests)) stmsData.profileRequests = [];
+
+      // Auto-sanitize trainees: clean any binary corrupted entries (e.g. invalid xlsx raw text import)
+      const countBefore = stmsData.trainees.length;
+      stmsData.trainees = stmsData.trainees.filter(t => {
+        if (!t || !t.nameKh) return false;
+        const name = String(t.nameKh);
+        if (name.includes('PK') && (name.includes('Content_Types') || name.includes('{PK') || /[\x00-\x08\x0E-\x1F\x7F]/.test(name))) return false;
+        if (/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(name)) return false;
+        if (t.id && (t.id.includes('{PK') || /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(t.id))) return false;
+        return true;
+      });
+      if (stmsData.trainees.length !== countBefore) {
+        saveData();
+      }
+
       if (!Array.isArray(stmsData.users) || stmsData.users.length === 0) {
         stmsData.users = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA?.users || []));
       } else {
@@ -212,7 +227,7 @@ function loginSuccess(user, notify = true) {
     currentTraineeUser = (stmsData.trainees || []).find(t => t.id === user.studentId) || stmsData.trainees[0] || user;
     currentView = 'trainee-portal';
   } else {
-    currentView = 'flow';
+    currentView = 'dashboard';
   }
 
   renderSidebar();
@@ -280,7 +295,7 @@ function switchRole(role, notify = true) {
     currentTraineeUser = stmsData.trainees[0] || previewUser;
     currentView = 'trainee-portal';
   } else {
-    currentView = 'flow';
+    currentView = 'dashboard';
   }
 
   renderSidebar();
@@ -300,51 +315,44 @@ function renderSidebar() {
 
   if (currentRole === 'admin') {
     menuHtml = `
-      <li class="sidebar-label">កិច្ចដំណើរការប្រព័ន្ធ (Architecture)</li>
-      <li><a class="sidebar-item-link ${currentView==='flow'?'active':''}" onclick="navigateView('flow')"><i class="fas fa-project-diagram"></i> <span>កិច្ចដំណើរការប្រព័ន្ធ (System Flow)</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='dashboard'?'active':''}" onclick="navigateView('dashboard')"><i class="fas fa-chart-pie"></i> <span>ផ្ទាំងព័ត៌មាន (Dashboard)</span></a></li>
-      
-      <li class="sidebar-label">១. ម៉ូឌុលរដ្ឋបាល និងគរុសនិស្សិត</li>
-      <li><a class="sidebar-item-link" href="add-student.html"><i class="fas fa-user-plus"></i> <span>ទម្រង់ចុះឈ្មោះសិស្ស (Add Student)</span></a></li>
-      <li><a class="sidebar-item-link" onclick="openEditStudentModal()"><i class="fas fa-user-edit"></i> <span>កែប្រែព័ត៌មានសិស្ស (Edit Info)</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='trainees'?'active':''}" onclick="navigateView('trainees')"><i class="fas fa-user-graduate"></i> <span>ប្រវត្តិគរុសនិស្សិត (Profiles)</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='requests'?'active':''}" onclick="navigateView('requests')"><i class="fas fa-clipboard-list"></i> <span>សំណើកែព័ត៌មាន (Requests)</span></a></li>
+      <li class="sidebar-label">ទំព័រដើម &amp; ស្ថិតិ</li>
+      <li><a class="sidebar-item-link ${currentView==='dashboard'?'active':''}" onclick="navigateView('dashboard')"><i class="fas fa-th-large"></i> <span>ផ្ទាំងព័ត៌មាន (Dashboard)</span></a></li>
 
-      <li class="sidebar-label">២. ម៉ូឌុលកាលវិភាគ និងការសិក្សា</li>
-      <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-alt"></i> <span>កាលវិភាគបង្រៀន (Timetable)</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='cohorts'?'active':''}" onclick="navigateView('cohorts')"><i class="fas fa-graduation-cap"></i> <span>ឆ្នាំសិក្សា & ជំនាន់ថ្នាក់</span></a></li>
+      <li class="sidebar-label">កិច្ចការគរុសនិស្សិត</li>
+      <li><a class="sidebar-item-link ${currentView==='trainees'?'active':''}" onclick="navigateView('trainees')"><i class="fas fa-user-graduate"></i> <span>បញ្ជីរាយនាមសិស្ស</span></a></li>
+      <li><a class="sidebar-item-link" href="add-student.html"><i class="fas fa-user-plus"></i> <span>ចុះឈ្មោះសិស្សថ្មី</span></a></li>
+      <li><a class="sidebar-item-link ${currentView==='requests'?'active':''}" onclick="navigateView('requests')"><i class="fas fa-clipboard-check"></i> <span>សំណើកែប្រែព័ត៌មាន</span></a></li>
 
-      <li class="sidebar-label">៣. ម៉ូឌុលគ្រប់គ្រងវត្តមាន</li>
-      <li><a class="sidebar-item-link ${currentView==='attendance'?'active':''}" onclick="navigateView('attendance')"><i class="fas fa-calendar-check"></i> <span>គ្រប់គ្រងវត្តមាន (Attendance)</span></a></li>
+      <li class="sidebar-label">កាលវិភាគ &amp; ថ្នាក់រៀន</li>
+      <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-alt"></i> <span>កាលវិភាគបង្រៀន</span></a></li>
+      <li><a class="sidebar-item-link ${currentView==='cohorts'?'active':''}" onclick="navigateView('cohorts')"><i class="fas fa-school"></i> <span>ជំនាន់ &amp; ថ្នាក់សិក្សា</span></a></li>
 
-      <li class="sidebar-label">៤. ម៉ូឌុលពិន្ទុ និងលទ្ធផល</li>
-      <li><a class="sidebar-item-link ${currentView==='grading'?'active':''}" onclick="navigateView('grading')"><i class="fas fa-calculator"></i> <span>ពិន្ទុ & វាយតម្លៃ (Grading)</span></a></li>
+      <li class="sidebar-label">វត្តមាន &amp; ការវាយតម្លៃ</li>
+      <li><a class="sidebar-item-link ${currentView==='attendance'?'active':''}" onclick="navigateView('attendance')"><i class="fas fa-calendar-check"></i> <span>គ្រប់គ្រងវត្តមាន</span></a></li>
+      <li><a class="sidebar-item-link ${currentView==='grading'?'active':''}" onclick="navigateView('grading')"><i class="fas fa-calculator"></i> <span>ពិន្ទុ &amp; ការវាយតម្លៃ</span></a></li>
 
-      <li class="sidebar-label">ប្រព័ន្ធ & សុវត្ថិភាព</li>
-      <li><a class="sidebar-item-link ${currentView==='rbac'?'active':''}" onclick="navigateView('rbac')"><i class="fas fa-user-shield"></i> <span>សិទ្ធិ & គណនី (RBAC)</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='backup'?'active':''}" onclick="navigateView('backup')"><i class="fas fa-database"></i> <span>បម្រុងទុកទិន្នន័យ (Backup)</span></a></li>
+      <li class="sidebar-label">ប្រព័ន្ធរដ្ឋបាល</li>
+      <li><a class="sidebar-item-link ${currentView==='backup'?'active':''}" onclick="navigateView('backup')"><i class="fas fa-database"></i> <span>បម្រុងទុក &amp; ស្តារទិន្នន័យ</span></a></li>
     `;
   } else if (currentRole === 'trainer') {
     menuHtml = `
-      <li class="sidebar-label">កិច្ចដំណើរការ & ទំព័រដើម</li>
-      <li><a class="sidebar-item-link ${currentView==='flow'?'active':''}" onclick="navigateView('flow')"><i class="fas fa-project-diagram"></i> <span>កិច្ចដំណើរការប្រព័ន្ធ (System Flow)</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='dashboard'?'active':''}" onclick="navigateView('dashboard')"><i class="fas fa-home"></i> <span>ទំព័រដើម</span></a></li>
+      <li class="sidebar-label">ទំព័រដើម</li>
+      <li><a class="sidebar-item-link ${currentView==='dashboard'?'active':''}" onclick="navigateView('dashboard')"><i class="fas fa-th-large"></i> <span>ផ្ទាំងព័ត៌មាន (Dashboard)</span></a></li>
 
-      <li class="sidebar-label">ការបង្រៀន & វត្តមាន</li>
-      <li><a class="sidebar-item-link" href="add-student.html"><i class="fas fa-user-plus"></i> <span>ទម្រង់ចុះឈ្មោះសិស្ស (Add Student)</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='attendance'?'active':''}" onclick="navigateView('attendance')"><i class="fas fa-clipboard-check"></i> <span>ស្រង់វត្តមានសិស្ស</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='grading'?'active':''}" onclick="navigateView('grading')"><i class="fas fa-edit"></i> <span>បញ្ចូលពិន្ទុតាមមុខវិជ្ជា</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-day"></i> <span>កាលវិភាគបង្រៀនរបស់ខ្ញុំ</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='trainees'?'active':''}" onclick="navigateView('trainees')"><i class="fas fa-users"></i> <span>បញ្ជីឈ្មោះគរុសនិស្សិត</span></a></li>
+      <li class="sidebar-label">ការបង្រៀន &amp; សិស្ស</li>
+      <li><a class="sidebar-item-link ${currentView==='trainees'?'active':''}" onclick="navigateView('trainees')"><i class="fas fa-user-graduate"></i> <span>បញ្ជីរាយនាមសិស្ស</span></a></li>
+      <li><a class="sidebar-item-link" href="add-student.html"><i class="fas fa-user-plus"></i> <span>ចុះឈ្មោះសិស្សថ្មី</span></a></li>
+      <li><a class="sidebar-item-link ${currentView==='attendance'?'active':''}" onclick="navigateView('attendance')"><i class="fas fa-calendar-check"></i> <span>ស្រង់វត្តមានសិស្ស</span></a></li>
+      <li><a class="sidebar-item-link ${currentView==='grading'?'active':''}" onclick="navigateView('grading')"><i class="fas fa-calculator"></i> <span>បញ្ចូលពិន្ទុតាមមុខវិជ្ជា</span></a></li>
+      <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-alt"></i> <span>កាលវិភាគបង្រៀន</span></a></li>
     `;
   } else if (currentRole === 'trainee') {
     menuHtml = `
-      <li class="sidebar-label">កិច្ចដំណើរការ & ផតថល</li>
-      <li><a class="sidebar-item-link ${currentView==='flow'?'active':''}" onclick="navigateView('flow')"><i class="fas fa-project-diagram"></i> <span>កិច្ចដំណើរការប្រព័ន្ធ (System Flow)</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='trainee-portal'?'active':''}" onclick="navigateView('trainee-portal')"><i class="fas fa-id-badge"></i> <span>ប្រវត្តិរូប & កាតសម្គាល់</span></a></li>
+      <li class="sidebar-label">ព័ត៌មានផ្ទាល់ខ្លួន</li>
+      <li><a class="sidebar-item-link ${currentView==='trainee-portal'?'active':''}" onclick="navigateView('trainee-portal')"><i class="fas fa-id-card"></i> <span>ប្រវត្តិរូប &amp; កាតសម្គាល់</span></a></li>
+      <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-alt"></i> <span>កាលវិភាគសិក្សា</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='trainee-attendance'?'active':''}" onclick="navigateView('trainee-attendance')"><i class="fas fa-user-check"></i> <span>វត្តមានផ្ទាល់ខ្លួន</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='trainee-grades'?'active':''}" onclick="navigateView('trainee-grades')"><i class="fas fa-award"></i> <span>លទ្ធផលពិន្ទុ & និទ្ទេស</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-week"></i> <span>កាលវិភាគសិក្សាថ្នាក់</span></a></li>
+      <li><a class="sidebar-item-link ${currentView==='trainee-grades'?'active':''}" onclick="navigateView('trainee-grades')"><i class="fas fa-award"></i> <span>លទ្ធផលពិន្ទុ &amp; និទ្ទេស</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='trainee-request'?'active':''}" onclick="navigateView('trainee-request')"><i class="fas fa-paper-plane"></i> <span>ស្នើសុំកែប្រែព័ត៌មាន</span></a></li>
     `;
   }
@@ -426,7 +434,7 @@ function renderView(view) {
 }
 
 // ==========================================================================
-// 1. DASHBOARD & ANALYTICS VIEW (ម៉ូឌុលផ្ទាំងគ្រប់គ្រងសង្ខេប)
+// 1. DASHBOARD & ANALYTICS VIEW (ម៉ូឌុលផ្ទាំងគ្រប់គ្រងសង្ខេប បែបស្អាត និងមានសណ្ដាប់ធ្នាប់)
 // ==========================================================================
 function renderDashboardView(container) {
   const total = stmsData.trainees.length;
@@ -443,39 +451,78 @@ function renderDashboardView(container) {
   const alertTrainees = stmsData.trainees.filter(t => (t.attendanceSummary?.absent || 0) > 3);
 
   let html = `
-    <!-- Top System Flow Blueprint Callout Banner -->
-    <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); border-radius: 12px; padding: 18px 22px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; box-shadow: 0 4px 16px rgba(37,99,235,0.25); flex-wrap:wrap; gap:12px;">
-      <div>
-        <h3 style="font-family: var(--font-moul); font-size: 1.05rem; margin-bottom: 4px;">
-          <i class="fas fa-project-diagram"></i> កិច្ចដំណើរការគ្រប់គ្រងគ្រប់ជ្រុងជ្រោយនៃសាលា (System Flow Blueprint)
-        </h3>
-        <p style="font-size: 0.82rem; color: #bfdbfe;">
-          ស្ដង់ដារទាំង ៤ ម៉ូឌុល៖ 1. រដ្ឋបាលគរុសនិស្សិត &bull; 2. កាលវិភាគសិក្សា &bull; 3. គ្រប់គ្រងវត្តមាន &bull; 4. ពិន្ទុ &amp; វាយតម្លៃ
-        </p>
+    <!-- Top Welcome Card -->
+    <div class="clean-dashboard-welcome">
+      <div class="clean-welcome-title">
+        <h2>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</h2>
+        <p>ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត និងព័ត៌មានវិទ្យា (STMS) &bull; ឆ្នាំសិក្សា ២០២៦ - ២០២៧</p>
       </div>
-      <button class="btn btn-warning" onclick="navigateView('flow')" style="font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-        <i class="fas fa-sitemap"></i> បើកមើលកិច្ចដំណើរការប្រព័ន្ធ (View Flowchart)
-      </button>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <a href="add-student.html" class="btn btn-primary" style="height:38px; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fas fa-user-plus"></i> ចុះឈ្មោះសិស្សថ្មី
+        </a>
+        <button class="btn btn-outline" style="height:38px; display:inline-flex; align-items:center; gap:6px;" onclick="navigateView('trainees')">
+          <i class="fas fa-list-ol"></i> បញ្ជីរាយនាមសិស្ស
+        </button>
+      </div>
     </div>
 
-    <!-- View Header -->
-    <div class="view-header">
-      <div class="view-title-group">
-        <h2><i class="fas fa-tachometer-alt"></i> ផ្ទាំងព័ត៌មាន &amp; ស្ថិតិសាលា KTPTTC</h2>
-        <p>ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (ឆ្នាំសិក្សា ២០២៦-២០២៧)</p>
+    <!-- Quick Action Shortcuts (៥ មុខងារចម្បង ស្អាត និងមានសណ្ដាប់ធ្នាប់) -->
+    <div class="clean-quick-actions-grid">
+      <div class="clean-quick-action-btn" onclick="navigateView('trainees')">
+        <div class="clean-action-icon" style="background:#eff6ff; color:#2563eb;">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <div class="clean-action-text">
+          <strong>បញ្ជីរាយនាមសិស្ស</strong>
+          <span>មើលបញ្ជី និងបោះពុម្ព</span>
+        </div>
       </div>
-      <div class="view-actions-group">
-        <button class="btn btn-outline" onclick="navigateView('flow')"><i class="fas fa-project-diagram"></i> កិច្ចដំណើរការប្រព័ន្ធ (Flow)</button>
-        ${currentRole === 'admin' ? `
-          <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុនិស្សិតថ្មី</button>
-          <button class="btn btn-outline" onclick="exportFullSummaryExcel()"><i class="fas fa-file-excel"></i> របាយការណ៍សង្ខេប</button>
-        ` : ''}
+
+      <a class="clean-quick-action-btn" href="add-student.html">
+        <div class="clean-action-icon" style="background:#ecfdf5; color:#10b981;">
+          <i class="fas fa-user-plus"></i>
+        </div>
+        <div class="clean-action-text">
+          <strong>ចុះឈ្មោះសិស្សថ្មី</strong>
+          <span>បញ្ចូលទិន្នន័យគរុសនិស្សិត</span>
+        </div>
+      </a>
+
+      <div class="clean-quick-action-btn" onclick="navigateView('attendance')">
+        <div class="clean-action-icon" style="background:#f0fdfa; color:#0d9488;">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="clean-action-text">
+          <strong>គ្រប់គ្រងវត្តមាន</strong>
+          <span>ស្រង់វត្តមានប្រចាំថ្ងៃ</span>
+        </div>
+      </div>
+
+      <div class="clean-quick-action-btn" onclick="navigateView('timetable')">
+        <div class="clean-action-icon" style="background:#eef2ff; color:#4f46e5;">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="clean-action-text">
+          <strong>កាលវិភាគបង្រៀន</strong>
+          <span>កម្មវិធីសិក្សា និងម៉ោង</span>
+        </div>
+      </div>
+
+      <div class="clean-quick-action-btn" onclick="navigateView('grading')">
+        <div class="clean-action-icon" style="background:#fffbeb; color:#d97706;">
+          <i class="fas fa-calculator"></i>
+        </div>
+        <div class="clean-action-text">
+          <strong>ពិន្ទុ &amp; ការវាយតម្លៃ</strong>
+          <span>លទ្ធផលប្រចាំខែ និងឆមាស</span>
+        </div>
       </div>
     </div>
 
     <!-- Disciplinary Alert Banner if any Trainee > 3 unexcused absences -->
     ${alertTrainees.length > 0 ? `
-      <div class="disciplinary-alert-box">
+      <div class="disciplinary-alert-box" style="margin-bottom:20px;">
         <div class="alert-left-content">
           <div class="alert-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
           <div>
@@ -491,13 +538,13 @@ function renderDashboardView(container) {
       </div>
     ` : ''}
 
-    <!-- KPI Metric Cards -->
-    <div class="kpi-grid">
+    <!-- KPI Metric Cards (ស្ថិតិសំខាន់ៗ) -->
+    <div class="kpi-grid" style="margin-bottom:22px;">
       <div class="kpi-card">
         <div class="kpi-left">
           <span>គរុសនិស្សិតសរុប</span>
           <h3>${total} នាក់</h3>
-          <p>ស្រី: ${female} (${femalePct}%) | ប្រុស: ${male}</p>
+          <p>ស្រី: ${female} (${femalePct}%) &bull; ប្រុស: ${male}</p>
         </div>
         <div class="kpi-icon-circle" style="background:#eff6ff; color:#2563eb;">
           <i class="fas fa-user-graduate"></i>
@@ -517,9 +564,9 @@ function renderDashboardView(container) {
 
       <div class="kpi-card">
         <div class="kpi-left">
-          <span>ជំនាន់ & ថ្នាក់បណ្តុះបណ្តាល</span>
+          <span>ជំនាន់ &amp; ថ្នាក់បណ្តុះបណ្តាល</span>
           <h3>${stmsData.cohorts.length} ជំនាន់</h3>
-          <p>១២+២ បឋម, មត្តេយ្យ, វិក្រឹតការ</p>
+          <p>១២+២, ១២+៤, បរិញ្ញាបត្រ+១</p>
         </div>
         <div class="kpi-icon-circle" style="background:#fef3c7; color:#d97706;">
           <i class="fas fa-school"></i>
@@ -528,7 +575,7 @@ function renderDashboardView(container) {
 
       <div class="kpi-card">
         <div class="kpi-left">
-          <span>គ្រូឧទ្ទេស & មុខវិជ្ជា</span>
+          <span>គ្រូឧទ្ទេស &amp; មុខវិជ្ជា</span>
           <h3>${stmsData.subjects.length} មុខវិជ្ជា</h3>
           <p>បង្រៀនដោយគ្រូឧទ្ទេសជំនាញ</p>
         </div>
@@ -538,45 +585,62 @@ function renderDashboardView(container) {
       </div>
     </div>
 
-    <!-- Analytics & Active Attendance Log -->
+    <!-- 2 Columns: Left (Recent Students) & Right (Today's Timetable + System Status) -->
     <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:24px;">
       
       <!-- Left: Recent Trainees Table -->
       <div class="table-card">
-        <div class="table-toolbar">
-          <strong style="color:#1e3a8a; font-size:0.92rem;"><i class="fas fa-users"></i> បញ្ជីគរុសនិស្សិតចុងក្រោយ</strong>
-          <a onclick="navigateView('trainees')" style="color:#2563eb; font-size:0.8rem; font-weight:600; cursor:pointer;">មើលទាំងអស់ →</a>
+        <div class="table-toolbar" style="border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:12px;">
+          <strong style="color:#1e3a8a; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-users" style="color:#2563eb;"></i> បញ្ជីគរុសនិស្សិតចុងក្រោយ
+          </strong>
+          <a onclick="navigateView('trainees')" style="color:#2563eb; font-size:0.84rem; font-weight:600; cursor:pointer;">
+            មើលបញ្ជីពេញលេញ (១២ ជួរឈរ) &rarr;
+          </a>
         </div>
         <div class="data-table-responsive">
-          <table class="stms-table">
+          <table class="roster-table" style="font-size:0.82rem;">
             <thead>
               <tr>
-                <th>អត្តលេខ</th>
-                <th>ឈ្មោះគរុសនិស្សិត</th>
-                <th>ភេទ</th>
+                <th style="width:45px; text-align:center;">ល.រ</th>
+                <th style="width:130px; text-align:center;">អ.ល</th>
+                <th>គោត្តនាម និងនាម</th>
+                <th style="width:60px; text-align:center;">ភេទ</th>
                 <th>ថ្នាក់រៀន</th>
-                <th>វត្តមាន</th>
-                <th>ស្ថានភាព</th>
+                <th style="width:90px; text-align:center;">វត្តមាន</th>
+                <th style="width:70px; text-align:center;">សកម្មភាព</th>
               </tr>
             </thead>
             <tbody>
               ${stmsData.trainees.length === 0 ? `
                 <tr>
-                  <td colspan="6" style="text-align:center; padding:35px 15px; color:#64748b;">
+                  <td colspan="7" style="text-align:center; padding:40px 15px; color:#64748b;">
                     <i class="fas fa-inbox fa-2x" style="color:#cbd5e1; margin-bottom:8px; display:block;"></i>
                     <div style="font-weight:700; color:#1e3a8a; font-size:0.95rem;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតទេ</div>
-                    <p style="font-size:0.8rem; color:#94a3b8; margin:4px 0 10px 0;">ប្រព័ន្ធរង់ចាំការបញ្ចូលព័ត៌មានពីគ្រូបង្រៀន ឬរដ្ឋបាល</p>
-                    <button class="btn btn-primary" style="padding:4px 12px; font-size:0.75rem;" onclick="openEnrollModal()"><i class="fas fa-plus"></i> ចុះឈ្មោះថ្មី</button>
+                    <p style="font-size:0.8rem; color:#94a3b8; margin:4px 0 12px 0;">ប្រព័ន្ធរង់ចាំការបញ្ចូលព័ត៌មានពីគ្រូបង្រៀន ឬរដ្ឋបាល</p>
+                    <a class="btn btn-primary" style="padding:6px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;" href="add-student.html">
+                      <i class="fas fa-plus"></i> ចុះឈ្មោះសិស្សដំបូង
+                    </a>
                   </td>
                 </tr>
-              ` : stmsData.trainees.slice(0, 5).map(t => `
+              ` : stmsData.trainees.slice(0, 6).map((t, idx) => `
                 <tr>
-                  <td><code>${t.id}</code></td>
-                  <td><strong>${t.avatar} ${t.nameKh}</strong></td>
-                  <td>${t.gender}</td>
-                  <td>${t.className}</td>
-                  <td><strong style="color:${(t.attendanceSummary?.rate||100)>=90?'#10b981':'#f59e0b'};">${t.attendanceSummary?.rate||100}%</strong></td>
-                  <td><span class="badge badge-present">${t.status}</span></td>
+                  <td style="text-align:center; font-weight:600;">${idx + 1}</td>
+                  <td><span class="roster-id-tag">${t.id}</span></td>
+                  <td>
+                    <div class="roster-student-cell">
+                      <div class="roster-student-avatar">
+                        ${t.photo ? `<img src="${t.photo}" alt="${t.nameKh}" onerror="this.outerHTML='👨‍🎓'">` : (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}
+                      </div>
+                      <span class="roster-student-name">${t.nameKh}</span>
+                    </div>
+                  </td>
+                  <td style="text-align:center;">${t.gender || 'ប្រុស'}</td>
+                  <td>${t.className || 'ថ្នាក់ ១២+២'}</td>
+                  <td style="text-align:center;"><strong style="color:${(t.attendanceSummary?.rate||100)>=90?'#10b981':'#f59e0b'};">${t.attendanceSummary?.rate||100}%</strong></td>
+                  <td style="text-align:center;">
+                    <button class="roster-action-btn btn-edit-roster" onclick="openEditStudent('${t.id}')" title="កែប្រែព័ត៌មាន"><i class="fas fa-edit"></i></button>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -584,61 +648,48 @@ function renderDashboardView(container) {
         </div>
       </div>
 
-      <!-- Right: Grade Distribution & Cohorts summary -->
+      <!-- Right: Today's Schedule & System Status -->
       <div style="display:flex; flex-direction:column; gap:16px;">
-        <div style="background:#ffffff; border-radius:10px; border:1px solid var(--border-color); padding:18px;">
-          <h4 style="color:#1e3a8a; font-size:0.9rem; margin-bottom:12px;"><i class="fas fa-chart-bar"></i> ការបែងចែកជំនាន់បណ្តុះបណ្តាល</h4>
-          <div style="margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:3px;">
-              <span>១២+២ បឋមសិក្សា (ជំនាន់ទី៣៤)</span>
-              <span>${Math.round(total * 0.7)} នាក់ (70%)</span>
-            </div>
-            <div style="height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;"><div style="width:70%; height:100%; background:#2563eb;"></div></div>
-          </div>
-          <div style="margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:3px;">
-              <span>១២+២ មត្តេយ្យសិក្សា (ជំនាន់ទី៣៤)</span>
-              <span>${Math.round(total * 0.2)} នាក់ (20%)</span>
-            </div>
-            <div style="height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;"><div style="width:20%; height:100%; background:#10b981;"></div></div>
-          </div>
-          <div>
-            <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:3px;">
-              <span>ថ្នាក់វិក្រឹតការនាយក-គ្រូ</span>
-              <span>${Math.max(0, total - Math.round(total * 0.9))} នាក់ (10%)</span>
-            </div>
-            <div style="height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;"><div style="width:10%; height:100%; background:#f59e0b;"></div></div>
-          </div>
-        </div>
-
-        <div style="background:#ffffff; border-radius:10px; border:1px solid var(--border-color); padding:18px;">
-          <h4 style="color:#1e3a8a; font-size:0.9rem; margin-bottom:10px;"><i class="fas fa-bell"></i> សំណើកែព័ត៌មានរង់ចាំការអនុម័ត</h4>
-          <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:10px;">
-            មានសំណើចំនួន <strong>${stmsData.profileRequests.filter(r=>r.status==='pending').length}</strong> ពីគរុសនិស្សិតកំពុងរង់ចាំការត្រួតពិនិត្យ។
-          </p>
-          <button class="btn btn-outline" style="width:100%; justify-content:center;" onclick="navigateView('requests')">ពិនិត្យសំណើ</button>
-        </div>
-
-        <!-- Library Management Card (matching central diagram screen) -->
+        <!-- Today's Schedule Card -->
         <div style="background:#ffffff; border-radius:10px; border:1px solid var(--border-color); padding:18px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h4 style="color:#1e3a8a; font-size:0.9rem; margin:0;"><i class="fas fa-book"></i> បណ្ណាល័យ Management</h4>
-            <a href="/library" target="_blank" style="color:#2563eb; font-size:0.75rem; font-weight:700; text-decoration:none;">បើកបណ្ណាល័យ →</a>
+            <h4 style="color:#1e3a8a; font-size:0.9rem; margin:0;"><i class="fas fa-calendar-day" style="color:#4f46e5;"></i> កាលវិភាគបង្រៀនថ្ងៃនេះ</h4>
+            <a onclick="navigateView('timetable')" style="color:#2563eb; font-size:0.75rem; font-weight:700; text-decoration:none; cursor:pointer;">មើលកាលវិភាគ &rarr;</a>
           </div>
-          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; text-align:center;">
-            <div style="background:#eff6ff; padding:8px 4px; border-radius:6px; border:1px solid #dbeafe;">
-              <div style="font-size:0.68rem; color:#1e40af;">Total Books</div>
-              <strong style="color:#1d4ed8; font-size:0.95rem;">1,485</strong>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #2563eb; border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="color:#0f172a; font-size:0.83rem;">គរុកោសល្យទូទៅ</strong>
+                <div style="font-size:0.74rem; color:#64748b;">បន្ទប់ ១០១ &bull; គ្រូឧទ្ទេសជំនាញ</div>
+              </div>
+              <span style="font-size:0.75rem; font-weight:700; color:#2563eb; background:#eff6ff; padding:2px 8px; border-radius:4px;">07:30 - 09:00</span>
             </div>
-            <div style="background:#fef3c7; padding:8px 4px; border-radius:6px; border:1px solid #fde68a;">
-              <div style="font-size:0.68rem; color:#92400e;">Issue/Return</div>
-              <strong style="color:#d97706; font-size:0.95rem;">124 / 110</strong>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #10b981; border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="color:#0f172a; font-size:0.83rem;">គណិតវិទ្យា</strong>
+                <div style="font-size:0.74rem; color:#64748b;">បន្ទប់ ១០១ &bull; គ្រូឧទ្ទេសជំនាញ</div>
+              </div>
+              <span style="font-size:0.75rem; font-weight:700; color:#10b981; background:#ecfdf5; padding:2px 8px; border-radius:4px;">09:15 - 10:45</span>
             </div>
-            <div style="background:#ecfdf5; padding:8px 4px; border-radius:6px; border:1px solid #a7f3d0;">
-              <div style="font-size:0.68rem; color:#065f46;">Available</div>
-              <strong style="color:#059669; font-size:0.95rem;">1,361</strong>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #f59e0b; border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="color:#0f172a; font-size:0.83rem;">ភាសាខ្មែរ</strong>
+                <div style="font-size:0.74rem; color:#64748b;">បន្ទប់ ១០១ &bull; គ្រូឧទ្ទេសជំនាញ</div>
+              </div>
+              <span style="font-size:0.75rem; font-weight:700; color:#d97706; background:#fffbeb; padding:2px 8px; border-radius:4px;">13:30 - 15:00</span>
             </div>
           </div>
+        </div>
+
+        <!-- Requests & System Health -->
+        <div style="background:#ffffff; border-radius:10px; border:1px solid var(--border-color); padding:18px;">
+          <h4 style="color:#1e3a8a; font-size:0.9rem; margin-bottom:8px;"><i class="fas fa-clipboard-check" style="color:#059669;"></i> សំណើសុំកែព័ត៌មានសិស្ស</h4>
+          <p style="font-size:0.82rem; color:#64748b; margin-bottom:12px;">
+            មានសំណើចំនួន <strong>${stmsData.profileRequests.filter(r=>r.status==='pending').length}</strong> កំពុងរង់ចាំការពិនិត្យ និងអនុម័តពីរដ្ឋបាល។
+          </p>
+          <button class="btn btn-outline" style="width:100%; justify-content:center; font-size:0.82rem;" onclick="navigateView('requests')">
+            <i class="fas fa-check-circle"></i> ពិនិត្យសំណើកែព័ត៌មាន
+          </button>
         </div>
       </div>
     </div>

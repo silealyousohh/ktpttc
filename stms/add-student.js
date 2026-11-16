@@ -37,13 +37,19 @@ function getSavedStudents() {
     const rawStms = localStorage.getItem('ktpttc_stms_data_v2');
     if (rawStms) {
       const parsed = JSON.parse(rawStms);
-      if (parsed && Array.isArray(parsed.trainees) && parsed.trainees.length > 0) return parsed.trainees;
+      if (parsed && Array.isArray(parsed.trainees) && parsed.trainees.length > 0) {
+        return parsed.trainees.filter(t => t && t.nameKh && !String(t.nameKh).includes('PK') && !/[\x00-\x08\x0E-\x1F\x7F]/.test(String(t.nameKh)));
+      }
     }
     const legacy = localStorage.getItem('krusmart_teacher_custom_students');
     if (legacy) {
       const parsed = JSON.parse(legacy);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      if (parsed && Array.isArray(parsed.students) && parsed.students.length > 0) return parsed.students;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter(t => t && t.nameKh && !String(t.nameKh).includes('PK') && !/[\x00-\x08\x0E-\x1F\x7F]/.test(String(t.nameKh)));
+      }
+      if (parsed && Array.isArray(parsed.students) && parsed.students.length > 0) {
+        return parsed.students.filter(t => t && t.nameKh && !String(t.nameKh).includes('PK') && !/[\x00-\x08\x0E-\x1F\x7F]/.test(String(t.nameKh)));
+      }
     }
     if (window.KTPTTC_INITIAL_DATA && Array.isArray(window.KTPTTC_INITIAL_DATA.trainees)) {
       return window.KTPTTC_INITIAL_DATA.trainees;
@@ -759,10 +765,20 @@ function handleExcelImport(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
 
+  if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+    showToast('សូមរក្សាទុកឯកសារជាទម្រង់ CSV (Comma Delimited ឬ UTF-8 CSV) មុននឹងនាំចូល!', 'warning');
+    input.value = '';
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const text = e.target.result;
+      if (text.startsWith('PK') || /[\x00-\x08\x0E-\x1F\x7F]/.test(text.substring(0, 50))) {
+        showToast('ឯកសារនេះជាប្រភេទ Binary មិនអាចអានជាអត្ថបទបានឡើយ។ សូមជ្រើសរើសឯកសារ CSV!', 'error');
+        return;
+      }
       const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
       if (lines.length <= 1) {
         showToast('ឯកសារពុំមានទិន្នន័យសិស្សទេ!', 'error');

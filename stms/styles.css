@@ -1510,6 +1510,89 @@ body {
 /* ==========================================================================
    MOEYS STUDENT ROSTER VIEW (បញ្ជីរាយនាមសិស្សានុសិស្ស តាមគំរូក្រសួងអប់រំ)
    ========================================================================== */
+.clean-dashboard-welcome {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  border-top: 4.5px solid #1e3a8a;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.clean-welcome-title h2 {
+  font-family: var(--font-moul, 'Moul', serif);
+  font-size: 1.15rem;
+  color: #1e3a8a;
+  margin: 0 0 6px 0;
+  letter-spacing: 0.2px;
+}
+
+.clean-welcome-title p {
+  font-size: 0.84rem;
+  color: #475569;
+  margin: 0;
+}
+
+.clean-quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.clean-quick-action-btn {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  color: #1e293b;
+}
+
+.clean-quick-action-btn:hover {
+  border-color: #94a3b8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.clean-action-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.clean-action-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.clean-action-text strong {
+  font-size: 0.86rem;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.clean-action-text span {
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
 .roster-card {
   background: #ffffff;
   border-radius: 10px;
