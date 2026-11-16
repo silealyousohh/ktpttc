@@ -183,23 +183,111 @@ function calculateAgeFromDob(dobString) {
   }
 }
 
-// Photo Upload Handlers
-function handlePhotoUpload(input) {
-  if (input.files && input.files[0]) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPhotoPreview(e.target.result);
-      showToast('បានជ្រើសរូបថតសិស្សដោយជោគជ័យ!', 'success');
-    };
-    reader.readAsDataURL(file);
+// ==========================================================================
+// Photo Upload & Live Camera Handlers (Enhanced with Server Upload)
+// ==========================================================================
+
+function triggerPhotoFileInput() {
+  const input = document.getElementById('photoFileInput');
+  if (input) input.click();
+}
+
+function showPhotoUploading(isLoading) {
+  const spinner = document.getElementById('photoUploadingSpinner');
+  if (spinner) {
+    spinner.style.display = isLoading ? 'flex' : 'none';
   }
+}
+
+// Compress image via HTML5 Canvas to prevent localStorage quota issues
+function compressImage(source, maxWidth = 500, maxHeight = 600, quality = 0.88) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width;
+      let h = img.height;
+      if (w > maxWidth || h > maxHeight) {
+        const ratio = Math.min(maxWidth / w, maxHeight / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => reject(new Error('មិនអាចអានទិន្នន័យរូបភាពបានទេ'));
+    if (typeof source === 'string') {
+      img.src = source;
+    } else if (source instanceof Blob || source instanceof File) {
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(source);
+    } else {
+      resolve('');
+    }
+  });
+}
+
+// Upload photo to Hostinger server storage (/api/upload/image)
+async function uploadPhotoToServer(compressedDataUrl) {
+  showPhotoUploading(true);
+  try {
+    const endpoint = window.location.hostname.includes('ktpttc.net') ? 'https://ktpttc.net/api/upload/image' : '/api/upload/image';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image: compressedDataUrl,
+        filename: `stu_${Date.now()}.jpg`
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && data.url) {
+        const fullUrl = data.url.startsWith('http') ? data.url : `https://ktpttc.net${data.url}`;
+        currentPhotoData = fullUrl;
+        setPhotoPreview(fullUrl);
+        showPhotoUploading(false);
+        showToast('បានផ្ទុកឡើងរូបថតសិស្សចូល Server ជោគជ័យ!', 'success');
+        return fullUrl;
+      }
+    }
+  } catch (err) {
+    console.warn('Server photo upload fallback to local storage:', err);
+  }
+  // Fallback to local compressed data URL
+  currentPhotoData = compressedDataUrl;
+  setPhotoPreview(compressedDataUrl);
+  showPhotoUploading(false);
+  showToast('បានជ្រើសរូបថតសិស្សរួចរាល់!', 'success');
+  return compressedDataUrl;
+}
+
+async function handlePhotoUpload(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  try {
+    showPhotoUploading(true);
+    const compressed = await compressImage(file);
+    setPhotoPreview(compressed);
+    await uploadPhotoToServer(compressed);
+  } catch (err) {
+    console.error(err);
+    showPhotoUploading(false);
+    showToast('កំហុសក្នុងការផ្ទុកឡើងរូបថត៖ ' + err.message, 'error');
+  }
+  input.value = '';
 }
 
 function promptPhotoUrl() {
   const url = prompt('សូមបញ្ចូលតំណភ្ជាប់រូបថត (Image URL)៖');
   if (url && url.trim().startsWith('http')) {
     setPhotoPreview(url.trim());
+    currentPhotoData = url.trim();
     showToast('បានភ្ជាប់រូបថតសិស្សរួចរាល់', 'success');
   }
 }
@@ -215,67 +303,145 @@ function setPhotoPreview(src) {
   }
 }
 
-// Camera Web Capture (Simple snapshot using HTML5 Video or fallback)
+// Camera Web Capture & Direct Upload Dialog (matching ជ្រើសរូបផ្ទាល់ button)
 function openWebcamCapture() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    const input = document.getElementById('photoFileInput');
-    if (input) {
-      input.setAttribute('capture', 'user');
-      input.click();
-    } else {
-      showToast('ឧបករណ៍នេះពុំគាំទ្រម៉ាស៊ីនថតផ្ទាល់ទេ', 'error');
-    }
-    return;
-  }
+  const existing = document.getElementById('webcamModal');
+  if (existing) existing.remove();
 
-  // Create quick modal for webcam
   const modal = document.createElement('div');
   modal.id = 'webcamModal';
-  modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.8);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
   
   modal.innerHTML = `
-    <div style="background:#1e293b; border-radius:12px; padding:20px; max-width:440px; width:90%; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-      <h3 style="color:#f8fafc; font-size:1.1rem; margin-bottom:12px;"><i class="fas fa-camera"></i> ថតរូបសិស្សផ្ទាល់</h3>
-      <video id="webcamVideo" autoplay playsinline style="width:100%; border-radius:8px; background:#000; max-height:280px; object-fit:cover;"></video>
-      <canvas id="webcamCanvas" style="display:none;"></canvas>
-      <div style="display:flex; justify-content:center; gap:12px; margin-top:16px;">
-        <button id="btnCancelCam" style="background:#64748b; color:#fff; border:none; padding:8px 18px; border-radius:6px; font-weight:600; cursor:pointer;">បោះបង់</button>
-        <button id="btnSnapCam" style="background:#16a34a; color:#fff; border:none; padding:8px 22px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="fas fa-camera"></i> ថតរូប</button>
+    <div style="background:#ffffff; border-radius:14px; padding:24px; max-width:480px; width:100%; box-shadow:0 20px 40px rgba(0,0,0,0.3); border:1px solid #e2e8f0; font-family:'Kantumruy Pro',sans-serif; text-align:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+        <h3 style="color:#1e3a8a; font-size:1.05rem; font-weight:700; margin:0; display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-camera" style="color:#2563eb;"></i> ថតរូបផ្ទាល់ ឬផ្ទុកឡើងរូបថត (Upload Photo)
+        </h3>
+        <button id="btnCloseWebcamModal" style="background:none; border:none; font-size:1.4rem; color:#94a3b8; cursor:pointer; line-height:1;">&times;</button>
+      </div>
+
+      <!-- Live Video Viewport or No-Camera Notice -->
+      <div id="camViewportContainer" style="position:relative; width:100%; height:260px; background:#0f172a; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:18px; border:2px dashed #93c5fd;">
+        <video id="webcamVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:none;"></video>
+        <div id="camPlaceholderMessage" style="color:#cbd5e1; font-size:0.88rem; padding:20px; line-height:1.6;">
+          <i class="fas fa-video fa-2x" style="color:#60a5fa; margin-bottom:10px; display:block;"></i>
+          កំពុងភ្ជាប់ទៅកាន់កាមេរ៉ា...
+        </div>
+        <canvas id="webcamCanvas" style="display:none;"></canvas>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button id="btnSnapCam" type="button" style="background:#16a34a; color:#ffffff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; font-size:0.88rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 6px rgba(22,163,74,0.3);">
+            <i class="fas fa-camera"></i> ថតរូបផ្ទាល់
+          </button>
+          <button id="btnUploadCamDirect" type="button" style="background:#2563eb; color:#ffffff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; font-size:0.88rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 6px rgba(37,99,235,0.3);">
+            <i class="fas fa-upload"></i> ផ្ទុកឡើងរូបថត
+          </button>
+        </div>
+
+        <button id="btnCancelCam" type="button" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:8px; font-weight:600; font-size:0.85rem; cursor:pointer;">
+          បោះបង់
+        </button>
+      </div>
+
+      <div style="margin-top:14px; font-size:0.75rem; color:#64748b; line-height:1.5;">
+        <i class="fas fa-info-circle" style="color:#3b82f6;"></i> លោកអ្នកអាចថតរូបផ្ទាល់ពីកាមេរ៉ា ឬចុច «ផ្ទុកឡើងរូបថត» ដើម្បីជ្រើសឯកសាររូបថតពីកុំព្យូទ័រ/ទូរស័ព្ទ។
       </div>
     </div>
   `;
   document.body.appendChild(modal);
 
   const video = modal.querySelector('#webcamVideo');
+  const placeholder = modal.querySelector('#camPlaceholderMessage');
+  const btnSnap = modal.querySelector('#btnSnapCam');
   let stream = null;
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
-    .then(s => {
-      stream = s;
-      video.srcObject = s;
-    })
-    .catch(err => {
-      console.error(err);
-      modal.remove();
-      showToast('មិនអាចបើកកាមេរ៉ាបានទេ៖ ' + err.message, 'error');
-    });
+  function stopCamStream() {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+  }
 
-  modal.querySelector('#btnCancelCam').onclick = () => {
-    if (stream) stream.getTracks().forEach(t => t.stop());
+  // Handle Close / Cancel
+  modal.querySelector('#btnCloseWebcamModal').onclick = () => { stopCamStream(); modal.remove(); };
+  modal.querySelector('#btnCancelCam').onclick = () => { stopCamStream(); modal.remove(); };
+  modal.onclick = (e) => { if (e.target === modal) { stopCamStream(); modal.remove(); } };
+
+  // Handle Direct Upload button click from inside modal
+  modal.querySelector('#btnUploadCamDirect').onclick = () => {
+    stopCamStream();
     modal.remove();
+    triggerPhotoFileInput();
   };
 
-  modal.querySelector('#btnSnapCam').onclick = () => {
+  // Attempt to activate camera
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } }, audio: false })
+      .then(s => {
+        stream = s;
+        video.srcObject = s;
+        video.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+      })
+      .catch(err => {
+        console.warn('Camera access denied or unavailable:', err);
+        if (placeholder) {
+          placeholder.innerHTML = `
+            <i class="fas fa-exclamation-triangle fa-2x" style="color:#f59e0b; margin-bottom:8px; display:block;"></i>
+            ឧបករណ៍មិនអាចបើកកាមេរ៉ាបានទេ<br>
+            <span style="font-size:0.75rem; color:#94a3b8;">(សូមចុចប៊ូតុង «ផ្ទុកឡើងរូបថត» ខាងក្រោមដើម្បីជ្រើសឯកសារ)</span>
+          `;
+        }
+        if (btnSnap) {
+          btnSnap.disabled = true;
+          btnSnap.style.opacity = '0.5';
+          btnSnap.style.cursor = 'not-allowed';
+        }
+      });
+  } else {
+    if (placeholder) {
+      placeholder.innerHTML = `
+        <i class="fas fa-exclamation-circle fa-2x" style="color:#ef4444; margin-bottom:8px; display:block;"></i>
+        ឧបករណ៍នេះពុំគាំទ្រ Web Camera ទេ<br>
+        <span style="font-size:0.75rem; color:#94a3b8;">សូមចុច «ផ្ទុកឡើងរូបថត» ដើម្បីជ្រើសឯកសាររូបថតពីឧបករណ៍</span>
+      `;
+    }
+    if (btnSnap) {
+      btnSnap.disabled = true;
+      btnSnap.style.opacity = '0.5';
+      btnSnap.style.cursor = 'not-allowed';
+    }
+  }
+
+  // Handle Snap photo
+  btnSnap.onclick = async () => {
+    if (!stream || video.videoWidth === 0) {
+      showToast('កាមេរ៉ាមិនទាន់ដំណើរការឡើយ!', 'warning');
+      return;
+    }
     const canvas = modal.querySelector('#webcamCanvas');
-    canvas.width = video.videoWidth || 640;
+    canvas.width = video.videoWidth || 480;
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-    setPhotoPreview(dataUrl);
-    if (stream) stream.getTracks().forEach(t => t.stop());
+    const rawDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    
+    stopCamStream();
     modal.remove();
-    showToast('បានថតរូបសិស្សរួចរាល់!', 'success');
+
+    try {
+      showPhotoUploading(true);
+      const compressed = await compressImage(rawDataUrl);
+      setPhotoPreview(compressed);
+      await uploadPhotoToServer(compressed);
+    } catch (e) {
+      console.error(e);
+      setPhotoPreview(rawDataUrl);
+    }
   };
 }
 

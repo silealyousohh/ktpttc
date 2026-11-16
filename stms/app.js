@@ -746,7 +746,13 @@ function renderTraineesView(container) {
               <tr data-trainee-row="${t.id}" data-cohort="${t.cohort}">
                 <td>${idx + 1}</td>
                 <td><code>${t.id}</code></td>
-                <td><strong style="color:#0f172a;">${t.avatar} ${t.nameKh}</strong> ${t.nameEn ? `<div style="font-size:0.75rem; color:#64748b;">${t.nameEn}</div>` : ''}</td>
+                <td>
+                  <strong style="color:#0f172a;">
+                    ${t.photo ? `<img src="${t.photo}" style="width:26px; height:26px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:6px; border:1px solid #cbd5e1;" onerror="this.style.display='none';">` : `${t.avatar} `}
+                    ${t.nameKh}
+                  </strong>
+                  ${t.nameEn ? `<div style="font-size:0.75rem; color:#64748b;">${t.nameEn}</div>` : ''}
+                </td>
                 <td><span style="color:${t.gender==='ស្រី'?'#ec4899':'#0284c7'}; font-weight:700;">${t.gender}</span></td>
                 <td>${t.dob}</td>
                 <td>${t.className}</td>
@@ -938,7 +944,7 @@ function viewTraineeCard(id) {
             <!-- Card Body -->
             <div style="display:flex; gap:14px; align-items:center; margin:10px 0;">
               <div style="width:72px; height:85px; background:#0f172a; border:2px solid #3b82f6; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:2.4rem; overflow:hidden;">
-                ${t.avatar}
+                ${t.photo ? `<img src="${t.photo}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML='${t.avatar}'">` : t.avatar}
               </div>
               <div style="text-align:left; font-size:0.82rem; line-height:1.6;">
                 <div>ឈ្មោះ៖ <strong style="font-size:0.95rem; color:#f8fafc;">${t.nameKh}</strong></div>
@@ -2705,9 +2711,8 @@ function renderSystemFlowView(container) {
               <i class="fas fa-id-card"></i> ប្រវត្តិរូប Profile
             </div>
             <div class="profile-preview-card">
-              <div class="trainee-passport-photo" style="background:#2563eb; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                <i class="fas fa-user-tie" style="font-size:1.6rem;"></i>
-                <span style="font-size:0.55rem; margin-top:2px; font-weight:700;">រូបថត</span>
+              <div class="trainee-passport-photo" style="background:#2563eb; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden;">
+                ${sampleTrainee.photo ? `<img src="${sampleTrainee.photo}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-user-tie" style="font-size:1.6rem;"></i><span style="font-size:0.55rem; margin-top:2px; font-weight:700;">រូបថត</span>`}
               </div>
               <div class="profile-card-details">
                 <div><strong>Trainee</strong></div>
