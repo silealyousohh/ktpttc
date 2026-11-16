@@ -499,9 +499,12 @@
       </a>
 
       <select id="classSelector" class="nav-select">
-        <option value="១២+២" selected>ថ្នាក់ដើម: ១២+២</option>
-        <option value="១២+៤">ថ្នាក់ដើម: ១២+៤</option>
-        <option value="បរិញ្ញាបត្រ+១">ថ្នាក់ដើម: បរិញ្ញាបត្រ+១</option>
+        <option value="១២+២ ក្រុម ក" selected>ថ្នាក់ដើម: ១២+២ ក្រុម ក</option>
+        <option value="១២+២ ក្រុម ខ">ថ្នាក់ដើម: ១២+២ ក្រុម ខ</option>
+        <option value="១២+៤ ក្រុម ក">ថ្នាក់ដើម: ១២+៤ ក្រុម ក</option>
+        <option value="១២+៤ ក្រុម ខ">ថ្នាក់ដើម: ១២+៤ ក្រុម ខ</option>
+        <option value="បរិញ្ញាបត្រ+១ ក្រុម ក">ថ្នាក់ដើម: បរិញ្ញាបត្រ+១ ក្រុម ក</option>
+        <option value="បរិញ្ញាបត្រ+១ ក្រុម ខ">ថ្នាក់ដើម: បរិញ្ញាបត្រ+១ ក្រុម ខ</option>
       </select>
 
       <a href="index.html" onclick="sessionStorage.setItem('stms_target_view', 'trainees');" class="nav-btn nav-btn-primary">
@@ -546,8 +549,8 @@
 
           <!-- Basic Info Columns -->
           <div>
-            <!-- Row 1: ID, Grade, Khmer Name -->
-            <div class="fields-grid-3">
+            <!-- Row 1: ID, Grade, Group, Khmer Name -->
+            <div class="fields-grid-4">
               <div class="form-group">
                 <label class="form-label" for="regStuId">អត្តលេខ<span class="required">*</span></label>
                 <input type="text" id="regStuId" class="form-control" placeholder="អត្តលេខ" required>
@@ -559,6 +562,19 @@
                   <option value="១២+២" selected>១២+២</option>
                   <option value="១២+៤">១២+៤</option>
                   <option value="បរិញ្ញាបត្រ+១">បរិញ្ញាបត្រ+១</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="regGroup">ក្រុម<span class="required">*</span></label>
+                <select id="regGroup" class="form-control" required>
+                  <option value="ក្រុម ក" selected>ក្រុម ក</option>
+                  <option value="ក្រុម ខ">ក្រុម ខ</option>
+                  <option value="ក្រុម គ">ក្រុម គ</option>
+                  <option value="ក្រុម ឃ">ក្រុម ឃ</option>
+                  <option value="ក្រុម ង">ក្រុម ង</option>
+                  <option value="ក្រុម ១">ក្រុម ១</option>
+                  <option value="ក្រុម ២">ក្រុម ២</option>
                 </select>
               </div>
 

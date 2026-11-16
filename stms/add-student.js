@@ -79,16 +79,24 @@ function initStudentIdSuggestion() {
   }
 }
 
-// Setup Class Selector dropdown (2-way sync with regClass)
+// Setup Class Selector dropdown (2-way sync with regClass & regGroup)
 function setupClassSelector() {
   const sel = document.getElementById('classSelector');
   const classInput = document.getElementById('regClass');
-  if (sel && classInput) {
+  const groupInput = document.getElementById('regGroup');
+  if (sel) {
     sel.addEventListener('change', (e) => {
-      classInput.value = e.target.value;
-    });
-    classInput.addEventListener('change', (e) => {
-      sel.value = e.target.value;
+      const val = e.target.value;
+      if (classInput) {
+        if (val.includes('១២+៤')) classInput.value = '១២+៤';
+        else if (val.includes('បរិញ្ញា')) classInput.value = 'បរិញ្ញាបត្រ+១';
+        else classInput.value = '១២+២';
+      }
+      if (groupInput) {
+        if (val.includes('ក្រុម ខ')) groupInput.value = 'ក្រុម ខ';
+        else if (val.includes('ក្រុម គ')) groupInput.value = 'ក្រុម គ';
+        else groupInput.value = 'ក្រុម ក';
+      }
     });
   }
 }
@@ -112,8 +120,18 @@ function checkEditMode() {
     idInput.readOnly = true;
   }
 
-  if (document.getElementById('regClass')) document.getElementById('regClass').value = s.className || '១២+២';
-  if (document.getElementById('classSelector')) document.getElementById('classSelector').value = s.className || '១២+២';
+  if (document.getElementById('regClass')) {
+    if (s.classGrade) document.getElementById('regClass').value = s.classGrade;
+    else if (s.className && s.className.includes('១២+៤')) document.getElementById('regClass').value = '១២+៤';
+    else if (s.className && s.className.includes('បរិញ្ញា')) document.getElementById('regClass').value = 'បរិញ្ញាបត្រ+១';
+    else document.getElementById('regClass').value = '១២+២';
+  }
+  if (document.getElementById('regGroup')) {
+    if (s.group) document.getElementById('regGroup').value = s.group;
+    else if (s.className && s.className.includes('ក្រុម ខ')) document.getElementById('regGroup').value = 'ក្រុម ខ';
+    else if (s.className && s.className.includes('ក្រុម គ')) document.getElementById('regGroup').value = 'ក្រុម គ';
+    else document.getElementById('regGroup').value = 'ក្រុម ក';
+  }
   if (document.getElementById('regNameKh')) document.getElementById('regNameKh').value = s.nameKh || '';
   if (document.getElementById('regNameEn')) document.getElementById('regNameEn').value = s.nameEn || '';
   if (document.getElementById('regGender')) document.getElementById('regGender').value = s.gender || 'ប្រុស';
@@ -319,7 +337,9 @@ function copyBirthplaceToAddress() {
 // Save Student Form
 function handleSaveStudent() {
   const id = document.getElementById('regStuId')?.value?.trim();
-  const className = document.getElementById('regClass')?.value?.trim() || '១២+២';
+  const classGrade = document.getElementById('regClass')?.value || '១២+២';
+  const group = document.getElementById('regGroup')?.value || 'ក្រុម ក';
+  const className = `${classGrade} ${group}`.trim();
   const nameKh = document.getElementById('regNameKh')?.value?.trim();
   const nameEn = document.getElementById('regNameEn')?.value?.trim() || '';
   const gender = document.getElementById('regGender')?.value;
@@ -346,6 +366,8 @@ function handleSaveStudent() {
   const studentRecord = {
     id,
     roll: students.length + 1,
+    classGrade,
+    group,
     className,
     nameKh,
     nameEn,
@@ -432,6 +454,8 @@ function handleSaveStudent() {
       dob,
       phone: parentPhone,
       parentPhone,
+      classGrade,
+      group,
       className,
       cohort: className.includes('១២+៤') ? "ថ្នាក់គរុកោសល្យ ១២+៤ ជំនាន់ទី ១" : className.includes('បរិញ្ញា') ? "ថ្នាក់បរិញ្ញាបត្រ+១ ជំនាន់ទី ១" : "ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤",
       trainingType: className.includes('១២+៤') ? "12+4" : className.includes('បរិញ្ញា') ? "បរិញ្ញាបត្រ+១" : "12+2 (បឋមសិក្សា)",
@@ -526,8 +550,10 @@ function resetFormForNextStudent(nextRoll) {
   
   const classInput = document.getElementById('regClass');
   if (classInput) classInput.value = '១២+២';
+  const groupInput = document.getElementById('regGroup');
+  if (groupInput) groupInput.value = 'ក្រុម ក';
   const sel = document.getElementById('classSelector');
-  if (sel) sel.value = '១២+២';
+  if (sel) sel.value = '១២+២ ក្រុម ក';
 
   // Reset photo
   currentPhotoData = '';
@@ -545,6 +571,7 @@ function downloadExcelTemplate() {
   const headers = [
     'អត្តលេខ',
     'ថ្នាក់ទី',
+    'ក្រុម',
     'ឈ្មោះសិស្ស_ខ្មែរ',
     'ឈ្មោះជាឡាតាំង',
     'ភេទ',
@@ -564,6 +591,7 @@ function downloadExcelTemplate() {
   const sampleRow1 = [
     'KTPTTC-2026-12P2-001',
     '១២+២',
+    'ក្រុម ក',
     'កែវ វិសាល',
     'Keo Visal',
     'ប្រុស',
@@ -583,10 +611,11 @@ function downloadExcelTemplate() {
   const sampleRow2 = [
     'KTPTTC-2026-12P2-002',
     '១២+៤',
+    'ក្រុម ខ',
     'ចាន់ សុគន្ធា',
     'Chan Sokunthea',
     'ស្រី',
-    '2013-08-20',
+    '2004-11-20',
     '016789123',
     'រាជធានីភ្នំពេញ',
     'ខណ្ឌដូនពេញ',
@@ -639,17 +668,24 @@ function handleExcelImport(input) {
       // Skip header row
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
-        if (cols.length >= 3 && cols[2]) {
+        if (cols.length >= 3 && (cols[2] || cols[3])) {
           const id = cols[0] || `STU-${String(students.length + 1).padStart(3, '0')}`;
-          const className = cols[1] || 'ថ្នាក់ទី ៧ក';
-          const nameKh = cols[2];
-          const nameEn = cols[3] || '';
+          const hasGroupCol = cols[2] && cols[2].includes('ក្រុម');
+          const classGrade = cols[1] || '១២+២';
+          const group = hasGroupCol ? cols[2] : 'ក្រុម ក';
+          const nameKh = hasGroupCol ? cols[3] : cols[2];
+          const nameEn = hasGroupCol ? (cols[4] || '') : (cols[3] || '');
+          const genderCol = hasGroupCol ? cols[5] : cols[4];
+          const dobCol = hasGroupCol ? cols[6] : cols[5];
+          const phoneCol = hasGroupCol ? cols[7] : cols[6];
+          const className = `${classGrade} ${group}`.trim();
+
           let gender = 'ប្រុស';
-          if (cols[4] && (cols[4].includes('ស្រី') || cols[4].toLowerCase().includes('female') || cols[4].toLowerCase() === 'f')) {
+          if (genderCol && (genderCol.includes('ស្រី') || genderCol.toLowerCase().includes('female') || genderCol.toLowerCase() === 'f')) {
             gender = 'ស្រី';
           }
-          const dob = cols[5] || '2013-01-01';
-          const parentPhone = cols[6] || '';
+          const dob = dobCol || '2005-01-01';
+          const parentPhone = phoneCol || '';
 
           students.push({
             id,
