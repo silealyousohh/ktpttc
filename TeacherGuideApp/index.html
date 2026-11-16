@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="km">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KruSmart - ប្រព័ន្ធគ្រប់គ្រងការបង្រៀនឌីជីថល | Teacher Digital Assistant</title>
-  
+
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="assets/logo_ptec.svg">
   <link rel="apple-touch-icon" href="assets/logo.png">
@@ -12,7 +13,9 @@
   <!-- Google Fonts: Kantumruy Pro, Moul, Noto Sans Khmer & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kantumruy+Pro:ital,wght@0,300..700;1,300..700&family=Moul&family=Noto+Sans+Khmer:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kantumruy+Pro:ital,wght@0,300..700;1,300..700&family=Moul&family=Noto+Sans+Khmer:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
 
   <!-- FontAwesome 6 Free -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,6 +23,7 @@
   <!-- App Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
   <!-- Ambient Luxury Lighting -->
@@ -30,7 +34,7 @@
        ====================================================================== -->
   <div id="loginScreen" class="login-screen-wrapper">
     <div class="login-card-container">
-      
+
       <!-- Left Branding Panel -->
       <div class="login-left-brand">
         <div class="login-brand-header">
@@ -52,7 +56,7 @@
       <!-- Right Login Form Panel -->
       <div class="login-right-form">
         <div class="login-form-inner">
-          
+
           <!-- Google Sign-In Button -->
           <button type="button" class="btn-google-login" onclick="handleGoogleLogin()">
             <img src="assets/google_icon.svg" alt="Google" style="width: 20px; height: 20px;">
@@ -68,19 +72,23 @@
           <form id="loginForm">
             <div class="form-group">
               <label for="loginEmail">អ៊ីមែល (Email)</label>
-              <input type="email" id="loginEmail" class="form-input" placeholder="name@ptec.edu.kh" value="teacher@krusmart.edu.kh" required>
+              <input type="email" id="loginEmail" class="form-input" placeholder="name@ptec.edu.kh"
+                value="teacher@krusmart.edu.kh" required>
             </div>
 
             <div class="form-group">
               <label for="loginPassword">ពាក្យសម្ងាត់ (Password)</label>
               <div class="input-with-icon">
-                <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" value="teacher2026" required>
-                <button type="button" class="password-toggle-btn" id="pwdToggleBtn" onclick="togglePasswordVisibility()">
+                <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" value="teacher2026"
+                  required>
+                <button type="button" class="password-toggle-btn" id="pwdToggleBtn"
+                  onclick="togglePasswordVisibility()">
                   <i class="fas fa-eye"></i> បង្ហាញ
                 </button>
               </div>
               <div class="forgot-pwd-wrap">
-                <a href="#" class="forgot-pwd-link" onclick="showToast('សូមទាក់ទងរដ្ឋបាលសាលាដើម្បីកំណត់ពាក្យសម្ងាត់ឡើងវិញ', 'info'); return false;">ភ្លេចពាក្យសម្ងាត់?</a>
+                <a href="#" class="forgot-pwd-link"
+                  onclick="showToast('សូមទាក់ទងរដ្ឋបាលសាលាដើម្បីកំណត់ពាក្យសម្ងាត់ឡើងវិញ', 'info'); return false;">ភ្លេចពាក្យសម្ងាត់?</a>
               </div>
             </div>
 
@@ -91,7 +99,8 @@
 
           <!-- Demo Quick Access -->
           <div class="demo-accounts">
-            <span class="demo-chip" onclick="handleGoogleLogin()"><i class="fas fa-bolt"></i> ចូលគណនីសាកល្បងរហ័ស (1-Click Demo)</span>
+            <span class="demo-chip" onclick="handleGoogleLogin()"><i class="fas fa-bolt"></i> ចូលគណនីសាកល្បងរហ័ស
+              (1-Click Demo)</span>
           </div>
 
         </div>
@@ -104,14 +113,15 @@
        SCREEN 2 & 3: MAIN DASHBOARD (Matching Reference Screenshots 2 & 3)
        ====================================================================== -->
   <div id="dashboardScreen" class="dashboard-wrapper" style="display: none;">
-    
+
     <!-- Top Sticky Navigation Bar -->
     <header class="krusmart-navbar">
       <div class="navbar-brand" onclick="window.scrollTo({top:0, behavior:'smooth'})" style="cursor: pointer;">
         <img src="assets/logo_ptec.svg" alt="Logo" class="navbar-brand-logo" onerror="this.src='assets/logo.png'">
         <div class="navbar-brand-text">
           <span style="color: #60a5fa;">KruSmart</span>
-          <span style="font-size: 0.78rem; color: #94a3b8; font-weight: normal; margin-left: 4px;">• ជំនួយការគ្រូបង្រៀន</span>
+          <span style="font-size: 0.78rem; color: #94a3b8; font-weight: normal; margin-left: 4px;">•
+            ជំនួយការគ្រូបង្រៀន</span>
         </div>
       </div>
 
@@ -133,7 +143,8 @@
           <i class="fas fa-crown"></i> Premium
         </span>
 
-        <button type="button" id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="ប្ដូរពន្លឺ / ងងឹត">
+        <button type="button" id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()"
+          title="ប្ដូរពន្លឺ / ងងឹត">
           <i class="fas fa-sun"></i>
         </button>
       </div>
@@ -141,16 +152,17 @@
 
     <!-- Main Content Area -->
     <main class="dashboard-content">
-      
+
       <!-- Hero Title Section -->
       <section class="dashboard-hero">
-        <h1 class="hero-main-title">✨ KruSmart - ប្រព័ន្ធគ្រប់គ្រងការបង្រៀនឌីជីថល 🚀</h1>
+        <h1 class="hero-main-title">✍︎ ប្រព័ន្ធគ្រប់គ្រងការបង្រៀនឌីជីថល</h1>
         <p class="hero-subtitle">គ្រប់គ្រងព័ត៌មានសិស្ស និងការបង្រៀនដោយស្រួល</p>
 
         <!-- Search Bar -->
         <div class="dashboard-search-wrap">
           <i class="fas fa-search dashboard-search-icon"></i>
-          <input type="text" id="dashboardSearchInput" class="dashboard-search-input" placeholder="🔍 ស្វែងរកមុខងារ..." autocomplete="off">
+          <input type="text" id="dashboardSearchInput" class="dashboard-search-input" placeholder="🔍 ស្វែងរកមុខងារ..."
+            autocomplete="off">
         </div>
       </section>
 
@@ -170,6 +182,9 @@
         </div>
       </div>
 
+      <!-- Empty Student Roster Notice & Quick Actions (Dynamic) -->
+      <div id="rosterStatusBanner" style="margin-bottom: 24px;"></div>
+
       <!-- ================================================================
            SECTION 1: សិស្ស និងវត្តមាន (Students & Attendance)
            ================================================================ -->
@@ -178,7 +193,7 @@
           <i class="fas fa-user-check" style="color: #38bdf8;"></i> សិស្ស និងវត្តមាន
         </h2>
         <div class="feature-grid">
-          
+
           <!-- Card 1 -->
           <div class="feature-card" onclick="handleCardAction('student-info')">
             <div class="card-icon-circle icon-blue">
@@ -222,7 +237,7 @@
           <i class="fas fa-edit" style="color: #a855f7;"></i> ពិន្ទុ និងការវាយតម្លៃ
         </h2>
         <div class="feature-grid">
-          
+
           <!-- Card 5 -->
           <div class="feature-card" onclick="handleCardAction('monthly-scores')">
             <div class="card-icon-circle icon-blue">
@@ -266,7 +281,7 @@
           <i class="fas fa-chart-line" style="color: #f59e0b;"></i> របាយការណ៍ និងស្ថិតិ
         </h2>
         <div class="feature-grid">
-          
+
           <!-- Card 9 -->
           <div class="feature-card" onclick="handleCardAction('ranking-table')">
             <div class="card-icon-circle icon-purple">
@@ -326,7 +341,7 @@
           <i class="fas fa-folder-open" style="color: #ec4899;"></i> រដ្ឋបាល និងផ្សេងៗ
         </h2>
         <div class="feature-grid">
-          
+
           <!-- Card 15 -->
           <div class="feature-card" onclick="handleCardAction('class-admin')">
             <div class="card-icon-circle icon-purple">
@@ -429,7 +444,8 @@
     </main>
 
     <!-- Footer -->
-    <footer style="text-align:center; padding:24px; color:#64748b; font-size:0.82rem; border-top:1px solid rgba(255,255,255,0.06);">
+    <footer
+      style="text-align:center; padding:24px; color:#64748b; font-size:0.82rem; border-top:1px solid rgba(255,255,255,0.06);">
       <p>KruSmart • ប្រព័ន្ធជំនួយការគ្រូបង្រៀនឌីជីថល កម្ពុជា • វិទ្យាស្ថានគរុកោសល្យរាជធានីភ្នំពេញ (PTEC) & KTPTTC</p>
     </footer>
 
@@ -440,10 +456,12 @@
        ====================================================================== -->
 
   <!-- 1. Student Info Modal -->
-  <div id="modalStudentInfo" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalStudentInfo')">
+  <div id="modalStudentInfo" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalStudentInfo')">
     <div class="modal-dialog" style="max-width: 950px;">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-users" style="color:#38bdf8;"></i> <span>បញ្ជីព័ត៌មានសិស្សក្នុងថ្នាក់ (Student Registry)</span></div>
+        <div class="modal-title"><i class="fas fa-users" style="color:#38bdf8;"></i> <span>បញ្ជីព័ត៌មានសិស្សក្នុងថ្នាក់
+            (Student Registry)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalStudentInfo')">&times;</button>
       </div>
       <div class="modal-body" id="modalStudentInfoBody"></div>
@@ -451,18 +469,25 @@
   </div>
 
   <!-- 3. Seating Plan Attendance Modal -->
-  <div id="modalSeatingPlan" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalSeatingPlan')">
+  <div id="modalSeatingPlan" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalSeatingPlan')">
     <div class="modal-dialog" style="max-width: 980px;">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-th-large" style="color:#f97316;"></i> <span>ប្លង់តុ និងការចុះវត្តមានសិស្ស (Interactive Seating Attendance)</span></div>
+        <div class="modal-title"><i class="fas fa-th-large" style="color:#f97316;"></i> <span>ប្លង់តុ
+            និងការចុះវត្តមានសិស្ស (Interactive Seating Attendance)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalSeatingPlan')">&times;</button>
       </div>
       <div class="modal-body">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
           <div id="seatingSummary" style="font-size:0.9rem;"></div>
           <div style="display:flex; gap:8px;">
-            <button onclick="markAllPresent()" style="background:#059669; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="fas fa-check-double"></i> វត្តមានទាំងអស់</button>
-            <button onclick="window.print()" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:6px 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-print"></i> បោះពុម្ពប្លង់</button>
+            <button onclick="markAllPresent()"
+              style="background:#059669; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-weight:600; cursor:pointer;"><i
+                class="fas fa-check-double"></i> វត្តមានទាំងអស់</button>
+            <button onclick="window.print()"
+              style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:6px 12px; border-radius:6px; cursor:pointer;"><i
+                class="fas fa-print"></i> បោះពុម្ពប្លង់</button>
           </div>
         </div>
         <div class="seating-chart-container">
@@ -474,10 +499,12 @@
   </div>
 
   <!-- 4. Monthly Attendance Modal -->
-  <div id="modalMonthlyAttendance" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalMonthlyAttendance')">
+  <div id="modalMonthlyAttendance" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalMonthlyAttendance')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-calendar-alt" style="color:#ec4899;"></i> <span>បញ្ជីវត្តមានប្រចាំខែ (Monthly Attendance Sheet)</span></div>
+        <div class="modal-title"><i class="fas fa-calendar-alt" style="color:#ec4899;"></i> <span>បញ្ជីវត្តមានប្រចាំខែ
+            (Monthly Attendance Sheet)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalMonthlyAttendance')">&times;</button>
       </div>
       <div class="modal-body" id="modalMonthlyAttendanceBody"></div>
@@ -485,10 +512,12 @@
   </div>
 
   <!-- 5. Monthly Score Modal -->
-  <div id="modalMonthlyScore" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalMonthlyScore')">
+  <div id="modalMonthlyScore" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalMonthlyScore')">
     <div class="modal-dialog" style="max-width: 1050px;">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-calculator" style="color:#38bdf8;"></i> <span>បញ្ចូលពិន្ទុ និងគណនាមធ្យមភាគ (Gradebook Matrix)</span></div>
+        <div class="modal-title"><i class="fas fa-calculator" style="color:#38bdf8;"></i> <span>បញ្ចូលពិន្ទុ
+            និងគណនាមធ្យមភាគ (Gradebook Matrix)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalMonthlyScore')">&times;</button>
       </div>
       <div class="modal-body" id="modalMonthlyScoreBody"></div>
@@ -496,10 +525,12 @@
   </div>
 
   <!-- 6. Send Parent Score Modal -->
-  <div id="modalSendParentScore" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalSendParentScore')">
+  <div id="modalSendParentScore" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalSendParentScore')">
     <div class="modal-dialog" style="max-width: 720px;">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-paper-plane" style="color:#a855f7;"></i> <span>បញ្ជូនពិន្ទុ និងដំណឹងទៅកាន់អាណាព្យាបាល</span></div>
+        <div class="modal-title"><i class="fas fa-paper-plane" style="color:#a855f7;"></i> <span>បញ្ជូនពិន្ទុ
+            និងដំណឹងទៅកាន់អាណាព្យាបាល</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalSendParentScore')">&times;</button>
       </div>
       <div class="modal-body" id="modalSendParentScoreBody"></div>
@@ -507,10 +538,12 @@
   </div>
 
   <!-- 9. Ranking Table Modal -->
-  <div id="modalRankingTable" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalRankingTable')">
+  <div id="modalRankingTable" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalRankingTable')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-trophy" style="color:#f59e0b;"></i> <span>តារាងចំណាត់ថ្នាក់សិស្ស (Class Ranking)</span></div>
+        <div class="modal-title"><i class="fas fa-trophy" style="color:#f59e0b;"></i> <span>តារាងចំណាត់ថ្នាក់សិស្ស
+            (Class Ranking)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalRankingTable')">&times;</button>
       </div>
       <div class="modal-body" id="modalRankingTableBody"></div>
@@ -518,10 +551,12 @@
   </div>
 
   <!-- 10. Honor Roll Modal -->
-  <div id="modalHonorRoll" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalHonorRoll')">
+  <div id="modalHonorRoll" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalHonorRoll')">
     <div class="modal-dialog" style="max-width: 820px;">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-medal" style="color:#ef4444;"></i> <span>តារាងកិត្តិយស & ប័ណ្ណសរសើរ (Honor Roll)</span></div>
+        <div class="modal-title"><i class="fas fa-medal" style="color:#ef4444;"></i> <span>តារាងកិត្តិយស & ប័ណ្ណសរសើរ
+            (Honor Roll)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalHonorRoll')">&times;</button>
       </div>
       <div class="modal-body" id="modalHonorRollBody"></div>
@@ -529,10 +564,12 @@
   </div>
 
   <!-- 12. Remedial Modal -->
-  <div id="modalRemedial" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalRemedial')">
+  <div id="modalRemedial" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalRemedial')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-chart-line" style="color:#ef4444;"></i> <span>កែលម្អសិស្សខ្សោយ (Remedial Action Tracking)</span></div>
+        <div class="modal-title"><i class="fas fa-chart-line" style="color:#ef4444;"></i> <span>កែលម្អសិស្សខ្សោយ
+            (Remedial Action Tracking)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalRemedial')">&times;</button>
       </div>
       <div class="modal-body" id="modalRemedialBody"></div>
@@ -540,10 +577,12 @@
   </div>
 
   <!-- 13. Behavior Modal -->
-  <div id="modalBehavior" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalBehavior')">
+  <div id="modalBehavior" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalBehavior')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-bullseye" style="color:#ec4899;"></i> <span>កែទម្លាប់ និងតាមដានវិន័យសិស្ស (Behavior Log)</span></div>
+        <div class="modal-title"><i class="fas fa-bullseye" style="color:#ec4899;"></i> <span>កែទម្លាប់
+            និងតាមដានវិន័យសិស្ស (Behavior Log)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalBehavior')">&times;</button>
       </div>
       <div class="modal-body" id="modalBehaviorBody"></div>
@@ -551,10 +590,12 @@
   </div>
 
   <!-- 14. Demographics Modal -->
-  <div id="modalDemographics" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalDemographics')">
+  <div id="modalDemographics" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalDemographics')">
     <div class="modal-dialog" style="max-width: 720px;">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-chart-pie" style="color:#10b981;"></i> <span>វិភាគអាយុ និងភេទ (Demographic Statistics)</span></div>
+        <div class="modal-title"><i class="fas fa-chart-pie" style="color:#10b981;"></i> <span>វិភាគអាយុ និងភេទ
+            (Demographic Statistics)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalDemographics')">&times;</button>
       </div>
       <div class="modal-body" id="modalDemographicsBody"></div>
@@ -562,10 +603,12 @@
   </div>
 
   <!-- 15. Class Admin Modal -->
-  <div id="modalClassAdmin" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalClassAdmin')">
+  <div id="modalClassAdmin" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalClassAdmin')">
     <div class="modal-dialog" style="max-width: 760px;">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-folder" style="color:#a855f7;"></i> <span>រដ្ឋបាល និងគណៈកម្មការថ្នាក់រៀន</span></div>
+        <div class="modal-title"><i class="fas fa-folder" style="color:#a855f7;"></i> <span>រដ្ឋបាល
+            និងគណៈកម្មការថ្នាក់រៀន</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalClassAdmin')">&times;</button>
       </div>
       <div class="modal-body" id="modalClassAdminBody"></div>
@@ -573,10 +616,12 @@
   </div>
 
   <!-- 16. Follow-up Book Modal -->
-  <div id="modalFollowUpBook" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalFollowUpBook')">
+  <div id="modalFollowUpBook" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalFollowUpBook')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-book-open" style="color:#06b6d4;"></i> <span>សៀវភៅតាមដានការបង្រៀនប្រចាំថ្ងៃ (Teacher Logbook)</span></div>
+        <div class="modal-title"><i class="fas fa-book-open" style="color:#06b6d4;"></i>
+          <span>សៀវភៅតាមដានការបង្រៀនប្រចាំថ្ងៃ (Teacher Logbook)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalFollowUpBook')">&times;</button>
       </div>
       <div class="modal-body" id="modalFollowUpBookBody"></div>
@@ -584,10 +629,12 @@
   </div>
 
   <!-- 17. Curriculum Books Modal -->
-  <div id="modalCurriculumBooks" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalCurriculumBooks')">
+  <div id="modalCurriculumBooks" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalCurriculumBooks')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-book-reader" style="color:#10b981;"></i> <span>សៀវភៅសិក្សាគោល និងសៀវភៅណែនាំគ្រូ</span></div>
+        <div class="modal-title"><i class="fas fa-book-reader" style="color:#10b981;"></i> <span>សៀវភៅសិក្សាគោល
+            និងសៀវភៅណែនាំគ្រូ</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalCurriculumBooks')">&times;</button>
       </div>
       <div class="modal-body" id="modalCurriculumBooksBody"></div>
@@ -595,10 +642,12 @@
   </div>
 
   <!-- 18. Exam Papers Modal -->
-  <div id="modalExamPapers" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalExamPapers')">
+  <div id="modalExamPapers" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalExamPapers')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-file-download" style="color:#f97316;"></i> <span>ឃ្លាំងវិញ្ញាសាប្រឡងគំរូ និងតេស្ត (Exam Papers Repository)</span></div>
+        <div class="modal-title"><i class="fas fa-file-download" style="color:#f97316;"></i>
+          <span>ឃ្លាំងវិញ្ញាសាប្រឡងគំរូ និងតេស្ត (Exam Papers Repository)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalExamPapers')">&times;</button>
       </div>
       <div class="modal-body" id="modalExamPapersBody"></div>
@@ -606,10 +655,12 @@
   </div>
 
   <!-- 20. Student Passcodes Modal -->
-  <div id="modalStudentCodes" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalStudentCodes')">
+  <div id="modalStudentCodes" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalStudentCodes')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-key" style="color:#14b8a6;"></i> <span>លេខកូដសិស្សសម្រាប់អាណាព្យាបាល</span></div>
+        <div class="modal-title"><i class="fas fa-key" style="color:#14b8a6;"></i>
+          <span>លេខកូដសិស្សសម្រាប់អាណាព្យាបាល</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalStudentCodes')">&times;</button>
       </div>
       <div class="modal-body" id="modalStudentCodesBody"></div>
@@ -617,10 +668,12 @@
   </div>
 
   <!-- 21. Timetable Modal -->
-  <div id="modalTimetable" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalTimetable')">
+  <div id="modalTimetable" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalTimetable')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-calendar-week" style="color:#06b6d4;"></i> <span>កាលវិភាគបង្រៀនប្រចាំសប្ដាហ៍</span></div>
+        <div class="modal-title"><i class="fas fa-calendar-week" style="color:#06b6d4;"></i>
+          <span>កាលវិភាគបង្រៀនប្រចាំសប្ដាហ៍</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalTimetable')">&times;</button>
       </div>
       <div class="modal-body" id="modalTimetableBody"></div>
@@ -628,10 +681,12 @@
   </div>
 
   <!-- 22. Inventory Modal -->
-  <div id="modalInventory" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalInventory')">
+  <div id="modalInventory" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalInventory')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-boxes" style="color:#f59e0b;"></i> <span>បញ្ជីសារពើភ័ណ្ឌ និងសម្ភារបន្ទប់រៀន</span></div>
+        <div class="modal-title"><i class="fas fa-boxes" style="color:#f59e0b;"></i> <span>បញ្ជីសារពើភ័ណ្ឌ
+            និងសម្ភារបន្ទប់រៀន</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalInventory')">&times;</button>
       </div>
       <div class="modal-body" id="modalInventoryBody"></div>
@@ -639,10 +694,12 @@
   </div>
 
   <!-- 23. Student ID Cards Modal -->
-  <div id="modalStudentIDCards" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalStudentIDCards')">
+  <div id="modalStudentIDCards" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalStudentIDCards')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-id-card" style="color:#a855f7;"></i> <span>អត្តសញ្ញាណប័ណ្ណសិស្ស (Student ID Badges)</span></div>
+        <div class="modal-title"><i class="fas fa-id-card" style="color:#a855f7;"></i> <span>អត្តសញ្ញាណប័ណ្ណសិស្ស
+            (Student ID Badges)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalStudentIDCards')">&times;</button>
       </div>
       <div class="modal-body" id="modalStudentIDCardsBody"></div>
@@ -650,10 +707,12 @@
   </div>
 
   <!-- 25. Teaching Aids Modal -->
-  <div id="modalTeachingAids" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalTeachingAids')">
+  <div id="modalTeachingAids" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalTeachingAids')">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-palette" style="color:#d946ef;"></i> <span>សម្ភារឧបទេស និងធនធានបង្រៀន</span></div>
+        <div class="modal-title"><i class="fas fa-palette" style="color:#d946ef;"></i> <span>សម្ភារឧបទេស
+            និងធនធានបង្រៀន</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalTeachingAids')">&times;</button>
       </div>
       <div class="modal-body" id="modalTeachingAidsBody"></div>
@@ -661,13 +720,143 @@
   </div>
 
   <!-- 26. Account Settings Modal -->
-  <div id="modalAccountSettings" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalAccountSettings')">
+  <div id="modalAccountSettings" class="modal-overlay" style="display:none;"
+    onclick="if(event.target===this) closeModal('modalAccountSettings')">
     <div class="modal-dialog" style="max-width: 600px;">
       <div class="modal-header">
-        <div class="modal-title"><i class="fas fa-user-cog" style="color:#64748b;"></i> <span>ព័ត៌មានគណនី និងការកំណត់ (Account Settings)</span></div>
+        <div class="modal-title"><i class="fas fa-user-cog" style="color:#64748b;"></i> <span>ព័ត៌មានគណនី និងការកំណត់
+            (Account Settings)</span></div>
         <button class="modal-close-btn" onclick="closeModal('modalAccountSettings')">&times;</button>
       </div>
       <div class="modal-body" id="modalAccountSettingsBody"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Student (បញ្ចូល ឬកែប្រែព័ត៌មានសិស្ស) -->
+  <div id="modalAddStudent" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalAddStudent')">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fas fa-user-plus" style="color:#38bdf8;"></i>
+          <span id="addStudentModalTitle">បញ្ចូលសិស្សថ្មី</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modalAddStudent')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="addStudentForm" onsubmit="event.preventDefault(); saveStudentForm(false);">
+          <input type="hidden" id="editStudentOriginalId" value="">
+          
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+            <div class="form-group">
+              <label for="stuRollInput">លេខរៀង (Roll No) <span style="color:#ef4444;">*</span></label>
+              <input type="number" id="stuRollInput" class="form-input" required min="1" placeholder="ឧ. 1">
+            </div>
+            <div class="form-group">
+              <label for="stuIdInput">អត្តលេខ (Student ID) <span style="color:#ef4444;">*</span></label>
+              <input type="text" id="stuIdInput" class="form-input" required placeholder="ឧ. STU-001">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+            <div class="form-group">
+              <label for="stuNameKhInput">គោត្តនាម និងនាម <span style="color:#ef4444;">*</span></label>
+              <input type="text" id="stuNameKhInput" class="form-input" required placeholder="ឧ. កែវ វិសាល">
+            </div>
+            <div class="form-group">
+              <label for="stuNameEnInput">ឈ្មោះជាឡាតាំង (English)</label>
+              <input type="text" id="stuNameEnInput" class="form-input" placeholder="ឧ. Keo Visal">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+            <div class="form-group">
+              <label for="stuGenderSelect">ភេទ <span style="color:#ef4444;">*</span></label>
+              <select id="stuGenderSelect" class="form-input" required style="cursor:pointer;">
+                <option value="ប្រុស">ប្រុស (Male)</option>
+                <option value="ស្រី">ស្រី (Female)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="stuDobInput">ថ្ងៃខែឆ្នាំកំណើត</label>
+              <input type="date" id="stuDobInput" class="form-input">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+            <div class="form-group">
+              <label for="stuParentNameInput">ឈ្មោះអាណាព្យាបាល</label>
+              <input type="text" id="stuParentNameInput" class="form-input" placeholder="ឧ. កែវ សុខា">
+            </div>
+            <div class="form-group">
+              <label for="stuParentPhoneInput">លេខទូរស័ព្ទអាណាព្យាបាល</label>
+              <input type="tel" id="stuParentPhoneInput" class="form-input" placeholder="ឧ. 012 345 678">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+            <div class="form-group">
+              <label for="stuSeatRowSelect">តុអង្គុយ (ជួរដេក)</label>
+              <select id="stuSeatRowSelect" class="form-input">
+                <option value="1">ជួរទី ១ (មុខគេ)</option>
+                <option value="2">ជួរទី ២</option>
+                <option value="3">ជួរទី ៣</option>
+                <option value="4">ជួរទី ៤</option>
+                <option value="5">ជួរទី ៥</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="stuSeatColSelect">តុអង្គុយ (ជួរឈរ)</label>
+              <select id="stuSeatColSelect" class="form-input">
+                <option value="1">កៅអីទី ១ (ឆ្វេង)</option>
+                <option value="2">កៅអីទី ២</option>
+                <option value="3">កៅអីទី ៣ (កណ្ដាល)</option>
+                <option value="4">កៅអីទី ៤</option>
+                <option value="5">កៅអីទី ៥ (ស្ដាំ)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; border-top:1px solid rgba(255,255,255,0.08); padding-top:16px;">
+            <button type="button" onclick="closeModal('modalAddStudent')" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:9px 18px; border-radius:8px; cursor:pointer;">បោះបង់</button>
+            <button type="button" onclick="saveStudentForm(true)" style="background:#059669; color:#fff; border:none; padding:9px 18px; border-radius:8px; font-weight:600; cursor:pointer;"><i class="fas fa-plus"></i> រក្សាទុក & បន្ថែមបន្ត</button>
+            <button type="submit" style="background:#2563eb; color:#fff; border:none; padding:9px 22px; border-radius:8px; font-weight:600; cursor:pointer;"><i class="fas fa-save"></i> រក្សាទុក</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Batch Import Students (នាំចូលបញ្ជីសិស្សរហ័ស) -->
+  <div id="modalImportStudents" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeModal('modalImportStudents')">
+    <div class="modal-dialog" style="max-width: 680px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fas fa-file-import" style="color:#10b981;"></i>
+          <span>នាំចូលបញ្ជីឈ្មោះសិស្សរហ័ស (Batch Import)</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modalImportStudents')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.25); border-radius:8px; padding:12px; margin-bottom:14px; font-size:0.85rem; color:#93c5fd;">
+          <i class="fas fa-info-circle"></i> លោកគ្រូ-អ្នកគ្រូ អាច Copy បញ្ជីឈ្មោះសិស្សពី <strong>Excel</strong> ឬ <strong>Word</strong> មក Paste ទីនេះបានដោយងាយ។<br>
+          <span style="color:#cbd5e1;">ទម្រង់គំរូ៖ <strong>ឈ្មោះសិស្ស</strong> (១បន្ទាត់ ម្នាក់) ឬ <strong>ឈ្មោះ, ភេទ, លេខទូរស័ព្ទ</strong></span>
+        </div>
+        
+        <div class="form-group">
+          <label for="importStudentsTextarea">បញ្ជីឈ្មោះសិស្ស (Paste ទីនេះ)៖</label>
+          <textarea id="importStudentsTextarea" class="form-input" style="height:180px; font-family:inherit; font-size:0.9rem; line-height:1.6;" placeholder="ឧទាហរណ៍៖&#10;កែវ វិសាល, ប្រុស, 012345678&#10;ចាន់ សុគន្ធា, ស្រី, 016789123&#10;ជា ពិសិដ្ឋ, ប្រុស&#10;ឈុន ស្រីពេជ្រ"></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+          <div style="font-size:0.8rem; color:#94a3b8;">
+            * ប្រព័ន្ធនឹងបង្កើតលេខរៀង និងអត្តលេខដោយស្វ័យប្រវត្តិតាមលំដាប់។
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="button" onclick="closeModal('modalImportStudents')" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:8px 16px; border-radius:6px; cursor:pointer;">បោះបង់</button>
+            <button type="button" onclick="processBatchStudentImport()" style="background:#059669; color:#fff; border:none; padding:8px 20px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="fas fa-check-circle"></i> នាំចូលទិន្នន័យ</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -675,4 +864,5 @@
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
+
 </html>

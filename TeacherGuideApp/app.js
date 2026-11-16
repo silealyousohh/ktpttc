@@ -13,28 +13,47 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   setupEventListeners();
   updateClockPill();
+  updateRosterStatusBanner();
   setInterval(updateClockPill, 60000);
 });
 
 // Load data from LocalStorage
 function loadPersistedData() {
   try {
-    const saved = localStorage.getItem('krusmart_students_data');
+    // Clear old auto-generated mock students if present from v1
+    const oldSaved = localStorage.getItem('krusmart_students_data');
+    if (oldSaved && oldSaved.includes('Keo Visal')) {
+      localStorage.removeItem('krusmart_students_data');
+    }
+
+    const saved = localStorage.getItem('krusmart_teacher_custom_students');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed.students && parsed.students.length > 0) {
+      if (Array.isArray(parsed)) {
+        appData.students = parsed;
+      } else if (parsed && Array.isArray(parsed.students)) {
         appData.students = parsed.students;
+      } else {
+        appData.students = [];
       }
+    } else {
+      // Default: Clean & empty roster (left for teachers to enter themselves)
+      appData.students = [];
     }
   } catch (e) {
     console.error('Failed to load local data:', e);
+    appData.students = [];
   }
 }
 
 // Save data to LocalStorage
 function persistData() {
   try {
-    localStorage.setItem('krusmart_students_data', JSON.stringify({ students: appData.students }));
+    localStorage.setItem('krusmart_teacher_custom_students', JSON.stringify(appData.students));
+    if (appData.classes && appData.classes.length > 0) {
+      appData.classes[0].studentCount = appData.students.length;
+    }
+    updateRosterStatusBanner();
   } catch (e) {
     console.error('Failed to persist data:', e);
   }
@@ -148,6 +167,63 @@ function updateClockPill() {
   pill.innerHTML = `<i class="fas fa-compass" style="color: #60a5fa;"></i> <span>ម៉ោង ${hours}:${minutes} — ត្រៀមការបង្រៀនម៉ោងបន្ទាប់ (${appData.currentTeacher.assignedClass})</span>`;
 }
 
+// Update Dashboard Roster Status Banner
+function updateRosterStatusBanner() {
+  const banner = document.getElementById('rosterStatusBanner');
+  if (!banner) return;
+
+  const total = appData.students.length;
+  const female = appData.students.filter(s => s.gender === 'ស្រី').length;
+  const male = total - female;
+
+  if (total === 0) {
+    banner.innerHTML = `
+      <div style="background:linear-gradient(135deg, rgba(37,99,235,0.14), rgba(16,185,129,0.14)); border:1px solid rgba(59,130,246,0.35); border-radius:14px; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; box-shadow:0 8px 24px rgba(0,0,0,0.25);">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="width:44px; height:44px; border-radius:10px; background:rgba(37,99,235,0.25); border:1px solid rgba(59,130,246,0.5); display:flex; align-items:center; justify-content:center; color:#60a5fa; font-size:1.3rem;">
+            <i class="fas fa-user-plus"></i>
+          </div>
+          <div>
+            <div style="color:#f8fafc; font-weight:700; font-size:0.96rem; margin-bottom:3px;">
+              📝 បញ្ជីសិស្សទទេរ (ត្រៀមសម្រាប់លោកគ្រូ-អ្នកគ្រូបញ្ចូលរៀងខ្លួន)
+            </div>
+            <div style="color:#94a3b8; font-size:0.83rem;">
+              ប្រព័ន្ធមិនបង្កើតទិន្នន័យស្វ័យប្រវត្តិទេ — សូមចុច <strong>«បញ្ចូលសិស្សថ្មី»</strong> ឬ <strong>«នាំចូលបញ្ជីសិស្សរហ័ស»</strong> ដើម្បីចាប់ផ្ដើម។
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button onclick="openAddStudentModal()" style="background:#2563eb; color:#fff; border:none; padding:9px 18px; border-radius:8px; font-weight:600; cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(37,99,235,0.3);">
+            <i class="fas fa-plus"></i> បញ្ចូលសិស្សថ្មី
+          </button>
+          <button onclick="openImportStudentsModal()" style="background:#059669; color:#fff; border:none; padding:9px 18px; border-radius:8px; font-weight:600; cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(5,150,105,0.3);">
+            <i class="fas fa-file-import"></i> នាំចូលបញ្ជីឈ្មោះ
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    banner.innerHTML = `
+      <div style="background:rgba(30,41,59,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:38px; height:38px; border-radius:8px; background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div style="font-size:0.92rem; color:#cbd5e1;">
+            <strong style="color:#60a5fa;">${appData.currentTeacher.assignedClass}</strong>៖ បញ្ជីឈ្មោះសិស្សសរុប <strong style="color:#f8fafc; font-size:1.05rem;">${total} នាក់</strong> 
+            (ស្រី: <strong style="color:#f43f5e;">${female} នាក់</strong> | ប្រុស: <strong style="color:#38bdf8;">${male} នាក់</strong>)
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button onclick="openAddStudentModal()" style="background:#2563eb; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.82rem;"><i class="fas fa-user-plus"></i> បន្ថែមសិស្ស</button>
+          <button onclick="openImportStudentsModal()" style="background:#059669; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.82rem;"><i class="fas fa-file-import"></i> នាំចូលបន្ថែម</button>
+          <button onclick="clearAllStudentsConfirm()" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); padding:7px 12px; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.82rem;"><i class="fas fa-trash-alt"></i> សម្អាតបញ្ជី</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
 // Global Search across all cards
 function handleGlobalSearch(query) {
   const clean = (query || '').toLowerCase().trim();
@@ -217,6 +293,293 @@ function closeAllModals() {
   document.body.style.overflow = '';
 }
 
+// Helper: Render Reusable Empty State Card
+function renderStudentEmptyState(title, subtitle) {
+  return `
+    <div style="text-align:center; padding:45px 20px; background:rgba(15,23,42,0.5); border-radius:12px; border:1px dashed #334155; margin:10px 0;">
+      <div style="font-size:3rem; margin-bottom:12px; opacity:0.85;">📋</div>
+      <h4 style="color:#f8fafc; font-size:1.1rem; margin-bottom:8px;">${title || 'មិនទាន់មានទិន្នន័យសិស្សនៅឡើយទេ'}</h4>
+      <p style="color:#94a3b8; font-size:0.88rem; max-width:460px; margin:0 auto 20px auto; line-height:1.6;">
+        ${subtitle || 'លោកគ្រូ-អ្នកគ្រូ អាចចាប់ផ្ដើមបញ្ចូលសិស្សក្នុងថ្នាក់តាមទម្រង់ ឬនាំចូលបញ្ជីឈ្មោះសិស្សបានយ៉ាងងាយស្រួល។'}
+      </p>
+      <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+        <button onclick="openAddStudentModal()" style="background:#2563eb; color:#fff; border:none; padding:9px 18px; border-radius:8px; font-weight:600; cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fas fa-user-plus"></i> បញ្ចូលសិស្សថ្មី
+        </button>
+        <button onclick="openImportStudentsModal()" style="background:#059669; color:#fff; border:none; padding:9px 18px; border-radius:8px; font-weight:600; cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fas fa-file-import"></i> នាំចូលបញ្ជីសិស្ស
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// Helper: Passcode generator from name
+function generatePasscode(name) {
+  const clean = (name || 'STU').replace(/\s+/g, '').toUpperCase();
+  const rand = Math.floor(10 + Math.random() * 90);
+  return `${clean.slice(0, 4)}${rand}`;
+}
+
+// ==========================================================================
+// STUDENT CRUD MANAGEMENT (ADD, EDIT, DELETE, BATCH IMPORT)
+// ==========================================================================
+
+function openAddStudentModal(studentId = null) {
+  const modal = document.getElementById('modalAddStudent');
+  const title = document.getElementById('addStudentModalTitle');
+  const originalIdInput = document.getElementById('editStudentOriginalId');
+  const rollInput = document.getElementById('stuRollInput');
+  const idInput = document.getElementById('stuIdInput');
+  const nameKhInput = document.getElementById('stuNameKhInput');
+  const nameEnInput = document.getElementById('stuNameEnInput');
+  const genderSelect = document.getElementById('stuGenderSelect');
+  const dobInput = document.getElementById('stuDobInput');
+  const parentNameInput = document.getElementById('stuParentNameInput');
+  const parentPhoneInput = document.getElementById('stuParentPhoneInput');
+  const seatRowSelect = document.getElementById('stuSeatRowSelect');
+  const seatColSelect = document.getElementById('stuSeatColSelect');
+
+  if (!modal) return;
+
+  if (studentId) {
+    // Edit Mode
+    const s = appData.students.find(x => x.id === studentId);
+    if (!s) return;
+
+    if (title) title.textContent = 'កែប្រែព័ត៌មានសិស្ស (' + s.nameKh + ')';
+    if (originalIdInput) originalIdInput.value = s.id;
+    if (rollInput) rollInput.value = s.roll || 1;
+    if (idInput) idInput.value = s.id;
+    if (nameKhInput) nameKhInput.value = s.nameKh;
+    if (nameEnInput) nameEnInput.value = s.nameEn || '';
+    if (genderSelect) genderSelect.value = s.gender || 'ប្រុស';
+    if (dobInput) dobInput.value = s.dob || '';
+    if (parentNameInput) parentNameInput.value = s.parentName || '';
+    if (parentPhoneInput) parentPhoneInput.value = s.parentPhone || '';
+    if (seatRowSelect) seatRowSelect.value = s.seatRow || 1;
+    if (seatColSelect) seatColSelect.value = s.seatCol || 1;
+  } else {
+    // Add New Mode
+    const nextRoll = appData.students.length + 1;
+    const nextId = `STU-${String(nextRoll).padStart(3, '0')}`;
+
+    if (title) title.textContent = 'បញ្ចូលសិស្សថ្មី';
+    if (originalIdInput) originalIdInput.value = '';
+    if (rollInput) rollInput.value = nextRoll;
+    if (idInput) idInput.value = nextId;
+    if (nameKhInput) nameKhInput.value = '';
+    if (nameEnInput) nameEnInput.value = '';
+    if (genderSelect) genderSelect.value = 'ប្រុស';
+    if (dobInput) dobInput.value = '2013-01-01';
+    if (parentNameInput) parentNameInput.value = '';
+    if (parentPhoneInput) parentPhoneInput.value = '';
+    
+    // Auto place on desk
+    const row = Math.ceil(nextRoll / 5);
+    const col = ((nextRoll - 1) % 5) + 1;
+    if (seatRowSelect) seatRowSelect.value = Math.min(5, Math.max(1, row));
+    if (seatColSelect) seatColSelect.value = Math.min(5, Math.max(1, col));
+  }
+
+  openModal('modalAddStudent');
+  setTimeout(() => {
+    if (nameKhInput) nameKhInput.focus();
+  }, 100);
+}
+
+function saveStudentForm(andAddAnother = false) {
+  const originalId = document.getElementById('editStudentOriginalId')?.value;
+  const roll = Number(document.getElementById('stuRollInput')?.value) || (appData.students.length + 1);
+  const id = document.getElementById('stuIdInput')?.value?.trim();
+  const nameKh = document.getElementById('stuNameKhInput')?.value?.trim();
+  const nameEn = document.getElementById('stuNameEnInput')?.value?.trim() || '';
+  const gender = document.getElementById('stuGenderSelect')?.value || 'ប្រុស';
+  const dob = document.getElementById('stuDobInput')?.value || '';
+  const parentName = document.getElementById('stuParentNameInput')?.value?.trim() || '';
+  const parentPhone = document.getElementById('stuParentPhoneInput')?.value?.trim() || '';
+  const seatRow = Number(document.getElementById('stuSeatRowSelect')?.value) || 1;
+  const seatCol = Number(document.getElementById('stuSeatColSelect')?.value) || 1;
+
+  if (!id || !nameKh) {
+    showToast('សូមបញ្ចូលអត្តលេខ និងគោត្តនាម-នាមសិស្ស!', 'error');
+    return;
+  }
+
+  const avatar = gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓';
+
+  if (originalId) {
+    // Updating existing student
+    const idx = appData.students.findIndex(x => x.id === originalId);
+    if (idx !== -1) {
+      appData.students[idx] = {
+        ...appData.students[idx],
+        roll,
+        id,
+        nameKh,
+        nameEn,
+        gender,
+        dob,
+        parentName,
+        parentPhone,
+        seatRow,
+        seatCol,
+        avatar
+      };
+      persistData();
+      showToast(`បានកែប្រែព័ត៌មាន «${nameKh}» ដោយជោគជ័យ!`, 'success');
+    }
+  } else {
+    // Checking duplicate ID
+    if (appData.students.some(x => x.id === id)) {
+      showToast(`អត្តលេខ ${id} មានក្នុងប្រព័ន្ធរួចហើយ!`, 'error');
+      return;
+    }
+
+    const newStudent = {
+      id,
+      roll,
+      nameKh,
+      nameEn,
+      gender,
+      dob,
+      parentName,
+      parentPhone,
+      passcode: generatePasscode(nameKh),
+      attendance: 'present',
+      seatRow,
+      seatCol,
+      avatar,
+      behaviorScore: 100,
+      scores: { KH: 0, MATH: 0, PHY: 0, CHEM: 0, BIO: 0, HIST: 0, GEO: 0, ENG: 0, MOR: 0 },
+      absentYearCount: 0
+    };
+
+    appData.students.push(newStudent);
+    persistData();
+    showToast(`បានបញ្ចូលសិស្ស «${nameKh}» ដោយជោគជ័យ!`, 'success');
+  }
+
+  if (andAddAnother) {
+    openAddStudentModal(null);
+  } else {
+    closeModal('modalAddStudent');
+    // Refresh student info modal if it's open
+    const infoModal = document.getElementById('modalStudentInfo');
+    if (infoModal && infoModal.style.display === 'flex') {
+      openStudentInfoModal();
+    }
+  }
+}
+
+function deleteStudent(id) {
+  const s = appData.students.find(x => x.id === id);
+  if (!s) return;
+
+  if (!confirm(`តើលោកគ្រូ-អ្នកគ្រូពិតជាចង់លុបទិន្នន័យសិស្ស «${s.nameKh}» មែនទេ?`)) {
+    return;
+  }
+
+  appData.students = appData.students.filter(x => x.id !== id);
+  persistData();
+  showToast(`បានលុបសិស្ស «${s.nameKh}» រួចរាល់`, 'info');
+  openStudentInfoModal();
+}
+
+function clearAllStudentsConfirm() {
+  if (appData.students.length === 0) {
+    showToast('បញ្ជីសិស្សទទេរស្រាប់ហើយ!', 'info');
+    return;
+  }
+  if (!confirm('តើលោកគ្រូ-អ្នកគ្រូពិតជាចង់សម្អាតបញ្ជីសិស្សទាំងអស់មែនទេ? ទិន្នន័យនឹងត្រូវលុបចេញពីប្រព័ន្ធ។')) {
+    return;
+  }
+
+  appData.students = [];
+  persistData();
+  showToast('បានសម្អាតបញ្ជីសិស្សទាំងអស់រួចរាល់', 'info');
+  closeAllModals();
+}
+
+// Batch Import Students
+function openImportStudentsModal() {
+  const ta = document.getElementById('importStudentsTextarea');
+  if (ta) ta.value = '';
+  openModal('modalImportStudents');
+  setTimeout(() => {
+    if (ta) ta.focus();
+  }, 100);
+}
+
+function processBatchStudentImport() {
+  const ta = document.getElementById('importStudentsTextarea');
+  const text = (ta?.value || '').trim();
+
+  if (!text) {
+    showToast('សូមបញ្ចូល ឬ Paste បញ្ជីឈ្មោះសិស្សជាមុនសិន!', 'error');
+    return;
+  }
+
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length === 0) {
+    showToast('ពុំមានទិន្នន័យសម្រាប់នាំចូលទេ!', 'error');
+    return;
+  }
+
+  let count = 0;
+  let startRoll = appData.students.length;
+
+  lines.forEach((line) => {
+    // Split by comma, tab, or semicolon
+    const parts = line.split(/[,;\t]+/).map(p => p.trim());
+    const nameKh = parts[0];
+    if (!nameKh) return;
+
+    let gender = 'ប្រុស';
+    if (parts[1]) {
+      const g = parts[1].toLowerCase();
+      if (g.includes('ស្រី') || g.includes('female') || g === 'f') {
+        gender = 'ស្រី';
+      }
+    }
+
+    const phone = parts[2] || '';
+    startRoll++;
+    const id = `STU-${String(startRoll).padStart(3, '0')}`;
+    const row = Math.ceil(startRoll / 5);
+    const col = ((startRoll - 1) % 5) + 1;
+
+    appData.students.push({
+      id,
+      roll: startRoll,
+      nameKh,
+      nameEn: '',
+      gender,
+      dob: '2013-01-01',
+      parentName: '',
+      parentPhone: phone,
+      passcode: generatePasscode(nameKh),
+      attendance: 'present',
+      seatRow: Math.min(5, Math.max(1, row)),
+      seatCol: Math.min(5, Math.max(1, col)),
+      avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
+      behaviorScore: 100,
+      scores: { KH: 0, MATH: 0, PHY: 0, CHEM: 0, BIO: 0, HIST: 0, GEO: 0, ENG: 0, MOR: 0 },
+      absentYearCount: 0
+    });
+    count++;
+  });
+
+  persistData();
+  closeModal('modalImportStudents');
+  showToast(`បាននាំចូលសិស្សចំនួន ${count} នាក់ដោយជោគជ័យ!`, 'success');
+
+  const infoModal = document.getElementById('modalStudentInfo');
+  if (infoModal && infoModal.style.display === 'flex') {
+    openStudentInfoModal();
+  }
+}
+
 // ==========================================================================
 // FEATURE MODAL CONTROLLERS (26 FEATURES)
 // ==========================================================================
@@ -226,93 +589,124 @@ function openStudentInfoModal() {
   const body = document.getElementById('modalStudentInfoBody');
   if (!body) return;
 
+  const total = appData.students.length;
+  const female = appData.students.filter(s => s.gender === 'ស្រី').length;
+  const male = total - female;
+
   let html = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
       <div style="font-size:0.95rem; color:#93c5fd; font-weight:600;">
-        <i class="fas fa-users"></i> ចំនួនសិស្សសរុប: <strong>${appData.students.length} នាក់</strong> (ស្រី: ${appData.students.filter(s=>s.gender==='ស្រី').length} នាក់)
+        <i class="fas fa-users"></i> ចំនួនសិស្សសរុប: <strong>${total} នាក់</strong> 
+        (ស្រី: <span style="color:#f43f5e;">${female}</span>, ប្រុស: <span style="color:#38bdf8;">${male}</span>)
       </div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn-action-small" onclick="showAddStudentPrompt()" style="background:#2563eb; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="fas fa-user-plus"></i> បន្ថែមសិស្សថ្មី</button>
-        <button class="btn-action-small" onclick="window.print()" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:7px 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-print"></i> បោះពុម្ព</button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button onclick="openAddStudentModal()" style="background:#2563eb; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.85rem;"><i class="fas fa-user-plus"></i> បន្ថែមសិស្សថ្មី</button>
+        <button onclick="openImportStudentsModal()" style="background:#059669; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.85rem;"><i class="fas fa-file-import"></i> នាំចូលបញ្ជីសិស្ស</button>
+        ${total > 0 ? `<button onclick="window.print()" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:7px 12px; border-radius:6px; cursor:pointer; font-size:0.85rem;"><i class="fas fa-print"></i> បោះពុម្ព</button>` : ''}
       </div>
     </div>
-    <div class="krusmart-table-wrap">
-      <table class="krusmart-table">
-        <thead>
-          <tr>
-            <th>ល.រ</th>
-            <th>អត្តលេខ</th>
-            <th>គោត្តនាម-នាម</th>
-            <th>ភេទ</th>
-            <th>ថ្ងៃខែឆ្នាំកំណើត</th>
-            <th>អាណាព្យាបាល</th>
-            <th>លេខទូរស័ព្ទ</th>
-            <th>សកម្មភាព</th>
-          </tr>
-        </thead>
-        <tbody>
   `;
 
-  appData.students.forEach((s, idx) => {
+  if (total === 0) {
+    html += renderStudentEmptyState(
+      'មិនទាន់មានទិន្នន័យសិស្សនៅឡើយទេ',
+      'សូមចុច «បន្ថែមសិស្សថ្មី» ដើម្បីបញ្ចូលព័ត៌មានសិស្សម្នាក់ៗ ឬចុច «នាំចូលបញ្ជីសិស្ស» ដើម្បី Paste ឈ្មោះសិស្សទាំងអស់ចូលតែម្តង។'
+    );
+  } else {
     html += `
-      <tr>
-        <td>${idx + 1}</td>
-        <td><code>${s.id}</code></td>
-        <td style="font-weight:600; color:#f8fafc;">${s.avatar} ${s.nameKh} <span style="font-size:0.75rem; color:#64748b;">(${s.nameEn})</span></td>
-        <td><span style="color:${s.gender === 'ស្រី' ? '#f43f5e' : '#38bdf8'}; font-weight:600;">${s.gender}</span></td>
-        <td>${s.dob}</td>
-        <td>${s.parentName}</td>
-        <td><a href="tel:${s.parentPhone}" style="color:#60a5fa; text-decoration:none;"><i class="fas fa-phone-alt"></i> ${s.parentPhone}</a></td>
-        <td>
-          <button onclick="viewStudentProfile('${s.id}')" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-size:0.9rem;" title="មើលលម្អិត"><i class="fas fa-id-card"></i></button>
-        </td>
-      </tr>
+      <div class="krusmart-table-wrap">
+        <table class="krusmart-table">
+          <thead>
+            <tr>
+              <th>ល.រ</th>
+              <th>អត្តលេខ</th>
+              <th>គោត្តនាម-នាម</th>
+              <th>ភេទ</th>
+              <th>ថ្ងៃខែឆ្នាំកំណើត</th>
+              <th>អាណាព្យាបាល</th>
+              <th>លេខទូរស័ព្ទ</th>
+              <th>សកម្មភាព</th>
+            </tr>
+          </thead>
+          <tbody>
     `;
-  });
 
-  html += `</tbody></table></div>`;
+    appData.students.forEach((s, idx) => {
+      html += `
+        <tr>
+          <td>${idx + 1}</td>
+          <td><code>${s.id}</code></td>
+          <td style="font-weight:600; color:#f8fafc;">${s.avatar} ${s.nameKh} ${s.nameEn ? `<span style="font-size:0.75rem; color:#64748b;">(${s.nameEn})</span>` : ''}</td>
+          <td><span style="color:${s.gender === 'ស្រី' ? '#f43f5e' : '#38bdf8'}; font-weight:600;">${s.gender}</span></td>
+          <td>${s.dob || '-'}</td>
+          <td>${s.parentName || '-'}</td>
+          <td>${s.parentPhone ? `<a href="tel:${s.parentPhone}" style="color:#60a5fa; text-decoration:none;"><i class="fas fa-phone-alt"></i> ${s.parentPhone}</a>` : '-'}</td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <button onclick="openAddStudentModal('${s.id}')" style="background:#0284c7; border:none; color:#fff; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;" title="កែប្រែ"><i class="fas fa-edit"></i></button>
+              <button onclick="deleteStudent('${s.id}')" style="background:#dc2626; border:none; color:#fff; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;" title="លុប"><i class="fas fa-trash-alt"></i></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table></div>`;
+  }
+
   body.innerHTML = html;
   openModal('modalStudentInfo');
 }
 
 // 2. បញ្ជីឈ្មោះសិស្ស (Student Name List)
 function openStudentListModal() {
-  openStudentInfoModal(); // Opens roster view
+  openStudentInfoModal();
 }
 
 // 3. ចុះវត្តមានតាមប្លង់ (Classroom Seating Chart Attendance)
 function openSeatingPlanModal() {
   const container = document.getElementById('seatingChartGrid');
+  const summary = document.getElementById('seatingSummary');
   const countPresent = appData.students.filter(s => s.attendance === 'present').length;
   const countPerm = appData.students.filter(s => s.attendance === 'permission').length;
   const countAbsent = appData.students.filter(s => s.attendance === 'absent').length;
 
-  const summary = document.getElementById('seatingSummary');
   if (summary) {
-    summary.innerHTML = `
-      <span style="color:#34d399; font-weight:700;"><i class="fas fa-check-circle"></i> វត្តមាន: ${countPresent}</span> |
-      <span style="color:#fbbf24; font-weight:700;"><i class="fas fa-clock"></i> មានច្បាប់: ${countPerm}</span> |
-      <span style="color:#f87171; font-weight:700;"><i class="fas fa-times-circle"></i> ឥតច្បាប់: ${countAbsent}</span>
-    `;
+    if (appData.students.length === 0) {
+      summary.innerHTML = `<span style="color:#94a3b8;"><i class="fas fa-info-circle"></i> មិនទាន់មានសិស្សសម្រាប់កត់ត្រាវត្តមាន</span>`;
+    } else {
+      summary.innerHTML = `
+        <span style="color:#34d399; font-weight:700;"><i class="fas fa-check-circle"></i> វត្តមាន: ${countPresent}</span> |
+        <span style="color:#fbbf24; font-weight:700;"><i class="fas fa-clock"></i> មានច្បាប់: ${countPerm}</span> |
+        <span style="color:#f87171; font-weight:700;"><i class="fas fa-times-circle"></i> ឥតច្បាប់: ${countAbsent}</span>
+      `;
+    }
   }
 
   if (container) {
-    let html = '';
-    appData.students.forEach(s => {
-      const statusClass = s.attendance;
-      const statusText = s.attendance === 'present' ? 'វត្តមាន' : s.attendance === 'permission' ? 'ច្បាប់' : 'អវត្តមាន';
-      const badgeClass = s.attendance === 'present' ? 'status-p' : s.attendance === 'permission' ? 'status-pa' : 'status-a';
+    if (appData.students.length === 0) {
+      container.innerHTML = renderStudentEmptyState(
+        'មិនទាន់មានសិស្សសម្រាប់រៀបចំតុអង្គុយទេ',
+        'សូមបញ្ចូលសិស្សជាមុនសិន ដើម្បីឱ្យប្រព័ន្ធរៀបចំតុអង្គុយ និងអនុញ្ញាតឱ្យលោកគ្រូ-អ្នកគ្រូចុចកត់ត្រាវត្តមានតាមប្លង់តុ។'
+      );
+    } else {
+      let html = '';
+      appData.students.forEach(s => {
+        const statusClass = s.attendance;
+        const statusText = s.attendance === 'present' ? 'វត្តមាន' : s.attendance === 'permission' ? 'ច្បាប់' : 'អវត្តមាន';
+        const badgeClass = s.attendance === 'present' ? 'status-p' : s.attendance === 'permission' ? 'status-pa' : 'status-a';
 
-      html += `
-        <div class="desk-card ${statusClass}" onclick="toggleStudentAttendance('${s.id}')" title="ចុចដើម្បីប្ដូរវត្តមាន">
-          <div style="font-size:1.5rem;">${s.avatar}</div>
-          <div class="desk-student-name">${s.nameKh}</div>
-          <div style="font-size:0.7rem; color:#94a3b8;">តុទី ${s.roll}</div>
-          <span class="desk-status-badge ${badgeClass}">${statusText}</span>
-        </div>
-      `;
-    });
-    container.innerHTML = html;
+        html += `
+          <div class="desk-card ${statusClass}" onclick="toggleStudentAttendance('${s.id}')" title="ចុចដើម្បីប្ដូរវត្តមាន">
+            <div style="font-size:1.5rem;">${s.avatar}</div>
+            <div class="desk-student-name">${s.nameKh}</div>
+            <div style="font-size:0.7rem; color:#94a3b8;">តុទី ${s.roll}</div>
+            <span class="desk-status-badge ${badgeClass}">${statusText}</span>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
   }
   openModal('modalSeatingPlan');
 }
@@ -334,6 +728,10 @@ function toggleStudentAttendance(id) {
 }
 
 function markAllPresent() {
+  if (appData.students.length === 0) {
+    showToast('មិនទាន់មានសិស្សសម្រាប់កត់ត្រាទេ!', 'info');
+    return;
+  }
   appData.students.forEach(s => s.attendance = 'present');
   persistData();
   showToast('បានកត់ត្រាវត្តមានពេញលេញសម្រាប់សិស្សទាំងអស់!', 'success');
@@ -345,8 +743,17 @@ function openMonthlyAttendanceModal() {
   const body = document.getElementById('modalMonthlyAttendanceBody');
   if (!body) return;
 
+  if (appData.students.length === 0) {
+    body.innerHTML = renderStudentEmptyState(
+      'មិនទាន់មានទិន្នន័យវត្តមានប្រចាំខែទេ',
+      'សូមបញ្ចូលបញ្ជីឈ្មោះសិស្សជាមុនសិន ដើម្បីបង្កើតតារាងវត្តមានប្រចាំខែ។'
+    );
+    openModal('modalMonthlyAttendance');
+    return;
+  }
+
   let html = `
-    <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <h4 style="color:#60a5fa;"><i class="fas fa-calendar-alt"></i> បញ្ជីវត្តមានប្រចាំខែវិច្ឆិកា ឆ្នាំ២០២៦ (${appData.currentTeacher.assignedClass})</h4>
       <button onclick="window.print()" style="background:#2563eb; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer;"><i class="fas fa-print"></i> បោះពុម្ពតារាង A4</button>
     </div>
@@ -369,7 +776,7 @@ function openMonthlyAttendanceModal() {
 
   appData.students.forEach((s, idx) => {
     const absent = s.absentYearCount || 0;
-    const rate = Math.max(70, 100 - (absent * 2.5)).toFixed(1);
+    const rate = Math.max(0, 100 - (absent * 2.5)).toFixed(1);
     html += `
       <tr>
         <td>${idx + 1}</td>
@@ -393,6 +800,15 @@ function openMonthlyAttendanceModal() {
 function openMonthlyScoreModal() {
   const body = document.getElementById('modalMonthlyScoreBody');
   if (!body) return;
+
+  if (appData.students.length === 0) {
+    body.innerHTML = renderStudentEmptyState(
+      'មិនទាន់មានសិស្សសម្រាប់បញ្ចូលពិន្ទុទេ',
+      'សូមបញ្ចូលបញ្ជីសិស្សក្នុងថ្នាក់ជាមុនសិន ដើម្បីចាប់ផ្ដើមបញ្ចូលពិន្ទុ និងគណនាមធ្យមភាគ។'
+    );
+    openModal('modalMonthlyScore');
+    return;
+  }
 
   let html = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
@@ -440,26 +856,26 @@ function openMonthlyScoreModal() {
     const avg = (total / 9).toFixed(2);
     let grade = 'F';
     let gradeColor = '#ef4444';
-    if (avg >= 85) { grade = 'ល្អណាស់ (A)'; gradeColor = '#10b981'; }
-    else if (avg >= 75) { grade = 'ល្អ (B)'; gradeColor = '#3b82f6'; }
-    else if (avg >= 65) { grade = 'ល្អបង្គួរ (C)'; gradeColor = '#06b6d4'; }
-    else if (avg >= 50) { grade = 'មធ្យម (D)'; gradeColor = '#f59e0b'; }
-    else { grade = 'ខ្សោយ (F)'; gradeColor = '#ef4444'; }
+    if (avg >= 85) { grade = 'A'; gradeColor = '#10b981'; }
+    else if (avg >= 75) { grade = 'B'; gradeColor = '#3b82f6'; }
+    else if (avg >= 65) { grade = 'C'; gradeColor = '#06b6d4'; }
+    else if (avg >= 50) { grade = 'D'; gradeColor = '#f59e0b'; }
+    else { grade = 'F'; gradeColor = '#ef4444'; }
 
     html += `
       <tr data-student-id="${s.id}">
         <td>${idx + 1}</td>
-        <td style="font-weight:600; color:#f8fafc; white-space:nowrap;">${s.nameKh}</td>
-        <td><input type="number" class="score-input" data-subj="KH" value="${kh}" min="0" max="100" style="width:60px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; padding:3px 6px;"></td>
-        <td><input type="number" class="score-input" data-subj="MATH" value="${math}" min="0" max="100" style="width:60px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; padding:3px 6px;"></td>
-        <td><input type="number" class="score-input" data-subj="PHY" value="${phy}" min="0" max="50" style="width:55px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; padding:3px 6px;"></td>
-        <td><input type="number" class="score-input" data-subj="CHEM" value="${chem}" min="0" max="50" style="width:55px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; padding:3px 6px;"></td>
-        <td><input type="number" class="score-input" data-subj="BIO" value="${bio}" min="0" max="50" style="width:55px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; padding:3px 6px;"></td>
-        <td><input type="number" class="score-input" data-subj="HIST" value="${hist}" min="0" max="50" style="width:55px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; padding:3px 6px;"></td>
-        <td><input type="number" class="score-input" data-subj="ENG" value="${eng}" min="0" max="50" style="width:55px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; padding:3px 6px;"></td>
+        <td style="font-weight:600; color:#f8fafc; min-width:130px;">${s.nameKh}</td>
+        <td><input type="number" class="score-input" data-subj="KH" value="${kh}" min="0" max="100" style="width:55px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; text-align:center; padding:4px;"></td>
+        <td><input type="number" class="score-input" data-subj="MATH" value="${math}" min="0" max="100" style="width:55px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; text-align:center; padding:4px;"></td>
+        <td><input type="number" class="score-input" data-subj="PHY" value="${phy}" min="0" max="50" style="width:50px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; text-align:center; padding:4px;"></td>
+        <td><input type="number" class="score-input" data-subj="CHEM" value="${chem}" min="0" max="50" style="width:50px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; text-align:center; padding:4px;"></td>
+        <td><input type="number" class="score-input" data-subj="BIO" value="${bio}" min="0" max="50" style="width:50px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; text-align:center; padding:4px;"></td>
+        <td><input type="number" class="score-input" data-subj="HIST" value="${hist}" min="0" max="50" style="width:50px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; text-align:center; padding:4px;"></td>
+        <td><input type="number" class="score-input" data-subj="ENG" value="${eng}" min="0" max="50" style="width:50px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:4px; text-align:center; padding:4px;"></td>
         <td style="font-weight:700; color:#38bdf8;">${total}</td>
         <td style="font-weight:700;">${avg}</td>
-        <td style="font-weight:700; color:${gradeColor}; white-space:nowrap;">${grade}</td>
+        <td><span style="background:${gradeColor}22; color:${gradeColor}; font-weight:700; padding:2px 8px; border-radius:4px;">${grade}</span></td>
       </tr>
     `;
   });
@@ -493,7 +909,16 @@ function openSendParentScoreModal() {
   const body = document.getElementById('modalSendParentScoreBody');
   if (!body) return;
 
-  const sampleStudent = appData.students[1] || appData.students[0];
+  if (appData.students.length === 0) {
+    body.innerHTML = renderStudentEmptyState(
+      'មិនទាន់មានសិស្សសម្រាប់ផ្ញើពិន្ទុទេ',
+      'សូមបញ្ចូលបញ្ជីសិស្ស និងពិន្ទុជាមុនសិន ដើម្បីផ្ញើសារជូនដំណឹងទៅអាណាព្យាបាល។'
+    );
+    openModal('modalSendParentScore');
+    return;
+  }
+
+  const sampleStudent = appData.students[0];
   let html = `
     <div style="background:#1e293b; border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.08); margin-bottom:18px;">
       <h4 style="color:#60a5fa; margin-bottom:8px;"><i class="fas fa-paper-plane"></i> គំរូសារផ្ញើជូនអាណាព្យាបាល (Telegram / SMS Preview)</h4>
@@ -502,23 +927,22 @@ function openSendParentScoreModal() {
         📋 <strong>សេចក្តីជូនដំណឹងអំពីលទ្ធផលសិក្សាប្រចាំឆមាស</strong><br>
         👤 ឈ្មោះសិស្ស៖ <strong>${sampleStudent.nameKh}</strong> (${sampleStudent.gender})<br>
         📚 ថ្នាក់៖ <strong>${appData.currentTeacher.assignedClass}</strong> | អត្តលេខ៖ ${sampleStudent.id}<br>
-        ⭐️ មធ្យមភាគពិន្ទុ៖ <strong>48.6 / 50</strong> (និទ្ទេស៖ ល្អណាស់ A)<br>
+        ⭐️ មធ្យមភាគពិន្ទុ៖ <strong>${((Object.values(sampleStudent.scores || {}).reduce((a,b)=>a+b,0))/9).toFixed(1)} / 50</strong><br>
         🏆 ចំណាត់ថ្នាក់៖ <strong>លេខ ១</strong> ក្នុងចំណោមសិស្ស ${appData.students.length} នាក់<br>
-        📅 វត្តមាន៖ ពេញលេញ ១០០%<br>
-        👨‍🏫 គ្រូទទួលបន្ទុក៖ <strong>${appData.currentTeacher.nameKh}</strong> (ទូរស័ព្ទ៖ 012 999 888)<br>
-        🔗 មើលលម្អិតតាមកូដ៖ <a href="#" style="color:#38bdf8;">https://krusmart.edu.kh/p/${sampleStudent.passcode}</a>
+        📅 វត្តមាន៖ ពេញលេញ<br>
+        💬 យោបល់គ្រូ៖ សិស្សមានការខិតខំប្រឹងប្រែងរៀនសូត្រ និងមានវិន័យល្អប្រសើរ។
       </div>
     </div>
-    <div style="display:flex; justify-content:flex-end; gap:10px;">
-      <button onclick="showToast('បានចម្លងគំរូសាររួចរាល់! អាចបិទភ្ជាប់ក្នុង Telegram ឬ SMS', 'success')" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:9px 18px; border-radius:8px; font-weight:600; cursor:pointer;"><i class="fas fa-copy"></i> ចម្លងសារ</button>
-      <button onclick="showToast('បានបញ្ជូនពិន្ទុទៅអាណាព្យាបាលទាំងអស់ចំនួន ' + appData.students.length + ' នាក់ដោយជោគជ័យ!', 'success')" style="background:#2563eb; color:#fff; border:none; padding:9px 22px; border-radius:8px; font-weight:600; cursor:pointer;"><i class="fas fa-paper-plane"></i> ចុចបញ្ជូនទៅទាំងអស់</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <span style="font-size:0.85rem; color:#94a3b8;">ប្រព័ន្ធនឹងផ្ញើសារស្វ័យប្រវត្តិតាមរយៈ Bot Telegram & SMS Gateway</span>
+      <button onclick="showToast('បានផ្ញើលទ្ធផលពិន្ទុទៅអាណាព្យាបាលសិស្សទាំងអស់!', 'success')" style="background:#2563eb; color:#fff; border:none; padding:9px 18px; border-radius:8px; font-weight:600; cursor:pointer;"><i class="fas fa-paper-plane"></i> បញ្ជូនទៅអាណាព្យាបាលទាំងអស់</button>
     </div>
   `;
   body.innerHTML = html;
   openModal('modalSendParentScore');
 }
 
-// 7. បញ្ចូលពិន្ទុរហ័ស (Quick Score Input)
+// 7. បញ្ចូលពិន្ទុរហ័ស (Quick Score)
 function openQuickScoreModal() {
   openMonthlyScoreModal();
 }
@@ -533,6 +957,15 @@ function openRankingTableModal() {
   const body = document.getElementById('modalRankingTableBody');
   if (!body) return;
 
+  if (appData.students.length === 0) {
+    body.innerHTML = renderStudentEmptyState(
+      'មិនទាន់មានទិន្នន័យចំណាត់ថ្នាក់ទេ',
+      'សូមបញ្ចូលសិស្ស និងពិន្ទុប្រចាំខែជាមុនសិន ដើម្បីឱ្យប្រព័ន្ធគណនាចំណាត់ថ្នាក់ដោយស្វ័យប្រវត្តិ។'
+    );
+    openModal('modalRankingTable');
+    return;
+  }
+
   // Calculate averages & sort
   const ranked = appData.students.map(s => {
     const sc = s.scores || {};
@@ -542,7 +975,7 @@ function openRankingTableModal() {
   }).sort((a, b) => b.avgScore - a.avgScore);
 
   let html = `
-    <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <h4 style="color:#f59e0b;"><i class="fas fa-trophy"></i> តារាងចំណាត់ថ្នាក់សិស្សប្រចាំឆមាស (${appData.currentTeacher.assignedClass})</h4>
       <button onclick="window.print()" style="background:#2563eb; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer;"><i class="fas fa-print"></i> បោះពុម្ព</button>
     </div>
@@ -591,6 +1024,15 @@ function openHonorRollModal() {
   const body = document.getElementById('modalHonorRollBody');
   if (!body) return;
 
+  if (appData.students.length === 0) {
+    body.innerHTML = renderStudentEmptyState(
+      'មិនទាន់មានទិន្នន័យសិស្សពូកែទេ',
+      'សូមបញ្ចូលសិស្ស និងពិន្ទុជាមុនសិន ដើម្បីជ្រើសរើសជើងឯក និងបោះពុម្ពប័ណ្ណសរសើរ។'
+    );
+    openModal('modalHonorRoll');
+    return;
+  }
+
   const topStudents = appData.students.slice(0, 3);
   let html = `
     <div style="text-align:center; margin-bottom:20px;">
@@ -609,7 +1051,7 @@ function openHonorRollModal() {
       <div style="background:#1e293b; border:1px solid rgba(234,179,8,0.3); border-radius:12px; padding:20px; text-align:center;">
         <div style="font-size:2.8rem; margin-bottom:8px;">${medal}</div>
         <h4 style="color:#f8fafc; font-size:1.1rem; margin-bottom:4px;">${s.nameKh}</h4>
-        <p style="color:#94a3b8; font-size:0.8rem; margin-bottom:8px;">${s.nameEn}</p>
+        <p style="color:#94a3b8; font-size:0.8rem; margin-bottom:8px;">${s.nameEn || ''}</p>
         <div style="background:rgba(234,179,8,0.15); color:#facc15; padding:4px 10px; border-radius:6px; font-size:0.82rem; font-weight:700; margin-bottom:12px;">${title}</div>
         <button onclick="printStudentCertificate('${s.id}')" style="background:#2563eb; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer;"><i class="fas fa-award"></i> បោះពុម្ពប័ណ្ណសរសើរ A4</button>
       </div>
@@ -672,9 +1114,18 @@ function openRemedialModal() {
   const body = document.getElementById('modalRemedialBody');
   if (!body) return;
 
+  if (appData.students.length === 0) {
+    body.innerHTML = renderStudentEmptyState(
+      'មិនទាន់មានទិន្នន័យសិស្សត្រូវកែលម្អទេ',
+      'សូមបញ្ចូលសិស្ស និងពិន្ទុជាមុនសិន ដើម្បីស្វែងរកសិស្សខ្សោយ ឬត្រូវការបំប៉នបន្ថែម។'
+    );
+    openModal('modalRemedial');
+    return;
+  }
+
   const struggling = appData.students.filter(s => {
     const sc = s.scores || {};
-    return (sc.MATH < 65 || sc.KH < 65 || (s.absentYearCount > 5));
+    return ((sc.MATH && sc.MATH < 65) || (sc.KH && sc.KH < 65) || (s.absentYearCount > 5));
   });
 
   let html = `
@@ -682,35 +1133,48 @@ function openRemedialModal() {
       <h4 style="color:#f87171;"><i class="fas fa-exclamation-triangle"></i> បញ្ជីសិស្សត្រូវការជំនួយគរុកោសល្យ និងការបំប៉នបន្ថែម</h4>
       <p style="font-size:0.85rem; color:#fca5a5;">សិស្សមានពិន្ទុក្រោមមធ្យម ឬអវត្តមានច្រើន ត្រូវរៀបចំផែនការបំប៉នបន្ថែមក្រោយម៉ោងសិក្សា។</p>
     </div>
-    <div class="krusmart-table-wrap">
-      <table class="krusmart-table">
-        <thead>
-          <tr>
-            <th>ល.រ</th>
-            <th>ឈ្មោះសិស្ស</th>
-            <th>មុខវិជ្ជាខ្សោយ</th>
-            <th>ពិន្ទុ</th>
-            <th>មូលហេតុចម្បង</th>
-            <th>ផែនការកែលម្អ</th>
-          </tr>
-        </thead>
-        <tbody>
   `;
 
-  struggling.forEach((s, idx) => {
+  if (struggling.length === 0) {
     html += `
-      <tr>
-        <td>${idx + 1}</td>
-        <td style="font-weight:600; color:#f8fafc;">${s.nameKh}</td>
-        <td style="color:#f87171; font-weight:600;">គណិតវិទ្យា / ខ្មែរ</td>
-        <td>${s.scores.MATH || 60}/100</td>
-        <td>ខ្វះការយកចិត្តទុកដាក់ / អវត្តមានញឹកញាប់</td>
-        <td><button onclick="showToast('បានកត់ត្រាកិច្ចការបំប៉នរួចរាល់', 'success')" style="background:#2563eb; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.78rem; cursor:pointer;">រៀបចំម៉ោងបំប៉ន</button></td>
-      </tr>
+      <div style="text-align:center; padding:30px; color:#34d399;">
+        <i class="fas fa-check-circle" style="font-size:2.5rem; margin-bottom:10px;"></i>
+        <h4>ពុំមានសិស្សខ្សោយត្រូវកែលម្អទេ! សិស្សទាំងអស់មានលទ្ធផលល្អប្រសើរ។</h4>
+      </div>
     `;
-  });
+  } else {
+    html += `
+      <div class="krusmart-table-wrap">
+        <table class="krusmart-table">
+          <thead>
+            <tr>
+              <th>ល.រ</th>
+              <th>ឈ្មោះសិស្ស</th>
+              <th>មុខវិជ្ជាខ្សោយ</th>
+              <th>ពិន្ទុ</th>
+              <th>មូលហេតុចម្បង</th>
+              <th>ផែនការកែលម្អ</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
 
-  html += `</tbody></table></div>`;
+    struggling.forEach((s, idx) => {
+      html += `
+        <tr>
+          <td>${idx + 1}</td>
+          <td style="font-weight:600; color:#f8fafc;">${s.nameKh}</td>
+          <td style="color:#f87171; font-weight:600;">គណិតវិទ្យា / ខ្មែរ</td>
+          <td>${s.scores?.MATH || 0}/100</td>
+          <td>ខ្វះការយកចិត្តទុកដាក់ / អវត្តមានញឹកញាប់</td>
+          <td><button onclick="showToast('បានកត់ត្រាកិច្ចការបំប៉នរួចរាល់', 'success')" style="background:#2563eb; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.78rem; cursor:pointer;">រៀបចំម៉ោងបំប៉ន</button></td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table></div>`;
+  }
+
   body.innerHTML = html;
   openModal('modalRemedial');
 }
@@ -720,8 +1184,17 @@ function openBehaviorModal() {
   const body = document.getElementById('modalBehaviorBody');
   if (!body) return;
 
+  if (appData.students.length === 0) {
+    body.innerHTML = renderStudentEmptyState(
+      'មិនទាន់មានសិស្សសម្រាប់កត់ត្រាវិន័យទេ',
+      'សូមបញ្ចូលបញ្ជីសិស្សជាមុនសិន ដើម្បីតាមដានពិន្ទុវិន័យ និងអាកប្បកិរិយា។'
+    );
+    openModal('modalBehavior');
+    return;
+  }
+
   let html = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
       <h4 style="color:#ec4899;"><i class="fas fa-smile"></i> បញ្ជីពិន្ទុវិន័យ និងអាកប្បកិរិយាសិស្ស (ពិន្ទុដើម ១០០)</h4>
       <button onclick="showToast('បានរក្សាទុកពិន្ទុវិន័យ', 'success')" style="background:#2563eb; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer;"><i class="fas fa-save"></i> រក្សាទុក</button>
     </div>
@@ -741,7 +1214,7 @@ function openBehaviorModal() {
   `;
 
   appData.students.forEach((s, idx) => {
-    const pts = s.behaviorScore || 95;
+    const pts = s.behaviorScore || 100;
     html += `
       <tr>
         <td>${idx + 1}</td>
@@ -765,7 +1238,7 @@ function openBehaviorModal() {
 function adjustBehavior(id, amount) {
   const s = appData.students.find(x => x.id === id);
   if (!s) return;
-  s.behaviorScore = Math.max(0, Math.min(100, (s.behaviorScore || 95) + amount));
+  s.behaviorScore = Math.max(0, Math.min(100, (s.behaviorScore || 100) + amount));
   persistData();
   openBehaviorModal();
 }
@@ -778,8 +1251,8 @@ function openDemographicsModal() {
   const total = appData.students.length;
   const female = appData.students.filter(s => s.gender === 'ស្រី').length;
   const male = total - female;
-  const femalePct = ((female / total) * 100).toFixed(1);
-  const malePct = ((male / total) * 100).toFixed(1);
+  const femalePct = total > 0 ? ((female / total) * 100).toFixed(1) : '0';
+  const malePct = total > 0 ? ((male / total) * 100).toFixed(1) : '0';
 
   let html = `
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
@@ -796,29 +1269,41 @@ function openDemographicsModal() {
     </div>
     <div style="background:#1e293b; padding:20px; border-radius:12px;">
       <h4 style="color:#60a5fa; margin-bottom:12px;"><i class="fas fa-chart-pie"></i> ការបែងចែកតាមកម្រិតអាយុ</h4>
+  `;
+
+  if (total === 0) {
+    html += `
+      <p style="color:#94a3b8; font-size:0.88rem; text-align:center; padding:20px;">
+        មិនទាន់មានទិន្នន័យសិស្សសម្រាប់វិភាគអាយុទេ។
+      </p>
+    `;
+  } else {
+    html += `
       <div style="margin-bottom:10px;">
         <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
           <span>អាយុ ១២ ឆ្នាំ</span>
-          <span>៦ នាក់ (៣០%)</span>
+          <span>${Math.round(total * 0.3)} នាក់ (30%)</span>
         </div>
         <div style="height:10px; background:#0f172a; border-radius:5px; overflow:hidden;"><div style="width:30%; height:100%; background:#3b82f6;"></div></div>
       </div>
       <div style="margin-bottom:10px;">
         <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
           <span>អាយុ ១៣ ឆ្នាំ (ត្រឹមត្រូវតាមកម្រិត)</span>
-          <span>១២ នាក់ (៦០%)</span>
+          <span>${Math.round(total * 0.6)} នាក់ (60%)</span>
         </div>
         <div style="height:10px; background:#0f172a; border-radius:5px; overflow:hidden;"><div style="width:60%; height:100%; background:#10b981;"></div></div>
       </div>
       <div>
         <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
           <span>អាយុ ១៤ ឆ្នាំឡើង</span>
-          <span>២ នាក់ (១០%)</span>
+          <span>${Math.max(0, total - Math.round(total * 0.9))} នាក់ (10%)</span>
         </div>
         <div style="height:10px; background:#0f172a; border-radius:5px; overflow:hidden;"><div style="width:10%; height:100%; background:#f59e0b;"></div></div>
       </div>
-    </div>
-  `;
+    `;
+  }
+
+  html += `</div>`;
   body.innerHTML = html;
   openModal('modalDemographics');
 }
@@ -828,16 +1313,20 @@ function openClassAdminModal() {
   const body = document.getElementById('modalClassAdminBody');
   if (!body) return;
 
+  const p1 = appData.students[0]?.nameKh || 'កំពុងរង់ចាំជ្រើសតាំង';
+  const p2 = appData.students[1]?.nameKh || 'កំពុងរង់ចាំជ្រើសតាំង';
+  const p3 = appData.students[2]?.nameKh || 'កំពុងរង់ចាំជ្រើសតាំង';
+
   let html = `
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
       <div style="background:#1e293b; padding:20px; border-radius:12px;">
-        <h4 style="color:#a855f7; margin-bottom:12px;"><i class="fas fa-crown"></i> គណៈកម្មការថ្នាក់រៀន</h4>
+        <h4 style="color:#a855f7; margin-bottom:12px;"><i class="fas fa-crown"></i> គណៈកម្មការថ្នាក់រៀន (${appData.currentTeacher.assignedClass})</h4>
         <ul style="list-style:none; line-height:2.2; font-size:0.88rem;">
-          <li>👑 <strong>ប្រធានថ្នាក់៖</strong> កែវ វិសាល</li>
-          <li>⭐️ <strong>អនុប្រធានថ្នាក់ទី១៖</strong> ចាន់ សុគន្ធា</li>
-          <li>⭐️ <strong>អនុប្រធានថ្នាក់ទី២៖</strong> ថៃ ធីតា</li>
-          <li>📚 <strong>បណ្ណារក្សថ្នាក់៖</strong> សេង ចិន្តា</li>
-          <li>🧹 <strong>ប្រធានអនាម័យ៖</strong> ហ៊ុល មុន្នី</li>
+          <li>👑 <strong>ប្រធានថ្នាក់៖</strong> ${p1}</li>
+          <li>⭐️ <strong>អនុប្រធានថ្នាក់ទី១៖</strong> ${p2}</li>
+          <li>⭐️ <strong>អនុប្រធានថ្នាក់ទី២៖</strong> ${p3}</li>
+          <li>📚 <strong>បណ្ណារក្សថ្នាក់៖</strong> ស្ម័គ្រចិត្ត</li>
+          <li>🧹 <strong>ប្រធានអនាម័យ៖</strong> ស្ម័គ្រចិត្ត</li>
         </ul>
       </div>
       <div style="background:#1e293b; padding:20px; border-radius:12px;">
@@ -884,7 +1373,7 @@ function openFollowUpBookModal() {
             <td>07:00 - 08:35</td>
             <td>ភាសាខ្មែរ</td>
             <td>មេរៀនទី៥៖ អំណាន «ធម្មជាតិស្រុកកំណើត»</td>
-            <td>30/30</td>
+            <td>${appData.students.length}/${appData.students.length}</td>
             <td><span style="color:#34d399; font-weight:700;">✓ បានបង្រៀន</span></td>
           </tr>
           <tr>
@@ -892,7 +1381,7 @@ function openFollowUpBookModal() {
             <td>08:50 - 09:35</td>
             <td>គណិតវិទ្យា</td>
             <td>មេរៀនទី៤៖ ចំនួនគត់រ៉ឺឡាទីវ (លំហាត់អនុវត្ត)</td>
-            <td>29/30</td>
+            <td>${appData.students.length}/${appData.students.length}</td>
             <td><span style="color:#34d399; font-weight:700;">✓ បានបង្រៀន</span></td>
           </tr>
         </tbody>
@@ -982,8 +1471,17 @@ function openStudentCodesModal() {
   const body = document.getElementById('modalStudentCodesBody');
   if (!body) return;
 
+  if (appData.students.length === 0) {
+    body.innerHTML = renderStudentEmptyState(
+      'មិនទាន់មានលេខកូដសិស្សទេ',
+      'សូមបញ្ចូលបញ្ជីសិស្សជាមុនសិន ដើម្បីឱ្យប្រព័ន្ធបង្កើតលេខកូដសម្ងាត់សម្រាប់អាណាព្យាបាល។'
+    );
+    openModal('modalStudentCodes');
+    return;
+  }
+
   let html = `
-    <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <h4 style="color:#14b8a6;"><i class="fas fa-key"></i> កូដសម្ងាត់សម្រាប់អាណាព្យាបាលចូលពិនិត្យពិន្ទុតាមទូរស័ព្ទ</h4>
       <button onclick="window.print()" style="background:#2563eb; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer;"><i class="fas fa-print"></i> បោះពុម្ពបញ្ជីកូដ</button>
     </div>
@@ -1006,8 +1504,8 @@ function openStudentCodesModal() {
       <tr>
         <td>${idx + 1}</td>
         <td style="font-weight:600; color:#f8fafc;">${s.nameKh}</td>
-        <td>${s.parentName}</td>
-        <td>${s.parentPhone}</td>
+        <td>${s.parentName || '-'}</td>
+        <td>${s.parentPhone || '-'}</td>
         <td><strong style="color:#14b8a6; font-family:monospace; font-size:0.95rem; background:#0f172a; padding:3px 8px; border-radius:4px; border:1px solid #334155;">${s.passcode}</strong></td>
       </tr>
     `;
@@ -1024,7 +1522,7 @@ function openTimetableModal() {
   if (!body) return;
 
   let html = `
-    <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <h4 style="color:#60a5fa;"><i class="fas fa-calendar-week"></i> កាលវិភាគបង្រៀនប្រចាំសប្ដាហ៍ (${appData.currentTeacher.assignedClass})</h4>
       <button onclick="window.print()" style="background:#2563eb; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer;"><i class="fas fa-print"></i> បោះពុម្ព</button>
     </div>
@@ -1069,7 +1567,7 @@ function openInventoryModal() {
   if (!body) return;
 
   let html = `
-    <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <h4 style="color:#f59e0b;"><i class="fas fa-box-open"></i> បញ្ជីសារពើភ័ណ្ឌ និងសម្ភារក្នុងបន្ទប់ ២០១</h4>
       <button onclick="showToast('បានកត់ត្រាសម្ភារថ្មី', 'success')" style="background:#2563eb; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer;"><i class="fas fa-plus"></i> បន្ថែមសម្ភារ</button>
     </div>
@@ -1111,15 +1609,24 @@ function openStudentIDCardsModal() {
   const body = document.getElementById('modalStudentIDCardsBody');
   if (!body) return;
 
+  if (appData.students.length === 0) {
+    body.innerHTML = renderStudentEmptyState(
+      'មិនទាន់មានអត្តសញ្ញាណប័ណ្ណសិស្សទេ',
+      'សូមបញ្ចូលបញ្ជីសិស្សជាមុនសិន ដើម្បីឱ្យប្រព័ន្ធបង្កើតប័ណ្ណសម្គាល់ខ្លួនសិស្សស្វ័យប្រវត្តិ។'
+    );
+    openModal('modalStudentIDCards');
+    return;
+  }
+
   let html = `
-    <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <h4 style="color:#a855f7;"><i class="fas fa-id-badge"></i> គំរូប័ណ្ណសម្គាល់ខ្លួនសិស្ស (${appData.currentTeacher.assignedClass})</h4>
       <button onclick="window.print()" style="background:#2563eb; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer;"><i class="fas fa-print"></i> បោះពុម្ពប័ណ្ណទាំងអស់</button>
     </div>
     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
   `;
 
-  appData.students.slice(0, 4).forEach(s => {
+  appData.students.forEach(s => {
     html += `
       <div style="background:linear-gradient(135deg, #1e3a8a, #0f172a); border:2px solid #3b82f6; border-radius:12px; padding:16px; color:#fff; position:relative; box-shadow:0 8px 20px rgba(0,0,0,0.4);">
         <div style="display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:8px; margin-bottom:10px;">
@@ -1135,8 +1642,8 @@ function openStudentIDCardsModal() {
           </div>
           <div style="font-size:0.8rem; line-height:1.6;">
             <div>ឈ្មោះ៖ <strong>${s.nameKh}</strong></div>
-            <div style="font-size:0.75rem; color:#94a3b8;">${s.nameEn}</div>
-            <div>ភេទ៖ ${s.gender} | កើត៖ ${s.dob}</div>
+            ${s.nameEn ? `<div style="font-size:0.75rem; color:#94a3b8;">${s.nameEn}</div>` : ''}
+            <div>ភេទ៖ ${s.gender} | កើត៖ ${s.dob || '-'}</div>
             <div>អត្តលេខ៖ <code>${s.id}</code></div>
           </div>
         </div>
@@ -1149,7 +1656,7 @@ function openStudentIDCardsModal() {
   openModal('modalStudentIDCards');
 }
 
-// 24. ផ្ញើសារទៅអាណាព្យាបាល (Parent Notification Broadcast)
+// 24. ផ្ញើសារទៅអាណាព្យាបាល (Parent Messages)
 function openParentMessagesModal() {
   openSendParentScoreModal();
 }
@@ -1160,24 +1667,24 @@ function openTeachingAidsModal() {
   if (!body) return;
 
   let html = `
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px;">
-      <div style="background:#1e293b; border-radius:10px; padding:16px; text-align:center;">
-        <i class="fas fa-shapes" style="font-size:2rem; color:#ec4899; margin-bottom:10px;"></i>
-        <h4 style="font-size:0.95rem; margin-bottom:6px;">បណ្ណរូបភាពពាក្យគន្លឹះ</h4>
-        <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">Flashcards សម្រាប់ថ្នាក់ទី៧</p>
-        <button onclick="showToast('បានទាញយកកាត', 'success')" style="background:#2563eb; color:#fff; border:none; padding:5px 12px; border-radius:4px; font-size:0.8rem; cursor:pointer;">ទាញយក</button>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px;">
+      <div style="background:#1e293b; padding:16px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+        <div style="font-size:2rem; margin-bottom:8px;">📐</div>
+        <h4 style="color:#f8fafc; font-size:0.95rem; margin-bottom:4px;">ឧបករណ៍គណិតវិទ្យាឌីជីថល</h4>
+        <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">បន្ទាត់ កាំទ្រនិច បន្ទាត់កែង និងត្រីកោណមាត្រ</p>
+        <button onclick="showToast('បានបើកឧបករណ៍ជំនួយគណិតវិទ្យា', 'info')" style="background:#2563eb; color:#fff; border:none; padding:5px 12px; border-radius:4px; font-size:0.8rem; cursor:pointer;">ប្រើប្រាស់</button>
       </div>
-      <div style="background:#1e293b; border-radius:10px; padding:16px; text-align:center;">
-        <i class="fas fa-file-powerpoint" style="font-size:2rem; color:#f97316; margin-bottom:10px;"></i>
-        <h4 style="font-size:0.95rem; margin-bottom:6px;">ស្លាយបង្រៀនគំរូ</h4>
-        <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">ស្លាយ PowerPoint ភាសាខ្មែរ</p>
-        <button onclick="showToast('បានទាញយកស្លាយ', 'success')" style="background:#2563eb; color:#fff; border:none; padding:5px 12px; border-radius:4px; font-size:0.8rem; cursor:pointer;">ទាញយក</button>
+      <div style="background:#1e293b; padding:16px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+        <div style="font-size:2rem; margin-bottom:8px;">🔬</div>
+        <h4 style="color:#f8fafc; font-size:0.95rem; margin-bottom:4px;">ក្លែងធ្វើពិសោធន៍វិទ្យាសាស្ត្រ (PhET)</h4>
+        <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">ពិសោធន៍អគ្គិសនី រូបវិទ្យា និងគីមីវិទ្យានិម្មិត</p>
+        <button onclick="showToast('បានតភ្ជាប់ទៅ PhET Simulation', 'info')" style="background:#059669; color:#fff; border:none; padding:5px 12px; border-radius:4px; font-size:0.8rem; cursor:pointer;">បើកពិសោធន៍</button>
       </div>
-      <div style="background:#1e293b; border-radius:10px; padding:16px; text-align:center;">
-        <i class="fas fa-gamepad" style="font-size:2rem; color:#10b981; margin-bottom:10px;"></i>
-        <h4 style="font-size:0.95rem; margin-bottom:6px;">ល្បែងសិក្សាអប់រំ</h4>
-        <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">ល្បែងពង្រឹងការចងចាំសិស្ស</p>
-        <button onclick="showToast('បើកល្បែងសិក្សា', 'info')" style="background:#2563eb; color:#fff; border:none; padding:5px 12px; border-radius:4px; font-size:0.8rem; cursor:pointer;">លេងល្បែង</button>
+      <div style="background:#1e293b; padding:16px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+        <div style="font-size:2rem; margin-bottom:8px;">⏱️</div>
+        <h4 style="color:#f8fafc; font-size:0.95rem; margin-bottom:4px;">នាឡិកាកំណត់ម៉ោងពិភាក្សា</h4>
+        <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">កំណត់ម៉ោងកិច្ចការជាក្រុម (Countdown Timer)</p>
+        <button onclick="showToast('នាឡិកាកំណត់ម៉ោងត្រូវបានចាប់ផ្តើម', 'success')" style="background:#d946ef; color:#fff; border:none; padding:5px 12px; border-radius:4px; font-size:0.8rem; cursor:pointer;">ចាប់ផ្ដើម ៥ នាទី</button>
       </div>
     </div>
   `;
@@ -1192,34 +1699,31 @@ function openAccountSettingsModal() {
 
   const t = appData.currentTeacher;
   let html = `
-    <div style="background:#1e293b; border-radius:12px; padding:20px; line-height:2.2; font-size:0.9rem;">
-      <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:16px;">
-        <div style="width:64px; height:64px; border-radius:50%; background:#2563eb; display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:#fff;">
-          👨‍🏫
-        </div>
-        <div>
-          <h3 style="color:#f8fafc; font-size:1.2rem;">${t.nameKh}</h3>
-          <p style="color:#94a3b8; font-size:0.85rem;">${t.nameEn} • ${t.email}</p>
-        </div>
+    <div style="text-align:center; margin-bottom:20px;">
+      <div style="width:70px; height:70px; border-radius:50%; background:linear-gradient(135deg, #2563eb, #9333ea); display:flex; align-items:center; justify-content:center; color:#fff; font-size:2rem; margin:0 auto 12px auto;">
+        👩‍🏫
       </div>
+      <h3 style="color:#f8fafc; margin-bottom:4px;">${t.nameKh}</h3>
+      <p style="color:#94a3b8; font-size:0.85rem;">${t.email} • <span style="color:#facc15; font-weight:700;">👑 Premium Member</span></p>
+    </div>
+    <div style="background:#0f172a; padding:16px; border-radius:10px; border:1px solid #334155; margin-bottom:20px; font-size:0.88rem; line-height:2;">
       <div>🏫 <strong>ស្ថាប័ន៖</strong> ${t.schoolKh}</div>
-      <div>🏢 <strong>ស្ថាប័នពាក់ព័ន្ធ៖</strong> ${t.schoolAlt}</div>
       <div>📚 <strong>ថ្នាក់ទទួលបន្ទុក៖</strong> ${t.assignedClass}</div>
       <div>📅 <strong>ឆ្នាំសិក្សា៖</strong> ${t.academicYear}</div>
-      <div>👑 <strong>កញ្ចប់សេវាកម្ម៖</strong> <span class="badge-premium">KruSmart Pro</span></div>
-      
-      <div style="margin-top:24px; display:flex; gap:10px;">
-        <button onclick="handleLogout()" style="background:#ef4444; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="fas fa-sign-out-alt"></i> ចាកចេញពីគណនី</button>
-      </div>
+      <div>👥 <strong>ចំនួនសិស្សបច្ចុប្បន្ន៖</strong> ${appData.students.length} នាក់</div>
+    </div>
+    <div style="display:flex; justify-content:space-between; gap:10px;">
+      <button onclick="clearAllStudentsConfirm()" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600;"><i class="fas fa-trash-alt"></i> សម្អាតទិន្នន័យសិស្ស</button>
+      <button onclick="handleLogout()" style="background:#ef4444; color:#fff; border:none; padding:8px 18px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="fas fa-sign-out-alt"></i> ចាកចេញពីគណនី</button>
     </div>
   `;
   body.innerHTML = html;
   openModal('modalAccountSettings');
 }
 
-// Dispatcher for Card Clicks
-function handleCardAction(actionName) {
-  switch (actionName) {
+// Router for 26 Feature Cards
+function handleCardAction(action) {
+  switch (action) {
     case 'student-info': openStudentInfoModal(); break;
     case 'student-list': openStudentListModal(); break;
     case 'seating-plan': openSeatingPlanModal(); break;
