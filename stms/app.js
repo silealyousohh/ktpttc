@@ -306,6 +306,7 @@ function renderSidebar() {
       
       <li class="sidebar-label">១. ម៉ូឌុលរដ្ឋបាល និងគរុសនិស្សិត</li>
       <li><a class="sidebar-item-link" href="add-student.html"><i class="fas fa-user-plus"></i> <span>ទម្រង់ចុះឈ្មោះសិស្ស (Add Student)</span></a></li>
+      <li><a class="sidebar-item-link" onclick="openEditStudentModal()"><i class="fas fa-user-edit"></i> <span>កែប្រែព័ត៌មានសិស្ស (Edit Info)</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='trainees'?'active':''}" onclick="navigateView('trainees')"><i class="fas fa-user-graduate"></i> <span>ប្រវត្តិគរុសនិស្សិត (Profiles)</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='requests'?'active':''}" onclick="navigateView('requests')"><i class="fas fa-clipboard-list"></i> <span>សំណើកែព័ត៌មាន (Requests)</span></a></li>
 
@@ -663,6 +664,7 @@ function renderTraineesView(container) {
       </div>
       <div class="view-actions-group">
         <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> បង្កើតគណនី</button>
+        <button class="btn btn-outline" onclick="openEditStudentModal()"><i class="fas fa-edit"></i> កែប្រែព័ត៌មាន</button>
         <button class="btn btn-outline" onclick="exportTraineeRosterExcel()"><i class="fas fa-print"></i> បោះពុម្ពព័ត៌មាន</button>
         <button class="btn btn-outline" onclick="viewTraineeCard()"><i class="fas fa-id-card"></i> បោះពុម្ពអត្តសញ្ញាណប័ណ្ណ</button>
         <button class="btn btn-success" onclick="exportTraineeRosterExcel()"><i class="fas fa-file-excel"></i> ទាញយក Excel</button>
@@ -769,7 +771,8 @@ function renderTraineesView(container) {
                   <div style="display:flex; gap:6px;">
                     <button class="btn btn-outline" style="height:30px; padding:0 8px;" onclick="viewTraineeCard('${t.id}')" title="មើលកាតសម្គាល់ខ្លួន"><i class="fas fa-id-card"></i></button>
                     ${currentRole === 'admin' ? `
-                      <button class="btn btn-outline" style="height:30px; padding:0 8px;" onclick="editTraineeStatus('${t.id}')" title="កែប្រែស្ថានភាព"><i class="fas fa-edit"></i></button>
+                      <button class="btn btn-primary" style="height:30px; padding:0 10px; font-size:0.8rem; gap:4px; display:inline-flex; align-items:center;" onclick="openEditStudent('${t.id}')" title="កែប្រែព័ត៌មានសិស្ស"><i class="fas fa-edit"></i> កែប្រែ</button>
+                      <button class="btn btn-outline" style="height:30px; padding:0 8px;" onclick="editTraineeStatus('${t.id}')" title="កែប្រែស្ថានភាពសិក្សា"><i class="fas fa-user-tag"></i></button>
                       <button class="btn btn-outline" style="height:30px; padding:0 8px; color:#ef4444;" onclick="deleteTraineeRecord('${t.id}')" title="លុប"><i class="fas fa-trash"></i></button>
                     ` : ''}
                   </div>
@@ -809,6 +812,88 @@ function filterTraineeByCohort(cohort) {
 // Enrollment Modal Controller - Navigates to full standard Add Student Form
 function openEnrollModal() {
   window.location.href = 'add-student.html';
+}
+
+// Open Edit Student Page
+function openEditStudent(id) {
+  closeStmsModal();
+  window.location.href = `add-student.html?id=${encodeURIComponent(id)}`;
+}
+
+// Open Edit Student Selector Modal
+function openEditStudentModal() {
+  if (!stmsData.trainees || stmsData.trainees.length === 0) {
+    showToast('ពុំទាន់មានទិន្នន័យគរុសនិស្សិតដើម្បីកែប្រែនៅឡើយទេ! សូមចុះឈ្មោះគរុសនិស្សិតជាមុន។', 'warning');
+    return;
+  }
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="editStudentModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:680px; width:95%;">
+        <div class="modal-header-bar" style="border-bottom:1px solid #e2e8f0; padding:16px 20px;">
+          <div class="modal-header-title" style="font-size:1.05rem; font-weight:700; color:#1e3a8a; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-edit" style="color:#2563eb;"></i> ជ្រើសរើសគរុសនិស្សិតដើម្បីកែប្រែព័ត៌មាន
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:18px 20px;">
+          <div style="position:relative; margin-bottom:14px;">
+            <i class="fas fa-search" style="position:absolute; left:12px; top:13px; color:#94a3b8;"></i>
+            <input type="text" id="editStudentSearchInput" class="form-control" placeholder="ស្វែងរកតាមឈ្មោះ, អត្តលេខ, ថ្នាក់រៀន..." oninput="filterEditStudentList(this.value)" style="padding-left:36px; height:42px; border-radius:8px;">
+          </div>
+          <div id="editStudentListContainer" style="display:flex; flex-direction:column; gap:10px; max-height:380px; overflow-y:auto; padding-right:4px;">
+            ${renderEditStudentItems(stmsData.trainees)}
+          </div>
+        </div>
+        <div class="modal-footer-bar" style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.82rem; color:#64748b;">សរុប៖ <strong>${stmsData.trainees.length} នាក់</strong></span>
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  setTimeout(() => document.getElementById('editStudentSearchInput')?.focus(), 150);
+}
+
+function renderEditStudentItems(list) {
+  if (!list || list.length === 0) {
+    return `<div style="text-align:center; padding:30px 10px; color:#94a3b8;"><i class="fas fa-search fa-2x" style="margin-bottom:8px; display:block; color:#cbd5e1;"></i>រកមិនឃើញគរុសនិស្សិតដែលត្រូវនឹងពាក្យស្វែងរកឡើយ</div>`;
+  }
+  return list.map(t => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; transition:all 0.2s;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:42px; height:42px; border-radius:50%; background:#e2e8f0; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; border:1px solid #cbd5e1;">
+          ${t.photo ? `<img src="${t.photo}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML='${t.avatar || '👨‍🎓'}'">` : (t.avatar || '👨‍🎓')}
+        </div>
+        <div>
+          <div style="font-weight:700; color:#0f172a; font-size:0.92rem;">
+            ${t.nameKh} ${t.nameEn ? `<span style="font-size:0.8rem; font-weight:400; color:#64748b;">(${t.nameEn})</span>` : ''}
+          </div>
+          <div style="font-size:0.78rem; color:#64748b; margin-top:2px; display:flex; gap:10px;">
+            <span><i class="fas fa-id-badge"></i> <code style="color:#2563eb; font-weight:600;">${t.id}</code></span>
+            <span><i class="fas fa-chalkboard-teacher"></i> ${t.className || 'ថ្នាក់ ១២+២'}</span>
+            <span><i class="fas fa-venus-mars"></i> ${t.gender || 'ប្រុស'}</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="openEditStudent('${t.id}')" style="height:34px; padding:0 14px; font-size:0.82rem; gap:6px; display:inline-flex; align-items:center;">
+        <i class="fas fa-edit"></i> កែប្រែព័ត៌មាន
+      </button>
+    </div>
+  `).join('');
+}
+
+function filterEditStudentList(query) {
+  const q = (query || '').toLowerCase().trim();
+  const filtered = stmsData.trainees.filter(t => {
+    return (t.nameKh && t.nameKh.toLowerCase().includes(q)) ||
+           (t.nameEn && t.nameEn.toLowerCase().includes(q)) ||
+           (t.id && t.id.toLowerCase().includes(q)) ||
+           (t.className && t.className.toLowerCase().includes(q));
+  });
+  const container = document.getElementById('editStudentListContainer');
+  if (container) container.innerHTML = renderEditStudentItems(filtered);
 }
 
 function updateGeneratedId() {
@@ -967,7 +1052,8 @@ function viewTraineeCard(id) {
           </div>
 
         </div>
-        <div class="modal-footer-bar" style="justify-content:center;">
+        <div class="modal-footer-bar" style="justify-content:center; gap:10px;">
+          <button class="btn btn-outline" style="color:#2563eb; border-color:#93c5fd;" onclick="openEditStudent('${t.id}')"><i class="fas fa-edit"></i> កែប្រែព័ត៌មាន</button>
           <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> បោះពុម្ពប័ណ្ណ A4</button>
           <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
         </div>
@@ -2758,7 +2844,7 @@ function renderSystemFlowView(container) {
             <button type="button" class="flow-action-btn" onclick="openEnrollModal()">
               <i class="fas fa-user-plus"></i> បង្កើតគណនី
             </button>
-            <button type="button" class="flow-action-btn" onclick="navigateView('trainees')">
+            <button type="button" class="flow-action-btn" onclick="openEditStudentModal()">
               <i class="fas fa-edit"></i> កែប្រែព័ត៌មាន
             </button>
             <button type="button" class="flow-action-btn" onclick="exportTraineeRosterExcel()">

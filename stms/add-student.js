@@ -37,13 +37,16 @@ function getSavedStudents() {
     const rawStms = localStorage.getItem('ktpttc_stms_data_v2');
     if (rawStms) {
       const parsed = JSON.parse(rawStms);
-      if (parsed && Array.isArray(parsed.trainees)) return parsed.trainees;
+      if (parsed && Array.isArray(parsed.trainees) && parsed.trainees.length > 0) return parsed.trainees;
     }
     const legacy = localStorage.getItem('krusmart_teacher_custom_students');
     if (legacy) {
       const parsed = JSON.parse(legacy);
-      if (Array.isArray(parsed)) return parsed;
-      if (parsed && Array.isArray(parsed.students)) return parsed.students;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (parsed && Array.isArray(parsed.students) && parsed.students.length > 0) return parsed.students;
+    }
+    if (window.KTPTTC_INITIAL_DATA && Array.isArray(window.KTPTTC_INITIAL_DATA.trainees)) {
+      return window.KTPTTC_INITIAL_DATA.trainees;
     }
   } catch (e) {
     console.error(e);
@@ -143,30 +146,39 @@ function checkEditMode() {
   if (!editId) return;
 
   const students = getSavedStudents();
-  const s = students.find(x => x.id === editId);
-  if (!s) return;
+  const s = students.find(x => x.id === editId || (x.id && x.id.toLowerCase() === editId.toLowerCase()));
+  if (!s) {
+    showToast(`រកមិនឃើញគរុសនិស្សិតដែលមានអត្តលេខ ${editId} ទេ!`, 'error');
+    return;
+  }
 
   const title = document.querySelector('.form-header-title');
   if (title) title.innerHTML = `<i class="fas fa-user-edit" style="color: #2563eb;"></i> កែប្រែព័ត៌មានសិស្ស (${s.nameKh})`;
+
+  const submitText = document.getElementById('btnSubmitText');
+  if (submitText) submitText.innerText = 'រក្សាទុកការកែប្រែ (Update)';
+  const submitIcon = document.getElementById('btnSubmitIcon');
+  if (submitIcon) submitIcon.className = 'fas fa-sync-alt';
+  const submitBtn = document.getElementById('btnSubmitForm');
+  if (submitBtn) submitBtn.style.background = '#2563eb';
 
   const idInput = document.getElementById('regStuId');
   if (idInput) {
     idInput.value = s.id;
     idInput.readOnly = true;
+    idInput.style.backgroundColor = '#f1f5f9';
+    idInput.style.cursor = 'not-allowed';
   }
 
-  if (document.getElementById('regClass')) {
-    if (s.classGrade) document.getElementById('regClass').value = s.classGrade;
-    else if (s.className && s.className.includes('១២+៤')) document.getElementById('regClass').value = '១២+៤';
-    else if (s.className && s.className.includes('បរិញ្ញា')) document.getElementById('regClass').value = 'បរិញ្ញាបត្រ+១';
-    else document.getElementById('regClass').value = '១២+២';
-  }
-  if (document.getElementById('regGroup')) {
-    if (s.group) document.getElementById('regGroup').value = s.group;
-    else if (s.className && s.className.includes('ក្រុម ខ')) document.getElementById('regGroup').value = 'ក្រុម ខ';
-    else if (s.className && s.className.includes('ក្រុម គ')) document.getElementById('regGroup').value = 'ក្រុម គ';
-    else document.getElementById('regGroup').value = 'ក្រុម ក';
-  }
+  const classVal = s.classGrade || (s.className && s.className.includes('១២+៤') ? '១២+៤' : s.className && s.className.includes('បរិញ្ញា') ? 'បរិញ្ញាបត្រ+១' : '១២+២');
+  const groupVal = s.group || (s.className && s.className.includes('ក្រុម ខ') ? 'ក្រុម ខ' : s.className && s.className.includes('ក្រុម គ') ? 'ក្រុម គ' : s.className && s.className.includes('ក្រុម ឃ') ? 'ក្រុម ឃ' : s.className && s.className.includes('ក្រុម ង') ? 'ក្រុម ង' : s.className && s.className.includes('ក្រុម ១') ? 'ក្រុម ១' : s.className && s.className.includes('ក្រុម ២') ? 'ក្រុម ២' : 'ក្រុម ក');
+
+  if (document.getElementById('regClass')) document.getElementById('regClass').value = classVal;
+  if (document.getElementById('regGroup')) document.getElementById('regGroup').value = groupVal;
+
+  const sel = document.getElementById('classSelector');
+  if (sel) sel.value = `${classVal} ${groupVal}`;
+
   if (document.getElementById('regNameKh')) document.getElementById('regNameKh').value = s.nameKh || '';
   if (document.getElementById('regNameEn')) document.getElementById('regNameEn').value = s.nameEn || '';
   if (document.getElementById('regGender')) document.getElementById('regGender').value = s.gender || 'ប្រុស';
@@ -174,7 +186,7 @@ function checkEditMode() {
     document.getElementById('regDob').value = s.dob || '';
     calculateAgeFromDob(s.dob);
   }
-  if (document.getElementById('regParentPhone')) document.getElementById('regParentPhone').value = s.parentPhone || '';
+  if (document.getElementById('regParentPhone')) document.getElementById('regParentPhone').value = s.parentPhone || s.phone || '';
   if (document.getElementById('regUsername')) {
     document.getElementById('regUsername').value = s.username || s.id.toLowerCase();
     document.getElementById('regUsername').dataset.manual = 'true';
@@ -185,21 +197,26 @@ function checkEditMode() {
 
   if (s.photo) setPhotoPreview(s.photo);
 
-  if (s.birthplace) {
+  if (s.birthplace && typeof s.birthplace === 'object') {
     if (document.getElementById('pobProvince')) document.getElementById('pobProvince').value = s.birthplace.province || '';
     if (document.getElementById('pobDistrict')) document.getElementById('pobDistrict').value = s.birthplace.district || '';
     if (document.getElementById('pobCommune')) document.getElementById('pobCommune').value = s.birthplace.commune || '';
     if (document.getElementById('pobVillage')) document.getElementById('pobVillage').value = s.birthplace.village || '';
+  } else if (s.pob && typeof s.pob === 'string') {
+    if (document.getElementById('pobProvince')) document.getElementById('pobProvince').value = s.pob;
   }
 
-  if (s.address) {
-    if (document.getElementById('curProvince')) document.getElementById('curProvince').value = s.address.province || '';
-    if (document.getElementById('curDistrict')) document.getElementById('curDistrict').value = s.address.district || '';
-    if (document.getElementById('curCommune')) document.getElementById('curCommune').value = s.address.commune || '';
-    if (document.getElementById('curVillage')) document.getElementById('curVillage').value = s.address.village || '';
+  const curAddr = s.currentAddress || s.address;
+  if (curAddr && typeof curAddr === 'object') {
+    if (document.getElementById('curProvince')) document.getElementById('curProvince').value = curAddr.province || '';
+    if (document.getElementById('curDistrict')) document.getElementById('curDistrict').value = curAddr.district || '';
+    if (document.getElementById('curCommune')) document.getElementById('curCommune').value = curAddr.commune || '';
+    if (document.getElementById('curVillage')) document.getElementById('curVillage').value = curAddr.village || '';
+  } else if (typeof curAddr === 'string' && curAddr) {
+    if (document.getElementById('curProvince')) document.getElementById('curProvince').value = curAddr;
   }
 
-  if (s.status) {
+  if (s.status && typeof s.status === 'object') {
     if (document.getElementById('statusNew')) document.getElementById('statusNew').value = s.status.isNew || 'បាទ/ចាស';
     if (document.getElementById('statusRepeater')) document.getElementById('statusRepeater').value = s.status.isRepeater || 'ទេ';
     if (document.getElementById('statusFamily')) document.getElementById('statusFamily').value = s.status.familyStatus || 'ទេ';
@@ -207,6 +224,16 @@ function checkEditMode() {
     if (document.getElementById('statusPoorCard')) document.getElementById('statusPoorCard').value = s.status.poorCard || 'គ្មាន';
     if (document.getElementById('statusEthnic')) document.getElementById('statusEthnic').value = s.status.ethnic || 'ទេ';
     if (document.getElementById('statusScholarship')) document.getElementById('statusScholarship').value = s.status.scholarship || 'ទេ';
+  }
+
+  if (s.situation && typeof s.situation === 'object') {
+    if (document.getElementById('statusNew')) document.getElementById('statusNew').value = s.situation.isNew || 'បាទ/ចាស';
+    if (document.getElementById('statusRepeater')) document.getElementById('statusRepeater').value = s.situation.isRepeater || 'ទេ';
+    if (document.getElementById('statusFamily')) document.getElementById('statusFamily').value = s.situation.familyStatus || 'ទេ';
+    if (document.getElementById('statusDisability')) document.getElementById('statusDisability').value = s.situation.disability || 'ទេ';
+    if (document.getElementById('statusPoorCard')) document.getElementById('statusPoorCard').value = s.situation.poorCard || 'គ្មាន';
+    if (document.getElementById('statusEthnic')) document.getElementById('statusEthnic').value = s.situation.ethnic || 'ទេ';
+    if (document.getElementById('statusScholarship')) document.getElementById('statusScholarship').value = s.situation.scholarship || 'ទេ';
   }
 
   if (s.parents) {
@@ -397,10 +424,12 @@ function handleSaveStudent() {
   }
 
   const students = getSavedStudents();
+  const urlParams = new URLSearchParams(window.location.search);
+  const isEditMode = !!urlParams.get('id');
 
   // Check duplicate ID
   const existingIdx = students.findIndex(s => s.id === id);
-  if (existingIdx !== -1) {
+  if (existingIdx !== -1 && !isEditMode) {
     if (!confirm(`អត្តលេខ ${id} មានក្នុងប្រព័ន្ធរួចហើយ។ តើលោកគ្រូ-អ្នកគ្រូចង់ធ្វើបច្ចុប្បន្នភាព (Update) សិស្សនេះមែនទេ?`)) {
       return;
     }
@@ -590,10 +619,17 @@ function handleSaveStudent() {
     console.error('Sync to STMS storage error:', e);
   }
 
-  showToast(`បានរក្សាទុកគរុសនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
-
-  // Reset form for next student
-  resetFormForNextStudent(students.length + 1);
+  if (isEditMode) {
+    showToast(`បានកែប្រែព័ត៌មានគរុសនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
+    sessionStorage.setItem('stms_target_view', 'trainees');
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 1200);
+  } else {
+    showToast(`បានរក្សាទុកគរុសនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
+    // Reset form for next student
+    resetFormForNextStudent(students.length + 1);
+  }
 }
 
 // Reset form for next student entry

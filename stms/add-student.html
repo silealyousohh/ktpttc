@@ -820,9 +820,12 @@
 
         <!-- Bottom Action Buttons (Exact Match to Image 2) -->
         <div class="form-bottom-actions">
-          <button type="submit" class="btn-action btn-save">
-            <i class="fas fa-save"></i> រក្សាទុក
+          <button type="submit" class="btn-action btn-save" id="btnSubmitForm">
+            <i class="fas fa-save" id="btnSubmitIcon"></i> <span id="btnSubmitText">រក្សាទុក</span>
           </button>
+          <a href="index.html" class="btn-action" style="background: #64748b; text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> ត្រឡប់ក្រោយ
+          </a>
           <button type="button" class="btn-action btn-export-excel" onclick="downloadExcelTemplate()">
             <i class="fas fa-download"></i> ទាញយកគំរូ Excel
           </button>
