@@ -1410,7 +1410,7 @@ function openCurriculumBooksModal() {
           <p style="font-size:0.8rem; color:#94a3b8;">កម្រាស់៖ ${b.pages} ទំព័រ | កូដ៖ ${b.code}</p>
         </div>
         <div style="margin-top:14px; display:flex; gap:8px;">
-          <a href="/library" target="_blank" style="flex:1; background:#2563eb; color:#fff; text-decoration:none; padding:6px 0; border-radius:6px; text-align:center; font-size:0.82rem; font-weight:600;"><i class="fas fa-book-reader"></i> បើកអាន</a>
+          <a href="https://ktpttc.net/library" target="_blank" style="flex:1; background:#2563eb; color:#fff; text-decoration:none; padding:6px 0; border-radius:6px; text-align:center; font-size:0.82rem; font-weight:600;"><i class="fas fa-book-reader"></i> បើកអាន</a>
           <button onclick="showToast('កំពុងទាញយកឯកសារ...', 'info')" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:6px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-download"></i></button>
         </div>
       </div>

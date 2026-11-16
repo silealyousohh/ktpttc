@@ -1,0 +1,11 @@
+# STMS - KruSmart Teacher Guide Subdomain
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+</IfModule>

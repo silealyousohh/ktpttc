@@ -812,8 +812,21 @@ app.get(['/cpd', '/cpd/'], (req, res) => {
   res.sendFile(path.join(__dirname, 'Public_Index.html'));
 });
 
-// TeacherGuideApp & KruSmart Routes
+// TeacherGuideApp & KruSmart Routes (and stms.ktpttc.net subdomain support)
 const TEACHER_GUIDE_DIR = path.join(__dirname, 'TeacherGuideApp');
+
+app.use((req, res, next) => {
+  const host = (req.headers.host || '').toLowerCase();
+  if (host.startsWith('stms.') || host.startsWith('stms:')) {
+    return express.static(TEACHER_GUIDE_DIR, { index: 'index.html' })(req, res, () => {
+      const tgPath = path.join(TEACHER_GUIDE_DIR, 'index.html');
+      if (fs.existsSync(tgPath)) return res.sendFile(tgPath);
+      next();
+    });
+  }
+  next();
+});
+
 app.use('/TeacherGuideApp', express.static(TEACHER_GUIDE_DIR, { index: 'index.html' }));
 app.use('/krusmart', express.static(TEACHER_GUIDE_DIR, { index: 'index.html' }));
 
