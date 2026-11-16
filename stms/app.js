@@ -1019,7 +1019,7 @@ function viewTraineeCard(id) {
             <i class="fas fa-school card-watermark"></i>
             <!-- Card Header -->
             <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:8px;">
-              <img src="assets/logo_ptec.svg" style="width:36px; height:36px; background:#fff; border-radius:50%; padding:2px;" onerror="this.src='assets/logo.png'">
+              <img src="assets/ktpttc-logo.png" style="width:36px; height:36px; background:#fff; border-radius:50%; padding:2px;" onerror="this.src='assets/logo.png'">
               <div style="text-align:left;">
                 <div style="font-size:0.75rem; font-weight:700; color:#93c5fd;">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
                 <div style="font-size:0.65rem; color:#cbd5e1;">TRAINEE TEACHER IDENTITY CARD</div>
