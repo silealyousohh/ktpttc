@@ -69,13 +69,48 @@ function saveStudentsToStorage(list) {
   }
 }
 
-// Auto-suggest next Student ID
+// Toggle Registration Password Visibility
+function toggleRegPassword() {
+  const pInput = document.getElementById('regPassword');
+  const eyeIcon = document.getElementById('regEyeIcon');
+  if (!pInput) return;
+  if (pInput.type === 'password') {
+    pInput.type = 'text';
+    if (eyeIcon) eyeIcon.className = 'fas fa-eye-slash';
+  } else {
+    pInput.type = 'password';
+    if (eyeIcon) eyeIcon.className = 'fas fa-eye';
+  }
+}
+
+// Auto-suggest next Student ID & default Username
 function initStudentIdSuggestion() {
   const students = getSavedStudents();
   const nextNumber = students.length + 1;
   const idInput = document.getElementById('regStuId');
+  const uInput = document.getElementById('regUsername');
+  
   if (idInput && !idInput.value) {
-    idInput.value = `KTPTTC-2026-12P2-${String(nextNumber).padStart(3, '0')}`;
+    const autoId = `KTPTTC-2026-12P2-${String(nextNumber).padStart(3, '0')}`;
+    idInput.value = autoId;
+    if (uInput && !uInput.value) {
+      uInput.value = autoId.toLowerCase();
+    }
+  }
+
+  // Live sync regStuId to regUsername if not manually touched
+  if (idInput) {
+    idInput.addEventListener('input', () => {
+      if (uInput && (!uInput.dataset.manual || uInput.dataset.manual === 'false')) {
+        uInput.value = idInput.value.trim().toLowerCase();
+      }
+    });
+  }
+
+  if (uInput) {
+    uInput.addEventListener('input', () => {
+      uInput.dataset.manual = 'true';
+    });
   }
 }
 
@@ -140,6 +175,13 @@ function checkEditMode() {
     calculateAgeFromDob(s.dob);
   }
   if (document.getElementById('regParentPhone')) document.getElementById('regParentPhone').value = s.parentPhone || '';
+  if (document.getElementById('regUsername')) {
+    document.getElementById('regUsername').value = s.username || s.id.toLowerCase();
+    document.getElementById('regUsername').dataset.manual = 'true';
+  }
+  if (document.getElementById('regPassword')) {
+    document.getElementById('regPassword').value = s.password || 'ktpttc123';
+  }
 
   if (s.photo) setPhotoPreview(s.photo);
 
@@ -346,6 +388,8 @@ function handleSaveStudent() {
   const dob = document.getElementById('regDob')?.value;
   const age = document.getElementById('regAge')?.value || '';
   const parentPhone = document.getElementById('regParentPhone')?.value?.trim() || '';
+  const username = (document.getElementById('regUsername')?.value || id).trim().toLowerCase();
+  const password = (document.getElementById('regPassword')?.value || 'ktpttc123').trim();
 
   if (!id || !nameKh || !gender || !dob) {
     showToast('សូមបំពេញរាល់ព័ត៌មានដែលមានសញ្ញា (*) ឱ្យបានគ្រប់ជ្រុងជ្រោយ!', 'error');
@@ -375,6 +419,8 @@ function handleSaveStudent() {
     dob,
     age,
     parentPhone,
+    username,
+    password,
     photo: currentPhotoData || '',
     avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
     behaviorScore: 100,
@@ -454,6 +500,8 @@ function handleSaveStudent() {
       dob,
       phone: parentPhone,
       parentPhone,
+      username,
+      password,
       classGrade,
       group,
       className,
@@ -508,25 +556,33 @@ function handleSaveStudent() {
       stmsObj.trainees.push(traineeRecord);
     }
 
-    // Provision Login User for Student
-    const userExists = stmsObj.users.some(u => u.username.toLowerCase() === id.toLowerCase());
-    if (!userExists) {
-      stmsObj.users.push({
-        id: `USR-STU-${String(stmsObj.users.length + 1).padStart(3, '0')}`,
-        nameKh,
-        nameEn,
-        studentId: id,
-        username: id.toLowerCase(),
-        password: "ktpttc123",
-        role: "trainee",
-        roleLabel: "គរុសនិស្សិត",
-        email: parentPhone ? `${id.toLowerCase()}@student.ktpttc.edu.kh` : "portal@student.ktpttc.edu.kh",
-        phone: parentPhone,
-        className,
-        cohort: traineeRecord.cohort,
-        status: "active",
-        avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
-      });
+    // Provision / Update Login User for Student
+    const existingUserIdx = stmsObj.users.findIndex(u => 
+      (u.studentId && u.studentId.toLowerCase() === id.toLowerCase()) || 
+      (u.username && u.username.toLowerCase() === username.toLowerCase())
+    );
+
+    const userPayload = {
+      id: existingUserIdx !== -1 ? stmsObj.users[existingUserIdx].id : `USR-STU-${String(stmsObj.users.length + 1).padStart(3, '0')}`,
+      nameKh,
+      nameEn,
+      studentId: id,
+      username: username,
+      password: password,
+      role: "trainee",
+      roleLabel: "គរុសនិស្សិត",
+      email: parentPhone ? `${username}@student.ktpttc.edu.kh` : "portal@student.ktpttc.edu.kh",
+      phone: parentPhone,
+      className,
+      cohort: traineeRecord.cohort,
+      status: "active",
+      avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
+    };
+
+    if (existingUserIdx !== -1) {
+      stmsObj.users[existingUserIdx] = { ...stmsObj.users[existingUserIdx], ...userPayload };
+    } else {
+      stmsObj.users.push(userPayload);
     }
 
     localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
@@ -546,7 +602,22 @@ function resetFormForNextStudent(nextRoll) {
   
   // Set next ID & default class
   const idInput = document.getElementById('regStuId');
-  if (idInput) idInput.value = `KTPTTC-2026-12P2-${String(nextRoll).padStart(3, '0')}`;
+  const nextId = `KTPTTC-2026-12P2-${String(nextRoll).padStart(3, '0')}`;
+  if (idInput) idInput.value = nextId;
+
+  const uInput = document.getElementById('regUsername');
+  if (uInput) {
+    uInput.value = nextId.toLowerCase();
+    uInput.dataset.manual = 'false';
+  }
+
+  const pInput = document.getElementById('regPassword');
+  if (pInput) {
+    pInput.value = 'ktpttc123';
+    pInput.type = 'password';
+    const eyeIcon = document.getElementById('regEyeIcon');
+    if (eyeIcon) eyeIcon.className = 'fas fa-eye';
+  }
   
   const classInput = document.getElementById('regClass');
   if (classInput) classInput.value = '១២+២';
@@ -697,6 +768,8 @@ function handleExcelImport(input) {
             dob,
             age: '',
             parentPhone,
+            username: id.toLowerCase(),
+            password: 'ktpttc123',
             avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
             behaviorScore: 100,
             scores: { KH: 0, MATH: 0, PHY: 0, CHEM: 0, BIO: 0, HIST: 0, GEO: 0, ENG: 0, MOR: 0 },
@@ -711,6 +784,32 @@ function handleExcelImport(input) {
       }
 
       saveStudentsToStorage(students);
+
+      // Also sync login users in stmsObj
+      try {
+        let rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+        let stmsObj = rawStms ? JSON.parse(rawStms) : (window.KTPTTC_INITIAL_DATA || {});
+        if (!Array.isArray(stmsObj.users)) stmsObj.users = [];
+        students.forEach(st => {
+          if (!stmsObj.users.some(u => (u.studentId && u.studentId.toLowerCase() === st.id.toLowerCase()) || (u.username && u.username.toLowerCase() === st.id.toLowerCase()))) {
+            stmsObj.users.push({
+              id: `USR-STU-${String(stmsObj.users.length + 1).padStart(3, '0')}`,
+              nameKh: st.nameKh,
+              nameEn: st.nameEn || '',
+              studentId: st.id,
+              username: st.id.toLowerCase(),
+              password: 'ktpttc123',
+              role: 'trainee',
+              roleLabel: 'គរុសនិស្សិត',
+              phone: st.parentPhone || '',
+              className: st.className,
+              status: 'active',
+              avatar: st.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
+            });
+          }
+        });
+        localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+      } catch (err) {}
       showToast(`បាននាំចូលទិន្នន័យសិស្សចំនួន ${importedCount} នាក់ពី Excel ដោយជោគជ័យ!`, 'success');
       setTimeout(() => {
         sessionStorage.setItem('stms_target_view', 'trainees');
