@@ -31,12 +31,17 @@ function showToast(message, type = 'info') {
   }, 3500);
 }
 
-// Get saved students array from localStorage
+// Get saved students array from localStorage (KTPTTC STMS Database v2)
 function getSavedStudents() {
   try {
-    const raw = localStorage.getItem('krusmart_teacher_custom_students');
-    if (raw) {
-      const parsed = JSON.parse(raw);
+    const rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+    if (rawStms) {
+      const parsed = JSON.parse(rawStms);
+      if (parsed && Array.isArray(parsed.trainees)) return parsed.trainees;
+    }
+    const legacy = localStorage.getItem('krusmart_teacher_custom_students');
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
       if (Array.isArray(parsed)) return parsed;
       if (parsed && Array.isArray(parsed.students)) return parsed.students;
     }
@@ -49,6 +54,15 @@ function getSavedStudents() {
 // Save students array to localStorage
 function saveStudentsToStorage(list) {
   try {
+    let stmsObj = null;
+    const rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+    if (rawStms) {
+      stmsObj = JSON.parse(rawStms);
+    } else {
+      stmsObj = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
+    }
+    stmsObj.trainees = list;
+    localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
     localStorage.setItem('krusmart_teacher_custom_students', JSON.stringify(list));
   } catch (e) {
     console.error(e);
@@ -61,7 +75,7 @@ function initStudentIdSuggestion() {
   const nextNumber = students.length + 1;
   const idInput = document.getElementById('regStuId');
   if (idInput && !idInput.value) {
-    idInput.value = `STU-${String(nextNumber).padStart(3, '0')}`;
+    idInput.value = `KTPTTC-2026-12P2-${String(nextNumber).padStart(3, '0')}`;
   }
 }
 
@@ -373,40 +387,97 @@ function handleSaveStudent() {
 
   saveStudentsToStorage(students);
 
-  // Sync with KTPTTC STMS Trainee Database
+  // Sync with KTPTTC STMS Trainee Database (v2)
   try {
-    let rawStms = localStorage.getItem('ktpttc_stms_data_v1');
-    if (rawStms) {
-      let stmsObj = JSON.parse(rawStms);
-      if (stmsObj && Array.isArray(stmsObj.trainees)) {
-        const existingTraineeIdx = stmsObj.trainees.findIndex(t => t.id === id);
-        const traineeRecord = {
-          id,
-          roll: stmsObj.trainees.length + 1,
-          nameKh,
-          nameEn,
-          gender,
-          dob,
-          phone: parentPhone,
-          className,
-          cohort: className.includes('បឋម') ? "ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤" : className.includes('មត្តេយ្យ') ? "ថ្នាក់មត្តេយ្យសិក្សា ១២+២ ជំនាន់ទី ៣៤" : "ថ្នាក់វិក្រឹតការគ្រូបង្រៀន និងនាយកសាលា",
-          trainingType: className.includes('មត្តេយ្យ') ? "12+2 (មត្តេយ្យ)" : className.includes('វិក្រឹតការ') ? "វិក្រឹតការ" : "12+2 (បឋមសិក្សា)",
-          status: "កំពុងសិក្សា",
-          avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
-          photo: currentPhotoData || '',
-          pob: `${document.getElementById('pobVillage')?.value || ''} ${document.getElementById('pobCommune')?.value || ''} ${document.getElementById('pobDistrict')?.value || ''} ${document.getElementById('pobProvince')?.value || ''}`.trim(),
-          address: `${document.getElementById('curVillage')?.value || ''} ${document.getElementById('curCommune')?.value || ''} ${document.getElementById('curDistrict')?.value || ''} ${document.getElementById('curProvince')?.value || ''}`.trim(),
-          attendanceSummary: { present: 0, permission: 0, late: 0, absent: 0, rate: 100.0 },
-          scores: {}
-        };
-        if (existingTraineeIdx !== -1) {
-          stmsObj.trainees[existingTraineeIdx] = traineeRecord;
-        } else {
-          stmsObj.trainees.push(traineeRecord);
-        }
-        localStorage.setItem('ktpttc_stms_data_v1', JSON.stringify(stmsObj));
-      }
+    let rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+    let stmsObj = rawStms ? JSON.parse(rawStms) : (window.KTPTTC_INITIAL_DATA || {});
+    if (!Array.isArray(stmsObj.trainees)) stmsObj.trainees = [];
+    if (!Array.isArray(stmsObj.users)) stmsObj.users = [];
+
+    const existingTraineeIdx = stmsObj.trainees.findIndex(t => t.id === id);
+    const traineeRecord = {
+      id,
+      roll: stmsObj.trainees.length + 1,
+      nameKh,
+      nameEn,
+      gender,
+      dob,
+      phone: parentPhone,
+      parentPhone,
+      className,
+      cohort: className.includes('បឋម') ? "ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤" : className.includes('មត្តេយ្យ') ? "ថ្នាក់មត្តេយ្យសិក្សា ១២+២ ជំនាន់ទី ៣៤" : "ថ្នាក់វិក្រឹតការគ្រូបង្រៀន និងនាយកសាលា",
+      trainingType: className.includes('មត្តេយ្យ') ? "12+2 (មត្តេយ្យ)" : className.includes('វិក្រឹតការ') ? "វិក្រឹតការ" : "12+2 (បឋមសិក្សា)",
+      status: "កំពុងសិក្សា",
+      avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
+      photo: currentPhotoData || '',
+      pob: `${document.getElementById('pobVillage')?.value || ''} ${document.getElementById('pobCommune')?.value || ''} ${document.getElementById('pobDistrict')?.value || ''} ${document.getElementById('pobProvince')?.value || ''}`.trim(),
+      address: `${document.getElementById('curVillage')?.value || ''} ${document.getElementById('curCommune')?.value || ''} ${document.getElementById('curDistrict')?.value || ''} ${document.getElementById('curProvince')?.value || ''}`.trim(),
+      birthplace: {
+        province: document.getElementById('pobProvince')?.value?.trim() || '',
+        district: document.getElementById('pobDistrict')?.value?.trim() || '',
+        commune: document.getElementById('pobCommune')?.value?.trim() || '',
+        village: document.getElementById('pobVillage')?.value?.trim() || ''
+      },
+      currentAddress: {
+        province: document.getElementById('curProvince')?.value?.trim() || '',
+        district: document.getElementById('curDistrict')?.value?.trim() || '',
+        commune: document.getElementById('curCommune')?.value?.trim() || '',
+        village: document.getElementById('curVillage')?.value?.trim() || ''
+      },
+      situation: {
+        isNew: document.getElementById('statusNew')?.value || 'បាទ/ចាស',
+        isRepeater: document.getElementById('statusRepeater')?.value || 'ទេ',
+        familyStatus: document.getElementById('statusFamily')?.value || 'ទេ',
+        disability: document.getElementById('statusDisability')?.value || 'ទេ',
+        poorCard: document.getElementById('statusPoorCard')?.value || 'គ្មាន',
+        ethnic: document.getElementById('statusEthnic')?.value || 'ទេ',
+        scholarship: document.getElementById('statusScholarship')?.value || 'ទេ'
+      },
+      parents: {
+        fatherName: document.getElementById('fatherName')?.value?.trim() || '',
+        fatherJob: document.getElementById('fatherJob')?.value?.trim() || '',
+        motherName: document.getElementById('motherName')?.value?.trim() || '',
+        motherJob: document.getElementById('motherJob')?.value?.trim() || '',
+        guardianName: document.getElementById('guardianName')?.value?.trim() || '',
+        guardianJob: document.getElementById('guardianJob')?.value?.trim() || ''
+      },
+      additional: {
+        ethnicGroup: document.getElementById('ethnicGroup')?.value?.trim() || '',
+        specialNotes: document.getElementById('specialNotes')?.value?.trim() || '',
+        serviceNotes: document.getElementById('serviceNotes')?.value?.trim() || ''
+      },
+      attendanceSummary: { present: 0, permission: 0, late: 0, absent: 0, rate: 100.0 },
+      scores: {}
+    };
+
+    if (existingTraineeIdx !== -1) {
+      stmsObj.trainees[existingTraineeIdx] = traineeRecord;
+    } else {
+      stmsObj.trainees.push(traineeRecord);
     }
+
+    // Provision Login User for Student
+    const userExists = stmsObj.users.some(u => u.username.toLowerCase() === id.toLowerCase());
+    if (!userExists) {
+      stmsObj.users.push({
+        id: `USR-STU-${String(stmsObj.users.length + 1).padStart(3, '0')}`,
+        nameKh,
+        nameEn,
+        studentId: id,
+        username: id.toLowerCase(),
+        password: "ktpttc123",
+        role: "trainee",
+        roleLabel: "គរុសនិស្សិត",
+        email: parentPhone ? `${id.toLowerCase()}@student.ktpttc.edu.kh` : "portal@student.ktpttc.edu.kh",
+        phone: parentPhone,
+        className,
+        cohort: traineeRecord.cohort,
+        status: "active",
+        avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
+      });
+    }
+
+    localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
   } catch (e) {
     console.error('Sync to STMS storage error:', e);
   }
@@ -423,10 +494,10 @@ function resetFormForNextStudent(nextRoll) {
   
   // Set next ID & default class
   const idInput = document.getElementById('regStuId');
-  if (idInput) idInput.value = `STU-${String(nextRoll).padStart(3, '0')}`;
+  if (idInput) idInput.value = `KTPTTC-2026-12P2-${String(nextRoll).padStart(3, '0')}`;
   
   const classInput = document.getElementById('regClass');
-  if (classInput) classInput.value = 'ថ្នាក់ទី ៧ក';
+  if (classInput) classInput.value = 'ថ្នាក់បឋម ១២+២ ក្រុម ក';
 
   // Reset photo
   currentPhotoData = '';
@@ -576,6 +647,7 @@ function handleExcelImport(input) {
       saveStudentsToStorage(students);
       showToast(`បាននាំចូលទិន្នន័យសិស្សចំនួន ${importedCount} នាក់ពី Excel ដោយជោគជ័យ!`, 'success');
       setTimeout(() => {
+        sessionStorage.setItem('stms_target_view', 'trainees');
         window.location.href = 'index.html';
       }, 1500);
 

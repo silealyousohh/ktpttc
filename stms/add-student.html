@@ -497,13 +497,15 @@
       </a>
 
       <select id="classSelector" class="nav-select">
-        <option value="ថ្នាក់ទី ៧ក">ថ្នាក់ដើម: ថ្នាក់ទី ៧ក</option>
-        <option value="ថ្នាក់ទី ៧ខ">ថ្នាក់ដើម: ថ្នាក់ទី ៧ខ</option>
-        <option value="ថ្នាក់ទី ៨ក">ថ្នាក់ដើម: ថ្នាក់ទី ៨ក</option>
+        <option value="ថ្នាក់ដើម: ថ្នាក់ទី ៧ក">ថ្នាក់ដើម: ថ្នាក់ទី ៧ក</option>
+        <option value="ថ្នាក់ដើម: ថ្នាក់បឋម ១២+២ ក្រុម ក">ថ្នាក់ដើម: ថ្នាក់បឋម ១២+២ ក្រុម ក</option>
+        <option value="ថ្នាក់ដើម: ថ្នាក់បឋម ១២+២ ក្រុម ខ">ថ្នាក់ដើម: ថ្នាក់បឋម ១២+២ ក្រុម ខ</option>
+        <option value="ថ្នាក់ដើម: ថ្នាក់មត្តេយ្យ ១២+២">ថ្នាក់ដើម: ថ្នាក់មត្តេយ្យ ១២+២</option>
+        <option value="ថ្នាក់ដើម: ថ្នាក់វិក្រឹតការ វគ្គ១">ថ្នាក់ដើម: ថ្នាក់វិក្រឹតការ វគ្គ១</option>
       </select>
 
-      <a href="index.html#students" onclick="sessionStorage.setItem('openView', 'student-info');" class="nav-btn nav-btn-primary">
-        <i class="fas fa-users"></i> បញ្ជីឈ្មោះសិស្ស
+      <a href="index.html" onclick="sessionStorage.setItem('stms_target_view', 'trainees');" class="nav-btn nav-btn-primary">
+        <i class="fas fa-users"></i> + បញ្ជីឈ្មោះសិស្ស
       </a>
     </div>
   </header>
@@ -511,9 +513,7 @@
   <!-- Main Registration Form Container -->
   <main class="main-container">
     <div class="form-card">
-      <h2 class="form-header-title">
-        <i class="fas fa-user-plus" style="color: #2563eb;"></i> ទម្រង់ចុះឈ្មោះសិស្ស
-      </h2>
+      <h2 class="form-header-title">គ្រប់គ្រងបញ្ជីសិស្ស</h2>
 
       <form id="studentRegistrationForm" onsubmit="event.preventDefault(); handleSaveStudent();">
         
@@ -522,7 +522,7 @@
           
           <!-- Photo Column -->
           <div class="photo-upload-wrap">
-            <span class="photo-label">រូបថតភាព</span>
+            <span class="photo-label">រូបតំណាង</span>
             <div class="photo-preview-box" id="photoPreviewBox" onclick="document.getElementById('photoFileInput').click()">
               <i class="fas fa-image photo-placeholder-icon" id="photoPlaceholder"></i>
               <img id="photoPreviewImg" src="" alt="Student Photo" style="display: none;">
@@ -554,7 +554,7 @@
 
               <div class="form-group">
                 <label class="form-label" for="regClass">ថ្នាក់ទី<span class="required">*</span></label>
-                <input type="text" id="regClass" class="form-control" value="ថ្នាក់ទី ៧ក" placeholder="ថ្នាក់រៀន" required>
+                <input type="text" id="regClass" class="form-control" value="ថ្នាក់ដើម" placeholder="ថ្នាក់ដើម" required>
               </div>
 
               <div class="form-group">
@@ -589,7 +589,7 @@
             <div class="fields-grid-2">
               <div class="form-group">
                 <label class="form-label" for="regAge">អាយុ (ឆ្នាំ)</label>
-                <input type="text" id="regAge" class="form-control" placeholder="អាយុនឹងគណនាដោយស្វ័យប្រវត្តិ" readonly>
+                <input type="text" id="regAge" class="form-control" placeholder="អាយុនឹងត្រូវគណនាដោយស្វ័យប្រវត្តិ" readonly>
               </div>
 
               <div class="form-group">
@@ -651,9 +651,9 @@
           </div>
         </div>
 
-        <!-- Section: ស្ថានភាព និងការបញ្ឈប់ការសិក្សា (Status & Study Situation) -->
+        <!-- Section: ស្ថានភាព និងអាហារូបករណ៍ (Status & Scholarship) -->
         <div class="section-title section-status">
-          <i class="fas fa-ribbon"></i> <span>ស្ថានភាព និងការបញ្ឈប់ការសិក្សា</span>
+          <i class="fas fa-ribbon"></i> <span>ស្ថានភាព និងអាហារូបករណ៍</span>
         </div>
         <div class="fields-grid-3">
           <div class="form-group">
@@ -671,11 +671,12 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">ស្ថានភាពគ្រួសារ (កម្ពុជា)</label>
+            <label class="form-label">ស្ថានភាពគ្រួសារ (កំព្រា)</label>
             <select id="statusFamily" class="form-control">
               <option value="ទេ">ទេ</option>
-              <option value="ក្រ១">ក្រ១</option>
-              <option value="ក្រ២">ក្រ២</option>
+              <option value="កំព្រាឪពុក">កំព្រាឪពុក</option>
+              <option value="កំព្រាម្តាយ">កំព្រាម្តាយ</option>
+              <option value="កំព្រាទាំងពីរ">កំព្រាទាំងពីរ</option>
               <option value="ងាយរងគ្រោះ">ងាយរងគ្រោះ</option>
             </select>
           </div>

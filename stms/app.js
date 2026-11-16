@@ -203,8 +203,12 @@ function loginSuccess(user, notify = true) {
     });
   }
 
-  // Set default starting view
-  if (user.role === 'trainee') {
+  // Set default starting view or check target navigation
+  const targetView = sessionStorage.getItem('stms_target_view');
+  if (targetView) {
+    sessionStorage.removeItem('stms_target_view');
+    currentView = targetView;
+  } else if (user.role === 'trainee') {
     currentTraineeUser = (stmsData.trainees || []).find(t => t.id === user.studentId) || stmsData.trainees[0] || user;
     currentView = 'trainee-portal';
   } else {
@@ -301,6 +305,7 @@ function renderSidebar() {
       <li><a class="sidebar-item-link ${currentView==='dashboard'?'active':''}" onclick="navigateView('dashboard')"><i class="fas fa-chart-pie"></i> <span>ផ្ទាំងព័ត៌មាន (Dashboard)</span></a></li>
       
       <li class="sidebar-label">១. ម៉ូឌុលរដ្ឋបាល និងគរុសនិស្សិត</li>
+      <li><a class="sidebar-item-link" href="add-student.html"><i class="fas fa-user-plus"></i> <span>ទម្រង់ចុះឈ្មោះសិស្ស (Add Student)</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='trainees'?'active':''}" onclick="navigateView('trainees')"><i class="fas fa-user-graduate"></i> <span>ប្រវត្តិគរុសនិស្សិត (Profiles)</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='requests'?'active':''}" onclick="navigateView('requests')"><i class="fas fa-clipboard-list"></i> <span>សំណើកែព័ត៌មាន (Requests)</span></a></li>
 
@@ -325,6 +330,7 @@ function renderSidebar() {
       <li><a class="sidebar-item-link ${currentView==='dashboard'?'active':''}" onclick="navigateView('dashboard')"><i class="fas fa-home"></i> <span>ទំព័រដើម</span></a></li>
 
       <li class="sidebar-label">ការបង្រៀន & វត្តមាន</li>
+      <li><a class="sidebar-item-link" href="add-student.html"><i class="fas fa-user-plus"></i> <span>ទម្រង់ចុះឈ្មោះសិស្ស (Add Student)</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='attendance'?'active':''}" onclick="navigateView('attendance')"><i class="fas fa-clipboard-check"></i> <span>ស្រង់វត្តមានសិស្ស</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='grading'?'active':''}" onclick="navigateView('grading')"><i class="fas fa-edit"></i> <span>បញ្ចូលពិន្ទុតាមមុខវិជ្ជា</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-day"></i> <span>កាលវិភាគបង្រៀនរបស់ខ្ញុំ</span></a></li>
@@ -794,146 +800,9 @@ function filterTraineeByCohort(cohort) {
   });
 }
 
-// Enrollment Modal Controller
+// Enrollment Modal Controller - Navigates to full standard Add Student Form
 function openEnrollModal() {
-  const currentYear = stmsData.academicYears.find(y => y.isCurrent) || stmsData.academicYears[0];
-  const nextIdx = stmsData.trainees.length + 1;
-  const autoId = `KTPTTC-2026-12P2-${String(nextIdx).padStart(3, '0')}`;
-
-  const modalHtml = `
-    <div class="stms-modal-backdrop" id="enrollModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:820px;">
-        <div class="modal-header-bar">
-          <div class="modal-header-title"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិតថ្មី (Trainee Enrollment)</div>
-          <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
-        </div>
-        <div class="modal-body-scroll">
-          <form id="enrollForm" onsubmit="event.preventDefault(); submitEnrollForm();">
-            
-            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px; margin-bottom:18px; font-size:0.85rem; color:#1e40af;">
-              <i class="fas fa-info-circle"></i> លេខសម្គាល់គរុសនិស្សិត (Unique ID) នឹងត្រូវបង្កើតដោយស្វ័យប្រវត្តិតាមស្តង់ដារ KTPTTC និងឆ្នាំសិក្សា។
-            </div>
-
-            <div class="form-grid-3">
-              <div>
-                <label class="form-label">អត្តលេខស្វ័យប្រវត្តិ (Unique ID)*</label>
-                <input type="text" id="enrollId" class="form-input" value="${autoId}" readonly style="background:#f1f5f9; font-weight:700;">
-              </div>
-              <div>
-                <label class="form-label">ប្រភេទថ្នាក់បណ្តុះបណ្តាល*</label>
-                <select id="enrollType" class="form-input" onchange="updateGeneratedId()">
-                  <option value="12+2 (បឋមសិក្សា)">ថ្នាក់ ១២+២ (បឋមសិក្សា)</option>
-                  <option value="12+2 (មត្តេយ្យ)">ថ្នាក់ ១២+២ (មត្តេយ្យ)</option>
-                  <option value="វិក្រឹតការ">ថ្នាក់វិក្រឹតការគ្រូ-នាយក</option>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">ថ្នាក់រៀន*</label>
-                <select id="enrollClass" class="form-input">
-                  <option value="ថ្នាក់បឋម ១២+២ ក្រុម ក">ថ្នាក់បឋម ១២+២ ក្រុម ក</option>
-                  <option value="ថ្នាក់បឋម ១២+២ ក្រុម ខ">ថ្នាក់បឋម ១២+២ ក្រុម ខ</option>
-                  <option value="ថ្នាក់មត្តេយ្យ ១២+២">ថ្នាក់មត្តេយ្យ ១២+២</option>
-                  <option value="ថ្នាក់វិក្រឹតការ វគ្គ១">ថ្នាក់វិក្រឹតការ វគ្គ១</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-grid-3">
-              <div>
-                <label class="form-label">គោត្តនាម-នាម (ខ្មែរ)*</label>
-                <input type="text" id="enrollNameKh" class="form-input" placeholder="ឧ. សុខ ចិន្តា" required>
-              </div>
-              <div>
-                <label class="form-label">ឈ្មោះឡាតាំង</label>
-                <input type="text" id="enrollNameEn" class="form-input" placeholder="ឧ. Sok Chenda">
-              </div>
-              <div>
-                <label class="form-label">ភេទ*</label>
-                <select id="enrollGender" class="form-input" required>
-                  <option value="ប្រុស">ប្រុស (Male)</option>
-                  <option value="ស្រី">ស្រី (Female)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-grid-2">
-              <div>
-                <label class="form-label">ថ្ងៃខែឆ្នាំកំណើត*</label>
-                <input type="date" id="enrollDob" class="form-input" required value="2005-01-01">
-              </div>
-              <div>
-                <label class="form-label">លេខទូរស័ព្ទផ្ទាល់ខ្លួន</label>
-                <input type="tel" id="enrollPhone" class="form-input" placeholder="ឧ. 012 345 678">
-              </div>
-            </div>
-
-            <div style="margin-bottom:14px;">
-              <label class="form-label">ទីកន្លែងកំណើត (ភូមិ ឃុំ ស្រុក ខេត្ត)</label>
-              <input type="text" id="enrollPob" class="form-input" placeholder="ឧ. ឃុំឆ្លូង ស្រុកឆ្លូង ខេត្តក្រចេះ">
-            </div>
-
-            <div style="margin-bottom:14px;">
-              <label class="form-label">អាសយដ្ឋានបច្ចុប្បន្ន / ទីស្នាក់នៅ</label>
-              <input type="text" id="enrollAddress" class="form-input" placeholder="ឧ. អន្តេវាសិកដ្ឋាន KTPTTC">
-            </div>
-
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; margin-bottom:16px;">
-              <h4 style="color:#1e3a8a; font-size:0.85rem; margin-bottom:10px;"><i class="fas fa-file-certificate"></i> ព័ត៌មានសញ្ញាបត្របាក់ឌុប (BacII)</h4>
-              <div class="form-grid-3">
-                <div>
-                  <label class="form-label">សម័យប្រឡង (ឆ្នាំ)</label>
-                  <input type="text" id="enrollBacYear" class="form-input" value="2024">
-                </div>
-                <div>
-                  <label class="form-label">លេខតុ / លេខរៀង</label>
-                  <input type="text" id="enrollBacRoll" class="form-input" placeholder="ឧ. 54290">
-                </div>
-                <div>
-                  <label class="form-label">និទ្ទេសទទួលបាន</label>
-                  <select id="enrollBacGrade" class="form-input">
-                    <option value="និទ្ទេស A">និទ្ទេស A</option>
-                    <option value="និទ្ទេស B" selected>និទ្ទេស B</option>
-                    <option value="និទ្ទេស C">និទ្ទេស C</option>
-                    <option value="និទ្ទេស D">និទ្ទេស D</option>
-                    <option value="និទ្ទេស E">និទ្ទេស E</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Trainee Login Credentials Setup (Admin issues Username & Password) -->
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:14px; margin-bottom:16px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h4 style="color:#166534; font-size:0.85rem; font-weight:700;">
-                  <i class="fas fa-key"></i> កំណត់គណនី Login សម្រាប់គរុសនិស្សិត (កំណត់ដោយ Admin)
-                </h4>
-                <label style="font-size:0.8rem; color:#15803d; cursor:pointer; font-weight:600;">
-                  <input type="checkbox" id="enrollCreateAccount" checked onchange="document.getElementById('enrollAccountFields').style.display=this.checked?'grid':'none'"> បង្កើតគណនីភ្លាមៗ
-                </label>
-              </div>
-              <div class="form-grid-2" id="enrollAccountFields">
-                <div>
-                  <label class="form-label">ឈ្មោះគណនី (Username)*</label>
-                  <input type="text" id="enrollUsername" class="form-input" value="${autoId}">
-                </div>
-                <div>
-                  <label class="form-label">ពាក្យសម្ងាត់ដំបូង (Initial Password)*</label>
-                  <input type="text" id="enrollPassword" class="form-input" value="ktpttc123">
-                </div>
-              </div>
-            </div>
-
-            <div class="modal-footer-bar" style="padding:0; background:none; border:none;">
-              <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
-              <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> រក្សាទុក & បង្កើតអត្តលេខ</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  window.location.href = 'add-student.html';
 }
 
 function updateGeneratedId() {
