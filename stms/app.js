@@ -653,132 +653,306 @@ function notifyDisciplinaryDept() {
 }
 
 // ==========================================================================
-// 2. TRAINEE PROFILES MANAGEMENT VIEW (ម៉ូឌុលគ្រប់គ្រងប្រវត្តិគរុសនិស្សិត)
+// 2. TRAINEE PROFILES MANAGEMENT VIEW (បញ្ជីរាយនាមសិស្សានុសិស្ស តាមគំរូក្រសួងអប់រំ)
 // ==========================================================================
+let currentRosterClassFilter = 'all';
+let currentRosterSort = 'default';
+
+function formatDobDisplay(dob) {
+  if (!dob) return '-';
+  if (dob.includes('-')) {
+    const parts = dob.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+    }
+  }
+  return dob;
+}
+
+function calculateAgeFromDob(dob) {
+  if (!dob) return '-';
+  let d, m, y;
+  if (dob.includes('-')) {
+    const parts = dob.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        y = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        d = parseInt(parts[2], 10);
+      } else {
+        d = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        y = parseInt(parts[2], 10);
+      }
+    }
+  } else if (dob.includes('/')) {
+    const parts = dob.split('/');
+    if (parts.length === 3) {
+      if (parts[2].length === 4) {
+        d = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        y = parseInt(parts[2], 10);
+      } else if (parts[0].length === 4) {
+        y = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        d = parseInt(parts[2], 10);
+      }
+    }
+  }
+  if (y && !isNaN(y)) {
+    const now = new Date();
+    const currentYear = Math.max(now.getFullYear(), 2026);
+    let age = currentYear - y;
+    if (m !== undefined && !isNaN(m)) {
+      if (now.getMonth() < m || (now.getMonth() === m && now.getDate() < (d || 1))) {
+        age--;
+      }
+    }
+    return age > 0 ? age : '-';
+  }
+  return '-';
+}
+
+function formatBirthplaceDisplay(t) {
+  if (t.birthplace && typeof t.birthplace === 'object') {
+    const parts = [t.birthplace.village, t.birthplace.commune, t.birthplace.district, t.birthplace.province]
+      .map(s => (s || '').trim())
+      .filter(Boolean);
+    if (parts.length > 0) return parts.join(' ');
+  }
+  if (t.pob && typeof t.pob === 'string' && t.pob.trim()) {
+    return t.pob.trim();
+  }
+  return '-';
+}
+
+function formatParentDisplay(name, job) {
+  name = (name || '').trim();
+  job = (job || '').trim();
+  if (name && job) return `${name} (${job})`;
+  if (name) return name;
+  if (job) return `(${job})`;
+  return '-';
+}
+
+function handleRosterClassChange(val) {
+  currentRosterClassFilter = val;
+  renderView('trainees');
+}
+
+function setRosterSort(type) {
+  currentRosterSort = type;
+  renderView('trainees');
+}
+
+function saveCurrentRosterOrder() {
+  if (!stmsData.trainees || stmsData.trainees.length === 0) {
+    showToast('ពុំមានទិន្នន័យគរុសនិស្សិតសម្រាប់រក្សាទុកលំដាប់ឡើយ', 'warning');
+    return;
+  }
+  let list = [...stmsData.trainees];
+  if (currentRosterSort === 'id-asc') {
+    list.sort((a, b) => (a.id || '').localeCompare(b.id || '', undefined, { numeric: true }));
+  } else if (currentRosterSort === 'id-desc') {
+    list.sort((a, b) => (b.id || '').localeCompare(a.id || '', undefined, { numeric: true }));
+  } else if (currentRosterSort === 'name-asc') {
+    list.sort((a, b) => (a.nameKh || '').localeCompare(b.nameKh || '', 'km'));
+  } else if (currentRosterSort === 'name-desc') {
+    list.sort((a, b) => (b.nameKh || '').localeCompare(a.nameKh || '', 'km'));
+  }
+  list.forEach((s, idx) => {
+    s.roll = idx + 1;
+  });
+  stmsData.trainees = list;
+  saveData();
+  currentRosterSort = 'default';
+  showToast('បានរក្សាទុកលំដាប់សិស្សថ្មីជោគជ័យ!', 'success');
+  renderView('trainees');
+}
+
+function confirmDeleteAllStudents() {
+  if (!stmsData.trainees || stmsData.trainees.length === 0) {
+    showToast('ពុំមានទិន្នន័យគរុសនិស្សិតសម្រាប់លុបឡើយ', 'info');
+    return;
+  }
+  if (!confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យគរុសនិស្សិតទាំងអស់មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានឡើយ!')) {
+    return;
+  }
+  stmsData.trainees = [];
+  saveData();
+  showToast('បានលុបទិន្នន័យគរុសនិស្សិតទាំងអស់រួចរាល់', 'info');
+  renderView('trainees');
+}
+
+function exportOrPrintRoster() {
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="printExportModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:440px; width:92%; text-align:center; padding:24px 20px;">
+        <div style="font-size:1.15rem; font-weight:700; color:#1e3a8a; margin-bottom:12px;">
+          <i class="fas fa-print" style="color:#2563eb;"></i> ទម្រង់បោះពុម្ព និង ទាញយក
+        </div>
+        <p style="font-size:0.88rem; color:#64748b; margin-bottom:20px;">
+          សូមជ្រើសរើសជម្រើសដែលអ្នកចង់ដំណើរការ៖
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="btn btn-primary" onclick="closeStmsModal(); setTimeout(() => window.print(), 200);" style="height:42px; font-size:0.9rem; justify-content:center;">
+            <i class="fas fa-print"></i> បោះពុម្ពជាក្រដាស / PDF (Print Roster)
+          </button>
+          <button class="btn btn-success" onclick="closeStmsModal(); exportTraineeRosterExcel();" style="height:42px; font-size:0.9rem; justify-content:center;">
+            <i class="fas fa-file-excel"></i> ទាញយកជា Excel / CSV Spreadsheet
+          </button>
+          <button class="btn btn-outline" onclick="closeStmsModal()" style="height:38px; font-size:0.85rem; justify-content:center;">
+            បោះបង់
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
 function renderTraineesView(container) {
-  let html = `
-    <div class="view-header">
-      <div class="view-title-group">
-        <h2><i class="fas fa-user-graduate"></i> ម៉ូឌុលរដ្ឋបាល និងគរុសនិស្សិត (Module 1)</h2>
-        <p>គ្រប់គ្រងទិន្នន័យផ្ទាល់ខ្លួន សញ្ញាបត្របាក់ឌុប កាតសម្គាល់ខ្លួន និងស្ថានភាពសិក្សា KTPTTC</p>
-      </div>
-      <div class="view-actions-group">
-        <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> បង្កើតគណនី</button>
-        <button class="btn btn-outline" onclick="openEditStudentModal()"><i class="fas fa-edit"></i> កែប្រែព័ត៌មាន</button>
-        <button class="btn btn-outline" onclick="exportTraineeRosterExcel()"><i class="fas fa-print"></i> បោះពុម្ពព័ត៌មាន</button>
-        <button class="btn btn-outline" onclick="viewTraineeCard()"><i class="fas fa-id-card"></i> បោះពុម្ពអត្តសញ្ញាណប័ណ្ណ</button>
-        <button class="btn btn-success" onclick="exportTraineeRosterExcel()"><i class="fas fa-file-excel"></i> ទាញយក Excel</button>
-      </div>
-    </div>
+  const allTrainees = Array.isArray(stmsData.trainees) ? stmsData.trainees : [];
+  
+  // Extract distinct classes for dropdown
+  const distinctClasses = Array.from(new Set([
+    ...allTrainees.map(t => t.className).filter(Boolean)
+  ]));
 
-    <!-- Enrollment Flowchart (matching diagram) -->
-    <div style="background:#ffffff; border-radius:10px; border:1px solid var(--border-color); padding:14px 18px; margin-bottom:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <strong style="color:#1e3a8a; font-size:0.85rem;"><i class="fas fa-stream"></i> Enrollment Flowchart (ដំណើរការចុះឈ្មោះគរុសនិស្សិតស្តង់ដារ)</strong>
-        <span style="font-size:0.75rem; color:#64748b;">ចុចលើដំណាក់កាលនីមួយៗដើម្បីដំណើរការ</span>
-      </div>
-      <div class="flowchart-chain" style="padding:10px 16px;">
-        <div class="flowchart-step-item" onclick="openEnrollModal()" title="បំពេញទម្រង់ចុះឈ្មោះ">
-          <i class="fas fa-file-signature"></i>
-          <span>Registration<br>Form</span>
-        </div>
-        <div class="flowchart-arrow">➔</div>
-        <div class="flowchart-step-item" onclick="showToast('ការផ្ទៀងផ្ទាត់ឯកសារ៖ សញ្ញាបត្របាក់ឌុប & អត្តសញ្ញាណប័ណ្ណ', 'info')" title="ផ្ទៀងផ្ទាត់ឯកសារ">
-          <i class="fas fa-file-check"></i>
-          <span>Document<br>Verification</span>
-        </div>
-        <div class="flowchart-arrow">➔</div>
-        <div class="flowchart-step-item" onclick="viewTraineeCard()" title="បង្កើតលេខសម្គាល់ស្វ័យប្រវត្តិ">
-          <i class="fas fa-id-badge"></i>
-          <span>ID<br>Generation</span>
-        </div>
-        <div class="flowchart-arrow">➔</div>
-        <div class="flowchart-step-item" onclick="navigateView('backup')" title="ផ្ទុកក្នុង Database">
-          <i class="fas fa-database"></i>
-          <span>Database<br>Storage</span>
-        </div>
-      </div>
-    </div>
+  // Filter by Class
+  let filtered = allTrainees;
+  if (currentRosterClassFilter && currentRosterClassFilter !== 'all') {
+    filtered = allTrainees.filter(t => t.className === currentRosterClassFilter || t.cohort === currentRosterClassFilter);
+  }
 
-    <div class="table-card">
-      <div class="table-toolbar">
-        <div class="search-input-wrap">
-          <i class="fas fa-search"></i>
-          <input type="text" id="traineeFilterInput" class="search-input" placeholder="ស្វែងរកតាមឈ្មោះ, អត្តលេខ, ថ្នាក់..." oninput="filterTraineeTable(this.value)">
-        </div>
+  // Sort
+  let displayed = [...filtered];
+  if (currentRosterSort === 'id-asc') {
+    displayed.sort((a, b) => (a.id || '').localeCompare(b.id || '', undefined, { numeric: true }));
+  } else if (currentRosterSort === 'id-desc') {
+    displayed.sort((b, a) => (b.id || '').localeCompare(a.id || '', undefined, { numeric: true }));
+  } else if (currentRosterSort === 'name-asc') {
+    displayed.sort((a, b) => (a.nameKh || '').localeCompare(b.nameKh || '', 'km'));
+  } else if (currentRosterSort === 'name-desc') {
+    displayed.sort((b, a) => (b.nameKh || '').localeCompare(a.nameKh || '', 'km'));
+  }
 
-        <div style="display:flex; gap:10px; align-items:center;">
-          <select id="cohortFilterSelect" class="form-input" style="width:200px;" onchange="filterTraineeByCohort(this.value)">
-            <option value="all">គ្រប់ជំនាន់បណ្តុះបណ្តាល</option>
-            ${stmsData.cohorts.map(c => `<option value="${c.nameKh}">${c.nameKh}</option>`).join('')}
-          </select>
-          <span style="font-size:0.85rem; color:#64748b; font-weight:600;">សរុប: <strong>${stmsData.trainees.length} នាក់</strong></span>
+  const totalCount = displayed.length;
+  const femaleCount = displayed.filter(t => t.gender === 'ស្រី').length;
+
+  const html = `
+    <div class="roster-card">
+      <!-- Header Row -->
+      <div class="roster-header-row">
+        <div class="roster-header-left">
+          <h2 class="roster-title">បញ្ជីរាយនាមសិស្សានុសិស្ស</h2>
+          <div class="roster-class-stat-wrap">
+            <select class="roster-class-select" onchange="handleRosterClassChange(this.value)">
+              <option value="all" ${currentRosterClassFilter === 'all' ? 'selected' : ''}>ថ្នាក់ដើម</option>
+              ${distinctClasses.map(cls => `<option value="${cls}" ${currentRosterClassFilter === cls ? 'selected' : ''}>${cls}</option>`).join('')}
+            </select>
+            <div class="roster-stats-text">
+              <span>សិស្សសរុប: <strong>${totalCount} នាក់</strong></span>
+              <span class="roster-female-count">(ស្រី ${femaleCount} នាក់)</span>
+            </div>
+          </div>
+        </div>
+        <div class="roster-header-right">
+          <button class="roster-btn-print" onclick="exportOrPrintRoster()">
+            <i class="fas fa-print"></i> ទម្រង់បោះពុម្ព និង ទាញយក
+          </button>
+          <button class="roster-btn-delete-all" onclick="confirmDeleteAllStudents()">
+            <i class="fas fa-trash"></i> លុបទាំងអស់
+          </button>
         </div>
       </div>
 
-      <div class="data-table-responsive">
-        <table class="stms-table" id="traineesDataTable">
+      <!-- Sorting Toolbar Row -->
+      <div class="roster-toolbar-row">
+        <div class="roster-toolbar-left">
+          <span class="roster-toolbar-label"><i class="fas fa-bars"></i> តម្រៀប៖</span>
+          <div class="roster-sort-group">
+            <button class="roster-sort-btn ${currentRosterSort === 'default' ? 'active' : ''}" onclick="setRosterSort('default')">លំដាប់ដើម</button>
+            <button class="roster-sort-btn ${currentRosterSort === 'id-asc' ? 'active' : ''}" onclick="setRosterSort('id-asc')">អ.ល &uarr;</button>
+            <button class="roster-sort-btn ${currentRosterSort === 'id-desc' ? 'active' : ''}" onclick="setRosterSort('id-desc')">អ.ល &darr;</button>
+            <button class="roster-sort-btn ${currentRosterSort === 'name-asc' ? 'active' : ''}" onclick="setRosterSort('name-asc')">ឈ្មោះ: ក &rarr; អ</button>
+            <button class="roster-sort-btn ${currentRosterSort === 'name-desc' ? 'active' : ''}" onclick="setRosterSort('name-desc')">ឈ្មោះ: អ &rarr; ក</button>
+          </div>
+        </div>
+        <div class="roster-toolbar-right">
+          <button class="roster-btn-save-order" onclick="saveCurrentRosterOrder()">
+            <i class="fas fa-save"></i> រក្សាទុកលំដាប់នេះ
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Section -->
+      <div class="roster-table-responsive">
+        <table class="roster-table" id="traineesDataTable">
           <thead>
             <tr>
-              <th>ល.រ</th>
-              <th>អត្តលេខគរុនិស្សិត</th>
-              <th>គោត្តនាម-នាម</th>
-              <th>ភេទ</th>
-              <th>ថ្ងៃខែឆ្នាំកំណើត</th>
-              <th>ថ្នាក់រៀន</th>
-              <th>បាក់ឌុប (BacII)</th>
-              <th>ឯកសារយោង</th>
-              <th>ស្ថានភាពសិក្សា</th>
-              <th>សកម្មភាព</th>
+              <th style="width: 45px; text-align: center;">ល.រ</th>
+              <th style="width: 140px; text-align: center;">អ.ល</th>
+              <th style="min-width: 170px;">គោត្តនាម និងនាម</th>
+              <th style="width: 60px; text-align: center;">ភេទ</th>
+              <th style="width: 115px; text-align: center;">ថ្ងៃខែឆ្នាំកំណើត</th>
+              <th style="width: 60px; text-align: center;">អាយុ</th>
+              <th style="min-width: 160px;">ទីកន្លែងកំណើត</th>
+              <th style="min-width: 160px;">ឈ្មោះឪពុក និង មុខរបរ</th>
+              <th style="min-width: 160px;">ឈ្មោះម្តាយ និង មុខរបរ</th>
+              <th style="min-width: 140px; text-align: center;">អាណាព្យាបាល និងមុខរបរ</th>
+              <th style="width: 130px; text-align: center;">លេខទូរស័ព្ទអាណាព្យាបាល</th>
+              <th style="width: 90px; text-align: center;">សកម្មភាព</th>
             </tr>
           </thead>
           <tbody>
-            ${stmsData.trainees.length === 0 ? `
+            ${displayed.length === 0 ? `
               <tr>
-                <td colspan="10" style="text-align:center; padding:55px 20px; color:#64748b;">
+                <td colspan="12" style="text-align:center; padding:55px 20px; color:#64748b;">
                   <i class="fas fa-user-graduate fa-3x" style="color:#cbd5e1; margin-bottom:14px; display:block;"></i>
                   <div style="font-size:1.1rem; font-weight:700; color:#1e3a8a; margin-bottom:8px;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតនៅឡើយទេ</div>
                   <p style="font-size:0.875rem; color:#94a3b8; max-width:520px; margin:0 auto 18px auto; line-height:1.6;">
-                    ប្រព័ន្ធត្រូវបានរៀបចំទទេស្អាត (Clean State) ដោយមិនមានទិន្នន័យសិស្សស្វ័យប្រវត្តិឡើយ ទុកជូនលោកគ្រូ-អ្នកគ្រូ និងរដ្ឋបាលបញ្ចូលផ្ទាល់។
+                    សូមចុចប៊ូតុងខាងក្រោមដើម្បីបង្កើតគណនី ឬចុះឈ្មោះគរុសនិស្សិតថ្មី
                   </p>
-                  <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិតដំបូង</button>
+                  <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិត</button>
                 </td>
               </tr>
-            ` : stmsData.trainees.map((t, idx) => `
-              <tr data-trainee-row="${t.id}" data-cohort="${t.cohort}">
-                <td>${idx + 1}</td>
-                <td><code>${t.id}</code></td>
-                <td>
-                  <strong style="color:#0f172a;">
-                    ${t.photo ? `<img src="${t.photo}" style="width:26px; height:26px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:6px; border:1px solid #cbd5e1;" onerror="this.style.display='none';">` : `${t.avatar} `}
-                    ${t.nameKh}
-                  </strong>
-                  ${t.nameEn ? `<div style="font-size:0.75rem; color:#64748b;">${t.nameEn}</div>` : ''}
-                </td>
-                <td><span style="color:${t.gender==='ស្រី'?'#ec4899':'#0284c7'}; font-weight:700;">${t.gender}</span></td>
-                <td>${t.dob}</td>
-                <td>${t.className}</td>
-                <td><span style="background:#eff6ff; color:#1d4ed8; font-weight:600; padding:2px 6px; border-radius:4px; font-size:0.75rem;">${t.bacii?.grade || 'និទ្ទេស C'}</span></td>
-                <td>
-                  <span style="color:#10b981; font-size:0.8rem; font-weight:600;"><i class="fas fa-check-circle"></i> ${t.documents?.length || 3} ឯកសារ</span>
-                </td>
-                <td>
-                  <span class="badge ${t.status==='កំពុងសិក្សា'?'badge-present':t.status==='ព្យួរការសិក្សា'?'badge-permission':'badge-draft'}">
-                    ${t.status}
-                  </span>
-                </td>
-                <td>
-                  <div style="display:flex; gap:6px;">
-                    <button class="btn btn-outline" style="height:30px; padding:0 8px;" onclick="viewTraineeCard('${t.id}')" title="មើលកាតសម្គាល់ខ្លួន"><i class="fas fa-id-card"></i></button>
-                    ${currentRole === 'admin' ? `
-                      <button class="btn btn-primary" style="height:30px; padding:0 10px; font-size:0.8rem; gap:4px; display:inline-flex; align-items:center;" onclick="openEditStudent('${t.id}')" title="កែប្រែព័ត៌មានសិស្ស"><i class="fas fa-edit"></i> កែប្រែ</button>
-                      <button class="btn btn-outline" style="height:30px; padding:0 8px;" onclick="editTraineeStatus('${t.id}')" title="កែប្រែស្ថានភាពសិក្សា"><i class="fas fa-user-tag"></i></button>
-                      <button class="btn btn-outline" style="height:30px; padding:0 8px; color:#ef4444;" onclick="deleteTraineeRecord('${t.id}')" title="លុប"><i class="fas fa-trash"></i></button>
-                    ` : ''}
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
+            ` : displayed.map((t, idx) => {
+              const fatherStr = formatParentDisplay(t.parents?.fatherName, t.parents?.fatherJob);
+              const motherStr = formatParentDisplay(t.parents?.motherName, t.parents?.motherJob);
+              const guardianStr = formatParentDisplay(t.parents?.guardianName, t.parents?.guardianJob);
+              const parentPhone = (t.parentPhone || t.phone || t.parents?.phone || '-').trim() || '-';
+              const ageVal = t.age || calculateAgeFromDob(t.dob);
+
+              return `
+                <tr data-trainee-row="${t.id}">
+                  <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
+                  <td><span class="roster-id-tag">${t.id}</span></td>
+                  <td>
+                    <div class="roster-student-cell">
+                      <div class="roster-student-avatar">
+                        ${t.photo ? `<img src="${t.photo}" alt="${t.nameKh}" onerror="this.outerHTML='👨‍🎓'">` : (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}
+                      </div>
+                      <span class="roster-student-name">${t.nameKh}</span>
+                    </div>
+                  </td>
+                  <td style="text-align: center;">${t.gender || 'ប្រុស'}</td>
+                  <td style="text-align: center;">${formatDobDisplay(t.dob)}</td>
+                  <td><span class="roster-age-highlight">${ageVal}</span></td>
+                  <td>${formatBirthplaceDisplay(t)}</td>
+                  <td>${fatherStr}</td>
+                  <td>${motherStr}</td>
+                  <td style="text-align: ${guardianStr === '-' ? 'center' : 'left'};">${guardianStr}</td>
+                  <td style="text-align: center;">${parentPhone}</td>
+                  <td>
+                    <div class="roster-action-group">
+                      <button class="roster-action-btn btn-edit-roster" onclick="openEditStudent('${t.id}')" title="កែប្រែព័ត៌មាន"><i class="fas fa-edit"></i></button>
+                      <button class="roster-action-btn btn-delete-roster" onclick="deleteTraineeRecord('${t.id}')" title="លុបទិន្នន័យ"><i class="fas fa-trash"></i></button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
