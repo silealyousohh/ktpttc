@@ -837,6 +837,12 @@ app.get(['/teacher-guide', '/teacher-guide/', '/TeacherGuideApp', '/TeacherGuide
   res.sendFile(path.join(__dirname, 'public', 'Public_Index.html'));
 });
 
+app.get(['/add-student', '/add-student.html', '/TeacherGuideApp/add-student', '/TeacherGuideApp/add-student.html', '/krusmart/add-student'], (req, res) => {
+  const addPath = path.join(TEACHER_GUIDE_DIR, 'add-student.html');
+  if (fs.existsSync(addPath)) return res.sendFile(addPath);
+  res.redirect('/TeacherGuideApp');
+});
+
 // ==========================================
 // REST API ENDPOINTS
 // ==========================================

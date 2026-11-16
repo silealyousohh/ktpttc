@@ -15,6 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClockPill();
   updateRosterStatusBanner();
   setInterval(updateClockPill, 60000);
+
+  // Check if returning from add-student
+  if (sessionStorage.getItem('openView') === 'student-info' || window.location.hash.includes('student')) {
+    sessionStorage.removeItem('openView');
+    setTimeout(() => {
+      openStudentInfoModal();
+    }, 150);
+  }
 });
 
 // Load data from LocalStorage
@@ -326,66 +334,11 @@ function generatePasscode(name) {
 // ==========================================================================
 
 function openAddStudentModal(studentId = null) {
-  const modal = document.getElementById('modalAddStudent');
-  const title = document.getElementById('addStudentModalTitle');
-  const originalIdInput = document.getElementById('editStudentOriginalId');
-  const rollInput = document.getElementById('stuRollInput');
-  const idInput = document.getElementById('stuIdInput');
-  const nameKhInput = document.getElementById('stuNameKhInput');
-  const nameEnInput = document.getElementById('stuNameEnInput');
-  const genderSelect = document.getElementById('stuGenderSelect');
-  const dobInput = document.getElementById('stuDobInput');
-  const parentNameInput = document.getElementById('stuParentNameInput');
-  const parentPhoneInput = document.getElementById('stuParentPhoneInput');
-  const seatRowSelect = document.getElementById('stuSeatRowSelect');
-  const seatColSelect = document.getElementById('stuSeatColSelect');
-
-  if (!modal) return;
-
   if (studentId) {
-    // Edit Mode
-    const s = appData.students.find(x => x.id === studentId);
-    if (!s) return;
-
-    if (title) title.textContent = 'កែប្រែព័ត៌មានសិស្ស (' + s.nameKh + ')';
-    if (originalIdInput) originalIdInput.value = s.id;
-    if (rollInput) rollInput.value = s.roll || 1;
-    if (idInput) idInput.value = s.id;
-    if (nameKhInput) nameKhInput.value = s.nameKh;
-    if (nameEnInput) nameEnInput.value = s.nameEn || '';
-    if (genderSelect) genderSelect.value = s.gender || 'ប្រុស';
-    if (dobInput) dobInput.value = s.dob || '';
-    if (parentNameInput) parentNameInput.value = s.parentName || '';
-    if (parentPhoneInput) parentPhoneInput.value = s.parentPhone || '';
-    if (seatRowSelect) seatRowSelect.value = s.seatRow || 1;
-    if (seatColSelect) seatColSelect.value = s.seatCol || 1;
+    window.location.href = `add-student.html?id=${encodeURIComponent(studentId)}`;
   } else {
-    // Add New Mode
-    const nextRoll = appData.students.length + 1;
-    const nextId = `STU-${String(nextRoll).padStart(3, '0')}`;
-
-    if (title) title.textContent = 'បញ្ចូលសិស្សថ្មី';
-    if (originalIdInput) originalIdInput.value = '';
-    if (rollInput) rollInput.value = nextRoll;
-    if (idInput) idInput.value = nextId;
-    if (nameKhInput) nameKhInput.value = '';
-    if (nameEnInput) nameEnInput.value = '';
-    if (genderSelect) genderSelect.value = 'ប្រុស';
-    if (dobInput) dobInput.value = '2013-01-01';
-    if (parentNameInput) parentNameInput.value = '';
-    if (parentPhoneInput) parentPhoneInput.value = '';
-    
-    // Auto place on desk
-    const row = Math.ceil(nextRoll / 5);
-    const col = ((nextRoll - 1) % 5) + 1;
-    if (seatRowSelect) seatRowSelect.value = Math.min(5, Math.max(1, row));
-    if (seatColSelect) seatColSelect.value = Math.min(5, Math.max(1, col));
+    window.location.href = 'add-student.html';
   }
-
-  openModal('modalAddStudent');
-  setTimeout(() => {
-    if (nameKhInput) nameKhInput.focus();
-  }, 100);
 }
 
 function saveStudentForm(andAddAnother = false) {
