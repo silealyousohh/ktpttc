@@ -52,6 +52,15 @@ function loadData() {
           }
           if (!u.status) u.status = 'active';
         });
+
+        // Purge mock faculty teachers (USR-TRN-003 through USR-TRN-008)
+        const mockTeacherIds = ['USR-TRN-003', 'USR-TRN-004', 'USR-TRN-005', 'USR-TRN-006', 'USR-TRN-007', 'USR-TRN-008'];
+        const mockTeacherNames = ['លោកស្រី ម៉ៅ សុភា', 'លោក គង់ វិចិត្រ', 'លោក អ៊ុំ សុវណ្ណ', 'លោក ព្រុំ សម្បត្តិ', 'លោកស្រី នួន ចរិយា', 'លោក ឡុង វិសិដ្ឋ'];
+        const prevCount = stmsData.users.length;
+        stmsData.users = stmsData.users.filter(u => !u || (!mockTeacherIds.includes(u.id) && !mockTeacherNames.includes(u.nameKh)));
+        if (stmsData.users.length !== prevCount) {
+          saveData();
+        }
       }
 
       if (!stmsData.syllabi || typeof stmsData.syllabi !== 'object') {
@@ -7082,178 +7091,34 @@ function ensureSyncedCollections() {
     stmsData.attendanceSessions = [];
   }
 
-  // Seed Faculty Teachers for Admin Management
-  if (!Array.isArray(stmsData.users)) stmsData.users = [];
-  const initialTrainers = [
-    {
-      id: "USR-TRN-001",
-      nameKh: "សាស្ត្រាចារ្យ ហេង សំណាង",
-      nameEn: "Heng Samnang",
-      gender: "ប្រុស",
-      dob: "1982-04-12",
-      pob: "ខេត្តក្រចេះ",
-      qualification: "អនុបណ្ឌិតគរុកោសល្យ",
-      username: "trainer",
-      password: "trainer123",
-      role: "trainer",
-      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-      email: "samnang.heng@ktpttc.edu.kh",
-      phone: "016 777 888",
-      subject: "PED-101",
-      subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
-      status: "active",
-      avatar: "👨‍🏫"
-    },
-    {
-      id: "USR-TRN-002",
-      nameKh: "លោកស្រី ជា រចនា",
-      nameEn: "Chea Rachana",
-      gender: "ស្រី",
-      dob: "1986-08-25",
-      pob: "ខេត្តកំពង់ចាម",
-      qualification: "បរិញ្ញាបត្រជាន់ខ្ពស់អក្សរសាស្ត្រខ្មែរ",
-      username: "rachana",
-      password: "rachana123",
-      role: "trainer",
-      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-      email: "rachana.chea@ktpttc.edu.kh",
-      phone: "017 666 555",
-      subject: "KHM-104",
-      subjectName: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង",
-      status: "active",
-      avatar: "👩‍🏫"
-    },
-    {
-      id: "USR-TRN-003",
-      nameKh: "លោកស្រី ម៉ៅ សុភា",
-      nameEn: "Mao Sophear",
-      gender: "ស្រី",
-      dob: "1988-11-14",
-      pob: "រាជធានីភ្នំពេញ",
-      qualification: "អនុបណ្ឌិតចិត្តវិទ្យាគរុកោសល្យ",
-      username: "sophear",
-      password: "sophear123",
-      role: "trainer",
-      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-      email: "sophear.mao@ktpttc.edu.kh",
-      phone: "012 888 999",
-      subject: "PSY-102",
-      subjectName: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ",
-      status: "active",
-      avatar: "👩‍🏫"
-    },
-    {
-      id: "USR-TRN-004",
-      nameKh: "លោក គង់ វិចិត្រ",
-      nameEn: "Kong Vichet",
-      gender: "ប្រុស",
-      dob: "1985-02-18",
-      pob: "ខេត្តក្រចេះ",
-      qualification: "បរិញ្ញាបត្រជាន់ខ្ពស់គណិតវិទ្យា",
-      username: "vichet",
-      password: "vichet123",
-      role: "trainer",
-      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-      email: "vichet.kong@ktpttc.edu.kh",
-      phone: "092 112 233",
-      subject: "MTH-103",
-      subjectName: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម",
-      status: "active",
-      avatar: "👨‍🏫"
-    },
-    {
-      id: "USR-TRN-005",
-      nameKh: "លោក អ៊ុំ សុវណ្ណ",
-      nameEn: "Oum Sovann",
-      gender: "ប្រុស",
-      dob: "1990-07-22",
-      pob: "ខេត្តត្បូងឃ្មុំ",
-      qualification: "បរិញ្ញាបត្របច្ចេកវិទ្យាព័ត៌មាន (ICT)",
-      username: "sovann",
-      password: "sovann123",
-      role: "trainer",
-      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-      email: "sovann.oum@ktpttc.edu.kh",
-      phone: "089 445 566",
-      subject: "ICT-105",
-      subjectName: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)",
-      status: "active",
-      avatar: "👨‍🏫"
-    },
-    {
-      id: "USR-TRN-006",
-      nameKh: "លោក ព្រុំ សម្បត្តិ",
-      nameEn: "Prum Sambath",
-      gender: "ប្រុស",
-      dob: "1983-05-30",
-      pob: "ខេត្តព្រៃវែង",
-      qualification: "អនុបណ្ឌិតស្រាវជ្រាវអប់រំ",
-      username: "prum",
-      password: "prum123",
-      role: "trainer",
-      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-      email: "sambath.prum@ktpttc.edu.kh",
-      phone: "015 334 455",
-      subject: "RES-106",
-      subjectName: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)",
-      status: "active",
-      avatar: "👨‍🏫"
-    },
-    {
-      id: "USR-TRN-007",
-      nameKh: "លោកស្រី នួន ចរិយា",
-      nameEn: "Nuon Chariya",
-      gender: "ស្រី",
-      dob: "1987-09-10",
-      pob: "ខេត្តក្រចេះ",
-      qualification: "អនុបណ្ឌិតគ្រប់គ្រងអប់រំ",
-      username: "chariya",
-      password: "chariya123",
-      role: "trainer",
-      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-      email: "chariya.nuon@ktpttc.edu.kh",
-      phone: "077 556 677",
-      subject: "PRAC-107",
-      subjectName: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)",
-      status: "active",
-      avatar: "👩‍🏫"
-    },
-    {
-      id: "USR-TRN-008",
-      nameKh: "លោក ឡុង វិសិដ្ឋ",
-      nameEn: "Long Viseth",
-      gender: "ប្រុស",
-      dob: "1991-03-05",
-      pob: "ខេត្តកណ្តាល",
-      qualification: "បរិញ្ញាបត្រវិទ្យាសាស្ត្រកុំព្យូទ័រ",
-      username: "viseth",
-      password: "viseth123",
-      role: "trainer",
-      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-      email: "viseth.long@ktpttc.edu.kh",
-      phone: "096 667 788",
-      subject: "COM-108",
-      subjectName: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍",
-      status: "active",
-      avatar: "👨‍🏫"
-    }
+  // Purge Mock Faculty Teachers (USR-TRN-003 through USR-TRN-008 and unapproved mock data)
+  const mockTeacherIds = [
+    'USR-TRN-003',
+    'USR-TRN-004',
+    'USR-TRN-005',
+    'USR-TRN-006',
+    'USR-TRN-007',
+    'USR-TRN-008'
+  ];
+  const mockTeacherNames = [
+    'លោកស្រី ម៉ៅ សុភា',
+    'លោក គង់ វិចិត្រ',
+    'លោក អ៊ុំ សុវណ្ណ',
+    'លោក ព្រុំ សម្បត្តិ',
+    'លោកស្រី នួន ចរិយា',
+    'លោក ឡុង វិសិដ្ឋ'
   ];
 
-  initialTrainers.forEach(trn => {
-    const exists = stmsData.users.find(u => u.id === trn.id || u.username === trn.username);
-    if (!exists) {
-      stmsData.users.push(trn);
-    } else {
-      if (!exists.subject) exists.subject = trn.subject;
-      if (!exists.subjectName) exists.subjectName = trn.subjectName;
-      if (!exists.phone) exists.phone = trn.phone;
-      if (!exists.email) exists.email = trn.email;
-      if (!exists.gender) exists.gender = trn.gender;
-      if (!exists.dob) exists.dob = trn.dob;
-      if (!exists.pob) exists.pob = trn.pob;
-      if (!exists.qualification) exists.qualification = trn.qualification;
-    }
+  if (!Array.isArray(stmsData.users)) stmsData.users = [];
+  const beforeTeacherCount = stmsData.users.length;
+  stmsData.users = stmsData.users.filter(u => {
+    if (!u) return false;
+    const isMock = mockTeacherIds.includes(u.id) || mockTeacherNames.includes(u.nameKh);
+    return !isMock;
   });
+  if (stmsData.users.length !== beforeTeacherCount) {
+    saveData();
+  }
 
   // Seed Student Profile Update Requests
   if (!Array.isArray(stmsData.studentRequests)) {

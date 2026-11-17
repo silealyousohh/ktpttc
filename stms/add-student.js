@@ -102,15 +102,23 @@ function saveStudentsToStorage(list) {
 // Get saved teachers array from localStorage
 function getSavedTeachers() {
   try {
+    const mockTeacherIds = ['USR-TRN-003', 'USR-TRN-004', 'USR-TRN-005', 'USR-TRN-006', 'USR-TRN-007', 'USR-TRN-008'];
+    const mockTeacherNames = ['លោកស្រី ម៉ៅ សុភា', 'លោក គង់ វិចិត្រ', 'លោក អ៊ុំ សុវណ្ណ', 'លោក ព្រុំ សម្បត្តិ', 'លោកស្រី នួន ចរិយា', 'លោក ឡុង វិសិដ្ឋ'];
+
     const rawStms = localStorage.getItem('ktpttc_stms_data_v2');
     if (rawStms) {
       const parsed = JSON.parse(rawStms);
       if (parsed && Array.isArray(parsed.users)) {
-        return parsed.users.filter(u => u && u.role === 'trainer');
+        const cleanUsers = parsed.users.filter(u => !u || (!mockTeacherIds.includes(u.id) && !mockTeacherNames.includes(u.nameKh)));
+        if (cleanUsers.length !== parsed.users.length) {
+          parsed.users = cleanUsers;
+          localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(parsed));
+        }
+        return cleanUsers.filter(u => u && u.role === 'trainer');
       }
     }
     if (window.KTPTTC_INITIAL_DATA && Array.isArray(window.KTPTTC_INITIAL_DATA.users)) {
-      return window.KTPTTC_INITIAL_DATA.users.filter(u => u && u.role === 'trainer');
+      return window.KTPTTC_INITIAL_DATA.users.filter(u => u && u.role === 'trainer' && !mockTeacherIds.includes(u.id) && !mockTeacherNames.includes(u.nameKh));
     }
   } catch (e) {
     console.error(e);
