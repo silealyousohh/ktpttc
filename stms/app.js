@@ -213,8 +213,14 @@ function loginSuccess(user, notify = true) {
   if (avatarEl) avatarEl.textContent = user.avatar || (user.role === 'trainer' ? '👨‍🏫' : user.role === 'trainee' ? '👨‍🎓' : '👨‍💼');
 
   // Set body role class for styling rules
-  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student');
+  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'trainee-mode', 'is-admin-session');
   document.body.classList.add(`role-${user.role}`);
+  if (user.role === 'admin') {
+    document.body.classList.add('is-admin-session');
+  }
+  if (user.role === 'trainee') {
+    document.body.classList.add('trainee-mode');
+  }
 
   // Center Role Switcher: Visible ONLY to Administrator for role preview (Hidden for staff/trainers & students/trainees)
   const navCenterRole = document.getElementById('navCenterRole') || document.querySelector('.nav-center-role');
@@ -254,7 +260,9 @@ function handleLogout() {
     localStorage.removeItem('ktpttc_current_user');
     sessionStorage.removeItem('ktpttc_current_user');
     currentUser = null;
-    document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student');
+    document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'trainee-mode', 'is-admin-session');
+    const sidebarAside = document.querySelector('.stms-sidebar') || document.getElementById('stmsSidebar');
+    if (sidebarAside) sidebarAside.style.display = 'flex';
     const navCenterRole = document.getElementById('navCenterRole') || document.querySelector('.nav-center-role');
     if (navCenterRole) navCenterRole.style.display = 'none';
     showLoginScreen();
@@ -287,6 +295,23 @@ function switchRole(role, notify = true) {
   }
 
   currentRole = role;
+
+  // Update body role class
+  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'trainee-mode');
+  document.body.classList.add(`role-${role}`);
+  if (role === 'trainee') {
+    document.body.classList.add('trainee-mode');
+  }
+
+  // Trainee mode: hide left sidebar
+  const sidebarAside = document.querySelector('.stms-sidebar') || document.getElementById('stmsSidebar');
+  if (sidebarAside) {
+    if (role === 'trainee') {
+      sidebarAside.style.display = 'none';
+    } else {
+      sidebarAside.style.display = 'flex';
+    }
+  }
 
   // Update Top Role Switcher Pills
   document.querySelectorAll('.role-tab-btn').forEach(btn => {
@@ -322,6 +347,16 @@ function switchRole(role, notify = true) {
 // Render Sidebar Menu based on Active Role
 function renderSidebar() {
   const sidebarNav = document.getElementById('sidebarNavMenu');
+  const sidebarAside = document.querySelector('.stms-sidebar') || document.getElementById('stmsSidebar');
+
+  // Trainee / Student portal: Completely hide sidebar for clean standalone portal
+  if (currentRole === 'trainee' || currentView === 'trainee-portal') {
+    if (sidebarAside) sidebarAside.style.display = 'none';
+    if (sidebarNav) sidebarNav.innerHTML = '';
+    return;
+  }
+
+  if (sidebarAside) sidebarAside.style.display = 'flex';
   if (!sidebarNav) return;
 
   let menuHtml = '';
@@ -358,15 +393,6 @@ function renderSidebar() {
       <li><a class="sidebar-item-link ${currentView==='attendance'?'active':''}" onclick="navigateView('attendance')"><i class="fas fa-calendar-check"></i> <span>ស្រង់វត្តមានសិស្ស</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='grading'?'active':''}" onclick="navigateView('grading')"><i class="fas fa-calculator"></i> <span>បញ្ចូលពិន្ទុតាមមុខវិជ្ជា</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-alt"></i> <span>កាលវិភាគបង្រៀន</span></a></li>
-    `;
-  } else if (currentRole === 'trainee') {
-    menuHtml = `
-      <li class="sidebar-label">ព័ត៌មានផ្ទាល់ខ្លួន</li>
-      <li><a class="sidebar-item-link ${currentView==='trainee-portal'?'active':''}" onclick="navigateView('trainee-portal')"><i class="fas fa-id-card"></i> <span>ប្រវត្តិរូប &amp; កាតសម្គាល់</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-alt"></i> <span>កាលវិភាគសិក្សា</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='trainee-attendance'?'active':''}" onclick="navigateView('trainee-attendance')"><i class="fas fa-user-check"></i> <span>វត្តមានផ្ទាល់ខ្លួន</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='trainee-grades'?'active':''}" onclick="navigateView('trainee-grades')"><i class="fas fa-award"></i> <span>លទ្ធផលពិន្ទុ &amp; និទ្ទេស</span></a></li>
-      <li><a class="sidebar-item-link ${currentView==='trainee-request'?'active':''}" onclick="navigateView('trainee-request')"><i class="fas fa-paper-plane"></i> <span>ស្នើសុំកែប្រែព័ត៌មាន</span></a></li>
     `;
   }
 
