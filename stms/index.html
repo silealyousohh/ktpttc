@@ -18,15 +18,17 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- STMS Custom Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=3.4">
+  <link rel="stylesheet" href="styles.css?v=3.5">
 </head>
 
 <body>
 
   <!-- Top App Navigation Bar -->
   <header class="stms-navbar">
-    <div class="brand-section" onclick="handleLogoClick()" title="ចុចដើម្បីផ្ទុកទំព័រឡើងវិញ (Reload Page)" style="cursor: pointer;">
-      <img src="assets/ktpttc-header-logo.png" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" class="brand-header-logo" onerror="this.src='assets/ktpttc-logo.png'">
+    <div class="brand-section" onclick="handleLogoClick()" title="ចុចដើម្បីផ្ទុកទំព័រឡើងវិញ (Reload Page)"
+      style="cursor: pointer;">
+      <img src="assets/ktpttc-header-logo.png" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" class="brand-header-logo"
+        onerror="this.src='assets/ktpttc-logo.png'">
     </div>
 
     <!-- Center: Role-Based Access Control Switcher (Visible ONLY for Administrator, Hidden for staff & students) -->
@@ -130,8 +132,8 @@
                       <div style="padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                           <strong>កែប្រែ៖ ${r.fieldName}</strong>
-                          <span class="badge ${r.status==='approved'?'badge-success':r.status==='rejected'?'badge-danger':'badge-warning'}">
-                            ${r.status==='approved'?'បានអនុម័ត':r.status==='rejected'?'បដិសេធ':'រង់ចាំត្រួតពិនិត្យ'}
+                          <span class="badge ${r.status === 'approved' ? 'badge-success' : r.status === 'rejected' ? 'badge-danger' : 'badge-warning'}">
+                            ${r.status === 'approved' ? 'បានអនុម័ត' : r.status === 'rejected' ? 'បដិសេធ' : 'រង់ចាំត្រួតពិនិត្យ'}
                           </span>
                         </div>
                         <div style="font-size:0.8rem; color:#64748b;">តម្លៃថ្មី៖ ${r.newValue} | មូលហេតុ៖ ${r.reason}</div>
@@ -322,7 +324,7 @@
         </form>
 
         <div style="font-size:0.75rem; color:#64748b; text-align:center; margin-top:16px; line-height:1.5;">
-          <i class="fas fa-shield-alt"></i> ឈ្មោះគណនី និងពាក្យសម្ងាត់ ត្រូវបានចុះឈ្មោះ និងកំណត់ដោយ Admin សិក្សាធិការ
+          <i class="fas fa-shield-alt"></i> ឈ្មោះគណនី និងពាក្យសម្ងាត់ ត្រូវបានចុះឈ្មោះ និងកំណត់ដោយ Admin
         </div>
       </div>
 
@@ -330,8 +332,8 @@
   </div>
 
   <!-- Application Core Scripts -->
-  <script src="data.js?v=3.4"></script>
-  <script src="app.js?v=3.4"></script>
+  <script src="data.js?v=3.5"></script>
+  <script src="app.js?v=3.5"></script>
 </body>
 
 </html>
