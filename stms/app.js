@@ -121,13 +121,16 @@ function initAuth() {
 }
 
 function showLoginScreen() {
+  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student');
   const loginOverlay = document.getElementById('stmsLoginScreen');
   const navbar = document.getElementById('stmsNavbar');
   const layout = document.getElementById('stmsAppLayout');
+  const navCenterRole = document.getElementById('navCenterRole') || document.querySelector('.nav-center-role');
 
   if (loginOverlay) loginOverlay.style.display = 'flex';
   if (navbar) navbar.style.display = 'none';
   if (layout) layout.style.display = 'none';
+  if (navCenterRole) navCenterRole.style.display = 'none';
 
   const uInput = document.getElementById('loginUsername');
   const pInput = document.getElementById('loginPassword');
@@ -209,13 +212,20 @@ function loginSuccess(user, notify = true) {
   if (roleEl) roleEl.textContent = user.roleLabel || user.role;
   if (avatarEl) avatarEl.textContent = user.avatar || (user.role === 'trainer' ? '👨‍🏫' : user.role === 'trainee' ? '👨‍🎓' : '👨‍💼');
 
-  // Center Role Switcher: Visible ONLY to Administrator for role preview
-  const navCenterRole = document.getElementById('navCenterRole');
+  // Set body role class for styling rules
+  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student');
+  document.body.classList.add(`role-${user.role}`);
+
+  // Center Role Switcher: Visible ONLY to Administrator for role preview (Hidden for staff/trainers & students/trainees)
+  const navCenterRole = document.getElementById('navCenterRole') || document.querySelector('.nav-center-role');
   if (navCenterRole) {
-    navCenterRole.style.display = user.role === 'admin' ? 'flex' : 'none';
-    document.querySelectorAll('.role-tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.role === user.role);
-    });
+    const isAdmin = !!(user && user.role === 'admin');
+    navCenterRole.style.display = isAdmin ? 'flex' : 'none';
+    if (isAdmin) {
+      document.querySelectorAll('.role-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.role === user.role);
+      });
+    }
   }
 
   // Set default starting view or check target navigation
@@ -244,6 +254,9 @@ function handleLogout() {
     localStorage.removeItem('ktpttc_current_user');
     sessionStorage.removeItem('ktpttc_current_user');
     currentUser = null;
+    document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student');
+    const navCenterRole = document.getElementById('navCenterRole') || document.querySelector('.nav-center-role');
+    if (navCenterRole) navCenterRole.style.display = 'none';
     showLoginScreen();
     showToast('បានចាកចេញពីប្រព័ន្ធដោយជោគជ័យ!', 'info');
   }

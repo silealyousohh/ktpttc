@@ -113,6 +113,19 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* Hide Role Switcher completely for non-admin users (staff/teachers & students) */
+body.role-trainer #navCenterRole,
+body.role-trainee #navCenterRole,
+body.role-staff #navCenterRole,
+body.role-student #navCenterRole,
+body:not(.role-admin) #navCenterRole {
+  display: none !important;
+}
+
+body.role-admin #navCenterRole {
+  display: flex !important;
+}
+
 .role-tab-btn {
   background: none;
   border: none;
