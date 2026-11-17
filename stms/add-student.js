@@ -390,13 +390,13 @@ function populateDynamicClasses(selectedClass = null) {
     console.error(e);
   }
 
-  if (classList.length === 0) {
-    classList = ['១២+២ ក្រុម ក', '១២+២ ក្រុម ខ', '១២+៤ ក្រុម ក', '១២+៤ ក្រុម ខ', 'បរិញ្ញាបត្រ+១ ក្រុម ក', 'បរិញ្ញាបត្រ+១ ក្រុម ខ'];
-  }
-
   if (sel) {
-    const currentVal = selectedClass || sel.value || classList[0];
-    sel.innerHTML = classList.map(cls => `<option value="${cls}" ${cls === currentVal ? 'selected' : ''}>ថ្នាក់ដើម: ${cls}</option>`).join('');
+    if (classList.length === 0) {
+      sel.innerHTML = '<option value="">-- សូមចុចប៊ូតុង + ដើម្បីបន្ថែមថ្នាក់រៀន --</option>';
+    } else {
+      const currentVal = selectedClass || sel.value || classList[0];
+      sel.innerHTML = classList.map(cls => `<option value="${cls}" ${cls === currentVal ? 'selected' : ''}>${cls}</option>`).join('');
+    }
   }
 
   // Also ensure regClass has matching options
@@ -1399,7 +1399,17 @@ function handleSaveStudent() {
       classGrade,
       group,
       className,
-      cohort: className.includes('១២+៤') ? "ថ្នាក់គរុកោសល្យ ១២+៤ ជំនាន់ទី ១" : className.includes('បរិញ្ញា') ? "ថ្នាក់បរិញ្ញាបត្រ+១ ជំនាន់ទី ១" : "ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤",
+      cohort: (() => {
+        try {
+          const raw = localStorage.getItem('ktpttc_stms_data_v2');
+          if (raw) {
+            const data = JSON.parse(raw);
+            const foundCohort = (data.cohorts || []).find(c => (c.classes || []).includes(className) || c.nameKh.includes(className));
+            if (foundCohort) return foundCohort.nameKh;
+          }
+        } catch (e) {}
+        return className;
+      })(),
       trainingType: className.includes('១២+៤') ? "12+4" : className.includes('បរិញ្ញា') ? "បរិញ្ញាបត្រ+១" : "12+2 (បឋមសិក្សា)",
       status: "កំពុងសិក្សា",
       avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',

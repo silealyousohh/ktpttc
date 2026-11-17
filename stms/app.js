@@ -38,8 +38,45 @@ function loadData() {
         if (t.id && (t.id.includes('{PK') || /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(t.id))) return false;
         return true;
       });
+
+      // Purge any mock trainees (auto-seeded mock student profiles)
+      const mockStudentIds = ['ktpttc-2026-st-002', 'ktpttc-2026-st-003', 'ktpttc-2026-st-004', 'ktpttc-2026-st-005', 'ktpttc-2026-st-006'];
+      const mockStudentNames = ['សុខ ចិន្តា', 'ចាន់ ថា', 'ហេង វិសាល', 'លី ម៉ារីណា', 'កែវ សម្បត្តិ'];
+      stmsData.trainees = stmsData.trainees.filter(t => {
+        if (!t || !t.nameKh) return false;
+        return !mockStudentIds.includes(t.id) && !mockStudentNames.includes(t.nameKh);
+      });
       if (stmsData.trainees.length !== countBefore) {
         saveData();
+      }
+
+      // Purge mock assignments & lessons & videos & requests
+      if (Array.isArray(stmsData.assignments)) {
+        stmsData.assignments = stmsData.assignments.filter(a => a && a.id !== 'HW-101' && a.id !== 'HW-102');
+      }
+      if (Array.isArray(stmsData.lessons)) {
+        stmsData.lessons = stmsData.lessons.filter(l => l && l.id !== 'LSN-001' && l.id !== 'LSN-002');
+      }
+      if (Array.isArray(stmsData.videoLessons)) {
+        stmsData.videoLessons = stmsData.videoLessons.filter(v => v && v.id !== 'VID-001');
+      }
+      if (Array.isArray(stmsData.studentRequests)) {
+        stmsData.studentRequests = stmsData.studentRequests.filter(r => r && r.id !== 'REQ-001' && r.id !== 'REQ-002');
+      }
+      if (Array.isArray(stmsData.cohorts)) {
+        stmsData.cohorts = stmsData.cohorts.filter(c => c && c.id !== 'C-12P2-G34' && c.id !== 'C-PRE-G34' && c.id !== 'C-INSERVICE-2026');
+      }
+      if (Array.isArray(stmsData.timetables)) {
+        stmsData.timetables = stmsData.timetables.filter(t => t && t.cohortId !== 'C-12P2-G34');
+      }
+      if (stmsData.library && Array.isArray(stmsData.library.recentBorrows)) {
+        stmsData.library.recentBorrows = stmsData.library.recentBorrows.filter(b => b && b.id !== 'BK-3065' && b.id !== 'BK-5646' && b.id !== 'BK-3109');
+      }
+      if (Array.isArray(stmsData.dailyAttendanceStats) && stmsData.dailyAttendanceStats.some(s => s.present === 96 && s.day === 'ចន្ទ')) {
+        stmsData.dailyAttendanceStats = [];
+      }
+      if (stmsData.gradeDistribution && stmsData.gradeDistribution.A && stmsData.gradeDistribution.A.pct === 41) {
+        stmsData.gradeDistribution = {};
       }
 
       if (!Array.isArray(stmsData.users) || stmsData.users.length === 0) {
@@ -53,9 +90,9 @@ function loadData() {
           if (!u.status) u.status = 'active';
         });
 
-        // Purge mock faculty teachers (USR-TRN-003 through USR-TRN-008)
-        const mockTeacherIds = ['USR-TRN-003', 'USR-TRN-004', 'USR-TRN-005', 'USR-TRN-006', 'USR-TRN-007', 'USR-TRN-008'];
-        const mockTeacherNames = ['លោកស្រី ម៉ៅ សុភា', 'លោក គង់ វិចិត្រ', 'លោក អ៊ុំ សុវណ្ណ', 'លោក ព្រុំ សម្បត្តិ', 'លោកស្រី នួន ចរិយា', 'លោក ឡុង វិសិដ្ឋ'];
+        // Purge mock faculty teachers (USR-TRN-002 through USR-TRN-008)
+        const mockTeacherIds = ['USR-TRN-002', 'USR-TRN-003', 'USR-TRN-004', 'USR-TRN-005', 'USR-TRN-006', 'USR-TRN-007', 'USR-TRN-008'];
+        const mockTeacherNames = ['លោកស្រី ជា រចនា', 'លោកស្រី ម៉ៅ សុភា', 'លោក គង់ វិចិត្រ', 'លោក អ៊ុំ សុវណ្ណ', 'លោក ព្រុំ សម្បត្តិ', 'លោក ព្រំ សម្បត្តិ', 'លោកស្រី នួន ចរិយា', 'លោក ឡុង វិសិដ្ឋ'];
         const prevCount = stmsData.users.length;
         stmsData.users = stmsData.users.filter(u => !u || (!mockTeacherIds.includes(u.id) && !mockTeacherNames.includes(u.nameKh)));
         if (stmsData.users.length !== prevCount) {
@@ -99,6 +136,7 @@ function loadData() {
   // Ensure default teacher & student synced collections exist
   ensureSyncedCollections();
   syncAllSubjects();
+  syncTraineeStreams();
 }
 
 // Persist to LocalStorage
@@ -2348,7 +2386,7 @@ function openAddSlotModal() {
             </div>
             <div style="margin-bottom:12px;">
               <label class="form-label">គ្រូឧទ្ទេស</label>
-              <input type="text" id="slotTrainer" class="form-input" value="សាស្ត្រាចារ្យ ហេង សំណាង" required>
+              <input type="text" id="slotTrainer" class="form-input" placeholder="ឈ្មោះគ្រូទទួលបន្ទុក" required>
             </div>
             <div style="margin-bottom:16px;">
               <label class="form-label">បន្ទប់រៀន</label>
@@ -2388,23 +2426,37 @@ function submitAddSlot() {
 // 6. TRAINEE PORTAL VIEW (ផតថលផ្ទាល់ខ្លួនគរុសនិស្សិត - MODELED AFTER MOCKUP)
 // ==========================================================================
 
-const TRAINEE_STREAMS = [
-  { id: 'BAC1-B-S1', label: 'បរិញ្ញាបត្រ+១ ក្រុម ខ • ឆមាសទី ១', cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤' },
-  { id: '12P2-A-S1', label: 'ថ្នាក់បឋម ១២+២ ក្រុម ក • ឆមាសទី ១', cohort: 'ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤' },
-  { id: '12P2-B-S1', label: 'ថ្នាក់បឋម ១២+២ ក្រុម ខ • ឆមាសទី ១', cohort: 'ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤' },
-  { id: '12P2-A-S2', label: 'ថ្នាក់បឋម ១២+២ ក្រុម ក • ឆមាសទី ២', cohort: 'ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤' }
+let TRAINEE_STREAMS = [
+  { id: 'default', label: 'ថ្នាក់ទូទៅ', cohort: 'ថ្នាក់ទូទៅ' }
 ];
 let currentStreamIndex = 0;
 
+function syncTraineeStreams() {
+  const classes = getAllSystemClasses();
+  if (classes.length > 0) {
+    TRAINEE_STREAMS = classes.map((cls, idx) => ({
+      id: `stream-${idx}`,
+      label: `${cls} • ឆមាសទី ១`,
+      cohort: cls
+    }));
+  } else {
+    TRAINEE_STREAMS = [{ id: 'default', label: 'ថ្នាក់ទូទៅ', cohort: 'ថ្នាក់ទូទៅ' }];
+  }
+  if (currentStreamIndex >= TRAINEE_STREAMS.length) {
+    currentStreamIndex = 0;
+  }
+}
+window.syncTraineeStreams = syncTraineeStreams;
+
 let KTPTTC_ALL_SUBJECTS = [
-  { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", credits: 3, trainer: "សាស្ត្រាចារ្យ ហេង សំណាង" },
-  { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", credits: 2, trainer: "លោកស្រី ម៉ៅ សុភា" },
-  { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", credits: 3, trainer: "លោកគ្រូ យឹម វណ្ណា" },
-  { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", credits: 3, trainer: "លោកស្រី ជា រចនា" },
-  { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: "លោកគ្រូ ស៊ុយ សូលីដា" },
-  { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", credits: 2, trainer: "សាស្ត្រាចារ្យ ហេង សំណាង" },
-  { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "លោកគ្រូ យឹម វណ្ណា" },
-  { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, trainer: "លោកគ្រូ ស៊ុយ សូលីដា" }
+  { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", credits: 3, trainer: "" },
+  { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", credits: 2, trainer: "" },
+  { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", credits: 3, trainer: "" },
+  { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", credits: 3, trainer: "" },
+  { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: "" },
+  { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", credits: 2, trainer: "" },
+  { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "" },
+  { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, trainer: "" }
 ];
 
 function syncAllSubjects() {
@@ -2436,11 +2488,6 @@ function getAllSystemClasses() {
   (stmsData.trainees || []).forEach(t => {
     if (t.className && typeof t.className === 'string' && t.className.trim()) classSet.add(t.className.trim());
   });
-
-  // Default standard classes if empty
-  if (classSet.size === 0) {
-    ['ថ្នាក់បឋម ១២+២ ក្រុម ក', 'ថ្នាក់បឋម ១២+២ ក្រុម ខ', 'ថ្នាក់បឋម ១២+៤ ក្រុម ក', 'ថ្នាក់បឋម ១២+៤ ក្រុម ខ', 'បរិញ្ញាបត្រ+១ ក្រុម ក', 'បរិញ្ញាបត្រ+១ ក្រុម ខ'].forEach(c => classSet.add(c));
-  }
 
   return Array.from(classSet);
 }
@@ -2934,75 +2981,33 @@ function openTraineeTimetableModal() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">ចន្ទ</td>
-                  <td>07:30 - 09:00</td>
-                  <td><strong>គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
-                  <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
-                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
-                </tr>
-                <tr>
-                  <td>09:15 - 10:45</td>
-                  <td><strong>វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង</strong></td>
-                  <td>លោកស្រី ជា រចនា</td>
-                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
-                </tr>
-
-                <tr>
-                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">អង្គារ</td>
-                  <td>07:30 - 09:00</td>
-                  <td><strong>វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម</strong></td>
-                  <td>លោកគ្រូ យឹម វណ្ណា</td>
-                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
-                </tr>
-                <tr>
-                  <td>09:15 - 10:45</td>
-                  <td><strong>បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)</strong></td>
-                  <td>លោកគ្រូ ស៊ុយ សូលីដា</td>
-                  <td><span class="badge badge-present">បន្ទប់កុំព្យូទ័រ</span></td>
-                </tr>
-
-                <tr>
-                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">ពុធ</td>
-                  <td>07:30 - 09:00</td>
-                  <td><strong>ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ</strong></td>
-                  <td>លោកស្រី ម៉ៅ សុភា</td>
-                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
-                </tr>
-                <tr>
-                  <td>13:30 - 15:00</td>
-                  <td><strong>ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)</strong></td>
-                  <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
-                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
-                </tr>
-
-                <tr>
-                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">ព្រហស្បតិ៍</td>
-                  <td>07:30 - 09:00</td>
-                  <td><strong>បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍</strong></td>
-                  <td>លោកគ្រូ ស៊ុយ សូលីដា</td>
-                  <td><span class="badge badge-present">បន្ទប់កុំព្យូទ័រ</span></td>
-                </tr>
-                <tr>
-                  <td>09:15 - 10:45</td>
-                  <td><strong>គរុកោសល្យទូទៅ (អនុវត្តវិធីសាស្ត្របង្រៀន)</strong></td>
-                  <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
-                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
-                </tr>
-
-                <tr>
-                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">សុក្រ</td>
-                  <td>07:30 - 10:30</td>
-                  <td><strong>ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)</strong></td>
-                  <td>លោកគ្រូ យឹម វណ្ណា</td>
-                  <td><span class="badge badge-late">សាលាបឋមអនុវត្តន៍</span></td>
-                </tr>
-                <tr>
-                  <td>14:00 - 16:30</td>
-                  <td><strong>សិក្ខាសាលាឆ្លុះបញ្ចាំងគរុកោសល្យ និងតាក់តែងកិច្ចតែងការ</strong></td>
-                  <td>ក្រុមគ្រូឧទ្ទេស KTPTTC</td>
-                  <td><span class="badge badge-published">សាលប្រជុំធំ</span></td>
-                </tr>
+                ${(() => {
+                  const timetableEntries = (stmsData.timetables || []);
+                  let rows = '';
+                  timetableEntries.forEach(tb => {
+                    (tb.days || []).forEach(d => {
+                      (d.slots || []).forEach((sl, idx) => {
+                        rows += `
+                          <tr>
+                            ${idx === 0 ? `<td rowspan="${d.slots.length}" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">${d.day || ''}</td>` : ''}
+                            <td>${sl.period || ''}</td>
+                            <td><strong>${sl.subject || ''}</strong></td>
+                            <td>${sl.trainer || 'គ្រូឧទ្ទេស'}</td>
+                            <td><span class="badge badge-published">${sl.room || tb.room || 'បន្ទប់រៀន'}</span></td>
+                          </tr>
+                        `;
+                      });
+                    });
+                  });
+                  return rows || `
+                    <tr>
+                      <td colspan="5" style="text-align:center; padding:36px; color:#94a3b8;">
+                        <i class="fas fa-calendar-times" style="font-size:2rem; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
+                        មិនទាន់មានកាលវិភាគបង្រៀននៅឡើយទេ
+                      </td>
+                    </tr>
+                  `;
+                })()}
               </tbody>
             </table>
           </div>
@@ -3021,14 +3026,7 @@ function openTraineeTimetableModal() {
 // --------------------------------------------------------------------------
 // 3. HUB MODAL: វីដេអូ & មេរៀន E-LEARNING (PEDAGOGICAL VIDEO HUB)
 // --------------------------------------------------------------------------
-const KTPTTC_VIDEO_LESSONS = [
-  { id: "VID-01", subject: "KHM-104", category: "ភាសាខ្មែរ", title: "បច្ចេកទេសបង្រៀនអំណានដំបូងតាមវិធីសាស្ត្រសូរសំឡេង (Phonics)", trainer: "លោកស្រី ជា រចនា", duration: "៣៥ នាទី", views: 248, desc: "វិធីសាស្ត្របង្រៀនព្យញ្ជនៈ ស្រៈ និងការប្រកបពាក្យតាមសូរសំឡេងសម្រាប់សិស្សថ្នាក់ទី១ និងទី២។" },
-  { id: "VID-02", subject: "MTH-103", category: "គណិតវិទ្យា", title: "ការអនុវត្តកិច្ចតែងការបង្រៀនគណិតវិទ្យាថ្នាក់ទី ១ ដល់ទី ៣", trainer: "លោកគ្រូ យឹម វណ្ណា", duration: "៤២ នាទី", views: 310, desc: "ការប្រើប្រាស់ឧបករណ៍រូបវន្ត (Manipulatives) ដើម្បីពន្យល់ពីគោលគំនិតបូកដក និងប្រមាណវិធីគណិតវិទ្យា។" },
-  { id: "VID-03", subject: "PED-101", category: "គរុកោសល្យ", title: "ការបង្កើត និងប្រើប្រាស់ឧបករណ៍បង្រៀនពីវត្ថុធាតុក្នុងមូលដ្ឋាន", trainer: "សាស្ត្រាចារ្យ ហេង សំណាង", duration: "២៨ នាទី", views: 420, desc: "ការកែច្នៃសម្ភារក្នុងស្រុកសម្រាប់បម្រើឱ្យសកម្មភាពបង្រៀនសកម្មបែបសន្សំសំចៃ និងមានប្រសិទ្ធភាព។" },
-  { id: "VID-04", subject: "ICT-105", category: "ICT", title: "ការប្រើប្រាស់ ICT និងស្លាយបង្រៀនអន្តរកម្មក្នុងថ្នាក់បឋម", trainer: "លោកគ្រូ ស៊ុយ សូលីដា", duration: "៣០ នាទី", views: 195, desc: "ការប្រើប្រាស់ Canva, Google Slides និង PowerPoint ដើម្បីបង្កើតស្លាយបង្រៀនរស់រវើក។" },
-  { id: "VID-05", subject: "PSY-102", category: "ចិត្តវិទ្យា", title: "ចិត្តវិទ្យាគរុកោសល្យ និងការគ្រប់គ្រងថ្នាក់រៀនបែបវិជ្ជមាន", trainer: "លោកស្រី ម៉ៅ សុភា", duration: "៣៨ នាទី", views: 275, desc: "ការដោះស្រាយអាកប្បកិរិយារបស់កុមារ និងការលើកទឹកចិត្តឱ្យសិស្សចូលរួមសកម្មភាពដោយភាពរីករាយ។" },
-  { id: "VID-06", subject: "RES-106", category: "ការស្រាវជ្រាវ", title: "វិធីសាស្ត្រធ្វើការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", trainer: "សាស្ត្រាចារ្យ ហេង សំណាង", duration: "៤៥ នាទី", views: 180, desc: "ជំហានក្នុងការកំណត់បញ្ហា ការប្រមូលទិន្នន័យ និងការកែលម្អការបង្រៀនជាប្រចាំ។" }
-];
+const KTPTTC_VIDEO_LESSONS = [];
 
 function openTraineeLessonsModal(activeCategory = 'all') {
   const teacherVideos = (stmsData.videoLessons || []).map(v => ({
@@ -3038,7 +3036,7 @@ function openTraineeLessonsModal(activeCategory = 'all') {
     title: v.title,
     trainer: v.trainer || 'គ្រូឧទ្ទេស',
     duration: v.duration || '២០ នាទី',
-    views: v.views || 18,
+    views: v.views || 0,
     desc: v.desc || `មេរៀនវីដេអូបង្រៀន Upload ដោយ ${v.trainer || 'គ្រូឧទ្ទេស'} (${v.date || ''})`,
     isTeacherUpload: true
   }));
@@ -3076,7 +3074,13 @@ function openTraineeLessonsModal(activeCategory = 'all') {
           </div>
 
           <div style="display:flex; flex-direction:column; gap:12px;">
-            ${filtered.map(v => `
+            ${filtered.length === 0 ? `
+              <div style="text-align:center; padding:40px 20px; color:#94a3b8; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
+                <i class="fas fa-video-slash" style="font-size:2.4rem; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+                <div style="font-weight:600; font-size:0.95rem; color:#64748b;">មិនទាន់មានវីដេអូបង្រៀនក្នុងផ្នែកនេះទេ</div>
+                <div style="font-size:0.8rem; margin-top:4px;">គ្រូឧទ្ទេសអាចបញ្ចូលវីដេអូបង្រៀនថ្មីពីផ្ទាំងគ្រប់គ្រងមុខវិជ្ជា</div>
+              </div>
+            ` : filtered.map(v => `
               <div style="display:flex; gap:16px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center; transition:all 0.2s;" onmouseover="this.style.borderColor='#fdba74'" onmouseout="this.style.borderColor='var(--border-color)'">
                 <div style="width:96px; height:68px; border-radius:10px; background:linear-gradient(135deg, #09204a 0%, #1e3a8a 100%); display:flex; align-items:center; justify-content:center; color:#ffffff; flex-shrink:0; position:relative; cursor:pointer;" onclick="playTraineeVideo('${v.id}')">
                   <i class="fas fa-play" style="font-size:1.4rem; color:#f97316;"></i>
@@ -3195,14 +3199,7 @@ function playTraineeVideo(id) {
 // --------------------------------------------------------------------------
 // 4. HUB MODAL: សៀវភៅ & បណ្ណាល័យឌីជីថល (DIGITAL LIBRARY KTPTTC)
 // --------------------------------------------------------------------------
-const KTPTTC_DIGITAL_BOOKS = [
-  { id: "BK-01", category: "សៀវភៅគរុកោសល្យ", title: "សៀវភៅគរុកោសល្យទូទៅសម្រាប់គរុសិស្សបឋម ១២+២", author: "ក្រសួងអប់រំ យុវជន និងកីឡា (MoEYS)", pages: 240, size: "14.5 MB", previewText: "មាតិកា៖ ជំពូកទី ១ ទ្រឹស្ដីនៃការបង្រៀន និងរៀន, ជំពូកទី ២ ការរៀបចំកិច្ចតែងការបង្រៀន, ជំពូកទី ៣ ការគ្រប់គ្រងថ្នាក់រៀនបែបស្ថាបនានិយម..." },
-  { id: "BK-02", category: "សៀវភៅណែនាំគ្រូ", title: "សៀវភៅណែនាំគ្រូបង្រៀនភាសាខ្មែរ ថ្នាក់ទី ១ ដល់ទី ៦", author: "នាយកដ្ឋានអភិវឌ្ឍកម្មវិធីសិក្សា", pages: 310, size: "18.2 MB", previewText: "គោលបំណង៖ ណែនាំអំពីវិធីសាស្ត្របង្រៀនអំណានដំបូង ការសរសេរតាមអាន និងការយល់ដឹងពីអត្ថបទ..." },
-  { id: "BK-03", category: "សៀវភៅគោល", title: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋមសិក្សា (STEM Edition)", author: "គណៈកម្មការគណិតវិទ្យា KTPTTC", pages: 185, size: "12.0 MB", previewText: "ការបង្រៀនប្រមាណវិធីគណិតវិទ្យា ការដោះស្រាយចំណោទ និងការប្រើប្រាស់ឧបករណ៍បង្រៀនអន្តរកម្ម..." },
-  { id: "BK-04", category: "សៀវភៅគរុកោសល្យ", title: "ចិត្តវិទ្យាគរុកោសល្យ និងការគ្រប់គ្រងថ្នាក់រៀនបែបវិជ្ជមាន", author: "វិទ្យាស្ថានជាតិអប់រំ (NIE)", pages: 215, size: "16.1 MB", previewText: "ទ្រឹស្ដីនៃការលូតលាស់របស់កុមារ ការលើកទឹកចិត្ត និងដំណោះស្រាយចំពោះវិបត្តិអាកប្បកិរិយាក្នុងថ្នាក់..." },
-  { id: "BK-05", category: "ICT & បច្ចេកវិទ្យា", title: "សៀវភៅណែនាំការប្រើប្រាស់ ICT ក្នុងការបង្រៀនបឋមសិក្សា", author: "នាយកដ្ឋានបច្ចេកវិទ្យាព័ត៌មាន MoEYS", pages: 160, size: "11.8 MB", previewText: "ការទាញយកប្រយោជន៍ពីឧបករណ៍បច្ចេកវិទ្យា កម្មវិធីបង្រៀនអន្តរកម្ម និងការបង្កើតមេរៀនពហុព័ត៌មាន..." },
-  { id: "BK-06", category: "ការស្រាវជ្រាវ", title: "កម្រងប្រធានបទស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research Toolkit)", author: "ការិយាល័យស្រាវជ្រាវ KTPTTC", pages: 140, size: "9.5 MB", previewText: "គំរូនៃរបាយការណ៍ស្រាវជ្រាវសកម្មភាព ឧបករណ៍វាស់វែង និងករណីសិក្សានៅសាលាបឋមអនុវត្តន៍..." }
-];
+const KTPTTC_DIGITAL_BOOKS = [];
 
 function openTraineeLibraryModal() {
   let modalHtml = `
@@ -3227,7 +3224,13 @@ function openTraineeLibraryModal() {
           </div>
 
           <div id="digitalBookList" style="display:flex; flex-direction:column; gap:12px;">
-            ${KTPTTC_DIGITAL_BOOKS.map(b => `
+            ${KTPTTC_DIGITAL_BOOKS.length === 0 ? `
+              <div style="text-align:center; padding:40px 20px; color:#94a3b8; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
+                <i class="fas fa-book" style="font-size:2.4rem; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+                <div style="font-weight:600; font-size:0.95rem; color:#64748b;">មិនទាន់មានសៀវភៅក្នុងបណ្ណាល័យឌីជីថលនៅឡើយទេ</div>
+                <div style="font-size:0.8rem; margin-top:4px;">រដ្ឋបាល ឬបណ្ណារក្សអាចបញ្ចូលសៀវភៅ ឬឯកសារអេឡិចត្រូនិចក្នុងប្រព័ន្ធ</div>
+              </div>
+            ` : KTPTTC_DIGITAL_BOOKS.map(b => `
               <div class="book-card-item" style="display:flex; gap:16px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
                 <div style="width:58px; height:74px; border-radius:8px; background:linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); display:flex; align-items:center; justify-content:center; color:#15803d; font-size:1.8rem; flex-shrink:0; border:1px solid #86efac;">
                   <i class="fas fa-book"></i>
@@ -3268,7 +3271,8 @@ function filterDigitalBooks(q) {
 }
 
 function readTraineeBook(id) {
-  const b = KTPTTC_DIGITAL_BOOKS.find(item => item.id === id) || KTPTTC_DIGITAL_BOOKS[0];
+  const b = KTPTTC_DIGITAL_BOOKS.find(item => item.id === id) || (stmsData.books || []).find(item => item.id === id);
+  if (!b) return showToast('រកមិនឃើញសៀវភៅនេះទេ', 'warning');
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="bookReaderModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -3325,34 +3329,7 @@ function readTraineeBook(id) {
 // --------------------------------------------------------------------------
 // 5. HUB MODAL: វេទិកា & សំណើ (DISCUSSION FORUM & REQUESTS)
 // --------------------------------------------------------------------------
-let KTPTTC_FORUM_POSTS = [
-  {
-    id: "POST-01",
-    author: "យូសុះ ស៊ីលាល",
-    role: "គរុសិស្ស",
-    avatar: "👨‍🎓",
-    time: "២ ម៉ោងមុន",
-    category: "វិធីសាស្ត្របង្រៀន",
-    title: "តើវិធីសាស្ត្របង្រៀនតាមបែប 5E អនុវត្តយ៉ាងដូចម្តេចក្នុងមុខវិជ្ជាវិទ្យាសាស្ត្របឋម?",
-    content: "ខ្ញុំបាទកំពុងរៀបចំកិច្ចតែងការបង្រៀនស្តីពីប្រធានបទ 'វដ្តនៃទឹក'។ តើលោកគ្រូអ្នកគ្រូអាចផ្តល់យោបល់បន្ថែមពីដំណាក់កាល Engage និង Explore បានទេ?",
-    replies: [
-      { author: "សាស្ត្រាចារ្យ ហេង សំណាង", role: "គ្រូឧទ្ទេស", text: "សម្រាប់ដំណាក់កាល Engage គ្រូអាចចាក់វីដេអូខ្លីពីភ្លៀង ឬយកកែវទឹកកកមកបង្ហាញសិស្ស ដើម្បីឱ្យកុមារសង្កេតឃើញតំណក់ទឹកនៅជញ្ជាំងកែវ!", time: "១ ម៉ោងមុន" }
-    ]
-  },
-  {
-    id: "POST-02",
-    author: "កែវ សុជាតា",
-    role: "គរុសិស្ស",
-    avatar: "👩‍🎓",
-    time: "១ ថ្ងៃមុន",
-    category: "ភាសាខ្មែរ",
-    title: "ការរៀបចំកិច្ចតែងការបង្រៀនអំណានដំបូង សម្រាប់សិស្សរៀនយឺត",
-    content: "តើមានបច្ចេកទេសអ្វីខ្លះដើម្បីជួយសិស្សដែលពិបាកក្នុងការផ្សំសូរ និងប្រកបពាក្យព្យញ្ជនៈពួក អ និង អ៊?",
-    replies: [
-      { author: "លោកស្រី ជា រចនា", role: "គ្រូឧទ្ទេស", text: "ត្រូវប្រើកាតអក្សរចល័ត (Letter Cards) និងអនុវត្តការអានជាគូ (Peer Reading) ជារៀងរាល់ព្រឹក។", time: "៥ ម៉ោងមុន" }
-    ]
-  }
-];
+let KTPTTC_FORUM_POSTS = [];
 
 function openTraineeForumModal(activeTab = 'forum') {
   let modalHtml = `
@@ -3408,7 +3385,13 @@ function openTraineeForumModal(activeTab = 'forum') {
 
             <!-- Posts Stream -->
             <div style="display:flex; flex-direction:column; gap:12px;">
-              ${KTPTTC_FORUM_POSTS.map(p => `
+              ${KTPTTC_FORUM_POSTS.length === 0 ? `
+                <div style="text-align:center; padding:36px; color:#94a3b8; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
+                  <i class="fas fa-comments" style="font-size:2.4rem; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+                  <div style="font-weight:600; font-size:0.95rem; color:#64748b;">មិនទាន់មានប្រធានបទពិភាក្សានៅឡើយទេ</div>
+                  <div style="font-size:0.8rem; margin-top:4px;">គរុសិស្ស និងគ្រូឧទ្ទេសអាចបង្កើតប្រធានបទពិភាក្សាថ្មីដោយចុចប៊ូតុងខាងលើ</div>
+                </div>
+              ` : KTPTTC_FORUM_POSTS.map(p => `
                 <div class="forum-thread-item">
                   <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                     <div style="display:flex; align-items:center; gap:10px;">
@@ -3914,40 +3897,9 @@ function openTraineeAttendanceModal() {
                   `;
                 }).join('') : `
                   <tr>
-                    <td>17/11/2026</td>
-                    <td><strong>គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
-                    <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
-                    <td><span class="badge badge-present">វត្តមាន</span></td>
-                  </tr>
-                  <tr>
-                    <td>16/11/2026</td>
-                    <td><strong>វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង</strong></td>
-                    <td>លោកស្រី ជា រចនា</td>
-                    <td><span class="badge badge-present">វត្តមាន</span></td>
-                  </tr>
-                  <tr>
-                    <td>14/11/2026</td>
-                    <td><strong>វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម</strong></td>
-                    <td>លោកគ្រូ យឹម វណ្ណា</td>
-                    <td><span class="badge badge-present">វត្តមាន</span></td>
-                  </tr>
-                  <tr>
-                    <td>12/11/2026</td>
-                    <td><strong>បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)</strong></td>
-                    <td>លោកគ្រូ ស៊ុយ សូលីដា</td>
-                    <td><span class="badge badge-present">វត្តមាន</span></td>
-                  </tr>
-                  <tr>
-                    <td>09/11/2026</td>
-                    <td><strong>ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ</strong></td>
-                    <td>លោកស្រី ម៉ៅ សុភា</td>
-                    <td><span class="badge badge-permission">មានច្បាប់</span></td>
-                  </tr>
-                  <tr>
-                    <td>06/11/2026</td>
-                    <td><strong>ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន</strong></td>
-                    <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
-                    <td><span class="badge badge-present">វត្តមាន</span></td>
+                    <td colspan="4" style="text-align:center; padding:24px; color:#94a3b8;">
+                      មិនទាន់មានកំណត់ត្រាវត្តមាននៅឡើយទេ
+                    </td>
                   </tr>
                 `}
               </tbody>
@@ -4479,28 +4431,9 @@ function renderTraineeAttendanceView(container) {
                 `;
               }).join('') : `
                 <tr>
-                  <td>17/11/2026</td>
-                  <td><strong>គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
-                  <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
-                  <td><span class="badge badge-present">វត្តមាន</span></td>
-                </tr>
-                <tr>
-                  <td>16/11/2026</td>
-                  <td><strong>វិធីសាស្ត្របង្រៀនភាសាខ្មែរ</strong></td>
-                  <td>លោកស្រី ជា រចនា</td>
-                  <td><span class="badge badge-present">វត្តមាន</span></td>
-                </tr>
-                <tr>
-                  <td>14/11/2026</td>
-                  <td><strong>វិធីសាស្ត្របង្រៀនគណិតវិទ្យា</strong></td>
-                  <td>លោកគ្រូ យឹម វណ្ណា</td>
-                  <td><span class="badge badge-present">វត្តមាន</span></td>
-                </tr>
-                <tr>
-                  <td>12/11/2026</td>
-                  <td><strong>បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)</strong></td>
-                  <td>លោកគ្រូ ស៊ុយ សូលីដា</td>
-                  <td><span class="badge badge-present">វត្តមាន</span></td>
+                  <td colspan="4" style="text-align:center; padding:24px; color:#94a3b8;">
+                    មិនទាន់មានកំណត់ត្រាវត្តមាននៅឡើយទេ
+                  </td>
                 </tr>
               `}
             </tbody>
@@ -6903,273 +6836,23 @@ function recalculateScores() {
 // TEACHER / TRAINER PORTAL & REAL-TIME SYNCHRONIZED ACADEMIC CONTROLLERS
 // ==========================================================================
 
-// 1. Ensure Synced Collections (Cohort, Homework, Lessons, Videos, Attendance)
+// 1. Ensure Synced Collections (No auto-generated mock data)
 function ensureSyncedCollections() {
   if (!stmsData) stmsData = {};
   
-  // Seed Trainee Cohort if empty so teacher can immediately grade, assign, and take attendance
-  if (!Array.isArray(stmsData.trainees) || stmsData.trainees.length === 0) {
-    stmsData.trainees = [
-      {
-        id: 'ktpttc-2026-st-001',
-        roll: 1,
-        nameKh: 'យូសុះ ស៊ីលាល',
-        nameEn: 'Yousoh Silal',
-        gender: 'ប្រុស',
-        dob: '2001-11-16',
-        birthplace: { village: 'ពង្រ ២', commune: 'ពង្រ', district: 'ឆ្លូង', province: 'ក្រចេះ' },
-        parents: {
-          fatherName: 'កាជឹម យូសុះ',
-          fatherJob: 'កសិករ',
-          motherName: 'ម៉ាន',
-          motherJob: 'មេផ្ទះ',
-          guardianName: '',
-          guardianJob: '',
-          phone: '098765432'
-        },
-        parentPhone: '098765432',
-        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
-        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុបង្រៀន',
-        status: 'កំពុងសិក្សា',
-        phone: '098 765 432',
-        email: 'yousoh.silal@student.ktpttc.edu.kh',
-        avatar: '👨‍🎓',
-        attendanceSummary: { rate: 100, present: 48, permission: 0, late: 0, absent: 0 },
-        scores: {
-          'PED-101': { total: 92, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 28, final: 44 },
-          'PSY-102': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 27, final: 43 },
-          'MTH-103': { total: 95, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, final: 46 },
-          'KHM-104': { total: 88, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, final: 43 },
-          'ICT-105': { total: 90, grade: 'A', status: 'published', homework: 9, attendance: 10, monthly: 27, final: 44 },
-          'RES-106': { total: 91, grade: 'A', status: 'published', homework: 10, attendance: 9, monthly: 27, final: 45 },
-          'PRAC-107': { total: 97, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, final: 48 },
-          'COM-108': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, final: 44 }
-        }
-      },
-      {
-        id: 'ktpttc-2026-st-002',
-        roll: 2,
-        nameKh: 'សុខ ចិន្តា',
-        nameEn: 'Sok Chenda',
-        gender: 'ស្រី',
-        dob: '2002-03-12',
-        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
-        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុបង្រៀន',
-        status: 'កំពុងសិក្សា',
-        phone: '012 345 678',
-        email: 'chenda.sok@student.ktpttc.edu.kh',
-        avatar: '👩‍🎓',
-        attendanceSummary: { rate: 96, present: 46, permission: 2, late: 0, absent: 0 },
-        scores: {
-          'PED-101': { total: 88, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, final: 43 },
-          'PSY-102': { total: 86, grade: 'B+', status: 'published', homework: 8, attendance: 10, monthly: 26, final: 42 }
-        }
-      },
-      {
-        id: 'ktpttc-2026-st-003',
-        roll: 3,
-        nameKh: 'ចាន់ ថា',
-        nameEn: 'Chan Tha',
-        gender: 'ប្រុស',
-        dob: '2001-08-20',
-        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
-        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុបង្រៀន',
-        status: 'កំពុងសិក្សា',
-        phone: '097 888 999',
-        avatar: '👨‍🎓',
-        attendanceSummary: { rate: 92, present: 44, permission: 2, late: 1, absent: 1 },
-        scores: {
-          'PED-101': { total: 82, grade: 'B', status: 'published', homework: 8, attendance: 9, monthly: 25, final: 40 }
-        }
-      },
-      {
-        id: 'ktpttc-2026-st-004',
-        roll: 4,
-        nameKh: 'ហេង វិសាល',
-        nameEn: 'Heng Visal',
-        gender: 'ប្រុស',
-        dob: '2000-12-05',
-        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
-        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុបង្រៀន',
-        status: 'កំពុងសិក្សា',
-        phone: '088 123 456',
-        avatar: '👨‍🎓',
-        attendanceSummary: { rate: 100, present: 48, permission: 0, late: 0, absent: 0 },
-        scores: {
-          'PED-101': { total: 94, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, final: 45 }
-        }
-      },
-      {
-        id: 'ktpttc-2026-st-005',
-        roll: 5,
-        nameKh: 'លី ម៉ារីណា',
-        nameEn: 'Ly Marina',
-        gender: 'ស្រី',
-        dob: '2002-05-18',
-        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
-        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុបង្រៀន',
-        status: 'កំពុងសិក្សា',
-        phone: '070 456 789',
-        avatar: '👩‍🎓',
-        attendanceSummary: { rate: 94, present: 45, permission: 3, late: 0, absent: 0 },
-        scores: {
-          'PED-101': { total: 86, grade: 'B+', status: 'published', homework: 9, attendance: 9, monthly: 26, final: 42 }
-        }
-      },
-      {
-        id: 'ktpttc-2026-st-006',
-        roll: 6,
-        nameKh: 'កែវ សម្បត្តិ',
-        nameEn: 'Keo Sambath',
-        gender: 'ប្រុស',
-        dob: '2001-09-09',
-        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
-        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុបង្រៀន',
-        status: 'កំពុងសិក្សា',
-        phone: '011 223 344',
-        avatar: '👨‍🎓',
-        attendanceSummary: { rate: 98, present: 47, permission: 1, late: 0, absent: 0 },
-        scores: {
-          'PED-101': { total: 90, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 27, final: 43 }
-        }
-      }
-    ];
-  } else {
-    // Guarantee Yousoh Silal is present in roster
-    const yousoh = stmsData.trainees.find(t => t.id === 'ktpttc-2026-st-001' || t.nameKh === 'យូសុះ ស៊ីលាល');
-    if (!yousoh) {
-      stmsData.trainees.unshift({
-        id: 'ktpttc-2026-st-001',
-        roll: 1,
-        nameKh: 'យូសុះ ស៊ីលាល',
-        nameEn: 'Yousoh Silal',
-        gender: 'ប្រុស',
-        dob: '2001-11-16',
-        birthplace: { village: 'ពង្រ ២', commune: 'ពង្រ', district: 'ឆ្លូង', province: 'ក្រចេះ' },
-        parents: {
-          fatherName: 'កាជឹម យូសុះ',
-          fatherJob: 'កសិករ',
-          motherName: 'ម៉ាន',
-          motherJob: 'មេផ្ទះ',
-          guardianName: '',
-          guardianJob: '',
-          phone: '098765432'
-        },
-        parentPhone: '098765432',
-        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
-        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុបង្រៀន',
-        status: 'កំពុងសិក្សា',
-        phone: '098 765 432',
-        avatar: '👨‍🎓',
-        attendanceSummary: { rate: 100, present: 48, permission: 0, late: 0, absent: 0 },
-        scores: {
-          'PED-101': { total: 92, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 28, final: 44 }
-        }
-      });
-    } else {
-      if (!yousoh.parents) {
-        yousoh.parents = { fatherName: 'កាជឹម យូសុះ', fatherJob: 'កសិករ', motherName: 'ម៉ាន', motherJob: 'មេផ្ទះ', guardianName: '', guardianJob: '', phone: '098765432' };
-      }
-      if (!yousoh.birthplace) {
-        yousoh.birthplace = { village: 'ពង្រ ២', commune: 'ពង្រ', district: 'ឆ្លូង', province: 'ក្រចេះ' };
-      }
-      if (!yousoh.parentPhone) yousoh.parentPhone = '098765432';
-    }
-  }
+  if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+  if (!Array.isArray(stmsData.users)) stmsData.users = [];
+  if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
+  if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
+  if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
+  if (!Array.isArray(stmsData.studentRequests)) stmsData.studentRequests = [];
+  if (!Array.isArray(stmsData.attendanceSessions)) stmsData.attendanceSessions = [];
+  if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
+  if (!Array.isArray(stmsData.customClasses)) stmsData.customClasses = [];
 
-  // Initial Teacher Assignments
-  if (!Array.isArray(stmsData.assignments)) {
-    stmsData.assignments = [
-      {
-        id: "HW-101",
-        subjectCode: "PED-101",
-        subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
-        title: "រៀបចំកិច្ចតែងការបង្រៀនគំរូ ៥ ជំហាន (Lesson Plan)",
-        description: "សូមគរុសនិស្សិតរៀបចំកិច្ចតែងការបង្រៀនគំរូ ៥ ជំហានតាមស្តង់ដារ MoEYS សម្រាប់មុខវិជ្ជាភាសាខ្មែរ ឬគណិតវិទ្យាថ្នាក់ទី ២ ដោយបញ្ជាក់សម្ភារឧបទេស និងសកម្មភាពសិស្សឱ្យបានច្បាស់លាស់។",
-        dueDate: "2026-11-28",
-        points: 10,
-        attachment: "KTPTTC_Lesson_Plan_Template_MoEYS.docx",
-        trainerName: "សាស្ត្រាចារ្យ ហេង សំណាង",
-        createdAt: "2026-11-17",
-        status: "active"
-      },
-      {
-        id: "HW-102",
-        subjectCode: "MTH-103",
-        subjectName: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម",
-        title: "ការផលិតសម្ភារឧបទេសបង្រៀនប្រមាណវិធីបូក-ដក",
-        description: "ច្នៃប្រឌិតសម្ភារឧបទេសបង្រៀនគណិតវិទ្យាដោយប្រើប្រាស់វត្ថុធាតុដើមក្នុងមូលដ្ឋាន សម្រាប់ជួយសិស្សបឋមរៀនរាប់ និងធ្វើប្រមាណវិធីបូកដកលេខ ២ ខ្ទង់។",
-        dueDate: "2026-12-02",
-        points: 10,
-        attachment: "Math_Manipulatives_Guidelines.pdf",
-        trainerName: "លោកគ្រូ យឹម វណ្ណា",
-        createdAt: "2026-11-17",
-        status: "active"
-      }
-    ];
-  }
-
-  // Initial Lessons & Slides Uploads
-  if (!Array.isArray(stmsData.lessons)) {
-    stmsData.lessons = [
-      {
-        id: "LSN-001",
-        subjectCode: "PED-101",
-        subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
-        title: "ជំពូកទី ១៖ ទ្រឹស្ដីនៃការបង្រៀន និងរៀនតាមបែបស្ថាបនានិយម (Constructivism)",
-        chapter: "ជំពូកទី ១",
-        description: "ឯកសារមេរៀនស្តីពីទ្រឹស្ដី Jean Piaget & Lev Vygotsky ក្នុងការអភិវឌ្ឍការគិតរបស់កុមារបឋមសិក្សា។",
-        fileUrl: "#",
-        fileName: "PED101_Chapter1_Constructivism_Summary.pdf",
-        uploadedBy: "សាស្ត្រាចារ្យ ហេង សំណាង",
-        date: "2026-11-15"
-      },
-      {
-        id: "LSN-002",
-        subjectCode: "PED-101",
-        subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
-        title: "ជំពូកទី ២៖ ការរៀបចំកិច្ចតែងការបង្រៀន (Lesson Plan) តាមស្តង់ដារក្រសួងអប់រំ",
-        chapter: "ជំពូកទី ២",
-        description: "ការណែនាំរៀបចំកិច្ចតែងការ ៥ ជំហាន និងការកំណត់វត្ថុបំណងវិជ្ជាសម្បទា បំណិនសម្បទា និងចរិយាសម្បទា។",
-        fileUrl: "#",
-        fileName: "PED101_Chapter2_LessonPlan_MoEYS.pdf",
-        uploadedBy: "សាស្ត្រាចារ្យ ហេង សំណាង",
-        date: "2026-11-16"
-      }
-    ];
-  }
-
-  // Initial Video Lessons Uploads
-  if (!Array.isArray(stmsData.videoLessons)) {
-    stmsData.videoLessons = [
-      {
-        id: "VID-001",
-        subjectCode: "PED-101",
-        subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
-        title: "វិធីសាស្ត្របង្រៀនតាមបែបសកម្ម (Active Learning) ក្នុងថ្នាក់រៀនបឋម",
-        topic: "វិធីសាស្ត្របង្រៀន",
-        videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        duration: "18:45 នាទី",
-        trainer: "សាស្ត្រាចារ្យ ហេង សំណាង",
-        category: "គរុកោសល្យ",
-        date: "2026-11-16"
-      }
-    ];
-  }
-
-  if (!Array.isArray(stmsData.attendanceSessions)) {
-    stmsData.attendanceSessions = [];
-  }
-
-  // Purge Mock Faculty Teachers (USR-TRN-003 through USR-TRN-008 and unapproved mock data)
+  // Purge Mock Faculty Teachers (USR-TRN-002 through USR-TRN-008 and unapproved mock data)
   const mockTeacherIds = [
+    'USR-TRN-002',
     'USR-TRN-003',
     'USR-TRN-004',
     'USR-TRN-005',
@@ -7178,15 +6861,16 @@ function ensureSyncedCollections() {
     'USR-TRN-008'
   ];
   const mockTeacherNames = [
+    'លោកស្រី ជា រចនា',
     'លោកស្រី ម៉ៅ សុភា',
     'លោក គង់ វិចិត្រ',
     'លោក អ៊ុំ សុវណ្ណ',
     'លោក ព្រុំ សម្បត្តិ',
+    'លោក ព្រំ សម្បត្តិ',
     'លោកស្រី នួន ចរិយា',
     'លោក ឡុង វិសិដ្ឋ'
   ];
 
-  if (!Array.isArray(stmsData.users)) stmsData.users = [];
   const beforeTeacherCount = stmsData.users.length;
   stmsData.users = stmsData.users.filter(u => {
     if (!u) return false;
@@ -7195,34 +6879,6 @@ function ensureSyncedCollections() {
   });
   if (stmsData.users.length !== beforeTeacherCount) {
     saveData();
-  }
-
-  // Seed Student Profile Update Requests
-  if (!Array.isArray(stmsData.studentRequests)) {
-    stmsData.studentRequests = [
-      {
-        id: "REQ-001",
-        traineeId: "ktpttc-2026-st-001",
-        traineeName: "យូសុះ ស៊ីលាល",
-        field: "លេខទូរស័ព្ទ & អ៊ីមែល",
-        oldValue: "098 765 432",
-        newValue: "098 765 999 / yousoh.academic@ktpttc.edu.kh",
-        reason: "បានប្តូរលេខទូរស័ព្ទថ្មីសម្រាប់ទាក់ទងការសិក្សា",
-        date: "2026-11-17",
-        status: "pending"
-      },
-      {
-        id: "REQ-002",
-        traineeId: "ktpttc-2026-st-003",
-        traineeName: "ចាន់ ថា",
-        field: "ទីកន្លែងកំណើត",
-        oldValue: "ក្រចេះ",
-        newValue: "ភូមិព្រែកកក់ ឃុំព្រែកកក់ ស្រុកក្រូចឆ្មារ ខេត្តត្បូងឃ្មុំ",
-        reason: "សុំកែសម្រួលទីកន្លែងកំណើតឱ្យត្រូវតាមសំបុត្រកំណើតច្បាប់ដើម",
-        date: "2026-11-16",
-        status: "pending"
-      }
-    ];
   }
 }
 
@@ -7256,16 +6912,16 @@ function getActiveTrainerProfile() {
 
   return {
     id: "USR-TRN-001",
-    nameKh: "សាស្ត្រាចារ្យ ហេង សំណាង",
-    nameEn: "Heng Samnang",
+    nameKh: "គ្រូឧទ្ទេស",
+    nameEn: "Trainer",
     username: "trainer",
     role: "trainer",
     roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-    email: "samnang.heng@ktpttc.edu.kh",
-    phone: "016 777 888",
+    email: "trainer@ktpttc.net",
+    phone: "",
     subject: "PED-101",
     subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
-    cohort: "ថ្នាក់បឋមសិក្សា ១២+២ ក្រុម ខ",
+    cohort: "",
     avatar: "👨‍🏫"
   };
 }
@@ -7411,7 +7067,7 @@ function renderTrainerPortalView(container) {
           </div>
           <div class="trainee-hero-text">
             <span class="trainee-hero-greeting">${greeting}</span>
-            <h1 class="trainee-hero-name">${tr.nameKh || 'សាស្ត្រាចារ្យ ហេង សំណាង'}</h1>
+            <h1 class="trainee-hero-name">${tr.nameKh || 'គ្រូឧទ្ទេស'}</h1>
             <div class="trainee-hero-badges">
               <span class="trainee-badge-pill role"><i class="fas fa-chalkboard-teacher"></i> ${tr.roleLabel || 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន'}</span>
               <span class="trainee-badge-pill class"><i class="fas fa-chalkboard"></i> ${activeStream.label.split(' • ')[0]}</span>
@@ -9622,13 +9278,13 @@ function getActiveAdminProfile() {
   }
   return (stmsData.users || []).find(u => u.role === 'admin') || {
     id: "USR-ADM-001",
-    nameKh: "លោក ឈន ប៊ុនថន",
-    nameEn: "Chhorn Bunthorn",
+    nameKh: "អ្នកគ្រប់គ្រងប្រព័ន្ធ",
+    nameEn: "System Administrator",
     username: "admin",
     role: "admin",
     roleLabel: "អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ",
-    email: "admin@ktpttc.edu.kh",
-    phone: "072 971 234",
+    email: "admin@ktpttc.net",
+    phone: "",
     avatar: "👨‍💼"
   };
 }
@@ -9705,7 +9361,7 @@ function renderAdminPortalView(container) {
           </div>
           <div class="trainee-hero-text">
             <span class="trainee-hero-greeting">${greeting}</span>
-            <h1 class="trainee-hero-name">${admin.nameKh || 'លោក ឈន ប៊ុនថន'}</h1>
+            <h1 class="trainee-hero-name">${admin.nameKh || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ'}</h1>
             <div class="trainee-hero-badges">
               <span class="trainee-badge-pill role"><i class="fas fa-user-shield"></i> ${admin.roleLabel || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ'}</span>
               <span class="trainee-badge-pill class"><i class="fas fa-university"></i> សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</span>
@@ -10947,54 +10603,34 @@ function openAdminTimetableModal() {
                 </tr>
               </thead>
               <tbody>
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                  <td style="padding:10px;"><strong>ថ្ងៃចន្ទ</strong></td>
-                  <td style="padding:10px;">០៧:៣០ - ០៩:០០</td>
-                  <td style="padding:10px;"><strong style="color:#1e3a8a;">ចិត្តវិទ្យាគរុកោសល្យ</strong></td>
-                  <td style="padding:10px;">លោកស្រី ម៉ៅ សុភា</td>
-                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
-                  <td style="padding:10px;">បន្ទប់ ១០១</td>
-                </tr>
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                  <td style="padding:10px;"><strong>ថ្ងៃចន្ទ</strong></td>
-                  <td style="padding:10px;">០៩:១៥ - ១០:៤៥</td>
-                  <td style="padding:10px;"><strong style="color:#1e3a8a;">គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
-                  <td style="padding:10px;">សាស្ត្រាចារ្យ ហេង សំណាង</td>
-                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
-                  <td style="padding:10px;">បន្ទប់ ២០២</td>
-                </tr>
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                  <td style="padding:10px;"><strong>ថ្ងៃអង្គារ</strong></td>
-                  <td style="padding:10px;">០៧:៣០ - ០៩:០០</td>
-                  <td style="padding:10px;"><strong style="color:#1e3a8a;">វិធីសាស្ត្របង្រៀនគណិតវិទ្យា</strong></td>
-                  <td style="padding:10px;">លោក គង់ វិចិត្រ</td>
-                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
-                  <td style="padding:10px;">បន្ទប់ ២០២</td>
-                </tr>
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                  <td style="padding:10px;"><strong>ថ្ងៃពុធ</strong></td>
-                  <td style="padding:10px;">០៧:៣០ - ០៩:០០</td>
-                  <td style="padding:10px;"><strong style="color:#1e3a8a;">ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន</strong></td>
-                  <td style="padding:10px;">លោក ព្រុំ សម្បត្តិ</td>
-                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
-                  <td style="padding:10px;">បន្ទប់ ២០២</td>
-                </tr>
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                  <td style="padding:10px;"><strong>ថ្ងៃព្រហស្បតិ៍</strong></td>
-                  <td style="padding:10px;">១៣:៣០ - ១៥:០០</td>
-                  <td style="padding:10px;"><strong style="color:#1e3a8a;">ការចុះកម្មសិក្សាគរុកោសល្យ (Practicum)</strong></td>
-                  <td style="padding:10px;">លោកស្រី នួន ចរិយា</td>
-                  <td style="padding:10px;">សាលាបឋមអនុវត្តន៍</td>
-                  <td style="padding:10px;">ទីវាលអនុវត្តន៍</td>
-                </tr>
-                <tr>
-                  <td style="padding:10px;"><strong>ថ្ងៃសុក្រ</strong></td>
-                  <td style="padding:10px;">០៧:៣០ - ០៩:០០</td>
-                  <td style="padding:10px;"><strong style="color:#1e3a8a;">វិធីសាស្ត្របង្រៀនភាសាខ្មែរ</strong></td>
-                  <td style="padding:10px;">លោកស្រី ជា រចនា</td>
-                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
-                  <td style="padding:10px;">បន្ទប់ ២០២</td>
-                </tr>
+                ${(() => {
+                  const timetables = stmsData.timetables || [];
+                  let rows = '';
+                  timetables.forEach(tb => {
+                    (tb.days || []).forEach(d => {
+                      (d.slots || []).forEach(sl => {
+                        rows += `
+                          <tr style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:10px;"><strong>${d.day}</strong></td>
+                            <td style="padding:10px;">${sl.period}</td>
+                            <td style="padding:10px;"><strong style="color:#1e3a8a;">${sl.subject}</strong></td>
+                            <td style="padding:10px;">${sl.trainer || 'គ្រូឧទ្ទេស'}</td>
+                            <td style="padding:10px;">${tb.className || 'ថ្នាក់រៀន'}</td>
+                            <td style="padding:10px;">${sl.room || tb.room || 'បន្ទប់រៀន'}</td>
+                          </tr>
+                        `;
+                      });
+                    });
+                  });
+                  return rows || `
+                    <tr>
+                      <td colspan="6" style="text-align:center; padding:32px; color:#94a3b8;">
+                        <i class="fas fa-calendar-times" style="font-size:2rem; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
+                        មិនទាន់មានកាលវិភាគបង្រៀនមេនៅឡើយទេ
+                      </td>
+                    </tr>
+                  `;
+                })()}
               </tbody>
             </table>
           </div>
@@ -12186,11 +11822,11 @@ function openProfileSettingsModal(activeTab = 'general') {
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
                   <label class="form-label" style="font-weight:700;">ឈ្មោះជាភាសាខ្មែរ <span style="color:#ef4444;">*</span></label>
-                  <input type="text" id="profNameKh" class="form-input" value="${user.nameKh || ''}" placeholder="ឧ. ${role==='trainer'?'សាស្ត្រាចារ្យ ហេង សំណាង':role==='admin'?'លោក ឈន ប៊ុនថន':'យូសុះ ស៊ីលាល'}" />
+                  <input type="text" id="profNameKh" class="form-input" value="${user.nameKh || ''}" placeholder="ឧ. ${role==='trainer'?'គ្រូឧទ្ទេស':role==='admin'?'អ្នកគ្រប់គ្រងប្រព័ន្ធ':'គរុសិស្ស'}" />
                 </div>
                 <div>
                   <label class="form-label" style="font-weight:700;">ឈ្មោះជាអក្សរឡាតាំង (Latin Name)</label>
-                  <input type="text" id="profNameEn" class="form-input" value="${user.nameEn || ''}" placeholder="ឧ. ${role==='trainer'?'Heng Samnang':role==='admin'?'Chhorn Bunthorn':'Yousoh Silal'}" />
+                  <input type="text" id="profNameEn" class="form-input" value="${user.nameEn || ''}" placeholder="ឧ. ${role==='trainer'?'Trainer':role==='admin'?'System Administrator':'Trainee'}" />
                 </div>
               </div>
 
@@ -12515,10 +12151,10 @@ function resetRoleProfile(role) {
     localStorage.removeItem('ktpttc_profile_trainer');
     const tr = (stmsData.users || []).find(u => u.role === 'trainer');
     if (tr) {
-      tr.nameKh = "សាស្ត្រាចារ្យ ហេង សំណាង";
-      tr.nameEn = "Heng Samnang";
-      tr.phone = "016 777 888";
-      tr.email = "samnang.heng@ktpttc.edu.kh";
+      tr.nameKh = "គ្រូឧទ្ទេស";
+      tr.nameEn = "Trainer";
+      tr.phone = "";
+      tr.email = "trainer@ktpttc.net";
       tr.avatar = "👨‍🏫";
       delete tr.photo;
     }
@@ -12526,10 +12162,10 @@ function resetRoleProfile(role) {
     localStorage.removeItem('ktpttc_profile_admin');
     const adm = (stmsData.users || []).find(u => u.role === 'admin');
     if (adm) {
-      adm.nameKh = "លោក ឈន ប៊ុនថន";
-      adm.nameEn = "Chhorn Bunthorn";
-      adm.phone = "012 888 777";
-      adm.email = "admin@ktpttc.edu.kh";
+      adm.nameKh = "អ្នកគ្រប់គ្រងប្រព័ន្ធ";
+      adm.nameEn = "System Administrator";
+      adm.phone = "";
+      adm.email = "admin@ktpttc.net";
       adm.avatar = "👨‍💼";
       delete adm.photo;
     }
