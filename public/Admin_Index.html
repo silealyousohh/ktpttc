@@ -3253,8 +3253,44 @@
                 <label class="form-label">ចំណងជើងវគ្គសិក្សា (Course Title)</label>
                 <input type="text" id="courseTitleInput" class="form-control" required placeholder="ឧ. ប្រកាសស្តីពីការជ្រើសរើស «គរុកោសល្យ និងវគ្គបណ្តុះបណ្តាលបែបថ្មី» ជំនាន់ទី១២">
                 
-                <label class="form-label">តំណភ្ជាប់រូបភាព Poster (Image URL)</label>
-                <input type="text" id="courseImageUrlInput" class="form-control" required placeholder="./cpd-p1.jpg ឬ Web URL">
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <label class="form-label" style="margin: 0; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-image" style="color: var(--primary);"></i> រូបភាព Poster វគ្គសិក្សា (Course Poster / Image)
+                        </label>
+                        <span id="courseImageStatusBadge" style="display: none; font-size: 0.78rem; font-weight: 700; align-items: center; gap: 4px; color: #059669;">
+                            <i class="fas fa-check-circle"></i> បានភ្ជាប់រូបភាពរួចរាល់
+                        </span>
+                    </div>
+
+                    <div style="display: flex; gap: 14px; align-items: center;">
+                        <div id="courseModalPreviewWrap" style="width: 120px; height: 150px; border-radius: 8px; border: 1px dashed var(--border-color); background: #0f172a; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; cursor: pointer;" onclick="document.getElementById('courseImageFileInput').click()" title="ចុចដើម្បីជ្រើសរូបភាព Poster">
+                            <img id="courseModalPreview" src="" alt="Course Poster Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;" onerror="this.style.display='none'; document.getElementById('courseModalPreviewPlaceholder').style.display='flex';">
+                            <div id="courseModalPreviewPlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.75rem; text-align: center; padding: 6px;">
+                                <i class="fas fa-file-image" style="font-size: 1.8rem; color: var(--primary); margin-bottom: 4px;"></i>
+                                <span style="font-weight: 600;">ជ្រើស Poster</span>
+                                <span style="font-size: 0.68rem; color: #64748b;">(JPG, PNG)</span>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                <input type="file" id="courseImageFileInput" accept="image/*" style="display: none;" onchange="handleCourseImageSelected(this.files)">
+                                <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('courseImageFileInput').click()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25);">
+                                    <i class="fas fa-upload"></i> Upload រូបភាព Poster ផ្ទាល់
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="clearCourseImage()" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 7px 12px; font-size: 0.85rem;" title="លុបរូបភាព">
+                                    <i class="fas fa-trash-alt"></i> លុប
+                                </button>
+                                <span id="courseUploadProgressText" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;"></span>
+                            </div>
+                            <input type="text" id="courseImageUrlInput" class="form-control" placeholder="./cpd-p1.jpg, /uploads/... ឬ Web URL" required style="margin-bottom: 0; font-size: 0.85rem; padding: 7px 12px;" oninput="updateCourseModalPreview(this.value)">
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                <i class="fas fa-info-circle"></i> លោកអ្នកអាចចុចប៊ូតុង <strong>Upload រូបភាព Poster ផ្ទាល់</strong> ដើម្បីជ្រើសរើសរូបពីកុំព្យូទ័រ/ទូរស័ព្ទ ឬបិទភ្ជាប់តំណភ្ជាប់ (URL) របស់រូបភាព។
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
@@ -8007,6 +8043,69 @@
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">មិនមានទិន្នន័យវគ្គសិក្សាទេ</td></tr>';
         }
 
+        function updateCourseModalPreview(url) {
+            const img = document.getElementById('courseModalPreview');
+            const placeholder = document.getElementById('courseModalPreviewPlaceholder');
+            const badge = document.getElementById('courseImageStatusBadge');
+            const wrap = document.getElementById('courseModalPreviewWrap');
+            if (!img || !placeholder) return;
+            if (url && url.trim()) {
+                img.src = getDriveImageUrl(url.trim());
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+                if (badge) {
+                    badge.style.display = 'inline-flex';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> បានភ្ជាប់រូបភាពរួចរាល់';
+                    badge.style.color = '#059669';
+                }
+                if (wrap) wrap.style.borderStyle = 'solid';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                placeholder.style.display = 'flex';
+                if (badge) badge.style.display = 'none';
+                if (wrap) wrap.style.borderStyle = 'dashed';
+            }
+        }
+
+        async function handleCourseImageSelected(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            const badge = document.getElementById('courseImageStatusBadge');
+            const progressText = document.getElementById('courseUploadProgressText');
+            if (badge) {
+                badge.style.display = 'inline-flex';
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុង Upload...';
+                badge.style.color = 'var(--primary)';
+            }
+            if (progressText) progressText.innerText = 'កំពុងបង្ហាប់ និង Upload...';
+
+            try {
+                const result = await uploadImageToServer(file, 1600, 0.88);
+                const input = document.getElementById('courseImageUrlInput');
+                if (input) input.value = result.url;
+                updateCourseModalPreview(result.url);
+
+                if (progressText) progressText.innerText = result.isServer ? 'Upload ជោគជ័យ! ✅' : 'ផ្ទុករូបភាពរួចរាល់! ✅';
+                setTimeout(() => {
+                    if (progressText) progressText.innerText = '';
+                }, 2500);
+            } catch (err) {
+                console.error('Course poster upload error:', err);
+                alert('កំហុសក្នុងការ Upload រូបភាព៖ ' + err.message);
+                if (badge) badge.style.display = 'none';
+                if (progressText) progressText.innerText = '';
+            }
+        }
+
+        function clearCourseImage() {
+            const input = document.getElementById('courseImageUrlInput');
+            const fileInput = document.getElementById('courseImageFileInput');
+            if (input) input.value = '';
+            if (fileInput) fileInput.value = '';
+            updateCourseModalPreview('');
+        }
+
         function openEditCourseModal(item, idx) {
             let c = item;
             if (typeof item === 'number') {
@@ -8030,6 +8129,7 @@
             
             const urlInput = document.getElementById('courseImageUrlInput');
             if (urlInput) urlInput.value = c.image || '';
+            updateCourseModalPreview(c.image || '');
             
             const meta1Input = document.getElementById('courseMeta1Input');
             if (meta1Input) meta1Input.value = c.meta1 || '';
@@ -9750,6 +9850,11 @@
             if(modalId === 'modal-add-course' && !isEdit) {
                 document.getElementById('addCourseForm').reset();
                 document.getElementById('courseIdInput').value = '';
+                updateCourseModalPreview('');
+                const fileInput = document.getElementById('courseImageFileInput');
+                if (fileInput) fileInput.value = '';
+                const progressText = document.getElementById('courseUploadProgressText');
+                if (progressText) progressText.innerText = '';
                 const modalHeader = document.querySelector('#modal-add-course .modal-header h3');
                 if (modalHeader) modalHeader.innerText = 'បន្ថែមវគ្គសិក្សា CPD ថ្មី';
                 const submitBtn = document.getElementById('btn-save-course');
