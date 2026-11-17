@@ -1,14 +1,30 @@
 /**
- * KruSmart - Student Registration Form (ទម្រង់ចុះឈ្មោះសិស្ស)
+ * KruSmart - Student & Teacher Registration Form (ទម្រង់ចុះឈ្មោះសិស្ស និងគ្រូឧទ្ទេស)
  * Standard MoEYS Cambodia Registration Logic
+ * KTPTTC - Kratie Provincial Teacher Training Center
  */
 
+let currentRegistrationRole = 'student'; // 'student' or 'teacher'
 let currentPhotoData = '';
 
 document.addEventListener('DOMContentLoaded', () => {
-  initStudentIdSuggestion();
-  setupClassSelector();
   initCambodiaGeo();
+  setupClassSelector();
+
+  // Check URL query parameters for role & edit ID
+  const urlParams = new URLSearchParams(window.location.search);
+  const roleParam = (urlParams.get('role') || urlParams.get('type') || '').toLowerCase();
+  const editId = urlParams.get('id');
+
+  const teachers = getSavedTeachers();
+  const isTeacherId = editId && (editId.startsWith('USR-TRN') || teachers.some(tr => tr.id === editId || tr.username === editId));
+
+  if (roleParam === 'teacher' || roleParam === 'trainer' || isTeacherId) {
+    switchRegistrationRole('teacher', true);
+  } else {
+    switchRegistrationRole('student', true);
+  }
+
   checkEditMode();
 });
 
@@ -31,6 +47,10 @@ function showToast(message, type = 'info') {
     setTimeout(() => toast.remove(), 300);
   }, 3500);
 }
+
+// --------------------------------------------------------------------------
+// STORAGE ACCESSORS
+// --------------------------------------------------------------------------
 
 // Get saved students array from localStorage (KTPTTC STMS Database v2)
 function getSavedStudents() {
@@ -79,10 +99,149 @@ function saveStudentsToStorage(list) {
   }
 }
 
-// Toggle Registration Password Visibility
-function toggleRegPassword() {
-  const pInput = document.getElementById('regPassword');
-  const eyeIcon = document.getElementById('regEyeIcon');
+// Get saved teachers array from localStorage
+function getSavedTeachers() {
+  try {
+    const rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+    if (rawStms) {
+      const parsed = JSON.parse(rawStms);
+      if (parsed && Array.isArray(parsed.users)) {
+        return parsed.users.filter(u => u && u.role === 'trainer');
+      }
+    }
+    if (window.KTPTTC_INITIAL_DATA && Array.isArray(window.KTPTTC_INITIAL_DATA.users)) {
+      return window.KTPTTC_INITIAL_DATA.users.filter(u => u && u.role === 'trainer');
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  return [];
+}
+
+// --------------------------------------------------------------------------
+// ROLE SWITCHER LOGIC
+// --------------------------------------------------------------------------
+
+function switchRegistrationRole(role, isInitial = false) {
+  currentRegistrationRole = role;
+
+  const tabStu = document.getElementById('tabModeStudent');
+  const tabTrn = document.getElementById('tabModeTeacher');
+  const subtitle = document.getElementById('navBrandSubtitle');
+  const formTitle = document.getElementById('formHeaderTitle');
+  const classSel = document.getElementById('classSelector');
+  const trnSubjSel = document.getElementById('teacherSubjectSelector');
+  const rosterBtnText = document.getElementById('btnNavRosterText');
+  const stuFields = document.getElementById('studentBasicFields');
+  const trnFields = document.getElementById('teacherBasicFields');
+  const stuStatus = document.getElementById('studentStatusSection');
+  const trnEmp = document.getElementById('teacherEmploymentSection');
+  const stuParents = document.getElementById('studentParentsSection');
+  const trnEmerg = document.getElementById('teacherEmergencySection');
+  const submitText = document.getElementById('btnSubmitText');
+
+  // Student inputs
+  const regStuId = document.getElementById('regStuId');
+  const regNameKh = document.getElementById('regNameKh');
+  const regUsername = document.getElementById('regUsername');
+  const regPassword = document.getElementById('regPassword');
+
+  // Teacher inputs
+  const regTeacherId = document.getElementById('regTeacherId');
+  const regTeacherNameKh = document.getElementById('regTeacherNameKh');
+  const regTeacherPhone = document.getElementById('regTeacherPhone');
+  const regTeacherUsername = document.getElementById('regTeacherUsername');
+  const regTeacherPassword = document.getElementById('regTeacherPassword');
+
+  if (role === 'teacher') {
+    if (tabStu) tabStu.classList.remove('active');
+    if (tabTrn) tabTrn.classList.add('active');
+    if (subtitle) subtitle.innerText = 'ចុះឈ្មោះគ្រូឧទ្ទេសថ្មី (Add Teacher / Faculty)';
+    if (formTitle && (!formTitle.dataset.editing || formTitle.dataset.editing === 'false')) {
+      formTitle.innerHTML = '<i class="fas fa-chalkboard-teacher" style="color:#2563eb;"></i> គ្រប់គ្រងបញ្ជីគ្រូឧទ្ទេស និងសាស្ត្រាចារ្យ';
+    }
+    if (classSel) classSel.style.display = 'none';
+    if (trnSubjSel) trnSubjSel.style.display = '';
+    if (rosterBtnText) rosterBtnText.innerText = '+ បញ្ជីឈ្មោះគ្រូឧទ្ទេស';
+
+    if (stuFields) stuFields.style.display = 'none';
+    if (trnFields) trnFields.style.display = '';
+    if (stuStatus) stuStatus.style.display = 'none';
+    if (trnEmp) trnEmp.style.display = '';
+    if (stuParents) stuParents.style.display = 'none';
+    if (trnEmerg) trnEmerg.style.display = '';
+    if (submitText && (!submitText.dataset.editing || submitText.dataset.editing === 'false')) {
+      submitText.innerText = 'រក្សាទុកគ្រូឧទ្ទេស';
+    }
+
+    // Validation switching
+    if (regStuId) regStuId.required = false;
+    if (regNameKh) regNameKh.required = false;
+    if (regUsername) regUsername.required = false;
+    if (regPassword) regPassword.required = false;
+
+    if (regTeacherId) regTeacherId.required = true;
+    if (regTeacherNameKh) regTeacherNameKh.required = true;
+    if (regTeacherPhone) regTeacherPhone.required = true;
+    if (regTeacherUsername) regTeacherUsername.required = true;
+    if (regTeacherPassword) regTeacherPassword.required = true;
+
+    if (!isInitial || (regTeacherId && !regTeacherId.value)) {
+      initTeacherIdSuggestion();
+    }
+  } else {
+    if (tabStu) tabStu.classList.add('active');
+    if (tabTrn) tabTrn.classList.remove('active');
+    if (subtitle) subtitle.innerText = 'ចុះឈ្មោះសិស្សថ្មី (Add Student)';
+    if (formTitle && (!formTitle.dataset.editing || formTitle.dataset.editing === 'false')) {
+      formTitle.innerHTML = 'គ្រប់គ្រងបញ្ជីសិស្ស';
+    }
+    if (classSel) classSel.style.display = '';
+    if (trnSubjSel) trnSubjSel.style.display = 'none';
+    if (rosterBtnText) rosterBtnText.innerText = '+ បញ្ជីឈ្មោះសិស្ស';
+
+    if (stuFields) stuFields.style.display = '';
+    if (trnFields) trnFields.style.display = 'none';
+    if (stuStatus) stuStatus.style.display = '';
+    if (trnEmp) trnEmp.style.display = 'none';
+    if (stuParents) stuParents.style.display = '';
+    if (trnEmerg) trnEmerg.style.display = 'none';
+    if (submitText && (!submitText.dataset.editing || submitText.dataset.editing === 'false')) {
+      submitText.innerText = 'រក្សាទុកសិស្ស';
+    }
+
+    // Validation switching
+    if (regTeacherId) regTeacherId.required = false;
+    if (regTeacherNameKh) regTeacherNameKh.required = false;
+    if (regTeacherPhone) regTeacherPhone.required = false;
+    if (regTeacherUsername) regTeacherUsername.required = false;
+    if (regTeacherPassword) regTeacherPassword.required = false;
+
+    if (regStuId) regStuId.required = true;
+    if (regNameKh) regNameKh.required = true;
+    if (regUsername) regUsername.required = true;
+    if (regPassword) regPassword.required = true;
+
+    if (!isInitial || (regStuId && !regStuId.value)) {
+      initStudentIdSuggestion();
+    }
+  }
+}
+window.switchRegistrationRole = switchRegistrationRole;
+
+// Sync top teacher subject dropdown with form subject dropdown
+function syncTeacherSubject(val) {
+  const formSel = document.getElementById('regTeacherSubject');
+  if (formSel && val && val !== 'all') {
+    formSel.value = val;
+  }
+}
+window.syncTeacherSubject = syncTeacherSubject;
+
+// Toggle Password Visibility
+function toggleRegPassword(inputId = 'regPassword', iconId = 'regEyeIcon') {
+  const pInput = document.getElementById(inputId);
+  const eyeIcon = document.getElementById(iconId);
   if (!pInput) return;
   if (pInput.type === 'password') {
     pInput.type = 'text';
@@ -92,6 +251,11 @@ function toggleRegPassword() {
     if (eyeIcon) eyeIcon.className = 'fas fa-eye';
   }
 }
+window.toggleRegPassword = toggleRegPassword;
+
+// --------------------------------------------------------------------------
+// ID SUGGESTIONS
+// --------------------------------------------------------------------------
 
 // Auto-suggest next Student ID & default Username
 function initStudentIdSuggestion() {
@@ -109,7 +273,8 @@ function initStudentIdSuggestion() {
   }
 
   // Live sync regStuId to regUsername if not manually touched
-  if (idInput) {
+  if (idInput && !idInput._hasSyncListener) {
+    idInput._hasSyncListener = true;
     idInput.addEventListener('input', () => {
       if (uInput && (!uInput.dataset.manual || uInput.dataset.manual === 'false')) {
         uInput.value = idInput.value.trim().toLowerCase();
@@ -117,9 +282,58 @@ function initStudentIdSuggestion() {
     });
   }
 
-  if (uInput) {
+  if (uInput && !uInput._hasManualListener) {
+    uInput._hasManualListener = true;
     uInput.addEventListener('input', () => {
       uInput.dataset.manual = 'true';
+    });
+  }
+}
+
+// Auto-suggest next Teacher ID & default Username / Email
+function initTeacherIdSuggestion() {
+  const teachers = getSavedTeachers();
+  const nextNumber = teachers.length + 1;
+  const idInput = document.getElementById('regTeacherId');
+  const uInput = document.getElementById('regTeacherUsername');
+  const emailInput = document.getElementById('regTeacherEmail');
+
+  if (idInput && !idInput.value) {
+    const autoId = `USR-TRN-${String(nextNumber).padStart(3, '0')}`;
+    idInput.value = autoId;
+    if (uInput && !uInput.value) {
+      uInput.value = autoId.toLowerCase();
+    }
+    if (emailInput && !emailInput.value) {
+      emailInput.value = `${autoId.toLowerCase()}@ktpttc.edu.kh`;
+    }
+  }
+
+  // Live sync regTeacherId to username & email
+  if (idInput && !idInput._hasSyncListenerTrn) {
+    idInput._hasSyncListenerTrn = true;
+    idInput.addEventListener('input', () => {
+      const val = idInput.value.trim().toLowerCase();
+      if (uInput && (!uInput.dataset.manual || uInput.dataset.manual === 'false')) {
+        uInput.value = val;
+      }
+      if (emailInput && (!emailInput.dataset.manual || emailInput.dataset.manual === 'false')) {
+        emailInput.value = `${val}@ktpttc.edu.kh`;
+      }
+    });
+  }
+
+  if (uInput && !uInput._hasManualListenerTrn) {
+    uInput._hasManualListenerTrn = true;
+    uInput.addEventListener('input', () => {
+      uInput.dataset.manual = 'true';
+    });
+  }
+
+  if (emailInput && !emailInput._hasManualListenerTrn) {
+    emailInput._hasManualListenerTrn = true;
+    emailInput.addEventListener('input', () => {
+      emailInput.dataset.manual = 'true';
     });
   }
 }
@@ -146,28 +360,125 @@ function setupClassSelector() {
   }
 }
 
-// Check Edit Mode from URL query (?id=STU-001)
+// --------------------------------------------------------------------------
+// EDIT MODE HANDLER
+// --------------------------------------------------------------------------
+
+// Check Edit Mode from URL query (?id=STU-001 or ?role=teacher&id=USR-TRN-001)
 function checkEditMode() {
   const urlParams = new URLSearchParams(window.location.search);
   const editId = urlParams.get('id');
   if (!editId) return;
 
+  const title = document.getElementById('formHeaderTitle');
+  const submitText = document.getElementById('btnSubmitText');
+  const submitIcon = document.getElementById('btnSubmitIcon');
+  const submitBtn = document.getElementById('btnSubmitForm');
+
+  if (title) title.dataset.editing = 'true';
+  if (submitText) {
+    submitText.dataset.editing = 'true';
+    submitText.innerText = 'រក្សាទុកការកែប្រែ (Update)';
+  }
+  if (submitIcon) submitIcon.className = 'fas fa-sync-alt';
+  if (submitBtn) submitBtn.style.background = '#2563eb';
+
+  // 1. Try finding Teacher first if role is teacher
+  if (currentRegistrationRole === 'teacher' || editId.startsWith('USR-TRN')) {
+    const teachers = getSavedTeachers();
+    const tr = teachers.find(x => x.id === editId || (x.id && x.id.toLowerCase() === editId.toLowerCase()) || x.username === editId);
+    if (tr) {
+      if (currentRegistrationRole !== 'teacher') switchRegistrationRole('teacher', true);
+      if (title) title.innerHTML = `<i class="fas fa-chalkboard-teacher" style="color: #2563eb;"></i> កែប្រែព័ត៌មានគ្រូឧទ្ទេស (${tr.nameKh})`;
+
+      const idInput = document.getElementById('regTeacherId');
+      if (idInput) {
+        idInput.value = tr.id;
+        idInput.readOnly = true;
+        idInput.style.backgroundColor = '#f1f5f9';
+        idInput.style.cursor = 'not-allowed';
+      }
+
+      if (document.getElementById('regTeacherSubject')) document.getElementById('regTeacherSubject').value = tr.subject || 'PED-101';
+      if (document.getElementById('teacherSubjectSelector')) document.getElementById('teacherSubjectSelector').value = tr.subject || 'PED-101';
+      if (document.getElementById('regTeacherQual')) document.getElementById('regTeacherQual').value = tr.qualification || 'អនុបណ្ឌិតគរុកោសល្យ';
+      if (document.getElementById('regTeacherNameKh')) document.getElementById('regTeacherNameKh').value = tr.nameKh || '';
+      if (document.getElementById('regTeacherNameEn')) document.getElementById('regTeacherNameEn').value = tr.nameEn || '';
+      if (document.getElementById('regTeacherGender')) document.getElementById('regTeacherGender').value = tr.gender || 'ប្រុស';
+      if (document.getElementById('regTeacherDob')) {
+        document.getElementById('regTeacherDob').value = tr.dob || '1985-05-15';
+        calculateAgeFromDob(tr.dob || '1985-05-15', 'regTeacherAge');
+      }
+      if (document.getElementById('regTeacherPhone')) document.getElementById('regTeacherPhone').value = tr.phone || '';
+      if (document.getElementById('regTeacherEmail')) document.getElementById('regTeacherEmail').value = tr.email || '';
+      if (document.getElementById('regTeacherUsername')) {
+        document.getElementById('regTeacherUsername').value = tr.username || tr.id.toLowerCase();
+        document.getElementById('regTeacherUsername').dataset.manual = 'true';
+      }
+      if (document.getElementById('regTeacherPassword')) document.getElementById('regTeacherPassword').value = tr.password || 'ktpttc123';
+      if (document.getElementById('regTeacherRoleTitle')) document.getElementById('regTeacherRoleTitle').value = tr.position || 'គ្រូឧទ្ទេសពេញម៉ោង';
+      if (document.getElementById('regTeacherExperience')) document.getElementById('regTeacherExperience').value = tr.experience || '';
+
+      if (tr.photo) setPhotoPreview(tr.photo);
+
+      // Place of birth
+      if (tr.birthplace && typeof tr.birthplace === 'object') {
+        if (document.getElementById('pobProvince')) document.getElementById('pobProvince').value = tr.birthplace.province || '';
+        if (document.getElementById('pobDistrict')) document.getElementById('pobDistrict').value = tr.birthplace.district || '';
+        if (document.getElementById('pobCommune')) document.getElementById('pobCommune').value = tr.birthplace.commune || '';
+        if (document.getElementById('pobVillage')) document.getElementById('pobVillage').value = tr.birthplace.village || '';
+      } else if (tr.pob && typeof tr.pob === 'string') {
+        if (document.getElementById('pobProvince')) document.getElementById('pobProvince').value = tr.pob;
+      }
+
+      // Address
+      const curAddr = tr.currentAddress || tr.address;
+      if (curAddr && typeof curAddr === 'object') {
+        if (document.getElementById('curProvince')) document.getElementById('curProvince').value = curAddr.province || '';
+        if (document.getElementById('curDistrict')) document.getElementById('curDistrict').value = curAddr.district || '';
+        if (document.getElementById('curCommune')) document.getElementById('curCommune').value = curAddr.commune || '';
+        if (document.getElementById('curVillage')) document.getElementById('curVillage').value = curAddr.village || '';
+      } else if (typeof curAddr === 'string' && curAddr) {
+        if (document.getElementById('curProvince')) document.getElementById('curProvince').value = curAddr;
+      }
+
+      // Employment
+      if (tr.employment) {
+        if (document.getElementById('teacherStatusWork')) document.getElementById('teacherStatusWork').value = tr.employment.status || 'កំពុងបង្រៀន';
+        if (document.getElementById('teacherContractType')) document.getElementById('teacherContractType').value = tr.employment.type || 'ក្របខណ្ឌរដ្ឋ';
+        if (document.getElementById('teacherStartDate')) document.getElementById('teacherStartDate').value = tr.employment.startDate || '';
+        if (document.getElementById('teacherDept')) document.getElementById('teacherDept').value = tr.employment.department || 'ដេប៉ាតឺម៉ង់គរុកោសល្យទូទៅ';
+      }
+
+      // Emergency Contact
+      if (tr.emergencyContact) {
+        if (document.getElementById('teacherEmergName')) document.getElementById('teacherEmergName').value = tr.emergencyContact.name || '';
+        if (document.getElementById('teacherEmergRel')) document.getElementById('teacherEmergRel').value = tr.emergencyContact.relation || '';
+        if (document.getElementById('teacherEmergPhone')) document.getElementById('teacherEmergPhone').value = tr.emergencyContact.phone || '';
+      }
+
+      // Additional
+      if (tr.additional) {
+        if (document.getElementById('ethnicGroup')) document.getElementById('ethnicGroup').value = tr.additional.specialSkills || '';
+        if (document.getElementById('specialNotes')) document.getElementById('specialNotes').value = tr.additional.specialNotes || '';
+        if (document.getElementById('serviceNotes')) document.getElementById('serviceNotes').value = tr.additional.serviceNotes || '';
+      }
+
+      setTimeout(() => { syncAllGeoFields(); }, 50);
+      return;
+    }
+  }
+
+  // 2. Try finding Student
   const students = getSavedStudents();
   const s = students.find(x => x.id === editId || (x.id && x.id.toLowerCase() === editId.toLowerCase()));
   if (!s) {
-    showToast(`រកមិនឃើញគរុសនិស្សិតដែលមានអត្តលេខ ${editId} ទេ!`, 'error');
+    showToast(`រកមិនឃើញទិន្នន័យដែលមានអត្តលេខ ${editId} ទេ!`, 'error');
     return;
   }
 
-  const title = document.querySelector('.form-header-title');
+  if (currentRegistrationRole !== 'student') switchRegistrationRole('student', true);
   if (title) title.innerHTML = `<i class="fas fa-user-edit" style="color: #2563eb;"></i> កែប្រែព័ត៌មានសិស្ស (${s.nameKh})`;
-
-  const submitText = document.getElementById('btnSubmitText');
-  if (submitText) submitText.innerText = 'រក្សាទុកការកែប្រែ (Update)';
-  const submitIcon = document.getElementById('btnSubmitIcon');
-  if (submitIcon) submitIcon.className = 'fas fa-sync-alt';
-  const submitBtn = document.getElementById('btnSubmitForm');
-  if (submitBtn) submitBtn.style.background = '#2563eb';
 
   const idInput = document.getElementById('regStuId');
   if (idInput) {
@@ -191,7 +502,7 @@ function checkEditMode() {
   if (document.getElementById('regGender')) document.getElementById('regGender').value = s.gender || 'ប្រុស';
   if (document.getElementById('regDob')) {
     document.getElementById('regDob').value = s.dob || '';
-    calculateAgeFromDob(s.dob);
+    calculateAgeFromDob(s.dob, 'regAge');
   }
   if (document.getElementById('regParentPhone')) document.getElementById('regParentPhone').value = s.parentPhone || s.phone || '';
   if (document.getElementById('regUsername')) {
@@ -223,10 +534,7 @@ function checkEditMode() {
     if (document.getElementById('curProvince')) document.getElementById('curProvince').value = curAddr;
   }
 
-  // Pre-populate cascading geo dropdowns for this student
-  setTimeout(() => {
-    syncAllGeoFields();
-  }, 50);
+  setTimeout(() => { syncAllGeoFields(); }, 50);
 
   if (s.status && typeof s.status === 'object') {
     if (document.getElementById('statusNew')) document.getElementById('statusNew').value = s.status.isNew || 'បាទ/ចាស';
@@ -236,16 +544,6 @@ function checkEditMode() {
     if (document.getElementById('statusPoorCard')) document.getElementById('statusPoorCard').value = s.status.poorCard || 'គ្មាន';
     if (document.getElementById('statusEthnic')) document.getElementById('statusEthnic').value = s.status.ethnic || 'ទេ';
     if (document.getElementById('statusScholarship')) document.getElementById('statusScholarship').value = s.status.scholarship || 'ទេ';
-  }
-
-  if (s.situation && typeof s.situation === 'object') {
-    if (document.getElementById('statusNew')) document.getElementById('statusNew').value = s.situation.isNew || 'បាទ/ចាស';
-    if (document.getElementById('statusRepeater')) document.getElementById('statusRepeater').value = s.situation.isRepeater || 'ទេ';
-    if (document.getElementById('statusFamily')) document.getElementById('statusFamily').value = s.situation.familyStatus || 'ទេ';
-    if (document.getElementById('statusDisability')) document.getElementById('statusDisability').value = s.situation.disability || 'ទេ';
-    if (document.getElementById('statusPoorCard')) document.getElementById('statusPoorCard').value = s.situation.poorCard || 'គ្មាន';
-    if (document.getElementById('statusEthnic')) document.getElementById('statusEthnic').value = s.situation.ethnic || 'ទេ';
-    if (document.getElementById('statusScholarship')) document.getElementById('statusScholarship').value = s.situation.scholarship || 'ទេ';
   }
 
   if (s.parents) {
@@ -265,8 +563,8 @@ function checkEditMode() {
 }
 
 // Calculate Age from Date of Birth
-function calculateAgeFromDob(dobString) {
-  const ageInput = document.getElementById('regAge');
+function calculateAgeFromDob(dobString, targetId = 'regAge') {
+  const ageInput = document.getElementById(targetId);
   if (!dobString || !ageInput) return;
 
   const dob = new Date(dobString);
@@ -285,15 +583,17 @@ function calculateAgeFromDob(dobString) {
     ageInput.value = '';
   }
 }
+window.calculateAgeFromDob = calculateAgeFromDob;
 
-// ==========================================================================
-// Photo Upload & Live Camera Handlers (Enhanced with Server Upload)
-// ==========================================================================
+// --------------------------------------------------------------------------
+// PHOTO HANDLERS
+// --------------------------------------------------------------------------
 
 function triggerPhotoFileInput() {
   const input = document.getElementById('photoFileInput');
   if (input) input.click();
 }
+window.triggerPhotoFileInput = triggerPhotoFileInput;
 
 function showPhotoUploading(isLoading) {
   const spinner = document.getElementById('photoUploadingSpinner');
@@ -302,7 +602,7 @@ function showPhotoUploading(isLoading) {
   }
 }
 
-// Compress image via HTML5 Canvas to prevent localStorage quota issues
+// Compress image via HTML5 Canvas
 function compressImage(source, maxWidth = 500, maxHeight = 600, quality = 0.88) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -335,7 +635,7 @@ function compressImage(source, maxWidth = 500, maxHeight = 600, quality = 0.88) 
   });
 }
 
-// Upload photo to Hostinger server storage (/api/upload/image)
+// Upload photo to Hostinger server storage
 async function uploadPhotoToServer(compressedDataUrl) {
   showPhotoUploading(true);
   try {
@@ -345,7 +645,7 @@ async function uploadPhotoToServer(compressedDataUrl) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         image: compressedDataUrl,
-        filename: `stu_${Date.now()}.jpg`
+        filename: `${currentRegistrationRole === 'teacher' ? 'trn' : 'stu'}_${Date.now()}.jpg`
       })
     });
     if (res.ok) {
@@ -355,7 +655,7 @@ async function uploadPhotoToServer(compressedDataUrl) {
         currentPhotoData = fullUrl;
         setPhotoPreview(fullUrl);
         showPhotoUploading(false);
-        showToast('បានផ្ទុកឡើងរូបថតសិស្សចូល Server ជោគជ័យ!', 'success');
+        showToast('បានផ្ទុកឡើងរូបថតចូល Server ជោគជ័យ!', 'success');
         return fullUrl;
       }
     }
@@ -366,7 +666,7 @@ async function uploadPhotoToServer(compressedDataUrl) {
   currentPhotoData = compressedDataUrl;
   setPhotoPreview(compressedDataUrl);
   showPhotoUploading(false);
-  showToast('បានជ្រើសរូបថតសិស្សរួចរាល់!', 'success');
+  showToast('បានជ្រើសរូបថតរួចរាល់!', 'success');
   return compressedDataUrl;
 }
 
@@ -385,15 +685,17 @@ async function handlePhotoUpload(input) {
   }
   input.value = '';
 }
+window.handlePhotoUpload = handlePhotoUpload;
 
 function promptPhotoUrl() {
   const url = prompt('សូមបញ្ចូលតំណភ្ជាប់រូបថត (Image URL)៖');
   if (url && url.trim().startsWith('http')) {
     setPhotoPreview(url.trim());
     currentPhotoData = url.trim();
-    showToast('បានភ្ជាប់រូបថតសិស្សរួចរាល់', 'success');
+    showToast('បានភ្ជាប់រូបថតរួចរាល់', 'success');
   }
 }
+window.promptPhotoUrl = promptPhotoUrl;
 
 function setPhotoPreview(src) {
   currentPhotoData = src;
@@ -406,9 +708,9 @@ function setPhotoPreview(src) {
   }
 }
 
-// ==========================================================================
+// --------------------------------------------------------------------------
 // CAMBODIA ADMINISTRATIVE DIVISIONS (CASCADING GEO SELECTOR)
-// ==========================================================================
+// --------------------------------------------------------------------------
 function initCambodiaGeo() {
   const geo = window.CAMBODIA_GEO_DATA;
   if (!geo) {
@@ -493,7 +795,6 @@ function attachGeoListeners(provId, distId, commId, villId, distListId, commList
       setupDatalist(distListId, districts);
       distEl.placeholder = 'វាយបញ្ចូល ឬជ្រើសរើស...';
       
-      // If current district value doesn't belong to new province, clear it
       if (!districts.includes(distEl.value) && !force) {
         distEl.value = '';
         commEl.value = '';
@@ -563,7 +864,6 @@ function attachGeoListeners(provId, distId, commId, villId, distListId, commList
   commEl.addEventListener('input', onCommuneChange);
   commEl.addEventListener('change', onCommuneChange);
 
-  // Store trigger helper on element
   provEl._syncGeo = (force) => onProvinceChange(force);
 }
 
@@ -581,8 +881,22 @@ function copyBirthplaceToAddress() {
   syncAllGeoFields();
   showToast('បានចម្លងទីកន្លែងកំណើតទៅអាសយដ្ឋានបច្ចុប្បន្ន', 'info');
 }
+window.copyBirthplaceToAddress = copyBirthplaceToAddress;
 
-// Save Student Form
+// --------------------------------------------------------------------------
+// UNIFIED SAVE CONTROLLER
+// --------------------------------------------------------------------------
+
+function handleUnifiedSave() {
+  if (currentRegistrationRole === 'teacher') {
+    handleSaveTeacher();
+  } else {
+    handleSaveStudent();
+  }
+}
+window.handleUnifiedSave = handleUnifiedSave;
+
+// 1. SAVE STUDENT
 function handleSaveStudent() {
   const id = document.getElementById('regStuId')?.value?.trim();
   const classGrade = document.getElementById('regClass')?.value || '១២+២';
@@ -606,7 +920,6 @@ function handleSaveStudent() {
   const urlParams = new URLSearchParams(window.location.search);
   const isEditMode = !!urlParams.get('id');
 
-  // Check duplicate ID
   const existingIdx = students.findIndex(s => s.id === id);
   if (existingIdx !== -1 && !isEditMode) {
     if (!confirm(`អត្តលេខ ${id} មានក្នុងប្រព័ន្ធរួចហើយ។ តើលោកគ្រូ-អ្នកគ្រូចង់ធ្វើបច្ចុប្បន្នភាព (Update) សិស្សនេះមែនទេ?`)) {
@@ -614,7 +927,6 @@ function handleSaveStudent() {
     }
   }
 
-  // Create student payload
   const studentRecord = {
     id,
     roll: students.length + 1,
@@ -636,7 +948,6 @@ function handleSaveStudent() {
     absentYearCount: 0,
     attendance: 'present',
 
-    // Place of Birth
     birthplace: {
       province: document.getElementById('pobProvince')?.value?.trim() || '',
       district: document.getElementById('pobDistrict')?.value?.trim() || '',
@@ -644,7 +955,6 @@ function handleSaveStudent() {
       village: document.getElementById('pobVillage')?.value?.trim() || ''
     },
 
-    // Current Address
     address: {
       province: document.getElementById('curProvince')?.value?.trim() || '',
       district: document.getElementById('curDistrict')?.value?.trim() || '',
@@ -652,7 +962,6 @@ function handleSaveStudent() {
       village: document.getElementById('curVillage')?.value?.trim() || ''
     },
 
-    // Status
     status: {
       isNew: document.getElementById('statusNew')?.value || 'បាទ/ចាស',
       isRepeater: document.getElementById('statusRepeater')?.value || 'ទេ',
@@ -663,7 +972,6 @@ function handleSaveStudent() {
       scholarship: document.getElementById('statusScholarship')?.value || 'ទេ'
     },
 
-    // Parents Info
     parents: {
       fatherName: document.getElementById('fatherName')?.value?.trim() || '',
       fatherJob: document.getElementById('fatherJob')?.value?.trim() || '',
@@ -673,7 +981,6 @@ function handleSaveStudent() {
       guardianJob: document.getElementById('guardianJob')?.value?.trim() || ''
     },
 
-    // Additional Info
     additional: {
       ethnicGroup: document.getElementById('ethnicGroup')?.value?.trim() || '',
       specialNotes: document.getElementById('specialNotes')?.value?.trim() || '',
@@ -720,40 +1027,11 @@ function handleSaveStudent() {
       photo: currentPhotoData || '',
       pob: `${document.getElementById('pobVillage')?.value || ''} ${document.getElementById('pobCommune')?.value || ''} ${document.getElementById('pobDistrict')?.value || ''} ${document.getElementById('pobProvince')?.value || ''}`.trim(),
       address: `${document.getElementById('curVillage')?.value || ''} ${document.getElementById('curCommune')?.value || ''} ${document.getElementById('curDistrict')?.value || ''} ${document.getElementById('curProvince')?.value || ''}`.trim(),
-      birthplace: {
-        province: document.getElementById('pobProvince')?.value?.trim() || '',
-        district: document.getElementById('pobDistrict')?.value?.trim() || '',
-        commune: document.getElementById('pobCommune')?.value?.trim() || '',
-        village: document.getElementById('pobVillage')?.value?.trim() || ''
-      },
-      currentAddress: {
-        province: document.getElementById('curProvince')?.value?.trim() || '',
-        district: document.getElementById('curDistrict')?.value?.trim() || '',
-        commune: document.getElementById('curCommune')?.value?.trim() || '',
-        village: document.getElementById('curVillage')?.value?.trim() || ''
-      },
-      situation: {
-        isNew: document.getElementById('statusNew')?.value || 'បាទ/ចាស',
-        isRepeater: document.getElementById('statusRepeater')?.value || 'ទេ',
-        familyStatus: document.getElementById('statusFamily')?.value || 'ទេ',
-        disability: document.getElementById('statusDisability')?.value || 'ទេ',
-        poorCard: document.getElementById('statusPoorCard')?.value || 'គ្មាន',
-        ethnic: document.getElementById('statusEthnic')?.value || 'ទេ',
-        scholarship: document.getElementById('statusScholarship')?.value || 'ទេ'
-      },
-      parents: {
-        fatherName: document.getElementById('fatherName')?.value?.trim() || '',
-        fatherJob: document.getElementById('fatherJob')?.value?.trim() || '',
-        motherName: document.getElementById('motherName')?.value?.trim() || '',
-        motherJob: document.getElementById('motherJob')?.value?.trim() || '',
-        guardianName: document.getElementById('guardianName')?.value?.trim() || '',
-        guardianJob: document.getElementById('guardianJob')?.value?.trim() || ''
-      },
-      additional: {
-        ethnicGroup: document.getElementById('ethnicGroup')?.value?.trim() || '',
-        specialNotes: document.getElementById('specialNotes')?.value?.trim() || '',
-        serviceNotes: document.getElementById('serviceNotes')?.value?.trim() || ''
-      },
+      birthplace: studentRecord.birthplace,
+      currentAddress: studentRecord.address,
+      situation: studentRecord.status,
+      parents: studentRecord.parents,
+      additional: studentRecord.additional,
       attendanceSummary: { present: 0, permission: 0, late: 0, absent: 0, rate: 100.0 },
       scores: {}
     };
@@ -764,7 +1042,7 @@ function handleSaveStudent() {
       stmsObj.trainees.push(traineeRecord);
     }
 
-    // Provision / Update Login User for Student
+    // Provision / Update Login User
     const existingUserIdx = stmsObj.users.findIndex(u => 
       (u.studentId && u.studentId.toLowerCase() === id.toLowerCase()) || 
       (u.username && u.username.toLowerCase() === username.toLowerCase())
@@ -805,17 +1083,126 @@ function handleSaveStudent() {
       window.location.href = 'index.html';
     }, 1200);
   } else {
-    showToast(`បានរក្សាទុកគរុសនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
-    // Reset form for next student
+    showToast(`🎉 បានចុះឈ្មោះគរុសនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
     resetFormForNextStudent(students.length + 1);
   }
 }
+window.handleSaveStudent = handleSaveStudent;
 
-// Reset form for next student entry
+// 2. SAVE TEACHER
+function handleSaveTeacher() {
+  const id = document.getElementById('regTeacherId')?.value?.trim();
+  const subject = document.getElementById('regTeacherSubject')?.value || 'PED-101';
+  const qualification = document.getElementById('regTeacherQual')?.value?.trim() || 'អនុបណ្ឌិតគរុកោសល្យ';
+  const nameKh = document.getElementById('regTeacherNameKh')?.value?.trim();
+  const nameEn = document.getElementById('regTeacherNameEn')?.value?.trim() || '';
+  const gender = document.getElementById('regTeacherGender')?.value || 'ប្រុស';
+  const dob = document.getElementById('regTeacherDob')?.value || '1985-05-15';
+  const age = document.getElementById('regTeacherAge')?.value || '';
+  const phone = document.getElementById('regTeacherPhone')?.value?.trim() || '';
+  const email = document.getElementById('regTeacherEmail')?.value?.trim() || `${id.toLowerCase()}@ktpttc.edu.kh`;
+  const username = (document.getElementById('regTeacherUsername')?.value || id).trim().toLowerCase();
+  const password = (document.getElementById('regTeacherPassword')?.value || 'ktpttc123').trim();
+  const roleTitle = document.getElementById('regTeacherRoleTitle')?.value?.trim() || 'គ្រូឧទ្ទេសពេញម៉ោង';
+  const experience = document.getElementById('regTeacherExperience')?.value?.trim() || '';
+
+  if (!id || !nameKh || !gender) {
+    showToast('សូមបំពេញរាល់ព័ត៌មានដែលមានសញ្ញា (*) ឱ្យបានគ្រប់ជ្រុងជ្រោយ!', 'error');
+    return;
+  }
+
+  let rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+  let stmsObj = rawStms ? JSON.parse(rawStms) : (window.KTPTTC_INITIAL_DATA || {});
+  if (!Array.isArray(stmsObj.users)) stmsObj.users = [];
+
+  const subj = (window.KTPTTC_ALL_SUBJECTS || []).find(s => s.code === subject);
+
+  const teacherRecord = {
+    id,
+    nameKh,
+    nameEn,
+    gender,
+    dob,
+    age: age.replace(' ឆ្នាំ', '').trim() || '35',
+    qualification,
+    phone,
+    email,
+    username,
+    password,
+    role: "trainer",
+    roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+    subject,
+    subjectName: subj ? subj.nameKh : '',
+    position: roleTitle,
+    experience,
+    photo: currentPhotoData || '',
+    avatar: gender === 'ស្រី' ? '👩‍🏫' : '👨‍🏫',
+    status: "active",
+    pob: `${document.getElementById('pobVillage')?.value || ''} ${document.getElementById('pobCommune')?.value || ''} ${document.getElementById('pobDistrict')?.value || ''} ${document.getElementById('pobProvince')?.value || ''}`.trim(),
+    address: `${document.getElementById('curVillage')?.value || ''} ${document.getElementById('curCommune')?.value || ''} ${document.getElementById('curDistrict')?.value || ''} ${document.getElementById('curProvince')?.value || ''}`.trim(),
+    birthplace: {
+      province: document.getElementById('pobProvince')?.value?.trim() || '',
+      district: document.getElementById('pobDistrict')?.value?.trim() || '',
+      commune: document.getElementById('pobCommune')?.value?.trim() || '',
+      village: document.getElementById('pobVillage')?.value?.trim() || ''
+    },
+    currentAddress: {
+      province: document.getElementById('curProvince')?.value?.trim() || '',
+      district: document.getElementById('curDistrict')?.value?.trim() || '',
+      commune: document.getElementById('curCommune')?.value?.trim() || '',
+      village: document.getElementById('curVillage')?.value?.trim() || ''
+    },
+    employment: {
+      status: document.getElementById('teacherStatusWork')?.value || 'កំពុងបង្រៀន',
+      type: document.getElementById('teacherContractType')?.value || 'ក្របខណ្ឌរដ្ឋ',
+      startDate: document.getElementById('teacherStartDate')?.value || '',
+      department: document.getElementById('teacherDept')?.value || 'ដេប៉ាតឺម៉ង់គរុកោសល្យទូទៅ'
+    },
+    emergencyContact: {
+      name: document.getElementById('teacherEmergName')?.value?.trim() || '',
+      relation: document.getElementById('teacherEmergRel')?.value?.trim() || '',
+      phone: document.getElementById('teacherEmergPhone')?.value?.trim() || ''
+    },
+    additional: {
+      specialSkills: document.getElementById('ethnicGroup')?.value?.trim() || '',
+      specialNotes: document.getElementById('specialNotes')?.value?.trim() || '',
+      serviceNotes: document.getElementById('serviceNotes')?.value?.trim() || ''
+    },
+    createdAt: new Date().toISOString()
+  };
+
+  const existingIdx = stmsObj.users.findIndex(u => u.id === id || (u.username && u.username.toLowerCase() === username.toLowerCase() && u.role === 'trainer'));
+  if (existingIdx !== -1) {
+    stmsObj.users[existingIdx] = { ...stmsObj.users[existingIdx], ...teacherRecord };
+  } else {
+    stmsObj.users.push(teacherRecord);
+  }
+
+  localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const isEdit = !!urlParams.get('id');
+
+  if (isEdit) {
+    showToast(`🎉 បានកែប្រែព័ត៌មានគ្រូឧទ្ទេស «${nameKh}» ដោយជោគជ័យ!`, 'success');
+    sessionStorage.setItem('stms_target_view', 'trainers');
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 1200);
+  } else {
+    showToast(`🎉 បានចុះឈ្មោះគ្រូឧទ្ទេស «${nameKh}» (${id}) ដោយជោគជ័យ!`, 'success');
+    resetFormForNextTeacher();
+  }
+}
+window.handleSaveTeacher = handleSaveTeacher;
+
+// --------------------------------------------------------------------------
+// RESET FORMS
+// --------------------------------------------------------------------------
+
 function resetFormForNextStudent(nextRoll) {
   document.getElementById('studentRegistrationForm').reset();
   
-  // Set next ID & default class
   const idInput = document.getElementById('regStuId');
   const nextId = `KTPTTC-2026-12P2-${String(nextRoll).padStart(3, '0')}`;
   if (idInput) idInput.value = nextId;
@@ -841,97 +1228,162 @@ function resetFormForNextStudent(nextRoll) {
   const sel = document.getElementById('classSelector');
   if (sel) sel.value = '១២+២ ក្រុម ក';
 
-  // Reset photo
   currentPhotoData = '';
   const img = document.getElementById('photoPreviewImg');
   const placeholder = document.getElementById('photoPlaceholder');
   if (img) img.style.display = 'none';
   if (placeholder) placeholder.style.display = 'block';
 
-  // Scroll smoothly to top
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Download Excel / CSV Template
-function downloadExcelTemplate() {
-  const headers = [
-    'អត្តលេខ',
-    'ថ្នាក់ទី',
-    'ក្រុម',
-    'ឈ្មោះសិស្ស_ខ្មែរ',
-    'ឈ្មោះជាឡាតាំង',
-    'ភេទ',
-    'ថ្ងៃខែឆ្នាំកំណើត_YYYY-MM-DD',
-    'លេខទូរស័ព្ទអាណាព្យាបាល',
-    'ខេត្តកំណើត',
-    'ស្រុកកំណើត',
-    'ឃុំកំណើត',
-    'ភូមិកំណើត',
-    'ខេត្តបច្ចុប្បន្ន',
-    'ឈ្មោះឪពុក',
-    'មុខរបរឪពុក',
-    'ឈ្មោះម្តាយ',
-    'មុខរបរម្តាយ'
-  ];
+function resetFormForNextTeacher() {
+  document.getElementById('studentRegistrationForm').reset();
+  
+  const teachers = getSavedTeachers();
+  const nextNum = teachers.length + 1;
+  const nextId = `USR-TRN-${String(nextNum).padStart(3, '0')}`;
 
-  const sampleRow1 = [
-    'KTPTTC-2026-12P2-001',
-    '១២+២',
-    'ក្រុម ក',
-    'កែវ វិសាល',
-    'Keo Visal',
-    'ប្រុស',
-    '2005-05-12',
-    '012345678',
-    'ខេត្តក្រចេះ',
-    'ក្រុងក្រចេះ',
-    'សង្កាត់ក្រចេះ',
-    'ភូមិ១',
-    'ខេត្តក្រចេះ',
-    'កែវ សុខា',
-    'កសិករ',
-    'ម៉ៅ ស្រី',
-    'មេផ្ទះ'
-  ];
+  const idInput = document.getElementById('regTeacherId');
+  if (idInput) idInput.value = nextId;
 
-  const sampleRow2 = [
-    'KTPTTC-2026-12P2-002',
-    '១២+៤',
-    'ក្រុម ខ',
-    'ចាន់ សុគន្ធា',
-    'Chan Sokunthea',
-    'ស្រី',
-    '2004-11-20',
-    '016789123',
-    'រាជធានីភ្នំពេញ',
-    'ខណ្ឌដូនពេញ',
-    'ផ្សារកណ្តាល',
-    'ភូមិ២',
-    'រាជធានីភ្នំពេញ',
-    'ចាន់ ប៊ុនធឿន',
-    'អាជីវករ',
-    'សុខ សោភា',
-    'គ្រូបង្រៀន'
-  ];
+  const uInput = document.getElementById('regTeacherUsername');
+  if (uInput) {
+    uInput.value = nextId.toLowerCase();
+    uInput.dataset.manual = 'false';
+  }
 
-  const csvContent = '\uFEFF' + [
-    headers.join(','),
-    sampleRow1.join(','),
-    sampleRow2.join(',')
-  ].join('\r\n');
+  const emailInput = document.getElementById('regTeacherEmail');
+  if (emailInput) {
+    emailInput.value = `${nextId.toLowerCase()}@ktpttc.edu.kh`;
+    emailInput.dataset.manual = 'false';
+  }
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'គំរូបញ្ជីចុះឈ្មោះសិស្ស_MoEYS_Template.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const pInput = document.getElementById('regTeacherPassword');
+  if (pInput) {
+    pInput.value = 'ktpttc123';
+    pInput.type = 'password';
+    const eyeIcon = document.getElementById('regTeacherEyeIcon');
+    if (eyeIcon) eyeIcon.className = 'fas fa-eye';
+  }
 
-  showToast('បានទាញយកឯកសារគំរូ Excel/CSV ដោយជោគជ័យ!', 'success');
+  currentPhotoData = '';
+  const img = document.getElementById('photoPreviewImg');
+  const placeholder = document.getElementById('photoPlaceholder');
+  if (img) img.style.display = 'none';
+  if (placeholder) placeholder.style.display = 'block';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// --------------------------------------------------------------------------
+// EXCEL / CSV TEMPLATE & IMPORT
+// --------------------------------------------------------------------------
+
+function downloadExcelTemplate() {
+  if (currentRegistrationRole === 'teacher') {
+    // Teacher Template
+    const headers = [
+      'អត្តលេខគ្រូ',
+      'មុខវិជ្ជា_កូដ',
+      'កម្រិតវប្បធម៌',
+      'ឈ្មោះគ្រូ_ខ្មែរ',
+      'ឈ្មោះជាឡាតាំង',
+      'ភេទ',
+      'ថ្ងៃខែឆ្នាំកំណើត_YYYY-MM-DD',
+      'លេខទូរស័ព្ទ',
+      'អ៊ីមែល',
+      'ខេត្តកំណើត',
+      'ស្រុកកំណើត',
+      'ឃុំកំណើត',
+      'ភូមិកំណើត',
+      'ខេត្តបច្ចុប្បន្ន'
+    ];
+
+    const sampleRow1 = [
+      'USR-TRN-001',
+      'PED-101',
+      'អនុបណ្ឌិតគរុកោសល្យ',
+      'ហេង សំណាង',
+      'Heng Samnang',
+      'ប្រុស',
+      '1983-05-12',
+      '016777888',
+      'samnang.heng@ktpttc.edu.kh',
+      'ខេត្តក្រចេះ',
+      'ក្រុងក្រចេះ',
+      'សង្កាត់ក្រចេះ',
+      'ភូមិ១',
+      'ខេត្តក្រចេះ'
+    ];
+
+    const csvContent = '\uFEFF' + [headers.join(','), sampleRow1.join(',')].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'គំរូបញ្ជីគ្រូឧទ្ទេស_KTPTTC_Template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('បានទាញយកឯកសារគំរូគ្រូឧទ្ទេស CSV ដោយជោគជ័យ!', 'success');
+  } else {
+    // Student Template
+    const headers = [
+      'អត្តលេខ',
+      'ថ្នាក់ទី',
+      'ក្រុម',
+      'ឈ្មោះសិស្ស_ខ្មែរ',
+      'ឈ្មោះជាឡាតាំង',
+      'ភេទ',
+      'ថ្ងៃខែឆ្នាំកំណើត_YYYY-MM-DD',
+      'លេខទូរស័ព្ទអាណាព្យាបាល',
+      'ខេត្តកំណើត',
+      'ស្រុកកំណើត',
+      'ឃុំកំណើត',
+      'ភូមិកំណើត',
+      'ខេត្តបច្ចុប្បន្ន',
+      'ឈ្មោះឪពុក',
+      'មុខរបរឪពុក',
+      'ឈ្មោះម្តាយ',
+      'មុខរបរម្តាយ'
+    ];
+
+    const sampleRow1 = [
+      'KTPTTC-2026-12P2-001',
+      '១២+២',
+      'ក្រុម ក',
+      'កែវ វិសាល',
+      'Keo Visal',
+      'ប្រុស',
+      '2005-05-12',
+      '012345678',
+      'ខេត្តក្រចេះ',
+      'ក្រុងក្រចេះ',
+      'សង្កាត់ក្រចេះ',
+      'ភូមិ១',
+      'ខេត្តក្រចេះ',
+      'កែវ សុខា',
+      'កសិករ',
+      'ម៉ៅ ស្រី',
+      'មេផ្ទះ'
+    ];
+
+    const csvContent = '\uFEFF' + [headers.join(','), sampleRow1.join(',')].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'គំរូបញ្ជីចុះឈ្មោះសិស្ស_MoEYS_Template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('បានទាញយកឯកសារគំរូសិស្ស CSV ដោយជោគជ័យ!', 'success');
+  }
+}
+window.downloadExcelTemplate = downloadExcelTemplate;
 
 // Handle Excel / CSV File Import
 function handleExcelImport(input) {
@@ -954,92 +1406,151 @@ function handleExcelImport(input) {
       }
       const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
       if (lines.length <= 1) {
-        showToast('ឯកសារពុំមានទិន្នន័យសិស្សទេ!', 'error');
+        showToast('ឯកសារពុំមានទិន្នន័យទេ!', 'error');
         return;
       }
 
-      const students = getSavedStudents();
-      let importedCount = 0;
-
-      // Skip header row
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
-        if (cols.length >= 3 && (cols[2] || cols[3])) {
-          const id = cols[0] || `STU-${String(students.length + 1).padStart(3, '0')}`;
-          const hasGroupCol = cols[2] && cols[2].includes('ក្រុម');
-          const classGrade = cols[1] || '១២+២';
-          const group = hasGroupCol ? cols[2] : 'ក្រុម ក';
-          const nameKh = hasGroupCol ? cols[3] : cols[2];
-          const nameEn = hasGroupCol ? (cols[4] || '') : (cols[3] || '');
-          const genderCol = hasGroupCol ? cols[5] : cols[4];
-          const dobCol = hasGroupCol ? cols[6] : cols[5];
-          const phoneCol = hasGroupCol ? cols[7] : cols[6];
-          const className = `${classGrade} ${group}`.trim();
-
-          let gender = 'ប្រុស';
-          if (genderCol && (genderCol.includes('ស្រី') || genderCol.toLowerCase().includes('female') || genderCol.toLowerCase() === 'f')) {
-            gender = 'ស្រី';
-          }
-          const dob = dobCol || '2005-01-01';
-          const parentPhone = phoneCol || '';
-
-          students.push({
-            id,
-            roll: students.length + 1,
-            className,
-            nameKh,
-            nameEn,
-            gender,
-            dob,
-            age: '',
-            parentPhone,
-            username: id.toLowerCase(),
-            password: 'ktpttc123',
-            avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
-            behaviorScore: 100,
-            scores: { KH: 0, MATH: 0, PHY: 0, CHEM: 0, BIO: 0, HIST: 0, GEO: 0, ENG: 0, MOR: 0 },
-            absentYearCount: 0,
-            attendance: 'present',
-            birthplace: { province: cols[7] || '', district: cols[8] || '', commune: cols[9] || '', village: cols[10] || '' },
-            address: { province: cols[11] || cols[7] || '', district: '', commune: '', village: '' },
-            parents: { fatherName: cols[12] || '', fatherJob: cols[13] || '', motherName: cols[14] || '', motherJob: cols[15] || '' }
-          });
-          importedCount++;
-        }
-      }
-
-      saveStudentsToStorage(students);
-
-      // Also sync login users in stmsObj
-      try {
+      if (currentRegistrationRole === 'teacher') {
+        // Import Teachers
         let rawStms = localStorage.getItem('ktpttc_stms_data_v2');
         let stmsObj = rawStms ? JSON.parse(rawStms) : (window.KTPTTC_INITIAL_DATA || {});
         if (!Array.isArray(stmsObj.users)) stmsObj.users = [];
-        students.forEach(st => {
-          if (!stmsObj.users.some(u => (u.studentId && u.studentId.toLowerCase() === st.id.toLowerCase()) || (u.username && u.username.toLowerCase() === st.id.toLowerCase()))) {
-            stmsObj.users.push({
-              id: `USR-STU-${String(stmsObj.users.length + 1).padStart(3, '0')}`,
-              nameKh: st.nameKh,
-              nameEn: st.nameEn || '',
-              studentId: st.id,
-              username: st.id.toLowerCase(),
+
+        let imported = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+          if (cols.length >= 4 && (cols[0] || cols[3])) {
+            const id = cols[0] || `USR-TRN-${String(stmsObj.users.length + 1).padStart(3, '0')}`;
+            const subject = cols[1] || 'PED-101';
+            const qualification = cols[2] || 'អនុបណ្ឌិតគរុកោសល្យ';
+            const nameKh = cols[3];
+            const nameEn = cols[4] || '';
+            const gender = cols[5] && cols[5].includes('ស្រី') ? 'ស្រី' : 'ប្រុស';
+            const dob = cols[6] || '1985-05-15';
+            const phone = cols[7] || '';
+            const email = cols[8] || `${id.toLowerCase()}@ktpttc.edu.kh`;
+
+            const teacherRecord = {
+              id,
+              nameKh,
+              nameEn,
+              gender,
+              dob,
+              qualification,
+              phone,
+              email,
+              username: id.toLowerCase(),
               password: 'ktpttc123',
-              role: 'trainee',
-              roleLabel: 'គរុសនិស្សិត',
-              phone: st.parentPhone || '',
-              className: st.className,
+              role: 'trainer',
+              roleLabel: 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន',
+              subject,
               status: 'active',
-              avatar: st.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
-            });
+              avatar: gender === 'ស្រី' ? '👩‍🏫' : '👨‍🏫',
+              birthplace: { province: cols[9] || 'ខេត្តក្រចេះ', district: cols[10] || '', commune: cols[11] || '', village: cols[12] || '' },
+              address: { province: cols[13] || cols[9] || 'ខេត្តក្រចេះ', district: '', commune: '', village: '' }
+            };
+
+            const existingIdx = stmsObj.users.findIndex(u => u.id === id);
+            if (existingIdx !== -1) {
+              stmsObj.users[existingIdx] = { ...stmsObj.users[existingIdx], ...teacherRecord };
+            } else {
+              stmsObj.users.push(teacherRecord);
+            }
+            imported++;
           }
-        });
+        }
         localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
-      } catch (err) {}
-      showToast(`បាននាំចូលទិន្នន័យសិស្សចំនួន ${importedCount} នាក់ពី Excel ដោយជោគជ័យ!`, 'success');
-      setTimeout(() => {
-        sessionStorage.setItem('stms_target_view', 'trainees');
-        window.location.href = 'index.html';
-      }, 1500);
+        showToast(`បាននាំចូលទិន្នន័យគ្រូឧទ្ទេសចំនួន ${imported} នាក់ពី Excel ដោយជោគជ័យ!`, 'success');
+        setTimeout(() => {
+          sessionStorage.setItem('stms_target_view', 'trainers');
+          window.location.href = 'index.html';
+        }, 1500);
+
+      } else {
+        // Import Students
+        const students = getSavedStudents();
+        let importedCount = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+          if (cols.length >= 3 && (cols[2] || cols[3])) {
+            const id = cols[0] || `STU-${String(students.length + 1).padStart(3, '0')}`;
+            const hasGroupCol = cols[2] && cols[2].includes('ក្រុម');
+            const classGrade = cols[1] || '១២+២';
+            const group = hasGroupCol ? cols[2] : 'ក្រុម ក';
+            const nameKh = hasGroupCol ? cols[3] : cols[2];
+            const nameEn = hasGroupCol ? (cols[4] || '') : (cols[3] || '');
+            const genderCol = hasGroupCol ? cols[5] : cols[4];
+            const dobCol = hasGroupCol ? cols[6] : cols[5];
+            const phoneCol = hasGroupCol ? cols[7] : cols[6];
+            const className = `${classGrade} ${group}`.trim();
+
+            let gender = 'ប្រុស';
+            if (genderCol && (genderCol.includes('ស្រី') || genderCol.toLowerCase().includes('female') || genderCol.toLowerCase() === 'f')) {
+              gender = 'ស្រី';
+            }
+            const dob = dobCol || '2005-01-01';
+            const parentPhone = phoneCol || '';
+
+            students.push({
+              id,
+              roll: students.length + 1,
+              className,
+              nameKh,
+              nameEn,
+              gender,
+              dob,
+              age: '',
+              parentPhone,
+              username: id.toLowerCase(),
+              password: 'ktpttc123',
+              avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
+              behaviorScore: 100,
+              scores: { KH: 0, MATH: 0, PHY: 0, CHEM: 0, BIO: 0, HIST: 0, GEO: 0, ENG: 0, MOR: 0 },
+              absentYearCount: 0,
+              attendance: 'present',
+              birthplace: { province: cols[7] || '', district: cols[8] || '', commune: cols[9] || '', village: cols[10] || '' },
+              address: { province: cols[11] || cols[7] || '', district: '', commune: '', village: '' },
+              parents: { fatherName: cols[12] || '', fatherJob: cols[13] || '', motherName: cols[14] || '', motherJob: cols[15] || '' }
+            });
+            importedCount++;
+          }
+        }
+
+        saveStudentsToStorage(students);
+
+        // Sync login users
+        try {
+          let rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+          let stmsObj = rawStms ? JSON.parse(rawStms) : (window.KTPTTC_INITIAL_DATA || {});
+          if (!Array.isArray(stmsObj.users)) stmsObj.users = [];
+          students.forEach(st => {
+            if (!stmsObj.users.some(u => (u.studentId && u.studentId.toLowerCase() === st.id.toLowerCase()) || (u.username && u.username.toLowerCase() === st.id.toLowerCase()))) {
+              stmsObj.users.push({
+                id: `USR-STU-${String(stmsObj.users.length + 1).padStart(3, '0')}`,
+                nameKh: st.nameKh,
+                nameEn: st.nameEn || '',
+                studentId: st.id,
+                username: st.id.toLowerCase(),
+                password: 'ktpttc123',
+                role: 'trainee',
+                roleLabel: 'គរុសនិស្សិត',
+                phone: st.parentPhone || '',
+                className: st.className,
+                status: 'active',
+                avatar: st.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
+              });
+            }
+          });
+          localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+        } catch (err) {}
+
+        showToast(`បាននាំចូលទិន្នន័យសិស្សចំនួន ${importedCount} នាក់ពី Excel ដោយជោគជ័យ!`, 'success');
+        setTimeout(() => {
+          sessionStorage.setItem('stms_target_view', 'trainees');
+          window.location.href = 'index.html';
+        }, 1500);
+      }
 
     } catch (err) {
       console.error(err);
@@ -1050,3 +1561,4 @@ function handleExcelImport(input) {
   reader.readAsText(file, 'utf-8');
   input.value = '';
 }
+window.handleExcelImport = handleExcelImport;

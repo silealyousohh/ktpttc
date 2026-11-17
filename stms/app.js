@@ -468,7 +468,8 @@ function renderSidebar() {
       <li class="sidebar-label">កិច្ចការគ្រូ &amp; គរុសនិស្សិត</li>
       <li><a class="sidebar-item-link ${currentView==='trainees'?'active':''}" onclick="navigateView('trainees')"><i class="fas fa-user-graduate"></i> <span>បញ្ជីរាយនាមសិស្ស</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='trainers'?'active':''}" onclick="navigateView('trainers')"><i class="fas fa-chalkboard-teacher"></i> <span>បញ្ជីរាយនាមគ្រូឧទ្ទេស</span></a></li>
-      <li><a class="sidebar-item-link" href="add-student.html"><i class="fas fa-user-plus"></i> <span>ចុះឈ្មោះសិស្សថ្មី</span></a></li>
+      <li><a class="sidebar-item-link" href="add-student.html?role=student"><i class="fas fa-user-plus"></i> <span>ចុះឈ្មោះសិស្សថ្មី</span></a></li>
+      <li><a class="sidebar-item-link" href="add-student.html?role=teacher"><i class="fas fa-chalkboard-teacher"></i> <span>ចុះឈ្មោះគ្រូថ្មី</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='requests'?'active':''}" onclick="navigateView('requests')"><i class="fas fa-clipboard-check"></i> <span>សំណើកែប្រែព័ត៌មាន</span></a></li>
 
       <li class="sidebar-label">កាលវិភាគ &amp; ថ្នាក់រៀន</li>
@@ -490,7 +491,7 @@ function renderSidebar() {
       <li class="sidebar-label">ការបង្រៀន &amp; សិស្ស</li>
       <li><a class="sidebar-item-link ${currentView==='trainees'?'active':''}" onclick="navigateView('trainees')"><i class="fas fa-user-graduate"></i> <span>បញ្ជីរាយនាមសិស្ស</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='trainers'?'active':''}" onclick="navigateView('trainers')"><i class="fas fa-chalkboard-teacher"></i> <span>បញ្ជីរាយនាមគ្រូឧទ្ទេស</span></a></li>
-      <li><a class="sidebar-item-link" href="add-student.html"><i class="fas fa-user-plus"></i> <span>ចុះឈ្មោះសិស្សថ្មី</span></a></li>
+      <li><a class="sidebar-item-link" href="add-student.html?role=student"><i class="fas fa-user-plus"></i> <span>ចុះឈ្មោះសិស្សថ្មី</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='attendance'?'active':''}" onclick="navigateView('attendance')"><i class="fas fa-calendar-check"></i> <span>ស្រង់វត្តមានសិស្ស</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='grading'?'active':''}" onclick="navigateView('grading')"><i class="fas fa-calculator"></i> <span>បញ្ចូលពិន្ទុតាមមុខវិជ្ជា</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='timetable'?'active':''}" onclick="navigateView('timetable')"><i class="fas fa-calendar-alt"></i> <span>កាលវិភាគបង្រៀន</span></a></li>
@@ -8932,209 +8933,19 @@ function deleteAdminTeacher(userId) {
   }
 }
 
-// Add New Teacher Modal
+// Add New Teacher Controller - Navigates to full standard Add Teacher Form
 function openAdminAddTeacherModal() {
-  const subjects = KTPTTC_ALL_SUBJECTS;
-  const nextIdx = (stmsData.users || []).filter(u => u.role === 'trainer').length + 1;
-  const newId = `USR-TRN-${String(nextIdx).padStart(3, '0')}`;
-
-  const modalHtml = `
-    <div class="stms-modal-backdrop" id="adminAddTeacherModal" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:580px; width:95%;">
-        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:14px 20px;">
-          <div class="modal-header-title" style="color:#fff; font-size:1.05rem;">
-            <i class="fas fa-user-plus"></i> ចុះឈ្មោះគ្រូឧទ្ទេសថ្មី (Register New Faculty)
-          </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
-        </div>
-        <form onsubmit="saveAdminTeacher(event)" style="padding:20px;">
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">អត្តលេខគ្រូ</label>
-                <input type="text" id="trnId" class="form-control" value="${newId}" readonly style="background:#f1f5f9; font-weight:700;">
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ភេទ</label>
-                <select id="trnGender" class="form-control">
-                  <option value="ប្រុស">ប្រុស</option>
-                  <option value="ស្រី">ស្រី</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">គោត្តនាម-នាម (Khmer) *</label>
-              <input type="text" id="trnNameKh" class="form-control" placeholder="ឧ. លោកស្រី កែវ ចរិយា" required>
-            </div>
-
-            <div>
-              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ឈ្មោះជាឡាតាំង (English)</label>
-              <input type="text" id="trnNameEn" class="form-control" placeholder="ឧ. Keo Chariya">
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ថ្ងៃខែឆ្នាំកំណើត</label>
-                <input type="date" id="trnDob" class="form-control" value="1985-05-15">
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ទីកន្លែងកំណើត</label>
-                <input type="text" id="trnPob" class="form-control" placeholder="ឧ. ខេត្តក្រចេះ">
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">មុខវិជ្ជាទទួលបន្ទុក *</label>
-                <select id="trnSubject" class="form-control" required>
-                  ${subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh}</option>`).join('')}
-                </select>
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">កម្រិតវប្បធម៌ / ឯកទេស</label>
-                <input type="text" id="trnQual" class="form-control" placeholder="ឧ. អនុបណ្ឌិតគរុកោសល្យ">
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">លេខទូរស័ព្ទ *</label>
-                <input type="text" id="trnPhone" class="form-control" placeholder="012 345 678" required>
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">អ៊ីមែល</label>
-                <input type="email" id="trnEmail" class="form-control" placeholder="teacher@ktpttc.edu.kh">
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:#eff6ff; padding:10px; border-radius:8px; border:1px solid #bfdbfe;">
-              <div>
-                <label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Username</label>
-                <input type="text" id="trnUsername" class="form-control" placeholder="username" required>
-              </div>
-              <div>
-                <label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Password</label>
-                <input type="text" id="trnPassword" class="form-control" value="trainer123" required>
-              </div>
-            </div>
-
-          </div>
-
-          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
-            <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> រក្សាទុកគ្រូថ្មី</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-
-  showModal(modalHtml);
+  closeStmsModal();
+  window.location.href = 'add-student.html?role=teacher';
 }
+window.openAdminAddTeacherModal = openAdminAddTeacherModal;
 
-// Edit Existing Teacher Modal
+// Edit Existing Teacher Controller - Navigates to full standard Add Teacher Form in Edit Mode
 function openAdminEditTeacherModal(id) {
-  const tr = (stmsData.users || []).find(u => u.id === id);
-  if (!tr) return;
-  const subjects = KTPTTC_ALL_SUBJECTS;
-
-  const modalHtml = `
-    <div class="stms-modal-backdrop" id="adminEditTeacherModal" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:580px; width:95%;">
-        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:14px 20px;">
-          <div class="modal-header-title" style="color:#fff; font-size:1.05rem;">
-            <i class="fas fa-user-edit"></i> កែប្រែព័ត៌មានគ្រូឧទ្ទេស (${tr.nameKh})
-          </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
-        </div>
-        <form onsubmit="updateAdminTeacher('${tr.id}', event)" style="padding:20px;">
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">អត្តលេខគ្រូ</label>
-                <input type="text" class="form-control" value="${tr.id}" readonly style="background:#f1f5f9; font-weight:700;">
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ភេទ</label>
-                <select id="editTrnGender" class="form-control">
-                  <option value="ប្រុស" ${tr.gender === 'ប្រុស' ? 'selected' : ''}>ប្រុស</option>
-                  <option value="ស្រី" ${tr.gender === 'ស្រី' ? 'selected' : ''}>ស្រី</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">គោត្តនាម-នាម (Khmer) *</label>
-              <input type="text" id="editTrnNameKh" class="form-control" value="${tr.nameKh || ''}" required>
-            </div>
-
-            <div>
-              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ឈ្មោះជាឡាតាំង (English)</label>
-              <input type="text" id="editTrnNameEn" class="form-control" value="${tr.nameEn || ''}">
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ថ្ងៃខែឆ្នាំកំណើត</label>
-                <input type="date" id="editTrnDob" class="form-control" value="${tr.dob || '1985-05-15'}">
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ទីកន្លែងកំណើត</label>
-                <input type="text" id="editTrnPob" class="form-control" value="${tr.pob || 'ខេត្តក្រចេះ'}">
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">មុខវិជ្ជាទទួលបន្ទុក *</label>
-                <select id="editTrnSubject" class="form-control" required>
-                  ${subjects.map(s => `<option value="${s.code}" ${tr.subject === s.code ? 'selected' : ''}>${s.code} - ${s.nameKh}</option>`).join('')}
-                </select>
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">កម្រិតវប្បធម៌ / ឯកទេស</label>
-                <input type="text" id="editTrnQual" class="form-control" value="${tr.qualification || 'អនុបណ្ឌិតគរុកោសល្យ'}">
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">លេខទូរស័ព្ទ *</label>
-                <input type="text" id="editTrnPhone" class="form-control" value="${tr.phone || ''}" required>
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">អ៊ីមែល</label>
-                <input type="email" id="editTrnEmail" class="form-control" value="${tr.email || ''}">
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:#eff6ff; padding:10px; border-radius:8px; border:1px solid #bfdbfe;">
-              <div>
-                <label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Username</label>
-                <input type="text" id="editTrnUsername" class="form-control" value="${tr.username || ''}" required>
-              </div>
-              <div>
-                <label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Password</label>
-                <input type="text" id="editTrnPassword" class="form-control" value="${tr.password || 'trainer123'}" required>
-              </div>
-            </div>
-
-          </div>
-
-          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
-            <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> រក្សាទុកការកែប្រែ</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-
-  showModal(modalHtml);
+  closeStmsModal();
+  window.location.href = `add-student.html?role=teacher&id=${encodeURIComponent(id)}`;
 }
+window.openAdminEditTeacherModal = openAdminEditTeacherModal;
 
 // Update Existing Teacher
 function updateAdminTeacher(id, e) {
@@ -9328,87 +9139,12 @@ function filterAdminStudentList(query) {
   if (container) container.innerHTML = renderAdminStudentTableRows(filtered);
 }
 
-// Add New Trainee Modal
+// Add New Trainee Controller - Navigates to full standard Add Student Form
 function openAdminAddStudentModal() {
-  const nextIdx = (stmsData.trainees || []).length + 1;
-  const newId = `KTPTTC-2026-12P2-${String(nextIdx).padStart(3, '0')}`;
-
-  const modalHtml = `
-    <div class="stms-modal-backdrop" id="adminAddStudentModal" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:580px; width:95%;">
-        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:14px 20px;">
-          <div class="modal-header-title" style="color:#fff; font-size:1.05rem;">
-            <i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិតថ្មី (Register New Trainee)
-          </div>
-          <button class="modal-close-icon" onclick="openAdminStudentModal()" style="color:#fff;">&times;</button>
-        </div>
-        <form onsubmit="saveAdminStudent(event)" style="padding:20px;">
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">អត្តលេខគរុសិស្ស *</label>
-                <input type="text" id="stuId" class="form-control" value="${newId}" readonly style="background:#f1f5f9; font-weight:700; color:#2563eb;">
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ភេទ *</label>
-                <select id="stuGender" class="form-control">
-                  <option value="ប្រុស">ប្រុស (Male)</option>
-                  <option value="ស្រី">ស្រី (Female)</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">គោត្តនាម-នាម (Khmer) *</label>
-              <input type="text" id="stuNameKh" class="form-control" placeholder="ឧ. កែវ វិបុល" required>
-            </div>
-
-            <div>
-              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ឈ្មោះជាឡាតាំង (English)</label>
-              <input type="text" id="stuNameEn" class="form-control" placeholder="ឧ. Keo Vibul">
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ថ្ងៃខែឆ្នាំកំណើត</label>
-                <input type="date" id="stuDob" class="form-control" value="2002-05-15">
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">លេខទូរស័ព្ទ</label>
-                <input type="text" id="stuPhone" class="form-control" placeholder="012 888 999">
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ថ្នាក់រៀន</label>
-                <select id="stuClass" class="form-control">
-                  <option value="ថ្នាក់បឋម ១២+២ ក្រុម ខ">ថ្នាក់បឋម ១២+២ ក្រុម ខ</option>
-                  <option value="ថ្នាក់បឋម ១២+២ ក្រុម ក">ថ្នាក់បឋម ១២+២ ក្រុម ក</option>
-                  <option value="ថ្នាក់មត្តេយ្យ ១២+២">ថ្នាក់មត្តេយ្យ ១២+២</option>
-                  <option value="បរិញ្ញាបត្រ+១ ក្រុម ខ">បរិញ្ញាបត្រ+១ ក្រុម ខ</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ជំនាន់សិក្សា</label>
-                <input type="text" id="stuCohort" class="form-control" value="ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤">
-              </div>
-            </div>
-
-          </div>
-
-          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
-            <button type="button" class="btn btn-outline" onclick="openAdminStudentModal()">ត្រឡប់ក្រោយ</button>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> ចុះឈ្មោះសិស្ស</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-
-  showModal(modalHtml);
+  closeStmsModal();
+  window.location.href = 'add-student.html?role=student';
 }
+window.openAdminAddStudentModal = openAdminAddStudentModal;
 
 // Save New Trainee
 function saveAdminStudent(e) {

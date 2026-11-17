@@ -127,6 +127,43 @@
       background: #2563eb;
     }
 
+    /* Role Mode Switcher Tabs */
+    .role-switcher-wrap {
+      display: inline-flex;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      gap: 3px;
+    }
+
+    .nav-mode-btn {
+      background: transparent;
+      color: #bfdbfe;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .nav-mode-btn.active {
+      background: #ffffff;
+      color: #1e3a8a;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .nav-mode-btn:hover:not(.active) {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
     /* Main Container */
     .main-container {
       max-width: 1140px;
@@ -492,14 +529,25 @@
       <a href="index.html" style="display: flex; align-items: center; text-decoration: none;">
         <img src="assets/ktpttc-header-logo.png" alt="KTPTTC Logo" style="height: 38px; width: auto; object-fit: contain;" onerror="this.src='assets/logo.png'">
       </a>
-      <span style="border-left: 1px solid rgba(255,255,255,0.25); padding-left: 12px; font-size: 0.85rem; color: #e2e8f0; font-weight: 500;">ចុះឈ្មោះសិស្សថ្មី (Add Student)</span>
+      <span id="navBrandSubtitle" style="border-left: 1px solid rgba(255,255,255,0.25); padding-left: 12px; font-size: 0.85rem; color: #e2e8f0; font-weight: 500;">ចុះឈ្មោះសិស្សថ្មី (Add Student)</span>
     </div>
 
     <div class="nav-actions">
+      <!-- Role Mode Switcher Tabs -->
+      <div class="role-switcher-wrap">
+        <button type="button" id="tabModeStudent" class="nav-mode-btn active" onclick="switchRegistrationRole('student')">
+          <i class="fas fa-user-graduate"></i> សិស្ស (Student)
+        </button>
+        <button type="button" id="tabModeTeacher" class="nav-mode-btn" onclick="switchRegistrationRole('teacher')">
+          <i class="fas fa-chalkboard-teacher"></i> គ្រូឧទ្ទេស (Teacher)
+        </button>
+      </div>
+
       <a href="index.html" class="nav-btn">
         <i class="fas fa-home"></i> ទំព័រដើម
       </a>
 
+      <!-- Student Class Selector (Shown in student mode) -->
       <select id="classSelector" class="nav-select">
         <option value="១២+២ ក្រុម ក" selected>ថ្នាក់ដើម: ១២+២ ក្រុម ក</option>
         <option value="១២+២ ក្រុម ខ">ថ្នាក់ដើម: ១២+២ ក្រុម ខ</option>
@@ -509,8 +557,21 @@
         <option value="បរិញ្ញាបត្រ+១ ក្រុម ខ">ថ្នាក់ដើម: បរិញ្ញាបត្រ+១ ក្រុម ខ</option>
       </select>
 
-      <a href="index.html" onclick="sessionStorage.setItem('stms_target_view', 'trainees');" class="nav-btn nav-btn-primary">
-        <i class="fas fa-users"></i> + បញ្ជីឈ្មោះសិស្ស
+      <!-- Teacher Subject Selector (Shown in teacher mode) -->
+      <select id="teacherSubjectSelector" class="nav-select" style="display:none;" onchange="syncTeacherSubject(this.value)">
+        <option value="all">មុខវិជ្ជាទាំងអស់</option>
+        <option value="PED-101" selected>PED-101 • គរុកោសល្យទូទៅ</option>
+        <option value="PSY-102">PSY-102 • ចិត្តវិទ្យា</option>
+        <option value="MTH-103">MTH-103 • គណិតវិទ្យា</option>
+        <option value="KHM-104">KHM-104 • ភាសាខ្មែរ</option>
+        <option value="ICT-105">ICT-105 • បច្ចេកវិទ្យា (ICT)</option>
+        <option value="RES-106">RES-106 • ការស្រាវជ្រាវ</option>
+        <option value="PRA-107">PRA-107 • កម្មសិក្សា</option>
+        <option value="COM-108">COM-108 • សារគមនាគមន៍</option>
+      </select>
+
+      <a id="btnNavRosterLink" href="index.html" onclick="sessionStorage.setItem('stms_target_view', currentRegistrationRole === 'teacher' ? 'trainers' : 'trainees');" class="nav-btn nav-btn-primary">
+        <i class="fas fa-users"></i> <span id="btnNavRosterText">+ បញ្ជីឈ្មោះសិស្ស</span>
       </a>
     </div>
   </header>
@@ -518,9 +579,9 @@
   <!-- Main Registration Form Container -->
   <main class="main-container">
     <div class="form-card">
-      <h2 class="form-header-title">គ្រប់គ្រងបញ្ជីសិស្ស</h2>
+      <h2 class="form-header-title" id="formHeaderTitle">គ្រប់គ្រងបញ្ជីសិស្ស</h2>
 
-      <form id="studentRegistrationForm" onsubmit="event.preventDefault(); handleSaveStudent();">
+      <form id="studentRegistrationForm" onsubmit="event.preventDefault(); handleUnifiedSave();">
         
         <!-- Top: Photo + Basic Info -->
         <div class="student-basic-grid">
@@ -530,7 +591,7 @@
             <span class="photo-label">រូបតំណាង</span>
             <div class="photo-preview-box" id="photoPreviewBox" onclick="triggerPhotoFileInput()" title="ចុចដើម្បីផ្ទុកឡើងរូបថត ឬទាញទម្លាក់រូបថតមកទីនេះ">
               <i class="fas fa-image photo-placeholder-icon" id="photoPlaceholder"></i>
-              <img id="photoPreviewImg" src="" alt="Student Photo" style="display: none;">
+              <img id="photoPreviewImg" src="" alt="Photo Preview" style="display: none;">
               <div id="photoUploadingSpinner" style="display:none; position:absolute; inset:0; background:rgba(255,255,255,0.88); flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:0.75rem; color:#2563eb; font-weight:600;">
                 <i class="fas fa-spinner fa-spin fa-2x"></i>
                 <span>កំពុងផ្ទុកឡើង...</span>
@@ -550,91 +611,209 @@
           </div>
 
           <!-- Basic Info Columns -->
-          <div>
-            <!-- Row 1: ID, Grade, Group, Khmer Name -->
-            <div class="fields-grid-4">
-              <div class="form-group">
-                <label class="form-label" for="regStuId">អត្តលេខ<span class="required">*</span></label>
-                <input type="text" id="regStuId" class="form-control" placeholder="អត្តលេខ" required>
+          <div style="flex:1;">
+            
+            <!-- 1. Student Basic Fields -->
+            <div id="studentBasicFields">
+              <!-- Row 1: ID, Grade, Group, Khmer Name -->
+              <div class="fields-grid-4">
+                <div class="form-group">
+                  <label class="form-label" for="regStuId">អត្តលេខសិស្ស<span class="required">*</span></label>
+                  <input type="text" id="regStuId" class="form-control" placeholder="អត្តលេខ" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regClass">ថ្នាក់ទី<span class="required">*</span></label>
+                  <select id="regClass" class="form-control" required>
+                    <option value="១២+២" selected>១២+២</option>
+                    <option value="១២+៤">១២+៤</option>
+                    <option value="បរិញ្ញាបត្រ+១">បរិញ្ញាបត្រ+១</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regGroup">ក្រុម<span class="required">*</span></label>
+                  <select id="regGroup" class="form-control" required>
+                    <option value="ក្រុម ក" selected>ក្រុម ក</option>
+                    <option value="ក្រុម ខ">ក្រុម ខ</option>
+                    <option value="ក្រុម គ">ក្រុម គ</option>
+                    <option value="ក្រុម ឃ">ក្រុម ឃ</option>
+                    <option value="ក្រុម ង">ក្រុម ង</option>
+                    <option value="ក្រុម ១">ក្រុម ១</option>
+                    <option value="ក្រុម ២">ក្រុម ២</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regNameKh">ឈ្មោះសិស្ស (ខ្មែរ)<span class="required">*</span></label>
+                  <input type="text" id="regNameKh" class="form-control" placeholder="គោត្តនាម និងនាម" required>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="regClass">ថ្នាក់ទី<span class="required">*</span></label>
-                <select id="regClass" class="form-control" required>
-                  <option value="១២+២" selected>១២+២</option>
-                  <option value="១២+៤">១២+៤</option>
-                  <option value="បរិញ្ញាបត្រ+១">បរិញ្ញាបត្រ+១</option>
-                </select>
+              <!-- Row 2: Latin Name, Gender, DOB -->
+              <div class="fields-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="regNameEn">ឈ្មោះសិស្សជាអក្សរឡាតាំង</label>
+                  <input type="text" id="regNameEn" class="form-control" placeholder="Latin Name">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regGender">ភេទ<span class="required">*</span></label>
+                  <select id="regGender" class="form-control" required>
+                    <option value="" disabled selected>ជ្រើសរើស</option>
+                    <option value="ប្រុស">ប្រុស (Male)</option>
+                    <option value="ស្រី">ស្រី (Female)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regDob">ថ្ងៃខែឆ្នាំកំណើត<span class="required">*</span></label>
+                  <input type="date" id="regDob" class="form-control" onchange="calculateAgeFromDob(this.value, 'regAge')" required>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="regGroup">ក្រុម<span class="required">*</span></label>
-                <select id="regGroup" class="form-control" required>
-                  <option value="ក្រុម ក" selected>ក្រុម ក</option>
-                  <option value="ក្រុម ខ">ក្រុម ខ</option>
-                  <option value="ក្រុម គ">ក្រុម គ</option>
-                  <option value="ក្រុម ឃ">ក្រុម ឃ</option>
-                  <option value="ក្រុម ង">ក្រុម ង</option>
-                  <option value="ក្រុម ១">ក្រុម ១</option>
-                  <option value="ក្រុម ២">ក្រុម ២</option>
-                </select>
-              </div>
+              <!-- Row 3: Age, Parent Phone, Username, Password -->
+              <div class="fields-grid-4">
+                <div class="form-group">
+                  <label class="form-label" for="regAge">អាយុ (ឆ្នាំ)</label>
+                  <input type="text" id="regAge" class="form-control" placeholder="អាយុនឹងត្រូវគណនាដោយស្វ័យប្រវត្តិ" readonly>
+                </div>
 
-              <div class="form-group">
-                <label class="form-label" for="regNameKh">ឈ្មោះសិស្ស (ខ្មែរ)<span class="required">*</span></label>
-                <input type="text" id="regNameKh" class="form-control" placeholder="គោត្តនាម និងនាម" required>
-              </div>
-            </div>
+                <div class="form-group">
+                  <label class="form-label" for="regParentPhone">លេខទូរស័ព្ទអាណាព្យាបាល</label>
+                  <input type="tel" id="regParentPhone" class="form-control" placeholder="លេខទូរស័ព្ទ">
+                </div>
 
-            <!-- Row 2: Latin Name, Gender, DOB -->
-            <div class="fields-grid-3">
-              <div class="form-group">
-                <label class="form-label" for="regNameEn">ឈ្មោះសិស្សជាអក្សរឡាតាំង</label>
-                <input type="text" id="regNameEn" class="form-control" placeholder="Latin Name">
-              </div>
+                <div class="form-group">
+                  <label class="form-label" for="regUsername">ឈ្មោះគណនី (Username)<span class="required">*</span></label>
+                  <input type="text" id="regUsername" class="form-control" placeholder="Username ចូលប្រព័ន្ធ" required>
+                </div>
 
-              <div class="form-group">
-                <label class="form-label" for="regGender">ភេទ<span class="required">*</span></label>
-                <select id="regGender" class="form-control" required>
-                  <option value="" disabled selected>ជ្រើសរើស</option>
-                  <option value="ប្រុស">ប្រុស (Male)</option>
-                  <option value="ស្រី">ស្រី (Female)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="regDob">ថ្ងៃខែឆ្នាំកំណើត<span class="required">*</span></label>
-                <input type="date" id="regDob" class="form-control" onchange="calculateAgeFromDob(this.value)" required>
-              </div>
-            </div>
-
-            <!-- Row 3: Age, Parent Phone, Username, Password -->
-            <div class="fields-grid-4">
-              <div class="form-group">
-                <label class="form-label" for="regAge">អាយុ (ឆ្នាំ)</label>
-                <input type="text" id="regAge" class="form-control" placeholder="អាយុនឹងត្រូវគណនាដោយស្វ័យប្រវត្តិ" readonly>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="regParentPhone">លេខទូរស័ព្ទអាណាព្យាបាល</label>
-                <input type="tel" id="regParentPhone" class="form-control" placeholder="លេខទូរស័ព្ទ">
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="regUsername">ឈ្មោះគណនី (Username)<span class="required">*</span></label>
-                <input type="text" id="regUsername" class="form-control" placeholder="Username ចូលប្រព័ន្ធ" required>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="regPassword">ពាក្យសម្ងាត់ (Password)<span class="required">*</span></label>
-                <div style="position: relative; display: flex; align-items: center;">
-                  <input type="password" id="regPassword" class="form-control" value="ktpttc123" placeholder="Password" required style="padding-right: 36px;">
-                  <button type="button" onclick="toggleRegPassword()" style="position: absolute; right: 10px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;" title="បង្ហាញ/លាក់">
-                    <i class="fas fa-eye" id="regEyeIcon"></i>
-                  </button>
+                <div class="form-group">
+                  <label class="form-label" for="regPassword">ពាក្យសម្ងាត់ (Password)<span class="required">*</span></label>
+                  <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="regPassword" class="form-control" value="ktpttc123" placeholder="Password" required style="padding-right: 36px;">
+                    <button type="button" onclick="toggleRegPassword('regPassword', 'regEyeIcon')" style="position: absolute; right: 10px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;" title="បង្ហាញ/លាក់">
+                      <i class="fas fa-eye" id="regEyeIcon"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- 2. Teacher Basic Fields -->
+            <div id="teacherBasicFields" style="display: none;">
+              <!-- Row 1: Teacher ID, Subject, Qualification, Khmer Name -->
+              <div class="fields-grid-4">
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherId">អត្តលេខគ្រូឧទ្ទេស<span class="required">*</span></label>
+                  <input type="text" id="regTeacherId" class="form-control" placeholder="USR-TRN-xxx">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherSubject">មុខវិជ្ជាទទួលបន្ទុក<span class="required">*</span></label>
+                  <select id="regTeacherSubject" class="form-control">
+                    <option value="PED-101" selected>PED-101 • គរុកោសល្យទូទៅ</option>
+                    <option value="PSY-102">PSY-102 • ចិត្តវិទ្យា</option>
+                    <option value="MTH-103">MTH-103 • វិធីសាស្ត្រគណិតវិទ្យា</option>
+                    <option value="KHM-104">KHM-104 • វិធីសាស្ត្រភាសាខ្មែរ</option>
+                    <option value="ICT-105">ICT-105 • បច្ចេកវិទ្យាព័ត៌មាន (ICT)</option>
+                    <option value="RES-106">RES-106 • ការស្រាវជ្រាវ (Action Research)</option>
+                    <option value="PRA-107">PRA-107 • ការចុះកម្មសិក្សា (Practicum)</option>
+                    <option value="COM-108">COM-108 • សារគមនាគមន៍</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherQual">កម្រិតវប្បធម៌ / ឯកទេស<span class="required">*</span></label>
+                  <select id="regTeacherQual" class="form-control">
+                    <option value="អនុបណ្ឌិតគរុកោសល្យ" selected>អនុបណ្ឌិតគរុកោសល្យ</option>
+                    <option value="អនុបណ្ឌិតវិទ្យាសាស្ត្រអប់រំ">អនុបណ្ឌិតវិទ្យាសាស្ត្រអប់រំ</option>
+                    <option value="បរិញ្ញាបត្រជាន់ខ្ពស់">បរិញ្ញាបត្រជាន់ខ្ពស់ (Master)</option>
+                    <option value="បរិញ្ញាបត្រគរុកោសល្យ">បរិញ្ញាបត្រគរុកោសល្យ (Bachelor)</option>
+                    <option value="បរិញ្ញាបត្របច្ចេកវិទ្យា">បរិញ្ញាបត្របច្ចេកវិទ្យាព័ត៌មាន</option>
+                    <option value="បណ្ឌិតគរុកោសល្យ">បណ្ឌិត (PhD in Ed)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherNameKh">ឈ្មោះគ្រូឧទ្ទេស (ខ្មែរ)<span class="required">*</span></label>
+                  <input type="text" id="regTeacherNameKh" class="form-control" placeholder="គោត្តនាម និងនាម">
+                </div>
+              </div>
+
+              <!-- Row 2: Latin Name, Gender, DOB -->
+              <div class="fields-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherNameEn">ឈ្មោះគ្រូជាអក្សរឡាតាំង</label>
+                  <input type="text" id="regTeacherNameEn" class="form-control" placeholder="Latin Name (e.g. SOK SAMNANG)">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherGender">ភេទ<span class="required">*</span></label>
+                  <select id="regTeacherGender" class="form-control">
+                    <option value="ប្រុស" selected>ប្រុស (Male)</option>
+                    <option value="ស្រី">ស្រី (Female)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherDob">ថ្ងៃខែឆ្នាំកំណើត<span class="required">*</span></label>
+                  <input type="date" id="regTeacherDob" class="form-control" onchange="calculateAgeFromDob(this.value, 'regTeacherAge')">
+                </div>
+              </div>
+
+              <!-- Row 3: Age, Phone, Username, Password -->
+              <div class="fields-grid-4">
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherAge">អាយុ (ឆ្នាំ)</label>
+                  <input type="text" id="regTeacherAge" class="form-control" placeholder="គណនាដោយស្វ័យប្រវត្តិ" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherPhone">លេខទូរស័ព្ទផ្ទាល់ខ្លួន<span class="required">*</span></label>
+                  <input type="tel" id="regTeacherPhone" class="form-control" placeholder="012 345 678">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherUsername">ឈ្មោះគណនី (Username)<span class="required">*</span></label>
+                  <input type="text" id="regTeacherUsername" class="form-control" placeholder="Username ចូលប្រព័ន្ធ">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherPassword">ពាក្យសម្ងាត់ (Password)<span class="required">*</span></label>
+                  <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="regTeacherPassword" class="form-control" value="ktpttc123" placeholder="Password" style="padding-right: 36px;">
+                    <button type="button" onclick="toggleRegPassword('regTeacherPassword', 'regTeacherEyeIcon')" style="position: absolute; right: 10px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;" title="បង្ហាញ/លាក់">
+                      <i class="fas fa-eye" id="regTeacherEyeIcon"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 4: Email, Position Title, Experience -->
+              <div class="fields-grid-3" style="margin-top: 14px;">
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherEmail">អ៊ីមែលផ្លូវការ (Official Email)</label>
+                  <input type="email" id="regTeacherEmail" class="form-control" placeholder="name@ktpttc.edu.kh">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherRoleTitle">មុខតំណែង / តួនាទី</label>
+                  <select id="regTeacherRoleTitle" class="form-control">
+                    <option value="គ្រូឧទ្ទេសពេញម៉ោង" selected>គ្រូឧទ្ទេសពេញម៉ោង</option>
+                    <option value="ប្រធានដេប៉ាតឺម៉ង់">ប្រធានដេប៉ាតឺម៉ង់</option>
+                    <option value="អនុប្រធានដេប៉ាតឺម៉ង់">អនុប្រធានដេប៉ាតឺម៉ង់</option>
+                    <option value="គ្រូជាប់កិច្ចសន្យា">គ្រូជាប់កិច្ចសន្យា</option>
+                    <option value="សាស្ត្រាចារ្យអញ្ជើញ">សាស្ត្រាចារ្យអញ្ជើញ</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="regTeacherExperience">បទពិសោធន៍បង្រៀន</label>
+                  <input type="text" id="regTeacherExperience" class="form-control" placeholder="ឧ. ៥ ឆ្នាំ">
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -698,106 +877,170 @@
           </div>
         </div>
 
-        <!-- Section: ស្ថានភាព និងអាហារូបករណ៍ (Status & Scholarship) -->
-        <div class="section-title section-status">
-          <i class="fas fa-ribbon"></i> <span>ស្ថានភាព និងអាហារូបករណ៍</span>
-        </div>
-        <div class="fields-grid-3">
-          <div class="form-group">
-            <label class="form-label">សិស្សថ្មី</label>
-            <select id="statusNew" class="form-control">
-              <option value="បាទ/ចាស">បាទ/ចាស</option>
-              <option value="ទេ">ទេ</option>
-            </select>
+        <!-- 1. Student Status Section (Shown in student mode) -->
+        <div id="studentStatusSection">
+          <div class="section-title section-status">
+            <i class="fas fa-ribbon"></i> <span>ស្ថានភាព និងអាហារូបករណ៍</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">សិស្សត្រួតថ្នាក់</label>
-            <select id="statusRepeater" class="form-control">
-              <option value="ទេ">ទេ</option>
-              <option value="បាទ/ចាស">បាទ/ចាស</option>
-            </select>
+          <div class="fields-grid-3">
+            <div class="form-group">
+              <label class="form-label">សិស្សថ្មី</label>
+              <select id="statusNew" class="form-control">
+                <option value="បាទ/ចាស">បាទ/ចាស</option>
+                <option value="ទេ">ទេ</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">សិស្សត្រួតថ្នាក់</label>
+              <select id="statusRepeater" class="form-control">
+                <option value="ទេ">ទេ</option>
+                <option value="បាទ/ចាស">បាទ/ចាស</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ស្ថានភាពគ្រួសារ (កំព្រា)</label>
+              <select id="statusFamily" class="form-control">
+                <option value="ទេ">ទេ</option>
+                <option value="កំព្រាឪពុក">កំព្រាឪពុក</option>
+                <option value="កំព្រាម្តាយ">កំព្រាម្តាយ</option>
+                <option value="កំព្រាទាំងពីរ">កំព្រាទាំងពីរ</option>
+                <option value="ងាយរងគ្រោះ">ងាយរងគ្រោះ</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">ស្ថានភាពគ្រួសារ (កំព្រា)</label>
-            <select id="statusFamily" class="form-control">
-              <option value="ទេ">ទេ</option>
-              <option value="កំព្រាឪពុក">កំព្រាឪពុក</option>
-              <option value="កំព្រាម្តាយ">កំព្រាម្តាយ</option>
-              <option value="កំព្រាទាំងពីរ">កំព្រាទាំងពីរ</option>
-              <option value="ងាយរងគ្រោះ">ងាយរងគ្រោះ</option>
-            </select>
+
+          <div class="fields-grid-3">
+            <div class="form-group">
+              <label class="form-label">ពិការភាព</label>
+              <select id="statusDisability" class="form-control">
+                <option value="ទេ">ទេ</option>
+                <option value="មាន">មាន</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ប័ណ្ណក្រីក្រ</label>
+              <select id="statusPoorCard" class="form-control">
+                <option value="គ្មាន">គ្មាន</option>
+                <option value="ក្រ១">ក្រ១</option>
+                <option value="ក្រ២">ក្រ២</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">សិស្សជនជាតិ</label>
+              <select id="statusEthnic" class="form-control">
+                <option value="ទេ">ទេ</option>
+                <option value="មាន">មាន</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fields-grid-3">
+            <div class="form-group">
+              <label class="form-label">អាហារូបករណ៍</label>
+              <select id="statusScholarship" class="form-control">
+                <option value="ទេ">ទេ</option>
+                <option value="មាន">មាន</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="fields-grid-3">
-          <div class="form-group">
-            <label class="form-label">ពិការភាព</label>
-            <select id="statusDisability" class="form-control">
-              <option value="ទេ">ទេ</option>
-              <option value="មាន">មាន</option>
-            </select>
+        <!-- 2. Teacher Employment Section (Shown in teacher mode) -->
+        <div id="teacherEmploymentSection" style="display: none;">
+          <div class="section-title" style="color: #d97706;">
+            <i class="fas fa-briefcase"></i> <span>ព័ត៌មានបង្រៀន និងកិច្ចសន្យាការងារ</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">ប័ណ្ណក្រីក្រ</label>
-            <select id="statusPoorCard" class="form-control">
-              <option value="គ្មាន">គ្មាន</option>
-              <option value="ក្រ១">ក្រ១</option>
-              <option value="ក្រ២">ក្រ២</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">សិស្សជនជាតិ</label>
-            <select id="statusEthnic" class="form-control">
-              <option value="ទេ">ទេ</option>
-              <option value="មាន">មាន</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="fields-grid-3">
-          <div class="form-group">
-            <label class="form-label">អាហារូបករណ៍</label>
-            <select id="statusScholarship" class="form-control">
-              <option value="ទេ">ទេ</option>
-              <option value="មាន">មាន</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Section: ព័ត៌មានឪពុកម្តាយ និងអាណាព្យាបាល (Parents Information) -->
-        <div class="section-title section-parents">
-          <i class="fas fa-users"></i> <span>ព័ត៌មានឪពុកម្តាយ និងអាណាព្យាបាល</span>
-        </div>
-        <div class="fields-grid-2">
-          <div class="form-group">
-            <label class="form-label">ឈ្មោះឪពុក</label>
-            <input type="text" id="fatherName" class="form-control" placeholder="ឈ្មោះឪពុក">
-          </div>
-          <div class="form-group">
-            <label class="form-label">មុខរបរឪពុក</label>
-            <input type="text" id="fatherJob" class="form-control" placeholder="មុខរបរ">
+          <div class="fields-grid-4">
+            <div class="form-group">
+              <label class="form-label">ស្ថានភាពការងារ</label>
+              <select id="teacherStatusWork" class="form-control">
+                <option value="កំពុងបង្រៀន" selected>កំពុងបង្រៀន (Active)</option>
+                <option value="បេសកកម្មសិក្សា">បេសកកម្មសិក្សា</option>
+                <option value="ឈប់សម្រាក">ឈប់សម្រាក</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ប្រភេទក្របខណ្ឌ</label>
+              <select id="teacherContractType" class="form-control">
+                <option value="ក្របខណ្ឌរដ្ឋ" selected>ក្របខណ្ឌរដ្ឋ (Civil Servant)</option>
+                <option value="ជាប់កិច្ចសន្យា">ជាប់កិច្ចសន្យា (Contract)</option>
+                <option value="ក្រៅម៉ោង">ក្រៅម៉ោង (Part-time)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ថ្ងៃខែចូលបម្រើការងារ</label>
+              <input type="date" id="teacherStartDate" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ដេប៉ាតឺម៉ង់ / ការិយាល័យ</label>
+              <select id="teacherDept" class="form-control">
+                <option value="ដេប៉ាតឺម៉ង់គរុកោសល្យទូទៅ" selected>ដេប៉ាតឺម៉ង់គរុកោសល្យទូទៅ</option>
+                <option value="ដេប៉ាតឺម៉ង់វិទ្យាសាស្ត្រពិត">ដេប៉ាតឺម៉ង់វិទ្យាសាស្ត្រពិត</option>
+                <option value="ដេប៉ាតឺម៉ង់មនុស្សសាស្ត្រ">ដេប៉ាតឺម៉ង់មនុស្សសាស្ត្រ</option>
+                <option value="ការិយាល័យសិក្សាធិការ">ការិយាល័យសិក្សាធិការ</option>
+                <option value="ការិយាល័យរដ្ឋបាល">ការិយាល័យរដ្ឋបាល</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="fields-grid-2">
-          <div class="form-group">
-            <label class="form-label">ឈ្មោះម្តាយ</label>
-            <input type="text" id="motherName" class="form-control" placeholder="ឈ្មោះម្តាយ">
+        <!-- 3. Student Parents Section (Shown in student mode) -->
+        <div id="studentParentsSection">
+          <div class="section-title section-parents">
+            <i class="fas fa-users"></i> <span>ព័ត៌មានឪពុកម្តាយ និងអាណាព្យាបាល</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">មុខរបរម្តាយ</label>
-            <input type="text" id="motherJob" class="form-control" placeholder="មុខរបរ">
+          <div class="fields-grid-2">
+            <div class="form-group">
+              <label class="form-label">ឈ្មោះឪពុក</label>
+              <input type="text" id="fatherName" class="form-control" placeholder="ឈ្មោះឪពុក">
+            </div>
+            <div class="form-group">
+              <label class="form-label">មុខរបរឪពុក</label>
+              <input type="text" id="fatherJob" class="form-control" placeholder="មុខរបរ">
+            </div>
+          </div>
+
+          <div class="fields-grid-2">
+            <div class="form-group">
+              <label class="form-label">ឈ្មោះម្តាយ</label>
+              <input type="text" id="motherName" class="form-control" placeholder="ឈ្មោះម្តាយ">
+            </div>
+            <div class="form-group">
+              <label class="form-label">មុខរបរម្តាយ</label>
+              <input type="text" id="motherJob" class="form-control" placeholder="មុខរបរ">
+            </div>
+          </div>
+
+          <div class="fields-grid-2">
+            <div class="form-group">
+              <label class="form-label">ឈ្មោះអាណាព្យាបាល (ក្រៅពីឪពុកម្តាយ)</label>
+              <input type="text" id="guardianName" class="form-control" placeholder="ឈ្មោះអាណាព្យាបាល">
+            </div>
+            <div class="form-group">
+              <label class="form-label">មុខរបរអាណាព្យាបាល</label>
+              <input type="text" id="guardianJob" class="form-control" placeholder="មុខរបរ">
+            </div>
           </div>
         </div>
 
-        <div class="fields-grid-2">
-          <div class="form-group">
-            <label class="form-label">ឈ្មោះអាណាព្យាបាល (ក្រៅពីឪពុកម្តាយ)</label>
-            <input type="text" id="guardianName" class="form-control" placeholder="ឈ្មោះអាណាព្យាបាល">
+        <!-- 4. Teacher Emergency Contact Section (Shown in teacher mode) -->
+        <div id="teacherEmergencySection" style="display: none;">
+          <div class="section-title" style="color: #db2777;">
+            <i class="fas fa-phone-volume"></i> <span>ព័ត៌មានទំនាក់ទំនងបន្ទាន់ / គ្រួសារ</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">មុខរបរអាណាព្យាបាល</label>
-            <input type="text" id="guardianJob" class="form-control" placeholder="មុខរបរ">
+          <div class="fields-grid-3">
+            <div class="form-group">
+              <label class="form-label">ឈ្មោះអ្នកទំនាក់ទំនងបន្ទាន់</label>
+              <input type="text" id="teacherEmergName" class="form-control" placeholder="ឈ្មោះសាច់ញាតិ ឬប្តី/ប្រពន្ធ">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ត្រូវជា</label>
+              <input type="text" id="teacherEmergRel" class="form-control" placeholder="ឧ. ប្តី, ប្រពន្ធ, បងប្អូន...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">លេខទូរស័ព្ទទំនាក់ទំនងបន្ទាន់</label>
+              <input type="tel" id="teacherEmergPhone" class="form-control" placeholder="012 345 678">
+            </div>
           </div>
         </div>
 
@@ -853,9 +1096,9 @@
   <div id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="cambodia-geo.js?v=2.5"></script>
-  <script src="data.js?v=2.5"></script>
-  <script src="add-student.js?v=2.5"></script>
+  <script src="cambodia-geo.js?v=4.4"></script>
+  <script src="data.js?v=4.4"></script>
+  <script src="add-student.js?v=4.4"></script>
 </body>
 
 </html>
