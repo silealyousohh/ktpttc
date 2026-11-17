@@ -1559,7 +1559,14 @@ app.get('/api/courses', async (req, res) => {
     db.courses = DEFAULT_COURSES;
     await writeDb(db);
   }
-  res.json(db.courses || []);
+  const courses = (db.courses || []).map(c => ({
+    ...c,
+    image: c.image || c.imageUrl || '',
+    imageUrl: c.image || c.imageUrl || '',
+    description: c.description || c.desc || '',
+    desc: c.description || c.desc || ''
+  }));
+  res.json(courses);
 });
 
 app.post('/api/courses', async (req, res) => {
@@ -1569,6 +1576,11 @@ app.post('/api/courses', async (req, res) => {
   if (!newItem.id) {
     newItem.id = Date.now().toString();
   }
+  if (newItem.image && !newItem.imageUrl) newItem.imageUrl = newItem.image;
+  if (newItem.imageUrl && !newItem.image) newItem.image = newItem.imageUrl;
+  if (newItem.description && !newItem.desc) newItem.desc = newItem.description;
+  if (newItem.desc && !newItem.description) newItem.description = newItem.desc;
+
   const index = db.courses.findIndex((c, idx) => String(c.id) === String(newItem.id) || String(idx) === String(newItem.id));
   if (index >= 0) {
     db.courses[index] = { ...db.courses[index], ...newItem };

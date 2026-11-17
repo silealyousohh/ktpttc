@@ -7783,7 +7783,7 @@ function renderPublicCoursesGrid(courses) {
     if (!list || list.length === 0) return;
     
     const html = list.map(c => {
-        const imgSrc = getDriveImageUrl(c.imageUrl || './cpd-p1.jpg');
+        const imgSrc = getDriveImageUrl(c.image || c.imageUrl || c.poster || './cpd-p1.jpg');
         const m1 = c.meta1 || '';
         const m2 = c.meta2 || '';
         const icon1 = (m1.includes('ម៉ោង') || m1.includes('រយៈពេល')) ? 'fa-user-graduate' : (m1.includes('បច្ចេកវិទ្យា') ? 'fa-laptop-code' : (m1.includes('ភាសា') ? 'fa-book-reader' : 'fa-calendar-alt'));
@@ -7801,7 +7801,7 @@ function renderPublicCoursesGrid(courses) {
                 </div>
                 <div class="cpd-content">
                     <h3 class="cpd-card-title">${escapeCourseHtml(c.title || '')}</h3>
-                    <p class="cpd-card-desc">${escapeCourseHtml(c.desc || '')}</p>
+                    <p class="cpd-card-desc">${escapeCourseHtml(c.description || c.desc || '')}</p>
                     ${(meta1Html || meta2Html) ? `<div class="cpd-meta-list">${meta1Html}${meta2Html}</div>` : ''}
                 </div>
             </div>`;
