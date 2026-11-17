@@ -406,6 +406,11 @@ function navigateView(viewName) {
   renderView(viewName);
 }
 
+// Header Brand Logo Click: Reload Current Application Page
+function handleLogoClick() {
+  window.location.reload();
+}
+
 // Update Alert Badge in Top Bar
 function updateAlertBadge() {
   const badge = document.getElementById('topAlertBadge');
