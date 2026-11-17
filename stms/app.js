@@ -105,26 +105,48 @@ function showToast(message, type = 'info') {
 // ==========================================================================
 // AUTHENTICATION & LOGIN GATE CONTROLLER
 // ==========================================================================
+let authenticatedUser = null;
+
 function initAuth() {
   let savedUser = null;
+  let authSession = null;
   try {
+    const rawAuth = localStorage.getItem('ktpttc_auth_session');
+    if (rawAuth) authSession = JSON.parse(rawAuth);
     const raw = sessionStorage.getItem('ktpttc_current_user') || localStorage.getItem('ktpttc_current_user');
     if (raw) savedUser = JSON.parse(raw);
   } catch (e) {}
 
-  if (savedUser && savedUser.username) {
-    const freshUser = (stmsData.users || []).find(u => u.username.toLowerCase() === savedUser.username.toLowerCase());
-    if (freshUser && freshUser.status !== 'disabled') {
-      loginSuccess(freshUser, false);
-      return;
+  if (authSession) {
+    authenticatedUser = authSession;
+    window.authenticatedUser = authSession;
+  }
+
+  if (savedUser && (savedUser.username || savedUser.role)) {
+    const savedActiveRole = localStorage.getItem('ktpttc_active_role') || (authSession ? authSession.role : savedUser.role);
+    window.currentRole = savedActiveRole;
+    currentRole = savedActiveRole;
+
+    // Load fresh dedicated profile for active role
+    let activeProfile;
+    if (savedActiveRole === 'trainee') {
+      activeProfile = getActiveTraineeProfile();
+      currentTraineeUser = activeProfile;
+    } else if (savedActiveRole === 'trainer') {
+      activeProfile = getActiveTrainerProfile();
+    } else {
+      activeProfile = getActiveAdminProfile();
     }
+
+    loginSuccess(activeProfile, false);
+    return;
   }
 
   showLoginScreen();
 }
 
 function showLoginScreen() {
-  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student');
+  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'is-admin-session');
   const loginOverlay = document.getElementById('stmsLoginScreen');
   const navbar = document.getElementById('stmsNavbar');
   const layout = document.getElementById('stmsAppLayout');
@@ -182,6 +204,9 @@ function handleLoginSubmit() {
   }
 
   if (errBox) errBox.style.display = 'none';
+  window.authenticatedUser = user;
+  authenticatedUser = user;
+  localStorage.setItem('ktpttc_auth_session', JSON.stringify(user));
   loginSuccess(user, true);
 }
 
@@ -194,10 +219,19 @@ function quickFillLogin(username, password) {
 }
 
 function loginSuccess(user, notify = true) {
+  if (!window.authenticatedUser) {
+    window.authenticatedUser = user;
+    authenticatedUser = user;
+    localStorage.setItem('ktpttc_auth_session', JSON.stringify(user));
+  }
+  const authUser = window.authenticatedUser;
+  const isAdmin = (authUser && authUser.role === 'admin') || (user && user.role === 'admin');
+
   currentUser = user;
-  currentRole = user.role;
+  currentRole = window.currentRole || user.role;
   localStorage.setItem('ktpttc_current_user', JSON.stringify(user));
   sessionStorage.setItem('ktpttc_current_user', JSON.stringify(user));
+  localStorage.setItem('ktpttc_active_role', currentRole);
 
   const loginOverlay = document.getElementById('stmsLoginScreen');
   const navbar = document.getElementById('stmsNavbar');
@@ -212,18 +246,26 @@ function loginSuccess(user, notify = true) {
   const roleEl = document.getElementById('navbarUserRole');
   const avatarEl = document.getElementById('navbarUserAvatar');
   if (nameEl) nameEl.textContent = user.nameKh;
-  if (roleEl) roleEl.textContent = user.roleLabel || user.role;
-  if (avatarEl) avatarEl.textContent = user.avatar || (user.role === 'trainer' ? '👨‍🏫' : user.role === 'trainee' ? '👨‍🎓' : '👨‍💼');
+  if (roleEl) roleEl.textContent = user.roleLabel || (currentRole === 'trainee' ? 'គរុសនិស្សិត' : currentRole === 'trainer' ? 'គ្រូឧទ្ទេស' : 'អ្នកគ្រប់គ្រងប្រព័ន្ធ');
+  if (avatarEl) {
+    if (user.photo) {
+      avatarEl.innerHTML = `<img src="${user.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
+    } else {
+      avatarEl.textContent = user.avatar || (currentRole === 'trainer' ? '👨‍🏫' : currentRole === 'trainee' ? '👨‍🎓' : '👨‍💼');
+    }
+  }
 
   // Set body role class for styling rules
-  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'trainee-mode', 'trainer-mode', 'admin-mode', 'is-admin-session');
-  document.body.classList.add(`role-${user.role}`);
-  if (user.role === 'admin') {
+  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'trainee-mode', 'trainer-mode', 'admin-mode');
+  document.body.classList.add(`role-${currentRole}`);
+  if (isAdmin) {
     document.body.classList.add('is-admin-session');
+  }
+  if (currentRole === 'admin') {
     document.body.classList.add('admin-mode');
-  } else if (user.role === 'trainee') {
+  } else if (currentRole === 'trainee') {
     document.body.classList.add('trainee-mode');
-  } else if (user.role === 'trainer') {
+  } else if (currentRole === 'trainer') {
     document.body.classList.add('trainer-mode');
   }
 
@@ -236,11 +278,10 @@ function loginSuccess(user, notify = true) {
   // Center Role Switcher: Visible ONLY to Administrator for role preview (Hidden for staff/trainers & students/trainees)
   const navCenterRole = document.getElementById('navCenterRole') || document.querySelector('.nav-center-role');
   if (navCenterRole) {
-    const isAdmin = !!(user && user.role === 'admin');
     navCenterRole.style.display = isAdmin ? 'flex' : 'none';
     if (isAdmin) {
       document.querySelectorAll('.role-tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.role === user.role);
+        btn.classList.toggle('active', btn.dataset.role === currentRole);
       });
     }
   }
@@ -250,12 +291,12 @@ function loginSuccess(user, notify = true) {
   if (targetView) {
     sessionStorage.removeItem('stms_target_view');
     currentView = targetView;
-  } else if (user.role === 'trainee') {
+  } else if (currentRole === 'trainee') {
     currentTraineeUser = (stmsData.trainees || []).find(t => t.id === user.studentId) || stmsData.trainees[0] || user;
     currentView = 'trainee-portal';
-  } else if (user.role === 'trainer') {
+  } else if (currentRole === 'trainer') {
     currentView = 'trainer-portal';
-  } else if (user.role === 'admin') {
+  } else if (currentRole === 'admin') {
     currentView = 'admin-portal';
   } else {
     currentView = 'admin-portal';
@@ -274,8 +315,14 @@ function handleLogout() {
   if (confirm('តើលោកអ្នកពិតជាចង់ចាកចេញពីប្រព័ន្ធ STMS មែនទេ?')) {
     localStorage.removeItem('ktpttc_current_user');
     sessionStorage.removeItem('ktpttc_current_user');
+    localStorage.removeItem('ktpttc_active_role');
+    localStorage.removeItem('ktpttc_auth_session');
+    authenticatedUser = null;
+    window.authenticatedUser = null;
+    window.currentRole = null;
+    window.currentTrainerPreviewId = null;
     currentUser = null;
-    document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'trainee-mode', 'is-admin-session');
+    document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'trainee-mode', 'trainer-mode', 'admin-mode', 'is-admin-session');
     const sidebarAside = document.querySelector('.stms-sidebar') || document.getElementById('stmsSidebar');
     if (sidebarAside) sidebarAside.style.display = 'flex';
     const navCenterRole = document.getElementById('navCenterRole') || document.querySelector('.nav-center-role');
@@ -304,16 +351,28 @@ function toggleLoginPassword() {
 
 // Role Preview Switcher for Administrator
 function switchRole(role, notify = true) {
-  if (!currentUser || currentUser.role !== 'admin') {
+  const authUser = window.authenticatedUser || (function() {
+    try {
+      const raw = localStorage.getItem('ktpttc_auth_session');
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; }
+  })();
+
+  const isAdmin = (authUser && authUser.role === 'admin') || (currentUser && currentUser.role === 'admin') || document.body.classList.contains('is-admin-session');
+
+  if (!isAdmin) {
     showToast('មានតែ Administrator ប៉ុណ្ណោះដែលអាចប្តូរទៅមើលសិទ្ធិផ្សេងៗបាន!', 'warning');
     return;
   }
 
   currentRole = role;
+  window.currentRole = role;
+  localStorage.setItem('ktpttc_active_role', role);
 
   // Update body role class
   document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'trainee-mode', 'trainer-mode', 'admin-mode');
   document.body.classList.add(`role-${role}`);
+  document.body.classList.add('is-admin-session');
   if (role === 'trainee') {
     document.body.classList.add('trainee-mode');
   } else if (role === 'trainer') {
@@ -338,7 +397,7 @@ function switchRole(role, notify = true) {
   if (role === 'trainee') {
     previewUser = getActiveTraineeProfile();
     currentTraineeUser = previewUser;
-    currentUser = { ...previewUser, role: 'trainee', roleLabel: 'គរុសិស្ស' };
+    currentUser = { ...previewUser, role: 'trainee', roleLabel: 'គរុសនិស្សិត' };
   } else if (role === 'trainer') {
     previewUser = getActiveTrainerProfile();
     currentUser = { ...previewUser, role: 'trainer', roleLabel: 'គ្រូឧទ្ទេស' };
@@ -347,12 +406,15 @@ function switchRole(role, notify = true) {
     currentUser = { ...previewUser, role: 'admin', roleLabel: 'អ្នកគ្រប់គ្រងប្រព័ន្ធ' };
   }
 
+  localStorage.setItem('ktpttc_current_user', JSON.stringify(currentUser));
+  sessionStorage.setItem('ktpttc_current_user', JSON.stringify(currentUser));
+
   const nameEl = document.getElementById('navbarUserName');
   const roleEl = document.getElementById('navbarUserRole');
   const avatarEl = document.getElementById('navbarUserAvatar');
 
   if (nameEl) nameEl.textContent = previewUser.nameKh;
-  if (roleEl) roleEl.textContent = previewUser.roleLabel || (role === 'trainee' ? 'គរុសិស្ស' : role === 'trainer' ? 'គ្រូឧទ្ទេស' : 'រដ្ឋបាល');
+  if (roleEl) roleEl.textContent = previewUser.roleLabel || (role === 'trainee' ? 'គរុសនិស្សិត' : role === 'trainer' ? 'គ្រូឧទ្ទេស' : 'អ្នកគ្រប់គ្រងប្រព័ន្ធ');
   if (avatarEl) {
     if (previewUser.photo) {
       avatarEl.innerHTML = `<img src="${previewUser.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
@@ -377,7 +439,7 @@ function switchRole(role, notify = true) {
   renderView(currentView);
 
   if (notify) {
-    showToast(`កំពុងមើលក្នុងនាម៖ ${previewUser.roleLabel}`, 'info');
+    showToast(`កំពុងមើលក្នុងនាម៖ ${previewUser.roleLabel || role}`, 'info');
   }
 }
 
@@ -2056,6 +2118,16 @@ function getSubjectTheme(code) {
 }
 
 function getActiveTraineeProfile() {
+  let saved = null;
+  try {
+    const raw = localStorage.getItem('ktpttc_profile_trainee');
+    if (raw) saved = JSON.parse(raw);
+  } catch (e) {}
+
+  if (saved && saved.nameKh) {
+    return saved;
+  }
+
   let t = currentTraineeUser || (stmsData.trainees && stmsData.trainees.length > 0 ? stmsData.trainees[0] : null);
   if (!t || !t.id) {
     if (currentUser && currentUser.role === 'trainee' && currentUser.nameKh) {
@@ -2069,9 +2141,10 @@ function getActiveTraineeProfile() {
         dob: '2001-11-16',
         className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
         cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុបង្រៀន',
+        roleLabel: 'គរុសនិស្សិត',
         status: 'កំពុងសិក្សា',
-        phone: '098765432',
+        phone: '098 765 432',
+        email: 'yousoh.silal@ktpttc.edu.kh',
         avatar: '👨‍🎓',
         attendanceSummary: {
           rate: 98,
@@ -5807,16 +5880,35 @@ function getActiveTrainerProfile() {
     const found = (stmsData.users || []).find(u => u.id === currentTrainerPreviewId);
     if (found) return found;
   }
+
+  // 1. Dedicated localStorage profile
+  let saved = null;
+  try {
+    const raw = localStorage.getItem('ktpttc_profile_trainer');
+    if (raw) saved = JSON.parse(raw);
+  } catch (e) {}
+
+  if (saved && saved.nameKh) {
+    return saved;
+  }
+
   if (currentUser && currentUser.role === 'trainer' && currentUser.nameKh) {
     return currentUser;
   }
-  return (stmsData.users || []).find(u => u.role === 'trainer') || {
+
+  // 2. Find trainer in stmsData.users (excluding student name if accidental bleed occurred)
+  const foundTrainer = (stmsData.users || []).find(u => u.role === 'trainer' && u.nameKh !== 'យូសុះ ស៊ីលាល');
+  if (foundTrainer) return foundTrainer;
+
+  return {
     id: "USR-TRN-001",
     nameKh: "សាស្ត្រាចារ្យ ហេង សំណាង",
     nameEn: "Heng Samnang",
     username: "trainer",
     role: "trainer",
     roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+    email: "samnang.heng@ktpttc.edu.kh",
+    phone: "016 777 888",
     subject: "PED-101",
     subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
     cohort: "ថ្នាក់បឋមសិក្សា ១២+២ ក្រុម ខ",
@@ -8137,6 +8229,17 @@ function confirmStudentHomeworkSubmission(hwId) {
 
 // 1. Active Admin Profile Resolver
 function getActiveAdminProfile() {
+  // 1. Dedicated localStorage profile
+  let saved = null;
+  try {
+    const raw = localStorage.getItem('ktpttc_profile_admin');
+    if (raw) saved = JSON.parse(raw);
+  } catch (e) {}
+
+  if (saved && saved.nameKh) {
+    return saved;
+  }
+
   if (currentUser && currentUser.role === 'admin' && currentUser.nameKh) {
     return currentUser;
   }
@@ -9875,8 +9978,8 @@ function getActiveUserProfile() {
     return {
       ...t,
       role: 'trainee',
-      roleLabel: 'គរុសនិស្សិត (Trainee)',
-      username: t.username || 'yousoh.silal',
+      roleLabel: t.roleLabel || 'គរុសនិស្សិត (Trainee)',
+      username: t.username || 'trainee',
       email: t.email || 'yousoh.silal@ktpttc.edu.kh',
       phone: t.phone || '098 765 432',
       avatar: t.avatar || '👨‍🎓'
@@ -9886,10 +9989,10 @@ function getActiveUserProfile() {
     return {
       ...tr,
       role: 'trainer',
-      roleLabel: 'គ្រូឧទ្ទេស (Trainer)',
-      username: tr.username || 'teacher',
-      email: tr.email || 'trainer@ktpttc.edu.kh',
-      phone: tr.phone || '012 345 678',
+      roleLabel: tr.roleLabel || 'គ្រូឧទ្ទេស (Trainer)',
+      username: tr.username || 'trainer',
+      email: tr.email || 'samnang.heng@ktpttc.edu.kh',
+      phone: tr.phone || '016 777 888',
       avatar: tr.avatar || '👨‍🏫'
     };
   } else {
@@ -9897,10 +10000,10 @@ function getActiveUserProfile() {
     return {
       ...adm,
       role: 'admin',
-      roleLabel: 'អ្នកគ្រប់គ្រងប្រព័ន្ធ (Admin)',
+      roleLabel: adm.roleLabel || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ (Admin)',
       username: adm.username || 'admin',
       email: adm.email || 'admin@ktpttc.edu.kh',
-      phone: adm.phone || '012 888 999',
+      phone: adm.phone || '012 888 777',
       avatar: adm.avatar || '👨‍💼'
     };
   }
@@ -9910,6 +10013,7 @@ window.getActiveUserProfile = getActiveUserProfile;
 // 2. User Menu Modal (Fixed "undefined" bug & Added Profile Settings button)
 function renderUserMenuModal() {
   const activeUser = getActiveUserProfile();
+  const role = window.currentRole || activeUser.role || 'trainee';
   
   const modalHtml = `
     <div class="stms-modal-backdrop" id="userMenuModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -9931,7 +10035,7 @@ function renderUserMenuModal() {
           <!-- Avatar with Online Status -->
           <div style="position:relative; display:inline-block; margin-bottom:12px;">
             <div style="width:78px; height:78px; border-radius:50%; background:#eff6ff; border:3px solid #bfdbfe; display:flex; align-items:center; justify-content:center; font-size:2.8rem; margin:0 auto; box-shadow:0 4px 12px rgba(37,99,235,0.12); overflow:hidden;">
-              ${activeUser.photo ? `<img src="${activeUser.photo}" style="width:100%; height:100%; object-fit:cover;" />` : (activeUser.avatar || '👨‍🎓')}
+              ${activeUser.photo ? `<img src="${activeUser.photo}" style="width:100%; height:100%; object-fit:cover;" />` : (activeUser.avatar || (role==='trainer'?'👨‍🏫':role==='trainee'?'👨‍🎓':'👨‍💼'))}
             </div>
             <div style="position:absolute; bottom:2px; right:2px; width:22px; height:22px; border-radius:50%; background:#10b981; border:2px solid #ffffff; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:#ffffff;" title="គណនីសកម្ម (Online)">
               <i class="fas fa-check"></i>
@@ -9943,7 +10047,7 @@ function renderUserMenuModal() {
           
           <div style="margin-bottom:16px;">
             <span class="badge badge-primary" style="font-size:0.82rem; padding:4px 14px; border-radius:20px;">
-              <i class="fas fa-shield-alt" style="margin-right:4px;"></i> ${activeUser.roleLabel || window.currentRole}
+              <i class="fas fa-shield-alt" style="margin-right:4px;"></i> ${activeUser.roleLabel || (role==='trainee'?'គរុសនិស្សិត':role==='trainer'?'គ្រូឧទ្ទេស':'អ្នកគ្រប់គ្រង')}
             </span>
           </div>
 
@@ -9955,7 +10059,7 @@ function renderUserMenuModal() {
             </div>
             <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding:5px 0;">
               <strong>អត្តលេខ / លេខកូដ៖</strong>
-              <span>${activeUser.id || 'KTPTTC-2026-001'}</span>
+              <span>${activeUser.id || (role==='trainer'?'USR-TRN-001':role==='trainee'?'ktpttc-2026-st-001':'USR-ADM-001')}</span>
             </div>
             <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding:5px 0;">
               <strong>លេខទូរស័ព្ទ៖</strong>
@@ -9977,7 +10081,7 @@ function renderUserMenuModal() {
               <i class="fas fa-user-edit"></i> កែប្រែព័ត៌មានគណនី (Profile Settings)
             </button>
 
-            ${window.currentRole === 'admin' ? `
+            ${document.body.classList.contains('is-admin-session') || (window.authenticatedUser && window.authenticatedUser.role === 'admin') ? `
               <button class="btn btn-outline" style="width:100%; justify-content:center; height:36px; font-size:0.85rem;" onclick="closeStmsModal(); navigateView('rbac');">
                 <i class="fas fa-users-cog"></i> គ្រប់គ្រងគណនី &amp; ពាក្យសម្ងាត់ (RBAC)
               </button>
@@ -9999,9 +10103,13 @@ window.openUserMenuModal = renderUserMenuModal;
 
 // 3. Profile Settings Modal
 function openProfileSettingsModal(activeTab = 'general') {
-  const user = getActiveUserProfile();
+  const role = window.currentRole || (currentUser ? currentUser.role : 'trainee');
+  let user;
+  if (role === 'trainee') user = getActiveTraineeProfile();
+  else if (role === 'trainer') user = getActiveTrainerProfile();
+  else user = getActiveAdminProfile();
 
-  window.pendingProfileAvatar = user.avatar || '👨‍🎓';
+  window.pendingProfileAvatar = user.avatar || (role === 'trainer' ? '👨‍🏫' : role === 'trainee' ? '👨‍🎓' : '👨‍💼');
   window.pendingProfilePhoto = user.photo || null;
 
   const modalHtml = `
@@ -10013,14 +10121,34 @@ function openProfileSettingsModal(activeTab = 'general') {
               <i class="fas fa-user-cog"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ការកំណត់ &amp; កែប្រែព័ត៌មានគណនី (Profile Settings)</h3>
-              <p style="color:#bfdbfe; font-size:0.82rem; margin:2px 0 0 0;">កែប្រែព័ត៌មានផ្ទាល់ខ្លួន លេខទូរស័ព្ទ អ៊ីមែល និងពាក្យសម្ងាត់គណនី</p>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">
+                កែប្រែព័ត៌មានគណនី${role === 'trainee' ? 'គរុសិស្ស (Student Profile)' : role === 'trainer' ? 'គ្រូឧទ្ទេស (Teacher Profile)' : 'អ្នកគ្រប់គ្រង (Admin Profile)'}
+              </h3>
+              <p style="color:#bfdbfe; font-size:0.82rem; margin:2px 0 0 0;">ការកែប្រែគណនីនេះដាច់ដោយឡែកពីគណនីផ្សេងទៀត និងមិនបាត់បង់ពេល Reload ឡើយ</p>
             </div>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
+          <!-- Role Indicator Banner -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:10px; background:#eff6ff; display:flex; align-items:center; justify-content:center; font-size:1.6rem;">
+                ${role === 'trainee' ? '🎓' : role === 'trainer' ? '👨‍🏫' : '👨‍💼'}
+              </div>
+              <div>
+                <div style="font-size:0.75rem; color:#64748b; font-weight:700; text-transform:uppercase;">គណនីដែលកំពុងកែប្រែ</div>
+                <h4 style="margin:2px 0 0 0; font-size:0.95rem; color:#1e3a8a; font-weight:700;">
+                  ${role === 'trainee' ? 'គណនីគរុសិស្ស (Student Profile)' : role === 'trainer' ? 'គណនីគ្រូឧទ្ទេស (Teacher Profile)' : 'គណនីអ្នកគ្រប់គ្រង (Admin Profile)'}
+                </h4>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline" style="font-size:0.75rem; height:30px; padding:0 10px; color:#ef4444; border-color:#fca5a5;" onclick="resetRoleProfile('${role}')" title="កំណត់ទិន្នន័យគណនី ${role} ឡើងវិញតាមលំនាំដើម">
+              <i class="fas fa-undo"></i> កំណត់ឡើងវិញ
+            </button>
+          </div>
+
           <!-- Settings Tabs -->
           <div class="stms-modal-tabs">
             <button class="modal-tab-btn ${activeTab==='general'?'active':''}" onclick="openProfileSettingsModal('general')">
@@ -10037,12 +10165,12 @@ function openProfileSettingsModal(activeTab = 'general') {
               <!-- Avatar Selection Card -->
               <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; align-items:center; gap:18px;">
                 <div id="settingsAvatarDisplay" style="width:72px; height:72px; border-radius:50%; background:#ffffff; border:3px solid #3b82f6; display:flex; align-items:center; justify-content:center; font-size:2.8rem; box-shadow:0 3px 10px rgba(0,0,0,0.06); flex-shrink:0; overflow:hidden;">
-                  ${user.photo ? `<img src="${user.photo}" style="width:100%; height:100%; object-fit:cover;" />` : (user.avatar || '👨‍🎓')}
+                  ${user.photo ? `<img src="${user.photo}" style="width:100%; height:100%; object-fit:cover;" />` : (user.avatar || (role==='trainer'?'👨‍🏫':role==='trainee'?'👨‍🎓':'👨‍💼'))}
                 </div>
                 <div style="flex:1;">
                   <strong style="color:#1e293b; font-size:0.9rem; display:block; margin-bottom:6px;">ជ្រើសរើសរូបតំណាងគណនី (Avatar)</strong>
                   <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-                    ${['👨‍🎓', '👩‍🎓', '👨‍💼', '👩‍💼', '👨‍🏫', '👩‍🏫', '🧑‍💻', '🌟'].map(av => `
+                    ${(role === 'trainer' ? ['👨‍🏫', '👩‍🏫', '🧑‍🏫', '👨‍💼', '👩‍💼', '🌟'] : role === 'admin' ? ['👨‍💼', '👩‍💼', '🛡️', '⚡', '🌟'] : ['👨‍🎓', '👩‍🎓', '🧑‍🎓', '🧑‍💻', '👨‍💼', '🌟']).map(av => `
                       <button type="button" class="btn btn-outline" style="font-size:1.3rem; padding:4px 8px; height:36px; min-width:36px; border-radius:8px; ${(user.avatar===av && !user.photo)?'border-color:#3b82f6; background:#eff6ff;':''}" onclick="selectProfileAvatar('${av}')">
                         ${av}
                       </button>
@@ -10061,11 +10189,11 @@ function openProfileSettingsModal(activeTab = 'general') {
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
                   <label class="form-label" style="font-weight:700;">ឈ្មោះជាភាសាខ្មែរ <span style="color:#ef4444;">*</span></label>
-                  <input type="text" id="profNameKh" class="form-input" value="${user.nameKh || ''}" placeholder="ឧ. យុន ស៊ីណាល" />
+                  <input type="text" id="profNameKh" class="form-input" value="${user.nameKh || ''}" placeholder="ឧ. ${role==='trainer'?'សាស្ត្រាចារ្យ ហេង សំណាង':role==='admin'?'លោក ឈន ប៊ុនថន':'យូសុះ ស៊ីលាល'}" />
                 </div>
                 <div>
                   <label class="form-label" style="font-weight:700;">ឈ្មោះជាអក្សរឡាតាំង (Latin Name)</label>
-                  <input type="text" id="profNameEn" class="form-input" value="${user.nameEn || ''}" placeholder="ឧ. Yun Sional" />
+                  <input type="text" id="profNameEn" class="form-input" value="${user.nameEn || ''}" placeholder="ឧ. ${role==='trainer'?'Heng Samnang':role==='admin'?'Chhorn Bunthorn':'Yousoh Silal'}" />
                 </div>
               </div>
 
@@ -10081,11 +10209,11 @@ function openProfileSettingsModal(activeTab = 'general') {
                 </div>
               </div>
 
-              ${user.role === 'trainee' ? `
+              ${role === 'trainee' ? `
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                   <div>
                     <label class="form-label" style="font-weight:700;">ថ្ងៃខែឆ្នាំកំណើត</label>
-                    <input type="date" id="profDob" class="form-input" value="${user.dob || '2003-05-14'}" />
+                    <input type="date" id="profDob" class="form-input" value="${user.dob || '2001-11-16'}" />
                   </div>
                   <div>
                     <label class="form-label" style="font-weight:700;">ភេទ</label>
@@ -10100,10 +10228,10 @@ function openProfileSettingsModal(activeTab = 'general') {
               <!-- Readonly System Credentials Information -->
               <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 14px; font-size:0.8rem; color:#1e40af;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                  <span>អត្តលេខប្រព័ន្ធ៖ <strong>${user.id || '-'}</strong></span>
-                  <span>ឈ្មោះគណនី Login៖ <strong>${user.username || '-'}</strong></span>
+                  <span>អត្តលេខប្រព័ន្ធ៖ <strong>${user.id || (role==='trainer'?'USR-TRN-001':role==='trainee'?'ktpttc-2026-st-001':'USR-ADM-001')}</strong></span>
+                  <span>ឈ្មោះគណនី Login៖ <strong>${user.username || (role==='trainer'?'trainer':role==='trainee'?'trainee':'admin')}</strong></span>
                 </div>
-                <div>កម្រិតសិទ្ធិ៖ <strong>${user.roleLabel || window.currentRole}</strong> (កំណត់ដោយរដ្ឋបាល KTPTTC)</div>
+                <div>កម្រិតសិទ្ធិ៖ <strong>${user.roleLabel || (role==='trainee'?'គរុសនិស្សិត':role==='trainer'?'គ្រូឧទ្ទេស':'អ្នកគ្រប់គ្រង')}</strong> (កំណត់ដោយរដ្ឋបាល KTPTTC)</div>
               </div>
 
               <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
@@ -10173,12 +10301,29 @@ function handleProfilePhotoUpload(input) {
     const file = input.files[0];
     const reader = new FileReader();
     reader.onload = function(e) {
-      window.pendingProfilePhoto = e.target.result;
-      const display = document.getElementById('settingsAvatarDisplay');
-      if (display) {
-        display.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;" />`;
-      }
-      showToast('បានជ្រើសរើសរូបថតផ្ទាល់ខ្លួនជោគជ័យ!', 'success');
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX = 240;
+        let w = img.width, h = img.height;
+        if (w > h) {
+          if (w > MAX) { h *= MAX / w; w = MAX; }
+        } else {
+          if (h > MAX) { w *= MAX / h; h = MAX; }
+        }
+        canvas.width = Math.round(w);
+        canvas.height = Math.round(h);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        window.pendingProfilePhoto = dataUrl;
+        const display = document.getElementById('settingsAvatarDisplay');
+        if (display) {
+          display.innerHTML = `<img src="${dataUrl}" style="width:100%; height:100%; object-fit:cover;" />`;
+        }
+        showToast('បានជ្រើសរើសរូបថតផ្ទាល់ខ្លួនជោគជ័យ!', 'success');
+      };
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   }
@@ -10203,14 +10348,22 @@ function saveProfileSettings(tab) {
     }
 
     if (role === 'trainee') {
-      const t = getActiveTraineeProfile();
-      t.password = newPass;
-      const foundInList = (stmsData.trainees || []).find(x => x.id === t.id);
-      if (foundInList) foundInList.password = newPass;
-    } else {
-      const u = (stmsData.users || []).find(x => x.role === role);
+      const t = { ...getActiveTraineeProfile(), password: newPass };
+      localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(t));
+      const u = (stmsData.users || []).find(x => x.role === 'trainee');
       if (u) u.password = newPass;
-      if (currentUser) currentUser.password = newPass;
+      const st = (stmsData.trainees || []).find(x => x.id === t.id);
+      if (st) st.password = newPass;
+    } else if (role === 'trainer') {
+      const tr = { ...getActiveTrainerProfile(), password: newPass };
+      localStorage.setItem('ktpttc_profile_trainer', JSON.stringify(tr));
+      const u = (stmsData.users || []).find(x => x.id === tr.id || (x.role === 'trainer' && x.username === tr.username));
+      if (u) u.password = newPass;
+    } else {
+      const adm = { ...getActiveAdminProfile(), password: newPass };
+      localStorage.setItem('ktpttc_profile_admin', JSON.stringify(adm));
+      const u = (stmsData.users || []).find(x => x.role === 'admin');
+      if (u) u.password = newPass;
     }
     saveData();
     closeStmsModal();
@@ -10231,8 +10384,10 @@ function saveProfileSettings(tab) {
     return;
   }
 
+  let updatedUser = null;
+
   if (role === 'trainee') {
-    const t = getActiveTraineeProfile();
+    const t = { ...getActiveTraineeProfile() };
     t.nameKh = nameKh;
     if (nameEn) t.nameEn = nameEn;
     if (phone) t.phone = phone;
@@ -10245,16 +10400,35 @@ function saveProfileSettings(tab) {
       t.avatar = window.pendingProfileAvatar;
       t.photo = null;
     }
-    const idx = (stmsData.trainees || []).findIndex(x => x.id === t.id);
+    // Save to dedicated storage
+    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(t));
+
+    // Update stmsData.trainees
+    if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+    const idx = stmsData.trainees.findIndex(x => x.id === t.id);
     if (idx !== -1) {
       stmsData.trainees[idx] = { ...stmsData.trainees[idx], ...t };
+    } else {
+      stmsData.trainees.unshift(t);
     }
+
+    // Update stmsData.users trainee entry
+    const u = (stmsData.users || []).find(x => x.role === 'trainee');
+    if (u) {
+      u.nameKh = t.nameKh;
+      u.nameEn = t.nameEn;
+      u.phone = t.phone;
+      u.email = t.email;
+      if (t.photo) u.photo = t.photo;
+      if (t.avatar) u.avatar = t.avatar;
+    }
+
     currentTraineeUser = t;
-    if (currentUser && currentUser.role === 'trainee') {
-      currentUser = { ...currentUser, ...t };
-    }
+    currentUser = { ...currentUser, ...t, role: 'trainee', roleLabel: 'គរុសនិស្សិត' };
+    updatedUser = t;
+
   } else if (role === 'trainer') {
-    const tr = getActiveTrainerProfile();
+    const tr = { ...getActiveTrainerProfile() };
     tr.nameKh = nameKh;
     if (nameEn) tr.nameEn = nameEn;
     if (phone) tr.phone = phone;
@@ -10265,15 +10439,23 @@ function saveProfileSettings(tab) {
       tr.avatar = window.pendingProfileAvatar;
       tr.photo = null;
     }
-    const idx = (stmsData.users || []).findIndex(x => x.id === tr.id || x.role === 'trainer');
+    // Save to dedicated storage
+    localStorage.setItem('ktpttc_profile_trainer', JSON.stringify(tr));
+
+    // Update stmsData.users trainer entry
+    const idx = (stmsData.users || []).findIndex(x => x.id === tr.id || (x.role === 'trainer' && x.username === tr.username));
     if (idx !== -1) {
       stmsData.users[idx] = { ...stmsData.users[idx], ...tr };
+    } else {
+      stmsData.users.push(tr);
     }
-    if (currentUser && currentUser.role === 'trainer') {
-      currentUser = { ...currentUser, ...tr };
-    }
+
+    currentUser = { ...currentUser, ...tr, role: 'trainer', roleLabel: 'គ្រូឧទ្ទេស' };
+    updatedUser = tr;
+
   } else {
-    const adm = getActiveAdminProfile();
+    // Admin
+    const adm = { ...getActiveAdminProfile() };
     adm.nameKh = nameKh;
     if (nameEn) adm.nameEn = nameEn;
     if (phone) adm.phone = phone;
@@ -10284,33 +10466,83 @@ function saveProfileSettings(tab) {
       adm.avatar = window.pendingProfileAvatar;
       adm.photo = null;
     }
-    const idx = (stmsData.users || []).findIndex(x => x.id === adm.id || x.role === 'admin');
+    // Save to dedicated storage
+    localStorage.setItem('ktpttc_profile_admin', JSON.stringify(adm));
+
+    // Update stmsData.users admin entry
+    const idx = (stmsData.users || []).findIndex(x => x.role === 'admin');
     if (idx !== -1) {
       stmsData.users[idx] = { ...stmsData.users[idx], ...adm };
+    } else {
+      stmsData.users.push(adm);
     }
-    if (currentUser && currentUser.role === 'admin') {
-      currentUser = { ...currentUser, ...adm };
-    }
+
+    currentUser = { ...currentUser, ...adm, role: 'admin', roleLabel: 'អ្នកគ្រប់គ្រងប្រព័ន្ធ' };
+    updatedUser = adm;
   }
+
+  // Persist session & data
+  localStorage.setItem('ktpttc_current_user', JSON.stringify(currentUser));
+  sessionStorage.setItem('ktpttc_current_user', JSON.stringify(currentUser));
+  saveData();
 
   // Update navbar display immediately
   const nameEl = document.getElementById('navbarUserName');
   const avatarEl = document.getElementById('navbarUserAvatar');
   if (nameEl) nameEl.textContent = nameKh;
   if (avatarEl) {
-    if (window.pendingProfilePhoto) {
-      avatarEl.innerHTML = `<img src="${window.pendingProfilePhoto}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
-    } else if (window.pendingProfileAvatar) {
-      avatarEl.textContent = window.pendingProfileAvatar;
+    if (updatedUser && updatedUser.photo) {
+      avatarEl.innerHTML = `<img src="${updatedUser.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
+    } else if (updatedUser && updatedUser.avatar) {
+      avatarEl.textContent = updatedUser.avatar;
     }
   }
 
-  saveData();
   closeStmsModal();
-  showToast(`🎉 បានកែប្រែ និងរក្សាទុកព័ត៌មានគណនី «${nameKh}» ដោយជោគជ័យ!`, 'success');
+  const roleKh = role === 'trainee' ? 'គរុសិស្ស' : role === 'trainer' ? 'គ្រូឧទ្ទេស' : 'រដ្ឋបាល';
+  showToast(`🎉 បានរក្សាទុកព័ត៌មានគណនី${roleKh} «${nameKh}» ដោយជោគជ័យ!`, 'success');
+
   if (typeof renderView === 'function') {
     renderView(currentView);
   }
 }
 window.saveProfileSettings = saveProfileSettings;
+
+function resetRoleProfile(role) {
+  const roleName = role === 'trainee' ? 'គរុសិស្ស' : role === 'trainer' ? 'គ្រូឧទ្ទេស' : 'អ្នកគ្រប់គ្រង';
+  if (!confirm(`តើលោកអ្នកពិតជាចង់កំណត់ព័ត៌មានគណនី${roleName}ឡើងវិញតាមលំនាំដើមមែនទេ?`)) return;
+
+  if (role === 'trainee') {
+    localStorage.removeItem('ktpttc_profile_trainee');
+  } else if (role === 'trainer') {
+    localStorage.removeItem('ktpttc_profile_trainer');
+    const tr = (stmsData.users || []).find(u => u.role === 'trainer');
+    if (tr) {
+      tr.nameKh = "សាស្ត្រាចារ្យ ហេង សំណាង";
+      tr.nameEn = "Heng Samnang";
+      tr.phone = "016 777 888";
+      tr.email = "samnang.heng@ktpttc.edu.kh";
+      tr.avatar = "👨‍🏫";
+      delete tr.photo;
+    }
+  } else {
+    localStorage.removeItem('ktpttc_profile_admin');
+    const adm = (stmsData.users || []).find(u => u.role === 'admin');
+    if (adm) {
+      adm.nameKh = "លោក ឈន ប៊ុនថន";
+      adm.nameEn = "Chhorn Bunthorn";
+      adm.phone = "012 888 777";
+      adm.email = "admin@ktpttc.edu.kh";
+      adm.avatar = "👨‍💼";
+      delete adm.photo;
+    }
+  }
+  saveData();
+  showToast(`បានកំណត់ព័ត៌មានគណនី${roleName}ឡើងវិញតាមលំនាំដើមជោគជ័យ!`, 'info');
+  openProfileSettingsModal();
+  if (typeof renderView === 'function') {
+    renderView(currentView);
+  }
+}
+window.resetRoleProfile = resetRoleProfile;
 
