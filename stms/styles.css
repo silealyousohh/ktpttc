@@ -2813,3 +2813,87 @@ body:has(.admin-portal-container) .stms-content-viewport {
   font-weight: 800;
   font-size: 0.85rem;
 }
+
+/* ==========================================================================
+   STMS Real File Upload & Dropzone Components
+   ========================================================================== */
+.stms-upload-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 22px 18px;
+  text-align: center;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
+}
+
+.stms-upload-dropzone:hover {
+  border-color: #ea580c;
+  background: #fff7ed;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.08);
+  transform: translateY(-1px);
+}
+
+.stms-upload-dropzone.dragover {
+  border-color: #f97316 !important;
+  background: #ffedd5 !important;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15) !important;
+  transform: scale(1.01);
+}
+
+.stms-file-preview-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.stms-file-preview-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.stms-file-preview-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.file-type-pdf { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
+.file-type-word { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+.file-type-ppt { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
+.file-type-excel { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+.file-type-zip { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
+.file-type-image { background: #faf5ff; color: #9333ea; border: 1px solid #f3e8ff; }
+.file-type-other { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+
+.stms-file-item-row {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+.stms-file-item-row:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+}
+

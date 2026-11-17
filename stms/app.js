@@ -334,14 +334,32 @@ function switchRole(role, notify = true) {
   });
 
   // Assign Active User Profile preview based on Role
-  const previewUser = stmsData.users.find(u => u.role === role) || currentUser;
+  let previewUser;
+  if (role === 'trainee') {
+    previewUser = getActiveTraineeProfile();
+    currentTraineeUser = previewUser;
+    currentUser = { ...previewUser, role: 'trainee', roleLabel: 'គរុសិស្ស' };
+  } else if (role === 'trainer') {
+    previewUser = getActiveTrainerProfile();
+    currentUser = { ...previewUser, role: 'trainer', roleLabel: 'គ្រូឧទ្ទេស' };
+  } else {
+    previewUser = getActiveAdminProfile();
+    currentUser = { ...previewUser, role: 'admin', roleLabel: 'អ្នកគ្រប់គ្រងប្រព័ន្ធ' };
+  }
+
   const nameEl = document.getElementById('navbarUserName');
   const roleEl = document.getElementById('navbarUserRole');
   const avatarEl = document.getElementById('navbarUserAvatar');
 
   if (nameEl) nameEl.textContent = previewUser.nameKh;
-  if (roleEl) roleEl.textContent = `${previewUser.roleLabel} (Admin Preview)`;
-  if (avatarEl) avatarEl.textContent = previewUser.avatar;
+  if (roleEl) roleEl.textContent = previewUser.roleLabel || (role === 'trainee' ? 'គរុសិស្ស' : role === 'trainer' ? 'គ្រូឧទ្ទេស' : 'រដ្ឋបាល');
+  if (avatarEl) {
+    if (previewUser.photo) {
+      avatarEl.innerHTML = `<img src="${previewUser.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
+    } else {
+      avatarEl.textContent = previewUser.avatar || (role === 'trainee' ? '👨‍🎓' : role === 'trainer' ? '👨‍🏫' : '👨‍💼');
+    }
+  }
 
   // Set default view for role
   if (role === 'trainee') {
@@ -2158,8 +2176,8 @@ function renderTraineePortalView(container) {
           <button class="btn-hero-action primary" onclick="viewTraineeCard('${t.id}')">
             <i class="fas fa-id-card"></i> កាតសិស្ស
           </button>
-          <button class="btn-hero-action secondary" onclick="openTraineeForumModal('requests')">
-            <i class="fas fa-user-edit"></i> ស្នើសុំកែប្រែ
+          <button class="btn-hero-action secondary" onclick="openProfileSettingsModal()">
+            <i class="fas fa-user-edit"></i> កែប្រែព័ត៌មាន
           </button>
         </div>
       </div>
@@ -3266,7 +3284,7 @@ function openTraineeGuidelinesModal(activeSection = 'rules') {
                     <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; color:#1e3a8a;">
                       <i class="fas fa-paperclip"></i>
                       <span>ឯកសារភ្ជាប់៖ <strong>${hw.attachment || 'ឯកសារណែនាំ.docx'}</strong></span>
-                      <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem;" onclick="showToast('បានទាញយកឯកសារភ្ជាប់កិច្ចការដោយជោគជ័យ!', 'success')">
+                      <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem; color:#2563eb; border-color:#bfdbfe;" onclick="downloadHwAttachment('${hw.id}')">
                         <i class="fas fa-download"></i> ទាញយក
                       </button>
                     </div>
@@ -3541,17 +3559,26 @@ function openSubjectDetailModal(code) {
                 <span><i class="fas fa-file-pdf" style="color:#ef4444;"></i> មេរៀន &amp; ស្លាយដែលគ្រូបាន Upload (${subjectLessons.length})</span>
               </h4>
               <div style="display:flex; flex-direction:column; gap:8px;">
-                ${subjectLessons.map(l => `
-                  <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
-                    <div>
-                      <div style="font-weight:700; color:#1e293b; font-size:0.86rem;"><i class="fas fa-book-reader" style="color:#3b82f6; margin-right:6px;"></i> ${l.title}</div>
-                      <div style="font-size:0.76rem; color:#64748b; margin-top:2px;">${l.chapter} • Upload ដោយ៖ ${l.uploadedBy || 'គ្រូឧទ្ទេស'} (${l.date || ''})</div>
+                ${subjectLessons.map(l => {
+                  const fInfo = getFileIconInfo(l.fileName);
+                  return `
+                  <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                      <div class="stms-file-preview-icon ${fInfo.className}" style="width:36px; height:36px; font-size:1.15rem; flex-shrink:0;">
+                        <i class="${fInfo.icon}"></i>
+                      </div>
+                      <div style="min-width:0;">
+                        <div style="font-weight:700; color:#1e293b; font-size:0.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${l.title}</div>
+                        <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                          <span>${l.fileName || 'ឯកសារមេរៀន'}</span> • <span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.68rem; padding:1px 6px;">${l.fileSize || '2.4 MB'}</span> • ${l.chapter} • ${l.uploadedBy || 'គ្រូឧទ្ទេស'} (${l.date || ''})
+                        </div>
+                      </div>
                     </div>
-                    <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px; height:28px;" onclick="showToast('បានទាញយកឯកសារ «${l.fileName || l.title}» ដោយជោគជ័យ!', 'success')">
+                    <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px; height:28px; color:#2563eb; border-color:#bfdbfe; flex-shrink:0;" onclick="downloadLessonFile('${l.id}')">
                       <i class="fas fa-download"></i> ទាញយក
                     </button>
                   </div>
-                `).join('')}
+                `}).join('')}
               </div>
             </div>
           ` : ''}
@@ -6709,14 +6736,56 @@ function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
                 <input type="text" id="hwTitleInput" class="form-input" placeholder="ឧទាហរណ៍៖ រៀបចំកិច្ចតែងការបង្រៀនគំរូ ៥ ជំហាន..." />
               </div>
 
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                <div>
-                  <label class="form-label" style="font-weight:700;">ពិន្ទុអតិបរមា</label>
-                  <input type="number" id="hwPointsInput" class="form-input" value="10" min="1" max="100" />
+              <div style="margin-bottom:12px;">
+                <label class="form-label" style="font-weight:700;">ពិន្ទុអតិបរមា</label>
+                <input type="number" id="hwPointsInput" class="form-input" value="10" min="1" max="100" />
+              </div>
+
+              <div>
+                <label class="form-label" style="font-weight:700; display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="fas fa-paperclip" style="color:#f59e0b;"></i> ឯកសារភ្ជាប់ / Template (Word, PDF, PPTX)</span>
+                  <span id="hwUploadStatusText" style="font-size:0.75rem; color:#16a34a; font-weight:600;">
+                    <i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ
+                  </span>
+                </label>
+                <input type="file" id="hwRealFileInput" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip" style="display:none;" onchange="handleHwFileSelect(this)">
+                
+                <div id="hwDropzone" class="stms-upload-dropzone" style="padding:16px;"
+                     onclick="document.getElementById('hwRealFileInput').click()"
+                     ondragover="handleDropzoneDragOver(event, this)"
+                     ondragleave="handleDropzoneDragLeave(event, this)"
+                     ondrop="handleHwFileDrop(event)">
+                  <div style="font-weight:700; color:#1e293b; font-size:0.88rem;">
+                    <i class="fas fa-cloud-upload-alt" style="color:#f59e0b; margin-right:6px;"></i> ចុចដើម្បីជ្រើសរើសឯកសារភ្ជាប់កិច្ចការ ឬអូសទម្លាក់នៅទីនេះ
+                  </div>
+                  <div style="font-size:0.74rem; color:#64748b; margin-top:3px;">
+                    DOCX, PDF, PPTX, XLSX, ZIP (ទំហំអតិបរមា 50MB)
+                  </div>
                 </div>
-                <div>
-                  <label class="form-label" style="font-weight:700;">ឯកសារភ្ជាប់ / Template</label>
-                  <input type="text" id="hwAttachmentInput" class="form-input" placeholder="ឧ. MoEYS_Lesson_Plan_Template.docx" value="KTPTTC_Assignment_Guide.docx" />
+
+                <div id="hwFilePreviewCard" class="stms-file-preview-card" style="margin-top:8px;">
+                  <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                    <div id="hwFilePreviewIcon" class="stms-file-preview-icon file-type-word" style="width:38px; height:38px; font-size:1.2rem;">
+                      <i class="fas fa-file-word"></i>
+                    </div>
+                    <div style="min-width:0;">
+                      <div id="hwFilePreviewName" style="font-weight:700; color:#1e293b; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        KTPTTC_Assignment_Guide.docx
+                      </div>
+                      <div style="display:flex; align-items:center; gap:8px; font-size:0.74rem; color:#64748b;">
+                        <span id="hwFilePreviewSize" class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem;">1.2 MB</span>
+                        <span style="color:#10b981; font-weight:600;"><i class="fas fa-check-circle"></i> រួចរាល់</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex; gap:6px; flex-shrink:0;">
+                    <button type="button" class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.72rem;" onclick="event.stopPropagation(); document.getElementById('hwRealFileInput').click();">
+                      <i class="fas fa-sync-alt"></i> ប្តូរ
+                    </button>
+                    <button type="button" class="btn btn-outline" style="height:28px; padding:0 6px; font-size:0.72rem; color:#ef4444; border-color:#fca5a5;" onclick="event.stopPropagation(); removeHwSelectedFile();">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -6749,8 +6818,15 @@ function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
                     </button>
                   </div>
                   <p style="margin:8px 0; font-size:0.84rem; color:#475569; line-height:1.5;">${hw.description || ''}</p>
-                  <div style="font-size:0.78rem; color:#3b82f6;">
-                    <i class="fas fa-paperclip"></i> ${hw.attachment || 'ឯកសារភ្ជាប់'}
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px dashed #fed7aa;">
+                    <div style="font-size:0.8rem; color:#3b82f6; display:flex; align-items:center; gap:6px;">
+                      <i class="fas fa-paperclip"></i>
+                      <span>${hw.attachment || 'ឯកសារភ្ជាប់'}</span>
+                      <span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem;">${hw.attachmentSize || '1.2 MB'}</span>
+                    </div>
+                    <button class="btn btn-outline" style="height:26px; padding:0 10px; font-size:0.72rem; color:#2563eb; border-color:#bfdbfe;" onclick="downloadHwAttachment('${hw.id}')">
+                      <i class="fas fa-download"></i> ទាញយកឯកសារភ្ជាប់
+                    </button>
                   </div>
                 </div>
               `).join('') : `
@@ -6797,6 +6873,13 @@ function saveTeacherHomework() {
 
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
 
+  const fileInfo = window.pendingHwFileData || {
+    name: 'KTPTTC_Assignment_Guide.docx',
+    size: '1.2 MB',
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    dataUrl: null
+  };
+
   const newHw = {
     id: 'HW-' + Date.now(),
     subjectCode: subjectCode,
@@ -6805,7 +6888,9 @@ function saveTeacherHomework() {
     dueDate: dateEl ? dateEl.value : '2026-11-30',
     points: pointsEl ? parseInt(pointsEl.value, 10) || 10 : 10,
     description: descEl ? descEl.value.trim() : '',
-    attachment: attachEl && attachEl.value.trim() ? attachEl.value.trim() : 'ឯកសារណែនាំ_MoEYS.docx',
+    attachment: fileInfo.name,
+    attachmentSize: fileInfo.size,
+    attachmentData: fileInfo.dataUrl,
     trainerName: tr.nameKh,
     createdAt: new Date().toISOString().split('T')[0],
     status: 'active'
@@ -6815,6 +6900,14 @@ function saveTeacherHomework() {
     stmsData.assignments = [];
   }
   stmsData.assignments.unshift(newHw);
+
+  // Reset pending file
+  window.pendingHwFileData = {
+    name: 'KTPTTC_Assignment_Guide.docx',
+    size: '1.2 MB',
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    dataUrl: null
+  };
 
   saveData();
   showToast(`🎉 បានដាក់កិច្ចការថ្មី «${newHw.title}» និងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ!`, 'success');
@@ -6844,6 +6937,320 @@ function deleteTeacherAssignment(hwId) {
   openTeacherHomeworkModal(hw.subjectCode, 'list');
   if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
     renderView(currentView);
+  }
+}
+
+// ==========================================================================
+// FILE UPLOAD UTILITIES & HANDLERS (LESSONS, HOMEWORK & SUBMISSIONS)
+// ==========================================================================
+
+// Global pending file storage
+window.pendingLessonFileData = {
+  name: "PED101_Chapter3_TeachingMaterials.pdf",
+  size: "2.4 MB",
+  type: "application/pdf",
+  dataUrl: null
+};
+
+window.pendingHwFileData = {
+  name: "KTPTTC_Assignment_Guide.docx",
+  size: "1.2 MB",
+  type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  dataUrl: null
+};
+
+window.pendingStudentSubFileData = null;
+
+// File icon and type classifier
+function getFileIconInfo(filename) {
+  if (!filename) return { icon: 'fas fa-file-alt', className: 'file-type-other', color: '#64748b' };
+  const ext = filename.split('.').pop().toLowerCase();
+  if (ext === 'pdf') {
+    return { icon: 'fas fa-file-pdf', className: 'file-type-pdf', color: '#ef4444' };
+  } else if (['doc', 'docx'].includes(ext)) {
+    return { icon: 'fas fa-file-word', className: 'file-type-word', color: '#2563eb' };
+  } else if (['ppt', 'pptx'].includes(ext)) {
+    return { icon: 'fas fa-file-powerpoint', className: 'file-type-ppt', color: '#ea580c' };
+  } else if (['xls', 'xlsx', 'csv'].includes(ext)) {
+    return { icon: 'fas fa-file-excel', className: 'file-type-excel', color: '#16a34a' };
+  } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+    return { icon: 'fas fa-file-archive', className: 'file-type-zip', color: '#d97706' };
+  } else if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext)) {
+    return { icon: 'fas fa-file-image', className: 'file-type-image', color: '#9333ea' };
+  } else {
+    return { icon: 'fas fa-file-alt', className: 'file-type-other', color: '#64748b' };
+  }
+}
+
+// Format file size nicely
+function formatFileSize(bytes) {
+  if (!bytes || isNaN(bytes)) return '2.4 MB';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+// Drag & drop visual events
+function handleDropzoneDragOver(e, el) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (el) el.classList.add('dragover');
+}
+
+function handleDropzoneDragLeave(e, el) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (el) el.classList.remove('dragover');
+}
+
+// Lesson file handlers
+function handleLessonFileSelect(input) {
+  if (input.files && input.files[0]) {
+    processLessonFile(input.files[0]);
+  }
+}
+
+function handleLessonFileDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const dz = document.getElementById('lessonDropzone');
+  if (dz) dz.classList.remove('dragover');
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+    processLessonFile(e.dataTransfer.files[0]);
+  }
+}
+
+function processLessonFile(file) {
+  if (!file) return;
+  if (file.size > 50 * 1024 * 1024) {
+    showToast('⚠️ ទំហំឯកសារធំពេក! សូមជ្រើសរើសឯកសារក្រោម 50MB', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    window.pendingLessonFileData = {
+      name: file.name,
+      size: formatFileSize(file.size),
+      type: file.type || 'application/octet-stream',
+      dataUrl: e.target.result
+    };
+    updateLessonFilePreviewUI();
+    showToast(`បានជ្រើសរើសឯកសារ «${file.name}» (${formatFileSize(file.size)})`, 'success');
+  };
+  reader.readAsDataURL(file);
+
+  const titleEl = document.getElementById('lessonTitleInput');
+  if (titleEl && !titleEl.value.trim()) {
+    const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+    titleEl.value = cleanName;
+  }
+}
+
+function updateLessonFilePreviewUI() {
+  const card = document.getElementById('lessonFilePreviewCard');
+  const nameEl = document.getElementById('lessonFilePreviewName');
+  const sizeEl = document.getElementById('lessonFilePreviewSize');
+  const iconEl = document.getElementById('lessonFilePreviewIcon');
+  const statusEl = document.getElementById('lessonUploadStatusText');
+
+  if (!card) return;
+
+  if (window.pendingLessonFileData) {
+    card.style.display = 'flex';
+    const f = window.pendingLessonFileData;
+    if (nameEl) nameEl.textContent = f.name;
+    if (sizeEl) sizeEl.textContent = f.size;
+    const info = getFileIconInfo(f.name);
+    if (iconEl) {
+      iconEl.className = `stms-file-preview-icon ${info.className}`;
+      iconEl.innerHTML = `<i class="${info.icon}"></i>`;
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `<i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ`;
+      statusEl.style.color = '#16a34a';
+    }
+  } else {
+    card.style.display = 'none';
+    if (statusEl) {
+      statusEl.innerHTML = `<i class="fas fa-info-circle"></i> មិនទាន់ជ្រើសរើសឯកសារ`;
+      statusEl.style.color = '#64748b';
+    }
+  }
+}
+
+function removeLessonSelectedFile() {
+  window.pendingLessonFileData = null;
+  const input = document.getElementById('lessonRealFileInput');
+  if (input) input.value = '';
+  updateLessonFilePreviewUI();
+  showToast('បានដកឯកសារចេញ', 'info');
+}
+
+// Download Lesson File (Real File Download)
+function downloadLessonFile(lessonId) {
+  const l = (stmsData.lessons || []).find(x => x.id === lessonId);
+  if (!l) return;
+  const fileName = l.fileName || `${l.title || 'Lesson_Material'}.pdf`;
+
+  if (l.fileData && l.fileData.startsWith('data:')) {
+    const a = document.createElement('a');
+    a.href = l.fileData;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(`កំពុងទាញយកឯកសារ «${fileName}»...`, 'success');
+  } else {
+    const content = `========================================================================\n` +
+      `សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)\n` +
+      `ប្រព័ន្ធគ្រប់គ្រងគរុសិស្ស (STMS) - មេរៀន & ស្លាយបង្រៀន E-Learning\n` +
+      `========================================================================\n\n` +
+      `មុខវិជ្ជា៖ ${l.subjectName || l.subjectCode}\n` +
+      `កូដមុខវិជ្ជា៖ ${l.subjectCode}\n` +
+      `ជំពូក៖ ${l.chapter || ''}\n` +
+      `ចំណងជើងមេរៀន៖ ${l.title}\n` +
+      `Upload ដោយ៖ ${l.uploadedBy || 'គ្រូឧទ្ទេស'}\n` +
+      `កាលបរិច្ឆេទ៖ ${l.date || ''}\n` +
+      `ទំហំឯកសារ៖ ${l.fileSize || '2.4 MB'}\n\n` +
+      `ការពិពណ៌នាសង្ខេប៖\n${l.description || 'ឯកសារមេរៀនសម្រាប់ការសិក្សា និងស្រាវជ្រាវរបស់គរុសិស្ស KTPTTC'}\n\n` +
+      `------------------------------------------------------------------------\n` +
+      `រក្សាសិទ្ធិគ្រប់យ៉ាង © 2026 សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)\n`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName.endsWith('.pdf') || fileName.endsWith('.docx') || fileName.endsWith('.pptx') ? fileName : `${fileName}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast(`កំពុងទាញយកឯកសារ «${fileName}»...`, 'success');
+  }
+}
+
+// Homework file handlers
+function handleHwFileSelect(input) {
+  if (input.files && input.files[0]) {
+    processHwFile(input.files[0]);
+  }
+}
+
+function handleHwFileDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const dz = document.getElementById('hwDropzone');
+  if (dz) dz.classList.remove('dragover');
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+    processHwFile(e.dataTransfer.files[0]);
+  }
+}
+
+function processHwFile(file) {
+  if (!file) return;
+  if (file.size > 50 * 1024 * 1024) {
+    showToast('⚠️ ទំហំឯកសារធំពេក! សូមជ្រើសរើសឯកសារក្រោម 50MB', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    window.pendingHwFileData = {
+      name: file.name,
+      size: formatFileSize(file.size),
+      type: file.type || 'application/octet-stream',
+      dataUrl: e.target.result
+    };
+    updateHwFilePreviewUI();
+    showToast(`បានជ្រើសរើសឯកសារ «${file.name}» (${formatFileSize(file.size)})`, 'success');
+  };
+  reader.readAsDataURL(file);
+
+  const titleEl = document.getElementById('hwTitleInput');
+  if (titleEl && !titleEl.value.trim()) {
+    const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+    titleEl.value = cleanName;
+  }
+}
+
+function updateHwFilePreviewUI() {
+  const card = document.getElementById('hwFilePreviewCard');
+  const nameEl = document.getElementById('hwFilePreviewName');
+  const sizeEl = document.getElementById('hwFilePreviewSize');
+  const iconEl = document.getElementById('hwFilePreviewIcon');
+  const statusEl = document.getElementById('hwUploadStatusText');
+
+  if (!card) return;
+
+  if (window.pendingHwFileData) {
+    card.style.display = 'flex';
+    const f = window.pendingHwFileData;
+    if (nameEl) nameEl.textContent = f.name;
+    if (sizeEl) sizeEl.textContent = f.size;
+    const info = getFileIconInfo(f.name);
+    if (iconEl) {
+      iconEl.className = `stms-file-preview-icon ${info.className}`;
+      iconEl.innerHTML = `<i class="${info.icon}"></i>`;
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `<i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ`;
+      statusEl.style.color = '#16a34a';
+    }
+  } else {
+    card.style.display = 'none';
+    if (statusEl) {
+      statusEl.innerHTML = `<i class="fas fa-info-circle"></i> មិនទាន់ភ្ជាប់ឯកសារ`;
+      statusEl.style.color = '#64748b';
+    }
+  }
+}
+
+function removeHwSelectedFile() {
+  window.pendingHwFileData = null;
+  const input = document.getElementById('hwRealFileInput');
+  if (input) input.value = '';
+  updateHwFilePreviewUI();
+  showToast('បានដកឯកសារភ្ជាប់ចេញ', 'info');
+}
+
+// Download Homework Attachment (Real File Download)
+function downloadHwAttachment(hwId) {
+  const hw = (stmsData.assignments || []).find(x => x.id === hwId);
+  if (!hw) return;
+  const fileName = hw.attachment || `${hw.title || 'Assignment_Guide'}.docx`;
+
+  if (hw.attachmentData && hw.attachmentData.startsWith('data:')) {
+    const a = document.createElement('a');
+    a.href = hw.attachmentData;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(`កំពុងទាញយកឯកសារ «${fileName}»...`, 'success');
+  } else {
+    const content = `========================================================================\n` +
+      `សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)\n` +
+      `ប្រព័ន្ធគ្រប់គ្រងគរុសិស្ស (STMS) - សេចក្តីណែនាំកិច្ចការ & Template\n` +
+      `========================================================================\n\n` +
+      `មុខវិជ្ជា៖ ${hw.subjectName || hw.subjectCode}\n` +
+      `កូដមុខវិជ្ជា៖ ${hw.subjectCode}\n` +
+      `ចំណងជើងកិច្ចការ៖ ${hw.title}\n` +
+      `ពិន្ទុអតិបរមា៖ ${hw.points || 10} ពិន្ទុ\n` +
+      `កាលបរិច្ឆេទផុតកំណត់៖ ${hw.dueDate || ''}\n` +
+      `ដាក់ដោយ៖ ${hw.trainerName || 'គ្រូឧទ្ទេស'}\n\n` +
+      `សេចក្តីណែនាំកិច្ចការ៖\n${hw.description || 'សូមគរុសិស្សអនុវត្តតាមការណែនាំរបស់គ្រូឧទ្ទេស និងរៀបចំឯកសារឱ្យបានត្រឹមត្រូវ។'}\n\n` +
+      `------------------------------------------------------------------------\n` +
+      `រក្សាសិទ្ធិគ្រប់យ៉ាង © 2026 សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)\n`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName.endsWith('.docx') || fileName.endsWith('.pdf') || fileName.endsWith('.pptx') ? fileName : `${fileName}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast(`កំពុងទាញយកឯកសារភ្ជាប់ «${fileName}»...`, 'success');
   }
 }
 
@@ -6916,8 +7323,58 @@ function openTeacherUploadModal(selectedSubjectCode, activeTab = 'lesson') {
               </div>
 
               <div>
-                <label class="form-label" style="font-weight:700;">ជ្រើសរើសឯកសារ (PDF, PPTX, DOCX)</label>
-                <input type="text" id="lessonFileInput" class="form-input" placeholder="ឧ. PED101_Chapter3_TeachingMaterials.pdf" value="PED101_Chapter3_TeachingMaterials.pdf" />
+                <label class="form-label" style="font-weight:700; display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="fas fa-paperclip" style="color:#ea580c;"></i> ជ្រើសរើសឯកសារ (PDF, PPTX, DOCX, XLSX, ZIP)</span>
+                  <span id="lessonUploadStatusText" style="font-size:0.75rem; color:#16a34a; font-weight:600;">
+                    <i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ
+                  </span>
+                </label>
+                
+                <!-- Hidden Real File Input -->
+                <input type="file" id="lessonRealFileInput" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.png,.jpg,.jpeg" style="display:none;" onchange="handleLessonFileSelect(this)">
+                
+                <!-- Drag and Drop Dropzone -->
+                <div id="lessonDropzone" class="stms-upload-dropzone" 
+                     onclick="document.getElementById('lessonRealFileInput').click()"
+                     ondragover="handleDropzoneDragOver(event, this)"
+                     ondragleave="handleDropzoneDragLeave(event, this)"
+                     ondrop="handleLessonFileDrop(event)">
+                  <div style="width:48px; height:48px; border-radius:50%; background:#fff7ed; color:#ea580c; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 8px auto; border:1px solid #fed7aa;">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                  </div>
+                  <div style="font-weight:700; color:#1e293b; font-size:0.92rem; margin-bottom:4px;">
+                    ចុចដើម្បីជ្រើសរើសឯកសារពីកុំព្យូទ័រ ឬអូសទម្លាក់នៅទីនេះ (Drag &amp; Drop)
+                  </div>
+                  <div style="font-size:0.78rem; color:#64748b;">
+                    គាំទ្រប្រភេទ៖ PDF, PPTX, DOCX, XLSX, ZIP, រូបភាព (ទំហំអតិបរមា 50MB)
+                  </div>
+                </div>
+
+                <!-- Selected File Preview Card -->
+                <div id="lessonFilePreviewCard" class="stms-file-preview-card" style="margin-top:10px;">
+                  <div style="display:flex; align-items:center; gap:12px; overflow:hidden;">
+                    <div id="lessonFilePreviewIcon" class="stms-file-preview-icon file-type-pdf">
+                      <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div style="min-width:0;">
+                      <div id="lessonFilePreviewName" style="font-weight:700; color:#1e293b; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        PED101_Chapter3_TeachingMaterials.pdf
+                      </div>
+                      <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem; color:#64748b; margin-top:2px;">
+                        <span id="lessonFilePreviewSize" class="badge" style="background:#f1f5f9; color:#475569; font-size:0.72rem; padding:1px 6px;">2.4 MB</span>
+                        <span style="color:#10b981; font-weight:600;"><i class="fas fa-check-circle"></i> រួចរាល់សម្រាប់ Upload</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex; gap:6px; flex-shrink:0;">
+                    <button type="button" class="btn btn-outline" style="height:30px; padding:0 10px; font-size:0.75rem; border-color:#cbd5e1;" onclick="event.stopPropagation(); document.getElementById('lessonRealFileInput').click();">
+                      <i class="fas fa-sync-alt"></i> ប្តូរ
+                    </button>
+                    <button type="button" class="btn btn-outline" style="height:30px; padding:0 8px; font-size:0.75rem; color:#ef4444; border-color:#fca5a5;" onclick="event.stopPropagation(); removeLessonSelectedFile();">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -6937,17 +7394,33 @@ function openTeacherUploadModal(selectedSubjectCode, activeTab = 'lesson') {
                 <i class="fas fa-folder-open"></i> មេរៀនដែលបាន Upload ក្នុងមុខវិជ្ជារបស់ខ្ញុំ (${lessons.length})
               </h4>
               <div style="display:flex; flex-direction:column; gap:8px;">
-                ${lessons.length > 0 ? lessons.map(l => `
-                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                      <strong style="color:#1e293b; font-size:0.88rem;"><i class="fas fa-file-pdf" style="color:#ef4444; margin-right:6px;"></i> ${l.title}</strong>
-                      <div style="font-size:0.75rem; color:#64748b;">${l.chapter} • ${l.subjectCode} • ${l.date}</div>
+                ${lessons.length > 0 ? lessons.map(l => {
+                  const fInfo = getFileIconInfo(l.fileName);
+                  return `
+                  <div class="stms-file-item-row">
+                    <div style="display:flex; align-items:center; gap:12px; overflow:hidden;">
+                      <div class="stms-file-preview-icon ${fInfo.className}" style="width:38px; height:38px; font-size:1.2rem;">
+                        <i class="${fInfo.icon}"></i>
+                      </div>
+                      <div style="min-width:0;">
+                        <div style="font-weight:700; color:#1e293b; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                          ${l.title}
+                        </div>
+                        <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                          <span>${l.fileName || 'ឯកសារមេរៀន'}</span> • <span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem; padding:1px 6px;">${l.fileSize || '2.4 MB'}</span> • ${l.chapter} • ${l.subjectCode} • ${l.date}
+                        </div>
+                      </div>
                     </div>
-                    <button class="btn btn-outline" style="color:#ef4444; border-color:#fca5a5; font-size:0.72rem; height:26px; padding:0 8px;" onclick="deleteTeacherLesson('${l.id}')">
-                      <i class="fas fa-trash"></i>
-                    </button>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                      <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#2563eb; border-color:#bfdbfe;" onclick="downloadLessonFile('${l.id}')" title="ទាញយកឯកសារ">
+                        <i class="fas fa-download"></i> ទាញយក
+                      </button>
+                      <button class="btn btn-outline" style="color:#ef4444; border-color:#fca5a5; font-size:0.75rem; height:28px; padding:0 8px;" onclick="deleteTeacherLesson('${l.id}')" title="លុបមេរៀន">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
                   </div>
-                `).join('') : `
+                `}).join('') : `
                   <div style="text-align:center; padding:20px; color:#94a3b8; font-size:0.82rem;">
                     មិនទាន់មានមេរៀនដែលបាន Upload ក្នុងមុខវិជ្ជានេះនៅឡើយទេ។
                   </div>
@@ -7040,7 +7513,6 @@ function saveTeacherLesson() {
   const titleEl = document.getElementById('lessonTitleInput');
   const chapterEl = document.getElementById('lessonChapterInput');
   const descEl = document.getElementById('lessonDescInput');
-  const fileEl = document.getElementById('lessonFileInput');
 
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
@@ -7059,6 +7531,13 @@ function saveTeacherLesson() {
 
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
 
+  const fileInfo = window.pendingLessonFileData || {
+    name: `${subjectCode}_Lesson_Material.pdf`,
+    size: '2.4 MB',
+    type: 'application/pdf',
+    dataUrl: null
+  };
+
   const newLesson = {
     id: 'LSN-' + Date.now(),
     subjectCode: subjectCode,
@@ -7067,7 +7546,10 @@ function saveTeacherLesson() {
     chapter: chapterEl && chapterEl.value.trim() ? chapterEl.value.trim() : 'ជំពូកទី ១',
     description: descEl ? descEl.value.trim() : '',
     fileUrl: '#',
-    fileName: fileEl && fileEl.value.trim() ? fileEl.value.trim() : `${subjectCode}_Lesson_Material.pdf`,
+    fileName: fileInfo.name,
+    fileSize: fileInfo.size,
+    fileType: fileInfo.type,
+    fileData: fileInfo.dataUrl,
     uploadedBy: tr.nameKh,
     date: new Date().toISOString().split('T')[0]
   };
@@ -7077,8 +7559,16 @@ function saveTeacherLesson() {
   }
   stmsData.lessons.unshift(newLesson);
 
+  // Reset pending lesson file to default
+  window.pendingLessonFileData = {
+    name: "PED101_Chapter3_TeachingMaterials.pdf",
+    size: "2.4 MB",
+    type: "application/pdf",
+    dataUrl: null
+  };
+
   saveData();
-  showToast(`🎉 បាន Upload មេរៀន «${newLesson.title}» និងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ!`, 'success');
+  showToast(`🎉 បាន Upload ឯកសារ «${newLesson.fileName}» និងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ!`, 'success');
   openTeacherUploadModal(subjectCode, 'lesson');
   if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
     renderView(currentView);
@@ -7442,11 +7932,202 @@ function openTeacherTimetableModal() {
   showModal(modalHtml);
 }
 
-// Student Submit Homework Feedback
+// Student Submit Homework Modal with Real File Upload
 function submitStudentHomework(hwId) {
   const hw = (stmsData.assignments || []).find(a => a.id === hwId);
-  const title = hw ? hw.title : 'កិច្ចការ';
-  showToast(`🎉 បានប្រគល់កិច្ចការ «${title}» ជូនលោកគ្រូ/អ្នកគ្រូដោយជោគជ័យ!`, 'success');
+  if (!hw) return;
+
+  window.pendingStudentSubFileData = {
+    name: `កិច្ចការ_${hw.subjectCode}_យុន_ស៊ីណាល.docx`,
+    size: '1.4 MB',
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    dataUrl: null
+  };
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="studentSubmitHwModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:580px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-file-upload"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.1rem; margin:0;">ប្រគល់កិច្ចការ (Submit Homework)</h3>
+              <p style="color:#bfdbfe; font-size:0.8rem; margin:2px 0 0 0;">${hw.subjectCode} • ${hw.title}</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px;">
+          
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:0.8rem; color:#64748b;">ផុតកំណត់៖ <strong style="color:#b91c1c;">${hw.dueDate || 'ឆាប់ៗ'}</strong></span>
+              <span class="badge badge-warning" style="font-size:0.75rem;">ពិន្ទុ៖ ${hw.points || 10} ពិន្ទុ</span>
+            </div>
+            <div style="font-size:0.82rem; color:#334155; line-height:1.5;">${hw.description || 'សូមរៀបចំឯកសារកិច្ចការឱ្យបានត្រឹមត្រូវមុននឹងបញ្ជូនជូនគ្រូ។'}</div>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label class="form-label" style="font-weight:700; display:flex; justify-content:space-between; align-items:center;">
+              <span><i class="fas fa-paperclip" style="color:#2563eb;"></i> ជ្រើសរើសឯកសារកិច្ចការ (Word, PDF, ZIP)</span>
+              <span id="studentSubStatusText" style="font-size:0.75rem; color:#16a34a; font-weight:600;">
+                <i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ
+              </span>
+            </label>
+            <input type="file" id="studentSubRealFileInput" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg" style="display:none;" onchange="handleStudentSubFileSelect(this)">
+            
+            <div id="studentSubDropzone" class="stms-upload-dropzone" 
+                 onclick="document.getElementById('studentSubRealFileInput').click()"
+                 ondragover="handleDropzoneDragOver(event, this)"
+                 ondragleave="handleDropzoneDragLeave(event, this)"
+                 ondrop="handleStudentSubFileDrop(event)">
+              <div style="width:44px; height:44px; border-radius:50%; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:1.35rem; margin:0 auto 8px auto;">
+                <i class="fas fa-cloud-upload-alt"></i>
+              </div>
+              <div style="font-weight:700; color:#1e293b; font-size:0.9rem;">ចុចដើម្បីជ្រើសរើសឯកសារ ឬអូសទម្លាក់នៅទីនេះ</div>
+              <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">PDF, Word, ZIP (អតិបរមា 50MB)</div>
+            </div>
+
+            <div id="studentSubPreviewCard" class="stms-file-preview-card" style="margin-top:10px;">
+              <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                <div id="studentSubPreviewIcon" class="stms-file-preview-icon file-type-word" style="width:40px; height:40px; font-size:1.25rem;">
+                  <i class="fas fa-file-word"></i>
+                </div>
+                <div style="min-width:0;">
+                  <div id="studentSubPreviewName" style="font-weight:700; color:#1e293b; font-size:0.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    កិច្ចការ_${hw.subjectCode}_យុន_ស៊ីណាល.docx
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px; font-size:0.74rem; color:#64748b; margin-top:2px;">
+                    <span id="studentSubPreviewSize" class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem;">1.4 MB</span>
+                    <span style="color:#10b981; font-weight:600;"><i class="fas fa-check-circle"></i> រួចរាល់សម្រាប់ Submit</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px; flex-shrink:0;">
+                <button type="button" class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.72rem;" onclick="event.stopPropagation(); document.getElementById('studentSubRealFileInput').click();">
+                  <i class="fas fa-sync-alt"></i> ប្តូរ
+                </button>
+                <button type="button" class="btn btn-outline" style="height:28px; padding:0 6px; font-size:0.72rem; color:#ef4444; border-color:#fca5a5;" onclick="event.stopPropagation(); removeStudentSubFile();">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:18px;">
+            <label class="form-label" style="font-weight:700;">កំណត់សម្គាល់បន្ថែមជូនលោកគ្រូ/អ្នកគ្រូ (Optional)</label>
+            <textarea id="studentSubNoteInput" class="form-input" rows="2" placeholder="សរសេរសារខ្លីៗបញ្ជាក់ជូនលោកគ្រូ/អ្នកគ្រូ..."></textarea>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+            <button class="btn btn-primary" onclick="confirmStudentHomeworkSubmission('${hw.id}')">
+              <i class="fas fa-paper-plane"></i> 🚀 បញ្ជូនកិច្ចការទៅគ្រូ
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+
+function handleStudentSubFileSelect(input) {
+  if (input.files && input.files[0]) {
+    processStudentSubFile(input.files[0]);
+  }
+}
+
+function handleStudentSubFileDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const dz = document.getElementById('studentSubDropzone');
+  if (dz) dz.classList.remove('dragover');
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+    processStudentSubFile(e.dataTransfer.files[0]);
+  }
+}
+
+function processStudentSubFile(file) {
+  if (!file) return;
+  if (file.size > 50 * 1024 * 1024) {
+    showToast('⚠️ ទំហំឯកសារធំពេក! សូមជ្រើសរើសឯកសារក្រោម 50MB', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    window.pendingStudentSubFileData = {
+      name: file.name,
+      size: formatFileSize(file.size),
+      type: file.type || 'application/octet-stream',
+      dataUrl: e.target.result
+    };
+    const card = document.getElementById('studentSubPreviewCard');
+    const nameEl = document.getElementById('studentSubPreviewName');
+    const sizeEl = document.getElementById('studentSubPreviewSize');
+    const iconEl = document.getElementById('studentSubPreviewIcon');
+    const statusEl = document.getElementById('studentSubStatusText');
+    if (card) card.style.display = 'flex';
+    if (nameEl) nameEl.textContent = file.name;
+    if (sizeEl) sizeEl.textContent = formatFileSize(file.size);
+    const info = getFileIconInfo(file.name);
+    if (iconEl) {
+      iconEl.className = `stms-file-preview-icon ${info.className}`;
+      iconEl.innerHTML = `<i class="${info.icon}"></i>`;
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `<i class="fas fa-check-circle"></i> បានភ្ជាប់ឯកសារ`;
+      statusEl.style.color = '#16a34a';
+    }
+    showToast(`បានជ្រើសរើសឯកសារ «${file.name}» (${formatFileSize(file.size)})`, 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeStudentSubFile() {
+  window.pendingStudentSubFileData = null;
+  const input = document.getElementById('studentSubRealFileInput');
+  if (input) input.value = '';
+  const card = document.getElementById('studentSubPreviewCard');
+  if (card) card.style.display = 'none';
+  const statusEl = document.getElementById('studentSubStatusText');
+  if (statusEl) {
+    statusEl.innerHTML = `<i class="fas fa-info-circle"></i> មិនទាន់ភ្ជាប់ឯកសារ`;
+    statusEl.style.color = '#64748b';
+  }
+  showToast('បានដកឯកសារចេញ', 'info');
+}
+
+function confirmStudentHomeworkSubmission(hwId) {
+  const hw = (stmsData.assignments || []).find(a => a.id === hwId);
+  const noteEl = document.getElementById('studentSubNoteInput');
+  const file = window.pendingStudentSubFileData || {
+    name: `កិច្ចការ_${hw ? hw.subjectCode : 'Homework'}_យុន_ស៊ីណាល.docx`,
+    size: '1.4 MB'
+  };
+
+  if (hw) {
+    if (!Array.isArray(hw.submissions)) {
+      hw.submissions = [];
+    }
+    hw.submissions.push({
+      studentId: currentUser ? currentUser.id : 'TRN-2026-001',
+      studentName: currentUser ? currentUser.nameKh : 'យុន ស៊ីណាល',
+      submittedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      fileName: file.name,
+      fileSize: file.size,
+      fileData: file.dataUrl || null,
+      notes: noteEl ? noteEl.value.trim() : ''
+    });
+  }
+
+  saveData();
+  closeStmsModal();
+  showToast(`🎉 បានប្រគល់ឯកសារកិច្ចការ «${file.name}» ជូនគ្រូដោយជោគជ័យ!`, 'success');
 }
 
 
@@ -9181,3 +9862,455 @@ function saveAdminSubjectTeacher(subjCode) {
     renderAdminPortalView(document.getElementById('stmsContentViewport'));
   }
 }
+
+// ==========================================================================
+// USER PROFILE SETTINGS & ACCOUNT MANAGEMENT CONTROLLERS
+// ==========================================================================
+
+// 1. Unified Active User Profile Resolver
+function getActiveUserProfile() {
+  const role = window.currentRole || (currentUser ? currentUser.role : 'trainee');
+  if (role === 'trainee') {
+    const t = getActiveTraineeProfile();
+    return {
+      ...t,
+      role: 'trainee',
+      roleLabel: 'គរុសនិស្សិត (Trainee)',
+      username: t.username || 'yousoh.silal',
+      email: t.email || 'yousoh.silal@ktpttc.edu.kh',
+      phone: t.phone || '098 765 432',
+      avatar: t.avatar || '👨‍🎓'
+    };
+  } else if (role === 'trainer') {
+    const tr = getActiveTrainerProfile();
+    return {
+      ...tr,
+      role: 'trainer',
+      roleLabel: 'គ្រូឧទ្ទេស (Trainer)',
+      username: tr.username || 'teacher',
+      email: tr.email || 'trainer@ktpttc.edu.kh',
+      phone: tr.phone || '012 345 678',
+      avatar: tr.avatar || '👨‍🏫'
+    };
+  } else {
+    const adm = getActiveAdminProfile();
+    return {
+      ...adm,
+      role: 'admin',
+      roleLabel: 'អ្នកគ្រប់គ្រងប្រព័ន្ធ (Admin)',
+      username: adm.username || 'admin',
+      email: adm.email || 'admin@ktpttc.edu.kh',
+      phone: adm.phone || '012 888 999',
+      avatar: adm.avatar || '👨‍💼'
+    };
+  }
+}
+window.getActiveUserProfile = getActiveUserProfile;
+
+// 2. User Menu Modal (Fixed "undefined" bug & Added Profile Settings button)
+function renderUserMenuModal() {
+  const activeUser = getActiveUserProfile();
+  
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="userMenuModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:460px; border-radius:16px; overflow:hidden;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color:#ffffff; padding:16px 20px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:36px; height:36px; border-radius:8px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+              <i class="fas fa-user-circle"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.1rem; margin:0;">ព័ត៌មានគណនីផ្ទាល់ខ្លួន</h3>
+              <p style="color:#bfdbfe; font-size:0.78rem; margin:2px 0 0 0;">ប្រព័ន្ធ STMS • សាលាគរុកោសល្យខេត្តក្រចេះ</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="text-align:center; padding:22px 20px;">
+          
+          <!-- Avatar with Online Status -->
+          <div style="position:relative; display:inline-block; margin-bottom:12px;">
+            <div style="width:78px; height:78px; border-radius:50%; background:#eff6ff; border:3px solid #bfdbfe; display:flex; align-items:center; justify-content:center; font-size:2.8rem; margin:0 auto; box-shadow:0 4px 12px rgba(37,99,235,0.12); overflow:hidden;">
+              ${activeUser.photo ? `<img src="${activeUser.photo}" style="width:100%; height:100%; object-fit:cover;" />` : (activeUser.avatar || '👨‍🎓')}
+            </div>
+            <div style="position:absolute; bottom:2px; right:2px; width:22px; height:22px; border-radius:50%; background:#10b981; border:2px solid #ffffff; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:#ffffff;" title="គណនីសកម្ម (Online)">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+
+          <h3 style="font-size:1.25rem; color:#1e293b; margin:0 0 4px 0; font-weight:700;">${activeUser.nameKh || 'អ្នកប្រើប្រាស់'}</h3>
+          <p style="font-size:0.85rem; color:#64748b; margin:0 0 12px 0;">${activeUser.nameEn || ''} ${activeUser.email ? '&bull; ' + activeUser.email : ''}</p>
+          
+          <div style="margin-bottom:16px;">
+            <span class="badge badge-primary" style="font-size:0.82rem; padding:4px 14px; border-radius:20px;">
+              <i class="fas fa-shield-alt" style="margin-right:4px;"></i> ${activeUser.roleLabel || window.currentRole}
+            </span>
+          </div>
+
+          <!-- Metadata Info Card -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; font-size:0.84rem; text-align:left; color:#334155; margin-bottom:18px; line-height:1.7;">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">
+              <strong>ឈ្មោះគណនី (Username)៖</strong>
+              <code style="background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:4px; font-weight:700;">${activeUser.username || '-'}</code>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding:5px 0;">
+              <strong>អត្តលេខ / លេខកូដ៖</strong>
+              <span>${activeUser.id || 'KTPTTC-2026-001'}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding:5px 0;">
+              <strong>លេខទូរស័ព្ទ៖</strong>
+              <span>${activeUser.phone || '098 765 432'}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding:5px 0;">
+              <strong>សាលារៀន៖</strong>
+              <span>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding-top:5px;">
+              <strong>ស្ថានភាពគណនី៖</strong>
+              <span style="color:#16a34a; font-weight:700;"><i class="fas fa-circle" style="font-size:0.6rem; vertical-align:middle; margin-right:3px;"></i> សកម្ម (Active Session)</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn btn-primary" style="width:100%; justify-content:center; height:38px; font-size:0.88rem; box-shadow:0 4px 10px rgba(37,99,235,0.2);" onclick="closeStmsModal(); openProfileSettingsModal();">
+              <i class="fas fa-user-edit"></i> កែប្រែព័ត៌មានគណនី (Profile Settings)
+            </button>
+
+            ${window.currentRole === 'admin' ? `
+              <button class="btn btn-outline" style="width:100%; justify-content:center; height:36px; font-size:0.85rem;" onclick="closeStmsModal(); navigateView('rbac');">
+                <i class="fas fa-users-cog"></i> គ្រប់គ្រងគណនី &amp; ពាក្យសម្ងាត់ (RBAC)
+              </button>
+            ` : ''}
+
+            <button class="btn btn-danger" style="width:100%; justify-content:center; height:36px; font-size:0.85rem;" onclick="closeStmsModal(); handleLogout();">
+              <i class="fas fa-sign-out-alt"></i> ចាកចេញពីប្រព័ន្ធ (Log Out)
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.renderUserMenuModal = renderUserMenuModal;
+window.openUserMenuModal = renderUserMenuModal;
+
+// 3. Profile Settings Modal
+function openProfileSettingsModal(activeTab = 'general') {
+  const user = getActiveUserProfile();
+
+  window.pendingProfileAvatar = user.avatar || '👨‍🎓';
+  window.pendingProfilePhoto = user.photo || null;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="profileSettingsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:620px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:42px; height:42px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+              <i class="fas fa-user-cog"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ការកំណត់ &amp; កែប្រែព័ត៌មានគណនី (Profile Settings)</h3>
+              <p style="color:#bfdbfe; font-size:0.82rem; margin:2px 0 0 0;">កែប្រែព័ត៌មានផ្ទាល់ខ្លួន លេខទូរស័ព្ទ អ៊ីមែល និងពាក្យសម្ងាត់គណនី</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <!-- Settings Tabs -->
+          <div class="stms-modal-tabs">
+            <button class="modal-tab-btn ${activeTab==='general'?'active':''}" onclick="openProfileSettingsModal('general')">
+              <i class="fas fa-id-card"></i> ព័ត៌មានទូទៅ
+            </button>
+            <button class="modal-tab-btn ${activeTab==='security'?'active':''}" onclick="openProfileSettingsModal('security')">
+              <i class="fas fa-lock"></i> ប្តូរពាក្យសម្ងាត់ &amp; សុវត្ថិភាព
+            </button>
+          </div>
+
+          ${activeTab === 'general' ? `
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              
+              <!-- Avatar Selection Card -->
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; align-items:center; gap:18px;">
+                <div id="settingsAvatarDisplay" style="width:72px; height:72px; border-radius:50%; background:#ffffff; border:3px solid #3b82f6; display:flex; align-items:center; justify-content:center; font-size:2.8rem; box-shadow:0 3px 10px rgba(0,0,0,0.06); flex-shrink:0; overflow:hidden;">
+                  ${user.photo ? `<img src="${user.photo}" style="width:100%; height:100%; object-fit:cover;" />` : (user.avatar || '👨‍🎓')}
+                </div>
+                <div style="flex:1;">
+                  <strong style="color:#1e293b; font-size:0.9rem; display:block; margin-bottom:6px;">ជ្រើសរើសរូបតំណាងគណនី (Avatar)</strong>
+                  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                    ${['👨‍🎓', '👩‍🎓', '👨‍💼', '👩‍💼', '👨‍🏫', '👩‍🏫', '🧑‍💻', '🌟'].map(av => `
+                      <button type="button" class="btn btn-outline" style="font-size:1.3rem; padding:4px 8px; height:36px; min-width:36px; border-radius:8px; ${(user.avatar===av && !user.photo)?'border-color:#3b82f6; background:#eff6ff;':''}" onclick="selectProfileAvatar('${av}')">
+                        ${av}
+                      </button>
+                    `).join('')}
+                  </div>
+                  <div style="font-size:0.75rem; color:#64748b;">
+                    <input type="file" id="profilePhotoFileInput" accept="image/*" style="display:none;" onchange="handleProfilePhotoUpload(this)">
+                    <button type="button" class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem; color:#2563eb;" onclick="document.getElementById('profilePhotoFileInput').click()">
+                      <i class="fas fa-camera"></i> Upload រូបថតផ្ទាល់ខ្លួន (Photo)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Names Inputs -->
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                  <label class="form-label" style="font-weight:700;">ឈ្មោះជាភាសាខ្មែរ <span style="color:#ef4444;">*</span></label>
+                  <input type="text" id="profNameKh" class="form-input" value="${user.nameKh || ''}" placeholder="ឧ. យុន ស៊ីណាល" />
+                </div>
+                <div>
+                  <label class="form-label" style="font-weight:700;">ឈ្មោះជាអក្សរឡាតាំង (Latin Name)</label>
+                  <input type="text" id="profNameEn" class="form-input" value="${user.nameEn || ''}" placeholder="ឧ. Yun Sional" />
+                </div>
+              </div>
+
+              <!-- Contact Inputs -->
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                  <label class="form-label" style="font-weight:700;">លេខទូរស័ព្ទទំនាក់ទំនង</label>
+                  <input type="tel" id="profPhone" class="form-input" value="${user.phone || ''}" placeholder="097 888 1234" />
+                </div>
+                <div>
+                  <label class="form-label" style="font-weight:700;">អ៊ីមែល (Email)</label>
+                  <input type="email" id="profEmail" class="form-input" value="${user.email || ''}" placeholder="example@ktpttc.edu.kh" />
+                </div>
+              </div>
+
+              ${user.role === 'trainee' ? `
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <div>
+                    <label class="form-label" style="font-weight:700;">ថ្ងៃខែឆ្នាំកំណើត</label>
+                    <input type="date" id="profDob" class="form-input" value="${user.dob || '2003-05-14'}" />
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-weight:700;">ភេទ</label>
+                    <select id="profGender" class="form-input">
+                      <option value="ប្រុស" ${user.gender==='ប្រុស'?'selected':''}>ប្រុស</option>
+                      <option value="ស្រី" ${user.gender==='ស្រី'?'selected':''}>ស្រី</option>
+                    </select>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- Readonly System Credentials Information -->
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 14px; font-size:0.8rem; color:#1e40af;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                  <span>អត្តលេខប្រព័ន្ធ៖ <strong>${user.id || '-'}</strong></span>
+                  <span>ឈ្មោះគណនី Login៖ <strong>${user.username || '-'}</strong></span>
+                </div>
+                <div>កម្រិតសិទ្ធិ៖ <strong>${user.roleLabel || window.currentRole}</strong> (កំណត់ដោយរដ្ឋបាល KTPTTC)</div>
+              </div>
+
+              <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                <button class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+                <button class="btn btn-primary" onclick="saveProfileSettings('general')">
+                  <i class="fas fa-save"></i> រក្សាទុកព័ត៌មាន (Save Changes)
+                </button>
+              </div>
+
+            </div>
+          ` : `
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              
+              <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px; font-size:0.84rem; color:#92400e;">
+                <i class="fas fa-shield-alt" style="margin-right:6px;"></i> សូមប្រើពាក្យសម្ងាត់ដែលមានសុវត្ថិភាពខ្ពស់យ៉ាងតិច ៤ ខ្ទង់ ដើម្បីការពារគណនីរបស់អ្នក។
+              </div>
+
+              <div>
+                <label class="form-label" style="font-weight:700;">ពាក្យសម្ងាត់បច្ចុប្បន្ន (Current Password)</label>
+                <input type="password" id="profCurrPass" class="form-input" placeholder="បញ្ចូលពាក្យសម្ងាត់ចាស់..." />
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                  <label class="form-label" style="font-weight:700;">ពាក្យសម្ងាត់ថ្មី (New Password)</label>
+                  <input type="password" id="profNewPass" class="form-input" placeholder="ពាក្យសម្ងាត់ថ្មីយ៉ាងតិច ៤ ខ្ទង់..." />
+                </div>
+                <div>
+                  <label class="form-label" style="font-weight:700;">បញ្ជាក់ពាក្យសម្ងាត់ថ្មី (Confirm)</label>
+                  <input type="password" id="profConfirmPass" class="form-input" placeholder="វាយបញ្ចូលពាក្យសម្ងាត់ថ្មីម្តងទៀត..." />
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+                <button class="btn btn-primary" onclick="saveProfileSettings('security')">
+                  <i class="fas fa-key"></i> ប្តូរពាក្យសម្ងាត់ថ្មី
+                </button>
+              </div>
+
+            </div>
+          `}
+
+        </div>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openProfileSettingsModal = openProfileSettingsModal;
+
+// Avatar Picker Helper
+function selectProfileAvatar(emoji) {
+  window.pendingProfileAvatar = emoji;
+  window.pendingProfilePhoto = null;
+  const display = document.getElementById('settingsAvatarDisplay');
+  if (display) {
+    display.innerHTML = emoji;
+  }
+  showToast(`បានជ្រើសរើសរូបតំណាង ${emoji}`, 'info');
+}
+window.selectProfileAvatar = selectProfileAvatar;
+
+// Photo Upload Helper
+function handleProfilePhotoUpload(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      window.pendingProfilePhoto = e.target.result;
+      const display = document.getElementById('settingsAvatarDisplay');
+      if (display) {
+        display.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;" />`;
+      }
+      showToast('បានជ្រើសរើសរូបថតផ្ទាល់ខ្លួនជោគជ័យ!', 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+}
+window.handleProfilePhotoUpload = handleProfilePhotoUpload;
+
+// Save Profile Settings Function
+function saveProfileSettings(tab) {
+  const role = window.currentRole || 'trainee';
+
+  if (tab === 'security') {
+    const newPass = document.getElementById('profNewPass')?.value;
+    const confirmPass = document.getElementById('profConfirmPass')?.value;
+
+    if (!newPass || newPass.length < 4) {
+      showToast('⚠️ សូមបញ្ចូលពាក្យសម្ងាត់ថ្មីយ៉ាងតិច ៤ ខ្ទង់!', 'warning');
+      return;
+    }
+    if (newPass !== confirmPass) {
+      showToast('⚠️ ការបញ្ជាក់ពាក្យសម្ងាត់ថ្មីមិនត្រឹមត្រូវឡើយ!', 'error');
+      return;
+    }
+
+    if (role === 'trainee') {
+      const t = getActiveTraineeProfile();
+      t.password = newPass;
+      const foundInList = (stmsData.trainees || []).find(x => x.id === t.id);
+      if (foundInList) foundInList.password = newPass;
+    } else {
+      const u = (stmsData.users || []).find(x => x.role === role);
+      if (u) u.password = newPass;
+      if (currentUser) currentUser.password = newPass;
+    }
+    saveData();
+    closeStmsModal();
+    showToast('🎉 បានផ្លាស់ប្តូរពាក្យសម្ងាត់ថ្មីដោយជោគជ័យ!', 'success');
+    return;
+  }
+
+  // General Information
+  const nameKh = document.getElementById('profNameKh')?.value.trim();
+  const nameEn = document.getElementById('profNameEn')?.value.trim();
+  const phone = document.getElementById('profPhone')?.value.trim();
+  const email = document.getElementById('profEmail')?.value.trim();
+  const dob = document.getElementById('profDob')?.value;
+  const gender = document.getElementById('profGender')?.value;
+
+  if (!nameKh) {
+    showToast('⚠️ សូមបញ្ចូលឈ្មោះជាភាសាខ្មែរ!', 'warning');
+    return;
+  }
+
+  if (role === 'trainee') {
+    const t = getActiveTraineeProfile();
+    t.nameKh = nameKh;
+    if (nameEn) t.nameEn = nameEn;
+    if (phone) t.phone = phone;
+    if (email) t.email = email;
+    if (dob) t.dob = dob;
+    if (gender) t.gender = gender;
+    if (window.pendingProfilePhoto) {
+      t.photo = window.pendingProfilePhoto;
+    } else if (window.pendingProfileAvatar) {
+      t.avatar = window.pendingProfileAvatar;
+      t.photo = null;
+    }
+    const idx = (stmsData.trainees || []).findIndex(x => x.id === t.id);
+    if (idx !== -1) {
+      stmsData.trainees[idx] = { ...stmsData.trainees[idx], ...t };
+    }
+    currentTraineeUser = t;
+    if (currentUser && currentUser.role === 'trainee') {
+      currentUser = { ...currentUser, ...t };
+    }
+  } else if (role === 'trainer') {
+    const tr = getActiveTrainerProfile();
+    tr.nameKh = nameKh;
+    if (nameEn) tr.nameEn = nameEn;
+    if (phone) tr.phone = phone;
+    if (email) tr.email = email;
+    if (window.pendingProfilePhoto) {
+      tr.photo = window.pendingProfilePhoto;
+    } else if (window.pendingProfileAvatar) {
+      tr.avatar = window.pendingProfileAvatar;
+      tr.photo = null;
+    }
+    const idx = (stmsData.users || []).findIndex(x => x.id === tr.id || x.role === 'trainer');
+    if (idx !== -1) {
+      stmsData.users[idx] = { ...stmsData.users[idx], ...tr };
+    }
+    if (currentUser && currentUser.role === 'trainer') {
+      currentUser = { ...currentUser, ...tr };
+    }
+  } else {
+    const adm = getActiveAdminProfile();
+    adm.nameKh = nameKh;
+    if (nameEn) adm.nameEn = nameEn;
+    if (phone) adm.phone = phone;
+    if (email) adm.email = email;
+    if (window.pendingProfilePhoto) {
+      adm.photo = window.pendingProfilePhoto;
+    } else if (window.pendingProfileAvatar) {
+      adm.avatar = window.pendingProfileAvatar;
+      adm.photo = null;
+    }
+    const idx = (stmsData.users || []).findIndex(x => x.id === adm.id || x.role === 'admin');
+    if (idx !== -1) {
+      stmsData.users[idx] = { ...stmsData.users[idx], ...adm };
+    }
+    if (currentUser && currentUser.role === 'admin') {
+      currentUser = { ...currentUser, ...adm };
+    }
+  }
+
+  // Update navbar display immediately
+  const nameEl = document.getElementById('navbarUserName');
+  const avatarEl = document.getElementById('navbarUserAvatar');
+  if (nameEl) nameEl.textContent = nameKh;
+  if (avatarEl) {
+    if (window.pendingProfilePhoto) {
+      avatarEl.innerHTML = `<img src="${window.pendingProfilePhoto}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
+    } else if (window.pendingProfileAvatar) {
+      avatarEl.textContent = window.pendingProfileAvatar;
+    }
+  }
+
+  saveData();
+  closeStmsModal();
+  showToast(`🎉 បានកែប្រែ និងរក្សាទុកព័ត៌មានគណនី «${nameKh}» ដោយជោគជ័យ!`, 'success');
+  if (typeof renderView === 'function') {
+    renderView(currentView);
+  }
+}
+window.saveProfileSettings = saveProfileSettings;
+
