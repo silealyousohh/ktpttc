@@ -53,15 +53,21 @@ function loadData() {
           if (!u.status) u.status = 'active';
         });
       }
+
+      if (!stmsData.syllabi || typeof stmsData.syllabi !== 'object') {
+        stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
+      }
     } else {
       stmsData = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
       if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+      if (!stmsData.syllabi) stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
       saveData();
     }
   } catch (e) {
     console.error('Failed to load storage, using seed data:', e);
     stmsData = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
     if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+    if (!stmsData.syllabi) stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
   }
 
   // Ensure default teacher & student synced collections exist
@@ -3859,6 +3865,301 @@ function openTraineeAttendanceModal() {
 }
 
 // --------------------------------------------------------------------------
+// COURSE SYLLABUS CONTROLLERS (មាតិកាសង្ខេបនៃមុខវិជ្ជា - កំណត់ដោយគ្រូឧទ្ទេស/Admin)
+// --------------------------------------------------------------------------
+
+// Helper: Get course syllabus for a specific subject
+function getSubjectSyllabus(subjectCode) {
+  if (!stmsData.syllabi || typeof stmsData.syllabi !== 'object') {
+    stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
+  }
+  if (!stmsData.syllabi[subjectCode] || !Array.isArray(stmsData.syllabi[subjectCode]) || stmsData.syllabi[subjectCode].length === 0) {
+    const defaults = window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {};
+    stmsData.syllabi[subjectCode] = JSON.parse(JSON.stringify(defaults[subjectCode] || [
+      { chapter: "ជំពូកទី ១", title: "សេចក្តីផ្តើម និងទ្រឹស្តីមូលដ្ឋាននៃមុខវិជ្ជា" },
+      { chapter: "ជំពូកទី ២", title: "ការរៀបចំកិច្ចតែងការបង្រៀន និងខ្លឹមសារមេរៀន" },
+      { chapter: "ជំពូកទី ៣", title: "វិធីសាស្ត្របង្រៀនសកម្ម និងការគ្រប់គ្រងថ្នាក់រៀន" },
+      { chapter: "ជំពូកទី ៤", title: "ការវាស់វែង និងវាយតម្លៃលទ្ធផលសិក្សារបស់សិស្ស" }
+    ]));
+  }
+  return stmsData.syllabi[subjectCode];
+}
+window.getSubjectSyllabus = getSubjectSyllabus;
+
+// Security Check: Can active user edit syllabus for this subject?
+function canUserEditSubjectSyllabus(subjectCode) {
+  if (!currentUser) return false;
+  if (currentUser.role === 'admin') return true;
+  if (currentUser.role === 'trainer') {
+    const tr = getActiveTrainerProfile();
+    const myCodes = getTrainerAssignedSubjectCodes(tr);
+    return myCodes.includes(subjectCode);
+  }
+  return false;
+}
+window.canUserEditSubjectSyllabus = canUserEditSubjectSyllabus;
+
+// Modal to Configure/Edit Course Syllabus (គ្រូកំណត់មាតិកា)
+function openTeacherSyllabusModal(code) {
+  const tr = getActiveTrainerProfile();
+  
+  // Security Check: RBAC Enforcement
+  if (!canUserEditSubjectSyllabus(code)) {
+    showToast(`🔒 បដិសេធសិទ្ធិ៖ លោកគ្រូ/អ្នកគ្រូគ្មានសិទ្ធិកំណត់មាតិកាមុខវិជ្ជា ${code} ឡើយ! (អាចកំណត់បានតែមុខវិជ្ជាដែលខ្លួនបង្រៀនប៉ុណ្ណោះ)`, 'error');
+    return;
+  }
+
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === code) || (stmsData.subjects || []).find(s => s.code === code) || {
+    code: code,
+    nameKh: 'មុខវិជ្ជាគរុកោសល្យ',
+    credits: 3,
+    trainer: tr.nameKh
+  };
+  const theme = getSubjectTheme(code);
+  const syllabusList = getSubjectSyllabus(code);
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="teacherSyllabusModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:720px; width:95%;">
+        <div class="stms-modal-header" style="background:${theme.bg}; border-bottom:1px solid ${theme.border}; color:#1e293b;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:#ffffff; color:${theme.color}; display:flex; align-items:center; justify-content:center; font-size:1.4rem; box-shadow:0 2px 6px rgba(0,0,0,0.06); border:1px solid ${theme.border};">
+              <i class="fas fa-list-ol"></i>
+            </div>
+            <div>
+              <h3 style="color:#1e293b; font-size:1.15rem; margin:0; line-height:1.4;">កំណត់មាតិកាសង្ខេបនៃមុខវិជ្ជា (Course Syllabus)</h3>
+              <p style="color:#64748b; font-size:0.8rem; margin:2px 0 0 0;">
+                មុខវិជ្ជា៖ <strong>${subj.nameKh} (${subj.code})</strong> • គ្រូទទួលបន្ទុក៖ <strong style="color:${theme.color};">${tr.nameKh}</strong>
+              </p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#1e293b;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <!-- Instructions Callout -->
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px 16px; margin-bottom:18px; font-size:0.83rem; color:#1e40af; line-height:1.6;">
+            <i class="fas fa-info-circle"></i> <strong>ការណែនាំ៖</strong> លោកគ្រូ-អ្នកគ្រូអាចកំណត់ បន្ថែម ឬកែប្រែជំពូក និងប្រធានបទមេរៀននៃមុខវិជ្ជានេះ។ មាតិកានេះនឹងបង្ហាញជូនគរុសនិស្សិតទាំងអស់ក្នុងកម្រងមេរៀន Course Syllabus និងអាចទាញយកជា PDF បាន។
+          </div>
+
+          <!-- Dynamic Chapters Container -->
+          <div style="margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <strong style="color:#1e3a8a; font-size:0.92rem;"><i class="fas fa-bars"></i> បញ្ជីជំពូកមេរៀន (Course Chapters)</strong>
+              <button type="button" class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 12px; color:#2563eb; border-color:#93c5fd; background:#f0f7ff;" onclick="addSyllabusChapterRow()">
+                <i class="fas fa-plus"></i> បន្ថែមជំពូកថ្មី
+              </button>
+            </div>
+
+            <div id="syllabusChaptersList" style="display:flex; flex-direction:column; gap:10px;">
+              ${syllabusList.map((item, idx) => `
+                <div class="syllabus-chapter-row" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; display:flex; gap:10px; align-items:flex-start; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                  <div style="width:130px; flex-shrink:0;">
+                    <label style="display:block; font-size:0.72rem; color:#64748b; font-weight:700; margin-bottom:4px;">លេខរៀងជំពូក</label>
+                    <input type="text" class="form-control syllabus-chapter-label" value="${item.chapter || `ជំពូកទី ${idx + 1}`}" placeholder="ជំពូកទី..." style="height:34px; font-size:0.82rem; font-weight:700; color:#1e3a8a;">
+                  </div>
+                  <div style="flex:1;">
+                    <label style="display:block; font-size:0.72rem; color:#64748b; font-weight:700; margin-bottom:4px;">ប្រធានបទ / ខ្លឹមសារមេរៀន</label>
+                    <input type="text" class="form-control syllabus-chapter-title" value="${item.title || ''}" placeholder="បញ្ចូលខ្លឹមសារជំពូក..." style="height:34px; font-size:0.84rem;">
+                  </div>
+                  <button type="button" class="btn btn-outline" style="height:34px; width:34px; padding:0; display:flex; align-items:center; justify-content:center; color:#ef4444; border-color:#fecaca; margin-top:20px; flex-shrink:0;" onclick="removeSyllabusChapterRow(this)" title="លុបជំពូកនេះ">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:16px; margin-top:16px; flex-wrap:wrap; gap:10px;">
+            <button type="button" class="btn btn-outline" style="font-size:0.8rem; color:#64748b;" onclick="resetSubjectSyllabus('${code}')">
+              <i class="fas fa-history"></i> កំណត់ឡើងវិញតាមលំនាំដើម
+            </button>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn btn-outline" style="font-size:0.82rem;" onclick="closeStmsModal()">បោះបង់</button>
+              <button type="button" class="btn btn-primary" style="font-size:0.82rem; padding:6px 18px; display:inline-flex; align-items:center; gap:6px; background:#2563eb;" onclick="saveSubjectSyllabus('${code}')">
+                <i class="fas fa-save"></i> រក្សាទុកមាតិកា
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+window.openTeacherSyllabusModal = openTeacherSyllabusModal;
+
+// Append a new chapter row dynamically
+function addSyllabusChapterRow() {
+  const container = document.getElementById('syllabusChaptersList');
+  if (!container) return;
+  const count = container.querySelectorAll('.syllabus-chapter-row').length;
+  const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+  const toKh = n => String(n).replace(/[0-9]/g, d => khmerDigits[parseInt(d, 10)]);
+  const nextNum = toKh(count + 1);
+
+  const row = document.createElement('div');
+  row.className = 'syllabus-chapter-row';
+  row.style.cssText = 'background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; display:flex; gap:10px; align-items:flex-start; box-shadow:0 1px 3px rgba(0,0,0,0.03);';
+  row.innerHTML = `
+    <div style="width:130px; flex-shrink:0;">
+      <label style="display:block; font-size:0.72rem; color:#64748b; font-weight:700; margin-bottom:4px;">លេខរៀងជំពូក</label>
+      <input type="text" class="form-control syllabus-chapter-label" value="ជំពូកទី ${nextNum}" placeholder="ជំពូកទី..." style="height:34px; font-size:0.82rem; font-weight:700; color:#1e3a8a;">
+    </div>
+    <div style="flex:1;">
+      <label style="display:block; font-size:0.72rem; color:#64748b; font-weight:700; margin-bottom:4px;">ប្រធានបទ / ខ្លឹមសារមេរៀន</label>
+      <input type="text" class="form-control syllabus-chapter-title" value="" placeholder="បញ្ចូលខ្លឹមសារជំពូក..." style="height:34px; font-size:0.84rem;">
+    </div>
+    <button type="button" class="btn btn-outline" style="height:34px; width:34px; padding:0; display:flex; align-items:center; justify-content:center; color:#ef4444; border-color:#fecaca; margin-top:20px; flex-shrink:0;" onclick="removeSyllabusChapterRow(this)" title="លុបជំពូកនេះ">
+      <i class="fas fa-trash-alt"></i>
+    </button>
+  `;
+  container.appendChild(row);
+  const input = row.querySelector('.syllabus-chapter-title');
+  if (input) input.focus();
+}
+window.addSyllabusChapterRow = addSyllabusChapterRow;
+
+// Remove chapter row
+function removeSyllabusChapterRow(btn) {
+  const row = btn.closest('.syllabus-chapter-row');
+  if (row) {
+    row.remove();
+  }
+}
+window.removeSyllabusChapterRow = removeSyllabusChapterRow;
+
+// Save Subject Syllabus
+function saveSubjectSyllabus(code) {
+  const container = document.getElementById('syllabusChaptersList');
+  if (!container) return;
+
+  const rows = container.querySelectorAll('.syllabus-chapter-row');
+  const newList = [];
+
+  rows.forEach((r, idx) => {
+    const labelInput = r.querySelector('.syllabus-chapter-label');
+    const titleInput = r.querySelector('.syllabus-chapter-title');
+    const chapter = labelInput ? labelInput.value.trim() : `ជំពូកទី ${idx + 1}`;
+    const title = titleInput ? titleInput.value.trim() : '';
+    if (title) {
+      newList.push({ chapter, title });
+    }
+  });
+
+  if (newList.length === 0) {
+    showToast('សូមបញ្ចូលខ្លឹមសារយ៉ាងហោចណាស់ ១ ជំពូក!', 'error');
+    return;
+  }
+
+  if (!stmsData.syllabi) stmsData.syllabi = {};
+  stmsData.syllabi[code] = newList;
+  saveData();
+
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === code) || { nameKh: code };
+  showToast(`🎉 បានរក្សាទុកមាតិកាសង្ខេបនៃមុខវិជ្ជា «${subj.nameKh}» ដោយជោគជ័យ!`, 'success');
+  closeStmsModal();
+
+  // If subject detail modal is open or needs refresh, open it with new data
+  setTimeout(() => {
+    openSubjectDetailModal(code);
+  }, 200);
+}
+window.saveSubjectSyllabus = saveSubjectSyllabus;
+
+// Reset Subject Syllabus to MoEYS Default
+function resetSubjectSyllabus(code) {
+  if (!confirm('តើលោកគ្រូ-អ្នកគ្រូចង់កំណត់មាតិកានៃមុខវិជ្ជានេះឡើងវិញ តាមគំរូដើមរបស់ក្រសួងអប់រំមែនទេ?')) {
+    return;
+  }
+  const defaults = window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {};
+  if (!stmsData.syllabi) stmsData.syllabi = {};
+  stmsData.syllabi[code] = JSON.parse(JSON.stringify(defaults[code] || [
+    { chapter: "ជំពូកទី ១", title: "សេចក្តីផ្តើម និងទ្រឹស្តីមូលដ្ឋាននៃមុខវិជ្ជា" },
+    { chapter: "ជំពូកទី ២", title: "ការរៀបចំកិច្ចតែងការបង្រៀន និងខ្លឹមសារមេរៀន" },
+    { chapter: "ជំពូកទី ៣", title: "វិធីសាស្ត្របង្រៀនសកម្ម និងការគ្រប់គ្រងថ្នាក់រៀន" },
+    { chapter: "ជំពូកទី ៤", title: "ការវាស់វែង និងវាយតម្លៃលទ្ធផលសិក្សារបស់សិស្ស" }
+  ]));
+  saveData();
+
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === code) || { nameKh: code };
+  showToast(`បានកំណត់មាតិកាមុខវិជ្ជា «${subj.nameKh}» ឡើងវិញរួចរាល់!`, 'info');
+  closeStmsModal();
+  setTimeout(() => {
+    openTeacherSyllabusModal(code);
+  }, 200);
+}
+window.resetSubjectSyllabus = resetSubjectSyllabus;
+
+// Download printable Course Syllabus PDF / Document
+function downloadSubjectSyllabus(code) {
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === code) || {
+    code: code,
+    nameKh: 'មុខវិជ្ជាគរុកោសល្យ',
+    credits: 3,
+    trainer: 'សាស្ត្រាចារ្យ KTPTTC'
+  };
+  const syllabusList = getSubjectSyllabus(code);
+  const printWin = window.open('', '_blank');
+  if (!printWin) {
+    showToast(`បានទាញយកកម្រងមេរៀន (Syllabus) នៃមុខវិជ្ជា ${subj.nameKh}!`, 'success');
+    return;
+  }
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html lang="km">
+    <head>
+      <meta charset="utf-8">
+      <title>មាតិកាសង្ខេបនៃមុខវិជ្ជា - ${subj.nameKh}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+      <style>
+        body { font-family: 'Kantumruy Pro', sans-serif; padding: 40px; color: #1e293b; line-height: 1.8; }
+        .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 24px; }
+        .inst-title { font-size: 1.25rem; font-weight: 700; color: #1e3a8a; margin: 0; }
+        .inst-sub { font-size: 0.9rem; color: #64748b; margin: 4px 0; }
+        .course-title { font-size: 1.35rem; font-weight: 700; color: #1e293b; margin: 16px 0 6px 0; }
+        .course-meta { font-size: 0.9rem; color: #475569; }
+        .syllabus-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 24px; margin-top: 20px; }
+        .chapter-item { margin-bottom: 12px; font-size: 1rem; }
+        .chapter-num { font-weight: 700; color: #1e3a8a; }
+        .footer { margin-top: 50px; text-align: right; font-size: 0.85rem; color: #64748b; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="inst-title">ក្រសួងអប់រំ យុវជន និងកីឡា</div>
+        <div class="inst-title">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</div>
+        <div class="course-title">មាតិកាសង្ខេបនៃមុខវិជ្ជា (Course Syllabus)</div>
+        <div class="course-meta">
+          មុខវិជ្ជា៖ <strong>${subj.nameKh}</strong> | កូដ៖ <strong>${subj.code}</strong> | ចំនួន៖ <strong>${subj.credits} ក្រេឌីត</strong><br>
+          គ្រូឧទ្ទេសទទួលបន្ទុក៖ <strong>${subj.trainer}</strong>
+        </div>
+      </div>
+      <div class="syllabus-box">
+        <h3 style="margin-top:0; color:#1e3a8a; font-size:1.1rem; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">បញ្ជីជំពូក និងខ្លឹមសារមេរៀន</h3>
+        ${syllabusList.map((item, idx) => `
+          <div class="chapter-item">• <span class="chapter-num">${item.chapter || `ជំពូកទី ${idx + 1}`}៖</span> ${item.title}</div>
+        `).join('')}
+      </div>
+      <div class="footer">
+        <div>ធ្វើនៅក្រចេះ, ថ្ងៃទី... ខែ... ឆ្នាំ២០២៦</div>
+        <div style="font-weight:700; margin-top:8px;">គ្រូឧទ្ទេសទទួលបន្ទុកមុខវិជ្ជា</div>
+        <div style="margin-top:40px;">${subj.trainer}</div>
+      </div>
+      <script>
+        window.onload = function() { window.print(); }
+      </script>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+}
+window.downloadSubjectSyllabus = downloadSubjectSyllabus;
+
+// --------------------------------------------------------------------------
 // 9. SUBJECT DETAILS MODAL (LEARNING CENTER FOR EACH OF THE 8 SUBJECTS)
 // --------------------------------------------------------------------------
 function openSubjectDetailModal(code) {
@@ -3875,6 +4176,8 @@ function openSubjectDetailModal(code) {
   const subjectLessons = (stmsData.lessons || []).filter(l => l.subjectCode === code);
   const subjectAssignments = (stmsData.assignments || []).filter(a => a.subjectCode === code);
   const subjectVideos = [...(stmsData.videoLessons || []), ...KTPTTC_VIDEO_LESSONS].filter(v => v.subjectCode === code || v.subject === code);
+  const syllabusList = getSubjectSyllabus(code);
+  const canEditSyllabus = canUserEditSubjectSyllabus(code);
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="subjectDetailModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -3893,16 +4196,22 @@ function openSubjectDetailModal(code) {
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
-          <!-- Syllabus Outline -->
+          <!-- Syllabus Outline (Configured by Teacher) -->
           <div style="margin-bottom:18px;">
-            <h4 style="font-size:0.92rem; color:#1e3a8a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-              <i class="fas fa-list-ol" style="color:${theme.color};"></i> មាតិកាសង្ខេបនៃមុខវិជ្ជា (Course Syllabus)
-            </h4>
-            <div style="background:#f8fafc; border-radius:10px; padding:14px; border:1px solid var(--border-color); font-size:0.86rem; line-height:1.8; color:#334155;">
-              <div>• <strong>ជំពូកទី ១៖</strong> ទ្រឹស្ដីនៃការបង្រៀន និងរៀនតាមបែបស្ថាបនានិយម (Constructivism)</div>
-              <div>• <strong>ជំពូកទី ២៖</strong> ការរៀបចំកិច្ចតែងការបង្រៀន (Lesson Plan) តាមស្តង់ដារក្រសួងអប់រំ</div>
-              <div>• <strong>ជំពូកទី ៣៖</strong> វិធីសាស្ត្របង្រៀនសកម្ម និងការគ្រប់គ្រងថ្នាក់រៀនបែបវិជ្ជមាន</div>
-              <div>• <strong>ជំពូកទី ៤៖</strong> ការវាស់វែង និងវាយតម្លៃលទ្ធផលសិក្សារបស់សិស្សបឋម</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="font-size:0.92rem; color:#1e3a8a; margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-list-ol" style="color:${theme.color};"></i> មាតិកាសង្ខេបនៃមុខវិជ្ជា (Course Syllabus)
+              </h4>
+              ${canEditSyllabus ? `
+                <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:${theme.color}; border-color:${theme.color}; display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,0.9);" onclick="openTeacherSyllabusModal('${subj.code}')" title="កំណត់ និងកែប្រែមាតិកាសង្ខេបមុខវិជ្ជា">
+                  <i class="fas fa-edit"></i> កំណត់មាតិកា
+                </button>
+              ` : ''}
+            </div>
+            <div style="background:#f8fafc; border-radius:10px; padding:14px; border:1px solid var(--border-color); font-size:0.86rem; line-height:1.8; color:#334155;" id="syllabusContentBox_${subj.code}">
+              ${syllabusList.map((item, idx) => `
+                <div>• <strong>${item.chapter || `ជំពូកទី ${idx + 1}`}៖</strong> ${item.title}</div>
+              `).join('')}
             </div>
           </div>
 
@@ -4012,7 +4321,7 @@ function openSubjectDetailModal(code) {
             <button class="btn btn-outline" onclick="closeStmsModal(); openTraineeLessonsModal();">
               <i class="fas fa-play-circle" style="color:#ea580c;"></i> មើលវីដេអូបង្រៀន
             </button>
-            <button class="btn btn-primary" onclick="showToast('បានទាញយកកម្រងមេរៀន (Syllabus PDF) នៃមុខវិជ្ជា ${subj.nameKh} ដោយជោគជ័យ!', 'success')">
+            <button class="btn btn-primary" onclick="downloadSubjectSyllabus('${subj.code}')">
               <i class="fas fa-download"></i> ទាញយក Syllabus (PDF)
             </button>
             <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
@@ -8156,7 +8465,7 @@ function openTeacherSubjectDetailModal(code) {
             សូមជ្រើសរើសសកម្មភាពគ្រប់គ្រងមុខវិជ្ជា «<strong>${subj.nameKh}</strong>» សម្រាប់គរុសនិស្សិត៖
           </p>
 
-          <!-- 4 Core Teacher Actions Grid -->
+          <!-- 6 Core Teacher Actions Grid -->
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
             <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:14px; cursor:pointer; transition:all 0.2s;" onclick="closeStmsModal(); openTeacherGradingModal('${subj.code}')">
               <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
@@ -8196,6 +8505,26 @@ function openTeacherSubjectDetailModal(code) {
                 <strong style="color:#9a3412; font-size:0.95rem;">Upload មេរៀន/វីដេអូ</strong>
               </div>
               <p style="margin:0; font-size:0.75rem; color:#c2410c;">បញ្ចូល Slide &amp; E-Learning (${lsnCount})</p>
+            </div>
+
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px; cursor:pointer; transition:all 0.2s;" onclick="closeStmsModal(); openTeacherSyllabusModal('${subj.code}')">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#dbeafe; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                  <i class="fas fa-list-ol"></i>
+                </div>
+                <strong style="color:#1e40af; font-size:0.95rem;">កំណត់មាតិកា (Syllabus)</strong>
+              </div>
+              <p style="margin:0; font-size:0.75rem; color:#1d4ed8;">កែសម្រួលជំពូក និងប្រធានបទមេរៀន</p>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:14px; cursor:pointer; transition:all 0.2s;" onclick="closeStmsModal(); openSubjectDetailModal('${subj.code}')">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#f1f5f9; color:#475569; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                  <i class="fas fa-eye"></i>
+                </div>
+                <strong style="color:#334155; font-size:0.95rem;">ពិនិត្យទំព័រមុខវិជ្ជា</strong>
+              </div>
+              <p style="margin:0; font-size:0.75rem; color:#64748b;">មើលទម្រង់ដូចគរុសនិស្សិតឃើញ</p>
             </div>
           </div>
 
@@ -8259,6 +8588,9 @@ function openTeacherSubjectsModal() {
                     </div>
                   </div>
                   <div style="display:flex; gap:8px;">
+                    <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px; height:30px; color:#2563eb; border-color:#bfdbfe;" onclick="closeStmsModal(); openTeacherSyllabusModal('${s.code}')" title="កំណត់ និងកែសម្រួលមាតិកាសង្ខេប (Course Syllabus)">
+                      <i class="fas fa-list-ol"></i> មាតិកា
+                    </button>
                     <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px; height:30px;" onclick="closeStmsModal(); openTeacherGradingModal('${s.code}')">
                       <i class="fas fa-calculator"></i> ដាក់ពិន្ទុ
                     </button>
@@ -10007,6 +10339,23 @@ function openAdminSubjectDetailModal(subjCode) {
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; text-align:center;">
               <div style="font-size:1.5rem; font-weight:800; color:#7c3aed;">${hwList.length}</div>
               <div style="font-size:0.75rem; color:#64748b; font-weight:600;">កិច្ចការដែលបានដាក់</div>
+            </div>
+          </div>
+
+          <!-- Course Syllabus Block -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <div style="font-size:0.9rem; font-weight:700; color:#1e40af; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-list-ol" style="color:${theme.color};"></i> មាតិកាសង្ខេបនៃមុខវិជ្ជា (Course Syllabus)
+              </div>
+              <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:${theme.color}; border-color:${theme.color}; display:inline-flex; align-items:center; gap:5px;" onclick="closeStmsModal(); openTeacherSyllabusModal('${subj.code}')">
+                <i class="fas fa-edit"></i> កំណត់មាតិកា
+              </button>
+            </div>
+            <div style="font-size:0.84rem; line-height:1.8; color:#334155;">
+              ${getSubjectSyllabus(subj.code).map((item, idx) => `
+                <div>• <strong>${item.chapter || `ជំពូកទី ${idx + 1}`}៖</strong> ${item.title}</div>
+              `).join('')}
             </div>
           </div>
 
