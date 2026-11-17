@@ -216,25 +216,21 @@ function loginSuccess(user, notify = true) {
   if (avatarEl) avatarEl.textContent = user.avatar || (user.role === 'trainer' ? '👨‍🏫' : user.role === 'trainee' ? '👨‍🎓' : '👨‍💼');
 
   // Set body role class for styling rules
-  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'trainee-mode', 'trainer-mode', 'is-admin-session');
+  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'trainee-mode', 'trainer-mode', 'admin-mode', 'is-admin-session');
   document.body.classList.add(`role-${user.role}`);
   if (user.role === 'admin') {
     document.body.classList.add('is-admin-session');
-  }
-  if (user.role === 'trainee') {
+    document.body.classList.add('admin-mode');
+  } else if (user.role === 'trainee') {
     document.body.classList.add('trainee-mode');
   } else if (user.role === 'trainer') {
     document.body.classList.add('trainer-mode');
   }
 
-  // Trainee & Trainer portal: hide left sidebar
+  // Trainee, Trainer & Admin portal: hide left sidebar for clean standalone portal
   const sidebarAside = document.querySelector('.stms-sidebar') || document.getElementById('stmsSidebar');
   if (sidebarAside) {
-    if (user.role === 'trainee' || user.role === 'trainer') {
-      sidebarAside.style.display = 'none';
-    } else {
-      sidebarAside.style.display = 'flex';
-    }
+    sidebarAside.style.display = 'none';
   }
 
   // Center Role Switcher: Visible ONLY to Administrator for role preview (Hidden for staff/trainers & students/trainees)
@@ -259,8 +255,10 @@ function loginSuccess(user, notify = true) {
     currentView = 'trainee-portal';
   } else if (user.role === 'trainer') {
     currentView = 'trainer-portal';
+  } else if (user.role === 'admin') {
+    currentView = 'admin-portal';
   } else {
-    currentView = 'dashboard';
+    currentView = 'admin-portal';
   }
 
   renderSidebar();
@@ -314,22 +312,20 @@ function switchRole(role, notify = true) {
   currentRole = role;
 
   // Update body role class
-  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'trainee-mode', 'trainer-mode');
+  document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'trainee-mode', 'trainer-mode', 'admin-mode');
   document.body.classList.add(`role-${role}`);
   if (role === 'trainee') {
     document.body.classList.add('trainee-mode');
   } else if (role === 'trainer') {
     document.body.classList.add('trainer-mode');
+  } else if (role === 'admin') {
+    document.body.classList.add('admin-mode');
   }
 
-  // Trainee & Trainer mode: hide left sidebar
+  // Hide sidebar for portal mode across all roles
   const sidebarAside = document.querySelector('.stms-sidebar') || document.getElementById('stmsSidebar');
   if (sidebarAside) {
-    if (role === 'trainee' || role === 'trainer') {
-      sidebarAside.style.display = 'none';
-    } else {
-      sidebarAside.style.display = 'flex';
-    }
+    sidebarAside.style.display = 'none';
   }
 
   // Update Top Role Switcher Pills
@@ -353,8 +349,10 @@ function switchRole(role, notify = true) {
     currentView = 'trainee-portal';
   } else if (role === 'trainer') {
     currentView = 'trainer-portal';
+  } else if (role === 'admin') {
+    currentView = 'admin-portal';
   } else {
-    currentView = 'dashboard';
+    currentView = 'admin-portal';
   }
 
   renderSidebar();
@@ -370,8 +368,8 @@ function renderSidebar() {
   const sidebarNav = document.getElementById('sidebarNavMenu');
   const sidebarAside = document.querySelector('.stms-sidebar') || document.getElementById('stmsSidebar');
 
-  // Trainee / Student portal & Trainer portal: Completely hide sidebar for clean standalone portal
-  if (currentRole === 'trainee' || currentRole === 'trainer' || currentView === 'trainee-portal' || currentView === 'trainer-portal') {
+  // Trainee, Trainer & Admin portal: Completely hide sidebar for clean standalone portal
+  if (currentRole === 'trainee' || currentRole === 'trainer' || currentRole === 'admin' || currentView === 'trainee-portal' || currentView === 'trainer-portal' || currentView === 'admin-portal') {
     if (sidebarAside) sidebarAside.style.display = 'none';
     if (sidebarNav) sidebarNav.innerHTML = '';
     return;
@@ -486,6 +484,9 @@ function renderView(view) {
       break;
     case 'trainer-portal':
       renderTrainerPortalView(container);
+      break;
+    case 'admin-portal':
+      renderAdminPortalView(container);
       break;
     case 'trainee-attendance':
       renderTraineeAttendanceView(container);
@@ -5604,6 +5605,171 @@ function ensureSyncedCollections() {
   if (!Array.isArray(stmsData.attendanceSessions)) {
     stmsData.attendanceSessions = [];
   }
+
+  // Seed Faculty Teachers for Admin Management
+  if (!Array.isArray(stmsData.users)) stmsData.users = [];
+  const initialTrainers = [
+    {
+      id: "USR-TRN-001",
+      nameKh: "សាស្ត្រាចារ្យ ហេង សំណាង",
+      nameEn: "Heng Samnang",
+      username: "trainer",
+      password: "trainer123",
+      role: "trainer",
+      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+      email: "samnang.heng@ktpttc.edu.kh",
+      phone: "016 777 888",
+      subject: "PED-101",
+      subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
+      status: "active",
+      avatar: "👨‍🏫"
+    },
+    {
+      id: "USR-TRN-002",
+      nameKh: "លោកស្រី ជា រចនា",
+      nameEn: "Chea Rachana",
+      username: "rachana",
+      password: "rachana123",
+      role: "trainer",
+      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+      email: "rachana.chea@ktpttc.edu.kh",
+      phone: "017 666 555",
+      subject: "KHM-104",
+      subjectName: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង",
+      status: "active",
+      avatar: "👩‍🏫"
+    },
+    {
+      id: "USR-TRN-003",
+      nameKh: "លោកស្រី ម៉ៅ សុភា",
+      nameEn: "Mao Sophear",
+      username: "sophear",
+      password: "sophear123",
+      role: "trainer",
+      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+      email: "sophear.mao@ktpttc.edu.kh",
+      phone: "012 888 999",
+      subject: "PSY-102",
+      subjectName: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ",
+      status: "active",
+      avatar: "👩‍🏫"
+    },
+    {
+      id: "USR-TRN-004",
+      nameKh: "លោក គង់ វិចិត្រ",
+      nameEn: "Kong Vichet",
+      username: "vichet",
+      password: "vichet123",
+      role: "trainer",
+      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+      email: "vichet.kong@ktpttc.edu.kh",
+      phone: "092 112 233",
+      subject: "MTH-103",
+      subjectName: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម",
+      status: "active",
+      avatar: "👨‍🏫"
+    },
+    {
+      id: "USR-TRN-005",
+      nameKh: "លោក អ៊ុំ សុវណ្ណ",
+      nameEn: "Oum Sovann",
+      username: "sovann",
+      password: "sovann123",
+      role: "trainer",
+      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+      email: "sovann.oum@ktpttc.edu.kh",
+      phone: "089 445 566",
+      subject: "ICT-105",
+      subjectName: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)",
+      status: "active",
+      avatar: "👨‍🏫"
+    },
+    {
+      id: "USR-TRN-006",
+      nameKh: "លោក ព្រុំ សម្បត្តិ",
+      nameEn: "Prum Sambath",
+      username: "prum",
+      password: "prum123",
+      role: "trainer",
+      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+      email: "sambath.prum@ktpttc.edu.kh",
+      phone: "015 334 455",
+      subject: "RES-106",
+      subjectName: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)",
+      status: "active",
+      avatar: "👨‍🏫"
+    },
+    {
+      id: "USR-TRN-007",
+      nameKh: "លោកស្រី នួន ចរិយា",
+      nameEn: "Nuon Chariya",
+      username: "chariya",
+      password: "chariya123",
+      role: "trainer",
+      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+      email: "chariya.nuon@ktpttc.edu.kh",
+      phone: "077 556 677",
+      subject: "PRAC-107",
+      subjectName: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)",
+      status: "active",
+      avatar: "👩‍🏫"
+    },
+    {
+      id: "USR-TRN-008",
+      nameKh: "លោក ឡុង វិសិដ្ឋ",
+      nameEn: "Long Viseth",
+      username: "viseth",
+      password: "viseth123",
+      role: "trainer",
+      roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+      email: "viseth.long@ktpttc.edu.kh",
+      phone: "096 667 788",
+      subject: "COM-108",
+      subjectName: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍",
+      status: "active",
+      avatar: "👨‍🏫"
+    }
+  ];
+
+  initialTrainers.forEach(trn => {
+    const exists = stmsData.users.find(u => u.id === trn.id || u.username === trn.username);
+    if (!exists) {
+      stmsData.users.push(trn);
+    } else {
+      if (!exists.subject) exists.subject = trn.subject;
+      if (!exists.subjectName) exists.subjectName = trn.subjectName;
+      if (!exists.phone) exists.phone = trn.phone;
+      if (!exists.email) exists.email = trn.email;
+    }
+  });
+
+  // Seed Student Profile Update Requests
+  if (!Array.isArray(stmsData.studentRequests)) {
+    stmsData.studentRequests = [
+      {
+        id: "REQ-001",
+        traineeId: "ktpttc-2026-st-001",
+        traineeName: "យូសុះ ស៊ីលាល",
+        field: "លេខទូរស័ព្ទ & អ៊ីមែល",
+        oldValue: "098 765 432",
+        newValue: "098 765 999 / yousoh.academic@ktpttc.edu.kh",
+        reason: "បានប្តូរលេខទូរស័ព្ទថ្មីសម្រាប់ទាក់ទងការសិក្សា",
+        date: "2026-11-17",
+        status: "pending"
+      },
+      {
+        id: "REQ-002",
+        traineeId: "ktpttc-2026-st-003",
+        traineeName: "ចាន់ ថា",
+        field: "ទីកន្លែងកំណើត",
+        oldValue: "ក្រចេះ",
+        newValue: "ភូមិព្រែកកក់ ឃុំព្រែកកក់ ស្រុកក្រូចឆ្មារ ខេត្តត្បូងឃ្មុំ",
+        reason: "សុំកែសម្រួលទីកន្លែងកំណើតឱ្យត្រូវតាមសំបុត្រកំណើតច្បាប់ដើម",
+        date: "2026-11-16",
+        status: "pending"
+      }
+    ];
+  }
 }
 
 // 2. Active Trainer Profile Resolver
@@ -7052,3 +7218,1734 @@ function submitStudentHomework(hwId) {
 
 
 
+// ==========================================================================
+// ADMINISTRATOR PORTAL & MASTER INSTITUTIONAL MANAGEMENT CONTROLLERS
+// ==========================================================================
+
+// 1. Active Admin Profile Resolver
+function getActiveAdminProfile() {
+  if (currentUser && currentUser.role === 'admin' && currentUser.nameKh) {
+    return currentUser;
+  }
+  return (stmsData.users || []).find(u => u.role === 'admin') || {
+    id: "USR-ADM-001",
+    nameKh: "លោក ឈន ប៊ុនថន",
+    nameEn: "Chhorn Bunthorn",
+    username: "admin",
+    role: "admin",
+    roleLabel: "អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ",
+    email: "admin@ktpttc.edu.kh",
+    phone: "072 971 234",
+    avatar: "👨‍💼"
+  };
+}
+
+// 2. Render Administrator Portal View (Exact Same Prestigious Format as Teacher & Student)
+function renderAdminPortalView(container) {
+  const admin = getActiveAdminProfile();
+  const greeting = getKhmerGreeting();
+  const khmerDate = getKhmerFormattedDate();
+  const initialLetter = getKhmerFirstLetter(admin.nameKh);
+  const activeStream = TRAINEE_STREAMS[currentStreamIndex];
+  const subjects = KTPTTC_ALL_SUBJECTS;
+
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+  const trainees = stmsData.trainees || [];
+  const pendingRequests = (stmsData.studentRequests || []).filter(r => r.status === 'pending');
+
+  let avatarHtml = '';
+  if (admin.photo && String(admin.photo).trim() !== '') {
+    avatarHtml = `<img src="${admin.photo}" class="trainee-hero-avatar-img" alt="${admin.nameKh}" onerror="this.outerHTML='<span class=\\'trainee-hero-avatar-letter\\' style=\\'background:linear-gradient(135deg, #1e3a8a, #3b82f6);\\'>${initialLetter}</span>'" />`;
+  } else {
+    avatarHtml = `<span class="trainee-hero-avatar-letter" style="background:linear-gradient(135deg, #1e3a8a, #2563eb);">${initialLetter}</span>`;
+  }
+
+  // 8 MoEYS Subject Cards for Admin with Assigned Instructors
+  const subjectsHtml = subjects.map(subj => {
+    const theme = getSubjectTheme(subj.code);
+    const assignedTrn = trainers.find(t => t.subject === subj.code);
+    const trnName = assignedTrn ? assignedTrn.nameKh : (subj.trainer || 'មិនទាន់ចាត់តាំង');
+    const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === subj.code).length;
+    const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === subj.code).length;
+
+    return `
+      <div class="trainee-subject-card" style="--subj-bg:${theme.bg}; --subj-border:${theme.border}; --subj-color:${theme.color};" onclick="openAdminSubjectDetailModal('${subj.code}')" title="ចុចដើម្បីចាត់ចែងគ្រូ និងពិនិត្យមេរៀន/កិច្ចការមុខវិជ្ជា ${subj.nameKh}">
+        <div class="subj-card-icon" style="color:${theme.color};">
+          <i class="${theme.icon}"></i>
+        </div>
+        <div class="subj-card-name">
+          ${subj.nameKh}
+        </div>
+        <div style="font-size:0.75rem; color:#1e3a8a; font-weight:700; margin-top:4px; display:flex; align-items:center; gap:4px;">
+          <i class="fas fa-chalkboard-teacher" style="color:${theme.color};"></i> ${trnName}
+        </div>
+        <div style="font-size:0.72rem; color:#64748b; font-weight:600; margin-top:auto; display:flex; justify-content:space-between; width:100%; border-top:1px dashed #e2e8f0; padding-top:4px;">
+          <span>${subj.credits} ក្រេឌីត</span>
+          <span style="color:${theme.color}; font-weight:700;">${lsnCount} មេរៀន • ${hwCount} កិច្ចការ</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Calculate Overall Attendance Metrics
+  const totalStudents = trainees.length || 1;
+  let totalPresent = 0, totalPerm = 0, totalLate = 0, totalAbsent = 0;
+  trainees.forEach(t => {
+    totalPresent += (t.attendanceSummary?.present || 0);
+    totalPerm += (t.attendanceSummary?.permission || 0);
+    totalLate += (t.attendanceSummary?.late || 0);
+    totalAbsent += (t.attendanceSummary?.absent || 0);
+  });
+  const totalRecorded = totalPresent + totalPerm + totalLate + totalAbsent;
+  const avgAttendanceRate = totalRecorded > 0 ? Math.round(((totalRecorded - totalAbsent) / totalRecorded) * 100) : 98;
+  const concernsList = trainees.filter(t => (t.attendanceSummary?.absent || 0) > 0);
+
+  let html = `
+    <div class="admin-portal-container">
+      
+      <!-- 1. Admin Hero Banner Card (Deep Blue + Khmer Rosette Watermark) -->
+      <div class="trainee-hero-banner">
+        <div class="trainee-hero-pattern"></div>
+        <div class="trainee-hero-left">
+          <div class="trainee-hero-avatar-wrap">
+            ${avatarHtml}
+          </div>
+          <div class="trainee-hero-text">
+            <span class="trainee-hero-greeting">${greeting}</span>
+            <h1 class="trainee-hero-name">${admin.nameKh || 'លោក ឈន ប៊ុនថន'}</h1>
+            <div class="trainee-hero-badges">
+              <span class="trainee-badge-pill role"><i class="fas fa-user-shield"></i> ${admin.roleLabel || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ'}</span>
+              <span class="trainee-badge-pill class"><i class="fas fa-university"></i> សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</span>
+              <span class="trainee-badge-pill class" style="background:rgba(255,255,255,0.18);"><i class="fas fa-users-cog"></i> គ្រប់គ្រងទូទៅ &amp; សិក្សាធិការ</span>
+            </div>
+            <div class="trainee-hero-date">
+              ${khmerDate}
+            </div>
+          </div>
+        </div>
+        <div class="trainee-hero-actions">
+          <button class="btn-hero-action primary" onclick="openAdminAddStudentModal()">
+            <i class="fas fa-user-plus"></i> ចុះឈ្មោះសិស្សថ្មី
+          </button>
+          <button class="btn-hero-action secondary" onclick="openAdminTeacherModal()">
+            <i class="fas fa-chalkboard-teacher"></i> គ្រប់គ្រងគ្រូ
+          </button>
+          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openAdminBackupModal()">
+            <i class="fas fa-database"></i> បម្រុងទុក
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Admin 8 Pastel Hub Menu Grid (Identical Layout to Student & Teacher Portal) -->
+      <div class="trainee-hub-grid">
+        
+        <!-- 1. គ្រប់គ្រងគ្រូឧទ្ទេស (Pink) -->
+        <div class="trainee-hub-card card-pink" onclick="openAdminTeacherModal()">
+          <div class="hub-card-pattern"></div>
+          <div class="hub-card-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+          <div class="hub-card-title">គ្រូឧទ្ទេស</div>
+          <div class="hub-card-sub">${trainers.length} នាក់ • ចាត់ចែងមុខវិជ្ជា</div>
+        </div>
+
+        <!-- 2. គ្រប់គ្រងគរុសនិស្សិត (Blue) -->
+        <div class="trainee-hub-card card-blue" onclick="openAdminStudentModal()">
+          <div class="hub-card-pattern"></div>
+          <div class="hub-card-icon"><i class="fas fa-user-graduate"></i></div>
+          <div class="hub-card-title">គរុសនិស្សិត</div>
+          <div class="hub-card-sub">${trainees.length} នាក់ • គ្រប់គ្រងសិស្ស</div>
+        </div>
+
+        <!-- 3. ជំនាន់ & ថ្នាក់រៀន (Orange) -->
+        <div class="trainee-hub-card card-orange" onclick="openAdminCohortModal()">
+          <div class="hub-card-pattern"></div>
+          <div class="hub-card-icon"><i class="fas fa-school"></i></div>
+          <div class="hub-card-title">ជំនាន់ &amp; ថ្នាក់</div>
+          <div class="hub-card-sub">${(stmsData.cohorts||[]).length} កម្រិត &amp; បន្ទប់រៀន</div>
+        </div>
+
+        <!-- 4. កាលវិភាគមេ (Green) -->
+        <div class="trainee-hub-card card-green" onclick="openAdminTimetableModal()">
+          <div class="hub-card-pattern"></div>
+          <div class="hub-card-icon"><i class="fas fa-calendar-alt"></i></div>
+          <div class="hub-card-title">កាលវិភាគមេ</div>
+          <div class="hub-card-sub">កាលវិភាគបង្រៀនទូទៅ</div>
+        </div>
+
+        <!-- 5. អធិការកិច្ចវត្តមាន (Amber) -->
+        <div class="trainee-hub-card card-amber" onclick="openAdminAttendanceAuditModal()">
+          <div class="hub-card-pattern"></div>
+          <div class="hub-card-icon"><i class="fas fa-clipboard-check"></i></div>
+          <div class="hub-card-title">អធិការកិច្ចវត្តមាន</div>
+          <div class="hub-card-sub">អវត្តមាន &amp; លិខិតព្រមាន</div>
+        </div>
+
+        <!-- 6. ពិន្ទុ & សិក្សាធិការ (Purple) -->
+        <div class="trainee-hub-card card-purple" onclick="openAdminGradingModal()">
+          <div class="hub-card-pattern"></div>
+          <div class="hub-card-icon"><i class="fas fa-award"></i></div>
+          <div class="hub-card-title">ពិន្ទុ &amp; សិក្សាធិការ</div>
+          <div class="hub-card-sub">អនុម័ត &amp; បោះពុម្ពលទ្ធផល</div>
+        </div>
+
+        <!-- 7. សំណើពីគរុសិស្ស (Teal) -->
+        <div class="trainee-hub-card card-teal" onclick="openAdminRequestsModal()">
+          <div class="hub-card-pattern"></div>
+          <div class="hub-card-icon"><i class="fas fa-envelope-open-text"></i></div>
+          <div class="hub-card-title">សំណើពីគរុសិស្ស</div>
+          <div class="hub-card-sub">${pendingRequests.length} សំណើរង់ចាំអនុម័ត</div>
+        </div>
+
+        <!-- 8. បម្រុងទុក & ស្តារ (Sky) -->
+        <div class="trainee-hub-card card-sky" onclick="openAdminBackupModal()">
+          <div class="hub-card-pattern"></div>
+          <div class="hub-card-icon"><i class="fas fa-database"></i></div>
+          <div class="hub-card-title">បម្រុងទុក &amp; ស្តារ</div>
+          <div class="hub-card-sub">Backup / Restore JSON</div>
+        </div>
+
+      </div>
+
+      <!-- 3. Blue Ribbon Strip & Course Row -->
+      <div class="trainee-subjects-section" id="adminSubjectsSection">
+        
+        <div class="trainee-ribbon-bar">
+          <button class="ribbon-arrow-btn" onclick="prevTraineeSemester()" title="ឆមាសមុន">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <div class="ribbon-title">
+            <i class="fas fa-bookmark" style="opacity:0.9;"></i>
+            <span>${activeStream.label} (ផ្ទាំងគ្រប់គ្រងមុខវិជ្ជា និងសាស្ត្រាចារ្យទទួលបន្ទុក)</span>
+          </div>
+          <button class="ribbon-arrow-btn" onclick="nextTraineeSemester()" title="ឆមាសបន្ទាប់">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="trainee-subjects-body">
+          <div class="trainee-subjects-grid">
+            ${subjectsHtml}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 4. Real Stats & Admin Overview -->
+      <div class="trainee-stats-row">
+        
+        <!-- School-wide Attendance Audit -->
+        <div class="table-card">
+          <div class="table-toolbar">
+            <strong style="color:#1e3a8a;"><i class="fas fa-shield-alt" style="color:#10b981;"></i> ស្ថិតិវត្តមាន និងវិន័យទូទាំងសាលា</strong>
+            <button class="btn btn-primary" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openAdminAttendanceAuditModal()">
+              <i class="fas fa-clipboard-check"></i> ពិនិត្យលម្អិត
+            </button>
+          </div>
+          <div style="padding:22px;">
+            <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:14px;">
+              <span style="font-size:2.4rem; font-weight:800; color:#10b981; line-height:1;">
+                ${avgAttendanceRate}%
+              </span>
+              <span style="font-size:0.85rem; color:#64748b; font-weight:600;">អត្រាវត្តមានសរុបស្ថាប័ន (គរុសនិស្សិត ${totalStudents} នាក់)</span>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center; font-size:0.82rem; margin-bottom:16px;">
+              <div style="background:#f0fdf4; padding:10px 6px; border-radius:8px; border:1px solid #bbf7d0;">
+                <div style="font-weight:800; color:#15803d; font-size:1.15rem;">${totalPresent}</div>
+                <div style="color:#166534; font-size:0.75rem; font-weight:600;">វត្តមានសរុប</div>
+              </div>
+              <div style="background:#fffbeb; padding:10px 6px; border-radius:8px; border:1px solid #fde68a;">
+                <div style="font-weight:800; color:#b45309; font-size:1.15rem;">${totalPerm}</div>
+                <div style="color:#92400e; font-size:0.75rem; font-weight:600;">ច្បាប់</div>
+              </div>
+              <div style="background:#fff7ed; padding:10px 6px; border-radius:8px; border:1px solid #fed7aa;">
+                <div style="font-weight:800; color:#c2410c; font-size:1.15rem;">${totalLate}</div>
+                <div style="color:#9a3412; font-size:0.75rem; font-weight:600;">យឺត</div>
+              </div>
+              <div style="background:#fef2f2; padding:10px 6px; border-radius:8px; border:1px solid #fecaca;">
+                <div style="font-weight:800; color:#b91c1c; font-size:1.15rem;">${totalAbsent}</div>
+                <div style="color:#991b1b; font-size:0.75rem; font-weight:600;">ឥតច្បាប់</div>
+              </div>
+            </div>
+
+            ${concernsList.length > 0 ? `
+              <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#9f1239; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <i class="fas fa-exclamation-triangle"></i> មានគរុសិស្ស <strong>${concernsList.length} នាក់</strong> មានអវត្តមានឥតច្បាប់ (ត្រូវការចេញលិខិតព្រមាន)
+                </div>
+                <button class="btn btn-outline" style="height:24px; font-size:0.7rem; border-color:#f43f5e; color:#e11d48; padding:0 8px;" onclick="openAdminAttendanceAuditModal()">ចាត់ការ</button>
+              </div>
+            ` : `
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#166534;">
+                <i class="fas fa-check-circle"></i> វិន័យ និងវត្តមានទូទាំងសាលាស្ថិតក្នុងកម្រិតល្អប្រសើរ គ្មានសិស្សអវត្តមានលើសកម្រិតកំណត់ឡើយ។
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- Institutional Overview & Operations -->
+        <div class="table-card">
+          <div class="table-toolbar">
+            <strong style="color:#1e3a8a;"><i class="fas fa-cogs" style="color:#2563eb;"></i> សេចក្តីសង្ខេបស្ថាប័ន &amp; សិក្សាធិការ</strong>
+            <button class="btn btn-primary" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openAdminBackupModal()">
+              <i class="fas fa-download"></i> បម្រុងទុក JSON
+            </button>
+          </div>
+          <div style="padding:22px;">
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-bottom:16px;">
+              <div style="background:#eff6ff; padding:14px; border-radius:8px; border:1px solid #bfdbfe;">
+                <div style="font-size:0.75rem; color:#1e40af; font-weight:600;">គ្រូឧទ្ទេសសរុប (Faculty)</div>
+                <div style="font-size:1.6rem; font-weight:800; color:#1d4ed8; margin:4px 0;">${trainers.length} នាក់</div>
+                <div style="font-size:0.72rem; color:#3b82f6;">៨ មុខវិជ្ជាស្នូល MoEYS</div>
+              </div>
+              <div style="background:#f5f3ff; padding:14px; border-radius:8px; border:1px solid #ddd6fe;">
+                <div style="font-size:0.75rem; color:#5b21b6; font-weight:600;">គរុសនិស្សិតសរុប (Trainees)</div>
+                <div style="font-size:1.6rem; font-weight:800; color:#6d28d9; margin:4px 0;">${trainees.length} នាក់</div>
+                <div style="font-size:0.72rem; color:#7c3aed;">ជំនាន់ទី ៣៤ / បរិញ្ញាបត្រ+១</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-outline" style="flex:1; font-size:0.8rem; height:36px;" onclick="openAdminTeacherModal()">
+                <i class="fas fa-chalkboard-teacher"></i> គ្រប់គ្រងគ្រូ
+              </button>
+              <button class="btn btn-outline" style="flex:1; font-size:0.8rem; height:36px;" onclick="openAdminStudentModal()">
+                <i class="fas fa-user-graduate"></i> គ្រប់គ្រងសិស្ស
+              </button>
+              <button class="btn btn-primary" style="flex:1; font-size:0.8rem; height:36px;" onclick="openAdminGradingModal()">
+                <i class="fas fa-award"></i> អនុម័តពិន្ទុ
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+// --------------------------------------------------------------------------
+// 3. ADMIN MODAL 1: គ្រប់គ្រងគ្រូឧទ្ទេស (FACULTY & TEACHERS MANAGEMENT)
+// --------------------------------------------------------------------------
+function openAdminTeacherModal(autoOpenAdd = false) {
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+  const subjects = KTPTTC_ALL_SUBJECTS;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminTeacherModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:960px; width:95%; max-height:90vh;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-chalkboard-teacher" style="color:#60a5fa;"></i>
+            <span>គ្រប់គ្រងគ្រូឧទ្ទេស &amp; សាស្ត្រាចារ្យ (Faculty Management)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:20px;">
+          
+          <!-- Top Bar: Counters & Actions -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge badge-published" style="font-size:0.85rem; padding:6px 12px;">
+                <i class="fas fa-user-tie"></i> សរុប៖ ${trainers.length} នាក់
+              </span>
+              <span style="font-size:0.85rem; color:#64748b;">ទទួលបន្ទុក ៨ មុខវិជ្ជា MoEYS</span>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-primary" onclick="openAdminAddTeacherModal()" style="font-size:0.85rem;">
+                <i class="fas fa-plus-circle"></i> បន្ថែមគ្រូថ្មី
+              </button>
+              <button class="btn btn-outline" onclick="exportTeachersCSV()" style="font-size:0.85rem;">
+                <i class="fas fa-file-export"></i> ទាញយក CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Teachers Table -->
+          <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+            <table class="stms-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+              <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                <tr>
+                  <th style="padding:10px;">ល.រ</th>
+                  <th style="padding:10px;">ឈ្មោះគ្រូឧទ្ទេស</th>
+                  <th style="padding:10px;">មុខវិជ្ជាទទួលបន្ទុក</th>
+                  <th style="padding:10px;">ទំនាក់ទំនង</th>
+                  <th style="padding:10px;">គណនី (Username/Pass)</th>
+                  <th style="padding:10px; text-align:center;">ស្ថានភាព</th>
+                  <th style="padding:10px; text-align:center;">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${trainers.map((tr, idx) => {
+                  const currentSubj = subjects.find(s => s.code === tr.subject);
+                  return `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                      <td style="padding:10px; font-weight:700; color:#64748b; text-align:center;">${idx + 1}</td>
+                      <td style="padding:10px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                          <div style="width:36px; height:36px; border-radius:50%; background:#e0e7ff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#3730a3; flex-shrink:0;">
+                            ${tr.avatar || '👨‍🏫'}
+                          </div>
+                          <div>
+                            <strong style="color:#0f172a; font-size:0.9rem;">${tr.nameKh}</strong>
+                            <div style="font-size:0.75rem; color:#64748b;">${tr.nameEn || ''} • <code>${tr.id}</code></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style="padding:10px;">
+                        <select class="form-control" style="font-size:0.8rem; padding:4px 8px; height:32px; border-radius:6px;" onchange="reassignTeacherSubject('${tr.id}', this.value)">
+                          <option value="">-- ជ្រើសរើសមុខវិជ្ជា --</option>
+                          ${subjects.map(s => `
+                            <option value="${s.code}" ${tr.subject === s.code ? 'selected' : ''}>
+                              ${s.code} - ${s.nameKh}
+                            </option>
+                          `).join('')}
+                        </select>
+                      </td>
+                      <td style="padding:10px; font-size:0.8rem; color:#475569;">
+                        <div><i class="fas fa-phone-alt" style="color:#3b82f6;"></i> ${tr.phone || '012 345 678'}</div>
+                        <div style="font-size:0.72rem; color:#64748b;"><i class="fas fa-envelope"></i> ${tr.email || 'teacher@ktpttc.edu.kh'}</div>
+                      </td>
+                      <td style="padding:10px; font-size:0.8rem;">
+                        <div><strong>${tr.username}</strong></div>
+                        <div style="font-size:0.75rem; color:#64748b; font-family:monospace;">pwd: ${tr.password || 'trainer123'}</div>
+                      </td>
+                      <td style="padding:10px; text-align:center;">
+                        <span class="badge ${tr.status === 'active' || !tr.status ? 'badge-present' : 'badge-absent'}" style="font-size:0.75rem; padding:4px 8px;">
+                          ${tr.status === 'active' || !tr.status ? 'សកម្ម' : 'ផ្អាក'}
+                        </span>
+                      </td>
+                      <td style="padding:10px; text-align:center;">
+                        <div style="display:flex; justify-content:center; gap:6px;">
+                          <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem;" onclick="openAdminSubjectDetailModal('${tr.subject || 'PED-101'}')" title="មើលមុខវិជ្ជា">
+                            <i class="fas fa-eye"></i>
+                          </button>
+                          <button class="btn btn-danger" style="height:28px; padding:0 8px; font-size:0.75rem;" onclick="deleteAdminTeacher('${tr.id}')" title="លុបគ្រូ">
+                            <i class="fas fa-trash-alt"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between;">
+          <span style="font-size:0.8rem; color:#64748b;">Admin អាចចាត់តាំងមុខវិជ្ជាបង្រៀន និងផ្លាស់ប្តូរគ្រូបង្រៀនបានគ្រប់ពេល</span>
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+  if (autoOpenAdd) {
+    setTimeout(openAdminAddTeacherModal, 200);
+  }
+}
+
+// Reassign Subject to Teacher
+function reassignTeacherSubject(userId, newSubjectCode) {
+  const tr = (stmsData.users || []).find(u => u.id === userId);
+  if (!tr) return;
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === newSubjectCode);
+  tr.subject = newSubjectCode;
+  tr.subjectName = subj ? subj.nameKh : '';
+  saveData();
+  showToast(`✅ បានចាត់តាំងមុខវិជ្ជា «${subj ? subj.nameKh : newSubjectCode}» ជូន «${tr.nameKh}» ដោយជោគជ័យ!`, 'success');
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}
+
+// Delete Teacher
+function deleteAdminTeacher(userId) {
+  const tr = (stmsData.users || []).find(u => u.id === userId);
+  if (!tr) return;
+  if (!confirm(`តើអ្នកពិតជាចង់លុបគណនីគ្រូឧទ្ទេស «${tr.nameKh}» មែនទេ?`)) return;
+
+  stmsData.users = (stmsData.users || []).filter(u => u.id !== userId);
+  saveData();
+  showToast(`🗑️ បានលុបគណនី «${tr.nameKh}» ដោយជោគជ័យ!`, 'info');
+  openAdminTeacherModal();
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}
+
+// Add New Teacher Modal
+function openAdminAddTeacherModal() {
+  const subjects = KTPTTC_ALL_SUBJECTS;
+  const nextIdx = (stmsData.users || []).filter(u => u.role === 'trainer').length + 1;
+  const newId = `USR-TRN-${String(nextIdx).padStart(3, '0')}`;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminAddTeacherModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:540px; width:95%;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:14px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.05rem;">
+            <i class="fas fa-user-plus"></i> ចុះឈ្មោះគ្រូឧទ្ទេសថ្មី (Register New Faculty)
+          </div>
+          <button class="modal-close-icon" onclick="openAdminTeacherModal()" style="color:#fff;">&times;</button>
+        </div>
+        <form onsubmit="saveAdminTeacher(event)" style="padding:20px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">អត្តលេខគ្រូ</label>
+                <input type="text" id="trnId" class="form-control" value="${newId}" readonly style="background:#f1f5f9;">
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ភេទ</label>
+                <select id="trnGender" class="form-control">
+                  <option value="ប្រុស">ប្រុស</option>
+                  <option value="ស្រី">ស្រី</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">គោត្តនាម-នាម (Khmer) *</label>
+              <input type="text" id="trnNameKh" class="form-control" placeholder="ឧ. លោកស្រី កែវ ចរិយា" required>
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ឈ្មោះជាឡាតាំង (English)</label>
+              <input type="text" id="trnNameEn" class="form-control" placeholder="ឧ. Keo Chariya">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">លេខទូរស័ព្ទ *</label>
+                <input type="text" id="trnPhone" class="form-control" placeholder="012 345 678" required>
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">អ៊ីមែល</label>
+                <input type="email" id="trnEmail" class="form-control" placeholder="teacher@ktpttc.edu.kh">
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">មុខវិជ្ជាទទួលបន្ទុក *</label>
+              <select id="trnSubject" class="form-control" required>
+                ${subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh}</option>`).join('')}
+              </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:#eff6ff; padding:10px; border-radius:8px; border:1px solid #bfdbfe;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Username</label>
+                <input type="text" id="trnUsername" class="form-control" placeholder="username" required>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Password</label>
+                <input type="text" id="trnPassword" class="form-control" value="trainer123" required>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn btn-outline" onclick="openAdminTeacherModal()">ត្រឡប់ក្រោយ</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> រក្សាទុកគ្រូថ្មី</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// Save New Teacher
+function saveAdminTeacher(e) {
+  e.preventDefault();
+  const id = document.getElementById('trnId').value;
+  const nameKh = document.getElementById('trnNameKh').value.trim();
+  const nameEn = document.getElementById('trnNameEn').value.trim();
+  const gender = document.getElementById('trnGender').value;
+  const phone = document.getElementById('trnPhone').value.trim();
+  const email = document.getElementById('trnEmail').value.trim();
+  const subject = document.getElementById('trnSubject').value;
+  const username = document.getElementById('trnUsername').value.trim();
+  const password = document.getElementById('trnPassword').value.trim();
+
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subject);
+
+  const newTeacher = {
+    id,
+    nameKh,
+    nameEn,
+    gender,
+    username,
+    password,
+    role: "trainer",
+    roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+    email: email || `${username}@ktpttc.edu.kh`,
+    phone: phone || '012 000 000',
+    subject,
+    subjectName: subj ? subj.nameKh : '',
+    status: "active",
+    avatar: gender === 'ស្រី' ? '👩‍🏫' : '👨‍🏫'
+  };
+
+  if (!Array.isArray(stmsData.users)) stmsData.users = [];
+  stmsData.users.push(newTeacher);
+  saveData();
+
+  showToast(`🎉 បានចុះឈ្មោះគ្រូឧទ្ទេស «${nameKh}» ដោយជោគជ័យ!`, 'success');
+  openAdminTeacherModal();
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}
+
+// --------------------------------------------------------------------------
+// 4. ADMIN MODAL 2: គ្រប់គ្រងគរុសនិស្សិត (TRAINEE TEACHER ROSTER MANAGEMENT)
+// --------------------------------------------------------------------------
+function openAdminStudentModal() {
+  const trainees = stmsData.trainees || [];
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminStudentModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:1050px; width:96%; max-height:90vh;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-user-graduate" style="color:#93c5fd;"></i>
+            <span>គ្រប់គ្រងគរុសនិស្សិត (Trainee Teacher Management)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:20px;">
+          
+          <!-- Top Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+            <div style="position:relative; flex:1; min-width:260px; max-width:400px;">
+              <i class="fas fa-search" style="position:absolute; left:12px; top:13px; color:#94a3b8;"></i>
+              <input type="text" id="adminStudentSearch" class="form-control" placeholder="ស្វែងរកតាមឈ្មោះ, អត្តលេខ, ថ្នាក់រៀន..." oninput="filterAdminStudentList(this.value)" style="padding-left:36px; height:40px; border-radius:8px;">
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <span class="badge badge-published" style="font-size:0.85rem; padding:8px 14px;">
+                <i class="fas fa-users"></i> សរុប៖ ${trainees.length} នាក់
+              </span>
+              <button class="btn btn-primary" onclick="openAdminAddStudentModal()" style="font-size:0.85rem;">
+                <i class="fas fa-user-plus"></i> + ចុះឈ្មោះសិស្សថ្មី
+              </button>
+              <button class="btn btn-outline" onclick="exportStudentsCSV()" style="font-size:0.85rem;">
+                <i class="fas fa-file-csv"></i> ទាញយក CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Students Table Container -->
+          <div id="adminStudentTableContainer" class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+            ${renderAdminStudentTableRows(trainees)}
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.82rem; color:#64748b;">ចុចលើ <strong>[កាតសិស្ស]</strong> ដើម្បីមើល និងបោះពុម្ពប័ណ្ណសម្គាល់ខ្លួន</span>
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+  setTimeout(() => document.getElementById('adminStudentSearch')?.focus(), 150);
+}
+
+// Render Admin Student Table
+function renderAdminStudentTableRows(list) {
+  if (!list || list.length === 0) {
+    return `<div style="text-align:center; padding:40px 10px; color:#94a3b8;"><i class="fas fa-user-slash fa-2x" style="margin-bottom:8px; display:block; color:#cbd5e1;"></i>មិនមានទិន្នន័យគរុសនិស្សិតដែលត្រូវនឹងពាក្យស្វែងរកឡើយ</div>`;
+  }
+
+  return `
+    <table class="stms-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+      <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+        <tr>
+          <th style="padding:10px;">ល.រ</th>
+          <th style="padding:10px;">អត្តលេខ</th>
+          <th style="padding:10px;">ឈ្មោះគរុសនិស្សិត</th>
+          <th style="padding:10px;">ភេទ</th>
+          <th style="padding:10px;">ថ្នាក់រៀន &amp; ជំនាន់</th>
+          <th style="padding:10px; text-align:center;">វត្តមាន</th>
+          <th style="padding:10px; text-align:center;">លទ្ធផល</th>
+          <th style="padding:10px; text-align:center;">សកម្មភាព</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map((t, idx) => {
+          const rate = t.attendanceSummary?.rate ?? 100;
+          return `
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:10px; font-weight:700; color:#64748b; text-align:center;">${idx + 1}</td>
+              <td style="padding:10px;"><code style="color:#2563eb; font-weight:700;">${t.id}</code></td>
+              <td style="padding:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:1.2rem;">${t.avatar || (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}</span>
+                  <div>
+                    <strong style="color:#0f172a;">${t.nameKh}</strong>
+                    <div style="font-size:0.75rem; color:#64748b;">${t.nameEn || ''}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="padding:10px;">${t.gender || 'ប្រុស'}</td>
+              <td style="padding:10px; font-size:0.8rem;">
+                <div style="font-weight:600; color:#1e40af;">${t.className || 'ថ្នាក់ ១២+២'}</div>
+                <div style="font-size:0.72rem; color:#64748b;">${t.cohort || 'ជំនាន់ទី ៣៤'}</div>
+              </td>
+              <td style="padding:10px; text-align:center;">
+                <span class="badge ${rate >= 90 ? 'badge-present' : rate >= 80 ? 'badge-late' : 'badge-absent'}" style="font-size:0.75rem; padding:4px 8px;">
+                  ${rate}%
+                </span>
+              </td>
+              <td style="padding:10px; text-align:center;">
+                <span class="badge badge-published" style="font-size:0.75rem; padding:4px 8px;">
+                  ${t.status || 'កំពុងសិក្សា'}
+                </span>
+              </td>
+              <td style="padding:10px; text-align:center;">
+                <div style="display:flex; justify-content:center; gap:6px;">
+                  <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:#2563eb; border-color:#93c5fd;" onclick="viewTraineeCard('${t.id}')" title="ប័ណ្ណសម្គាល់ខ្លួន">
+                    <i class="fas fa-id-card"></i> កាត
+                  </button>
+                  <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem;" onclick="openAdminEditStudentModal('${t.id}')" title="កែប្រែ">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-danger" style="height:28px; padding:0 8px; font-size:0.75rem;" onclick="deleteAdminStudent('${t.id}')" title="លុប">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Filter Trainee List
+function filterAdminStudentList(query) {
+  const q = (query || '').toLowerCase().trim();
+  const filtered = (stmsData.trainees || []).filter(t => {
+    return (t.nameKh && t.nameKh.toLowerCase().includes(q)) ||
+           (t.nameEn && t.nameEn.toLowerCase().includes(q)) ||
+           (t.id && t.id.toLowerCase().includes(q)) ||
+           (t.className && t.className.toLowerCase().includes(q));
+  });
+  const container = document.getElementById('adminStudentTableContainer');
+  if (container) container.innerHTML = renderAdminStudentTableRows(filtered);
+}
+
+// Add New Trainee Modal
+function openAdminAddStudentModal() {
+  const nextIdx = (stmsData.trainees || []).length + 1;
+  const newId = `KTPTTC-2026-12P2-${String(nextIdx).padStart(3, '0')}`;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminAddStudentModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:580px; width:95%;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:14px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.05rem;">
+            <i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិតថ្មី (Register New Trainee)
+          </div>
+          <button class="modal-close-icon" onclick="openAdminStudentModal()" style="color:#fff;">&times;</button>
+        </div>
+        <form onsubmit="saveAdminStudent(event)" style="padding:20px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">អត្តលេខគរុសិស្ស *</label>
+                <input type="text" id="stuId" class="form-control" value="${newId}" readonly style="background:#f1f5f9; font-weight:700; color:#2563eb;">
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ភេទ *</label>
+                <select id="stuGender" class="form-control">
+                  <option value="ប្រុស">ប្រុស (Male)</option>
+                  <option value="ស្រី">ស្រី (Female)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">គោត្តនាម-នាម (Khmer) *</label>
+              <input type="text" id="stuNameKh" class="form-control" placeholder="ឧ. កែវ វិបុល" required>
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ឈ្មោះជាឡាតាំង (English)</label>
+              <input type="text" id="stuNameEn" class="form-control" placeholder="ឧ. Keo Vibul">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ថ្ងៃខែឆ្នាំកំណើត</label>
+                <input type="date" id="stuDob" class="form-control" value="2002-05-15">
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">លេខទូរស័ព្ទ</label>
+                <input type="text" id="stuPhone" class="form-control" placeholder="012 888 999">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ថ្នាក់រៀន</label>
+                <select id="stuClass" class="form-control">
+                  <option value="ថ្នាក់បឋម ១២+២ ក្រុម ខ">ថ្នាក់បឋម ១២+២ ក្រុម ខ</option>
+                  <option value="ថ្នាក់បឋម ១២+២ ក្រុម ក">ថ្នាក់បឋម ១២+២ ក្រុម ក</option>
+                  <option value="ថ្នាក់មត្តេយ្យ ១២+២">ថ្នាក់មត្តេយ្យ ១២+២</option>
+                  <option value="បរិញ្ញាបត្រ+១ ក្រុម ខ">បរិញ្ញាបត្រ+១ ក្រុម ខ</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ជំនាន់សិក្សា</label>
+                <input type="text" id="stuCohort" class="form-control" value="ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤">
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn btn-outline" onclick="openAdminStudentModal()">ត្រឡប់ក្រោយ</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> ចុះឈ្មោះសិស្ស</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// Save New Trainee
+function saveAdminStudent(e) {
+  e.preventDefault();
+  const id = document.getElementById('stuId').value.trim();
+  const nameKh = document.getElementById('stuNameKh').value.trim();
+  const nameEn = document.getElementById('stuNameEn').value.trim();
+  const gender = document.getElementById('stuGender').value;
+  const dob = document.getElementById('stuDob').value;
+  const phone = document.getElementById('stuPhone').value.trim();
+  const className = document.getElementById('stuClass').value;
+  const cohort = document.getElementById('stuCohort').value.trim();
+
+  const newTrainee = {
+    id,
+    roll: (stmsData.trainees || []).length + 1,
+    nameKh,
+    nameEn,
+    gender,
+    dob,
+    phone,
+    className,
+    cohort,
+    roleLabel: "គរុសនិស្សិត",
+    status: "កំពុងសិក្សា",
+    avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
+    attendanceSummary: { rate: 100, present: 0, permission: 0, late: 0, absent: 0 },
+    scores: {}
+  };
+
+  if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+  stmsData.trainees.push(newTrainee);
+
+  // Auto create student user login account
+  if (!Array.isArray(stmsData.users)) stmsData.users = [];
+  const username = id.toLowerCase().replace(/[^a-z0-9]/g, '');
+  stmsData.users.push({
+    id: `USR-STU-${String(stmsData.users.length + 1).padStart(3, '0')}`,
+    nameKh,
+    nameEn,
+    studentId: id,
+    username,
+    password: "student123",
+    role: "trainee",
+    roleLabel: "គរុសនិស្សិត",
+    phone: phone || "012 345 678",
+    className,
+    status: "active",
+    avatar: newTrainee.avatar
+  });
+
+  saveData();
+  showToast(`🎉 បានចុះឈ្មោះគរុសនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
+  openAdminStudentModal();
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}
+
+// Edit Trainee Modal
+function openAdminEditStudentModal(id) {
+  const t = (stmsData.trainees || []).find(x => x.id === id);
+  if (!t) return;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminEditStudentModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:540px; width:95%;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:14px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.05rem;">
+            <i class="fas fa-edit"></i> កែប្រែព័ត៌មានគរុសនិស្សិត (${t.nameKh})
+          </div>
+          <button class="modal-close-icon" onclick="openAdminStudentModal()" style="color:#fff;">&times;</button>
+        </div>
+        <form onsubmit="updateAdminStudent('${t.id}', event)" style="padding:20px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">អត្តលេខ</label>
+                <input type="text" class="form-control" value="${t.id}" readonly style="background:#f1f5f9;">
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ភេទ</label>
+                <select id="editStuGender" class="form-control">
+                  <option value="ប្រុស" ${t.gender === 'ប្រុស' ? 'selected' : ''}>ប្រុស</option>
+                  <option value="ស្រី" ${t.gender === 'ស្រី' ? 'selected' : ''}>ស្រី</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">គោត្តនាម-នាម (Khmer) *</label>
+              <input type="text" id="editStuNameKh" class="form-control" value="${t.nameKh}" required>
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ឈ្មោះជាឡាតាំង (English)</label>
+              <input type="text" id="editStuNameEn" class="form-control" value="${t.nameEn || ''}">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ថ្ងៃខែឆ្នាំកំណើត</label>
+                <input type="date" id="editStuDob" class="form-control" value="${t.dob || '2001-01-01'}">
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">លេខទូរស័ព្ទ</label>
+                <input type="text" id="editStuPhone" class="form-control" value="${t.phone || ''}">
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a;">ថ្នាក់រៀន</label>
+              <input type="text" id="editStuClass" class="form-control" value="${t.className || ''}">
+            </div>
+
+          </div>
+
+          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn btn-outline" onclick="openAdminStudentModal()">ត្រឡប់ក្រោយ</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> រក្សាទុកការកែប្រែ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// Update Trainee
+function updateAdminStudent(id, e) {
+  e.preventDefault();
+  const t = (stmsData.trainees || []).find(x => x.id === id);
+  if (!t) return;
+
+  t.nameKh = document.getElementById('editStuNameKh').value.trim();
+  t.nameEn = document.getElementById('editStuNameEn').value.trim();
+  t.gender = document.getElementById('editStuGender').value;
+  t.dob = document.getElementById('editStuDob').value;
+  t.phone = document.getElementById('editStuPhone').value.trim();
+  t.className = document.getElementById('editStuClass').value.trim();
+
+  saveData();
+  showToast(`✅ បានធ្វើបច្ចុប្បន្នភាពព័ត៌មាន «${t.nameKh}» ដោយជោគជ័យ!`, 'success');
+  openAdminStudentModal();
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}
+
+// Delete Trainee
+function deleteAdminStudent(id) {
+  const t = (stmsData.trainees || []).find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`តើអ្នកពិតជាចង់លុបទិន្នន័យគរុសនិស្សិត «${t.nameKh}» (${t.id}) មែនទេ?`)) return;
+
+  stmsData.trainees = (stmsData.trainees || []).filter(x => x.id !== id);
+  saveData();
+  showToast(`🗑️ បានលុបទិន្នន័យគរុសនិស្សិត «${t.nameKh}» ដោយជោគជ័យ!`, 'info');
+  openAdminStudentModal();
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}
+
+// --------------------------------------------------------------------------
+// 5. ADMIN MODAL 3: ជំនាន់ & ថ្នាក់រៀន (COHORTS & CLASSROOMS)
+// --------------------------------------------------------------------------
+function openAdminCohortModal() {
+  const cohorts = stmsData.cohorts || [];
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminCohortModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:750px; width:95%;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-school" style="color:#fdba74;"></i>
+            <span>គ្រប់គ្រងជំនាន់សិក្សា &amp; បន្ទប់រៀន (Cohorts &amp; Classrooms)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:20px;">
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <strong style="color:#1e3a8a;">បញ្ជីជំនាន់សិក្សា និងកម្រិតបណ្តុះបណ្តាល KTPTTC</strong>
+            <button class="btn btn-primary" onclick="showToast('បានបើកទម្រង់បង្កើតជំនាន់ថ្មី', 'info')" style="font-size:0.82rem;">
+              <i class="fas fa-plus"></i> បង្កើតជំនាន់ថ្មី
+            </button>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            ${cohorts.map((c, idx) => `
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:14px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                  <div>
+                    <strong style="font-size:0.95rem; color:#1e3a8a;">${c.nameKh}</strong>
+                    <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                      កូដ៖ <code>${c.id}</code> • ប្រភេទ៖ ${c.type} • ឆ្នាំសិក្សា៖ ២០២៦-២០២៧
+                    </div>
+                  </div>
+                  <span class="badge badge-published" style="font-size:0.75rem;">សកម្ម</span>
+                </div>
+                <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                  ${(c.classes || []).map(cls => `
+                    <span style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; font-size:0.75rem; padding:3px 10px; border-radius:6px; font-weight:600;">
+                      <i class="fas fa-chalkboard"></i> ${cls}
+                    </span>
+                  `).join('')}
+                  ${(c.rooms || []).map(rm => `
+                    <span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-size:0.75rem; padding:3px 10px; border-radius:6px;">
+                      <i class="fas fa-door-open"></i> ${rm}
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// --------------------------------------------------------------------------
+// 6. ADMIN MODAL 4: កាលវិភាគមេ (MASTER TIMETABLE)
+// --------------------------------------------------------------------------
+function openAdminTimetableModal() {
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminTimetableModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:960px; width:95%; max-height:90vh;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-calendar-alt" style="color:#86efac;"></i>
+            <span>កាលវិភាគបង្រៀនមេ (Master Institutional Timetable)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:20px;">
+          
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:0.85rem; color:#166534;">
+              <i class="fas fa-check-circle"></i> ប្រព័ន្ធបានផ្ទៀងផ្ទាត់ដោយស្វ័យប្រវត្ត៖ <strong>គ្មានទំនាស់ម៉ោង ឬបន្ទប់រៀន (No Schedule Conflicts)</strong>
+            </div>
+            <button class="btn btn-primary" onclick="showToast('កំពុងបើកទម្រង់បោះពុម្ពកាលវិភាគមេ...', 'info'); setTimeout(()=>window.print(), 300);" style="font-size:0.8rem; height:32px;">
+              <i class="fas fa-print"></i> បោះពុម្ពកាលវិភាគ
+            </button>
+          </div>
+
+          <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+            <table class="stms-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+              <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                <tr>
+                  <th style="padding:10px;">ថ្ងៃ</th>
+                  <th style="padding:10px;">ម៉ោងសិក្សា</th>
+                  <th style="padding:10px;">មុខវិជ្ជា MoEYS</th>
+                  <th style="padding:10px;">សាស្ត្រាចារ្យទទួលបន្ទុក</th>
+                  <th style="padding:10px;">ថ្នាក់រៀន</th>
+                  <th style="padding:10px;">បន្ទប់</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:10px;"><strong>ថ្ងៃចន្ទ</strong></td>
+                  <td style="padding:10px;">០៧:៣០ - ០៩:០០</td>
+                  <td style="padding:10px;"><strong style="color:#1e3a8a;">ចិត្តវិទ្យាគរុកោសល្យ</strong></td>
+                  <td style="padding:10px;">លោកស្រី ម៉ៅ សុភា</td>
+                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
+                  <td style="padding:10px;">បន្ទប់ ១០១</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:10px;"><strong>ថ្ងៃចន្ទ</strong></td>
+                  <td style="padding:10px;">០៩:១៥ - ១០:៤៥</td>
+                  <td style="padding:10px;"><strong style="color:#1e3a8a;">គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
+                  <td style="padding:10px;">សាស្ត្រាចារ្យ ហេង សំណាង</td>
+                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
+                  <td style="padding:10px;">បន្ទប់ ២០២</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:10px;"><strong>ថ្ងៃអង្គារ</strong></td>
+                  <td style="padding:10px;">០៧:៣០ - ០៩:០០</td>
+                  <td style="padding:10px;"><strong style="color:#1e3a8a;">វិធីសាស្ត្របង្រៀនគណិតវិទ្យា</strong></td>
+                  <td style="padding:10px;">លោក គង់ វិចិត្រ</td>
+                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
+                  <td style="padding:10px;">បន្ទប់ ២០២</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:10px;"><strong>ថ្ងៃពុធ</strong></td>
+                  <td style="padding:10px;">០៧:៣០ - ០៩:០០</td>
+                  <td style="padding:10px;"><strong style="color:#1e3a8a;">ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន</strong></td>
+                  <td style="padding:10px;">លោក ព្រុំ សម្បត្តិ</td>
+                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
+                  <td style="padding:10px;">បន្ទប់ ២០២</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:10px;"><strong>ថ្ងៃព្រហស្បតិ៍</strong></td>
+                  <td style="padding:10px;">១៣:៣០ - ១៥:០០</td>
+                  <td style="padding:10px;"><strong style="color:#1e3a8a;">ការចុះកម្មសិក្សាគរុកោសល្យ (Practicum)</strong></td>
+                  <td style="padding:10px;">លោកស្រី នួន ចរិយា</td>
+                  <td style="padding:10px;">សាលាបឋមអនុវត្តន៍</td>
+                  <td style="padding:10px;">ទីវាលអនុវត្តន៍</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px;"><strong>ថ្ងៃសុក្រ</strong></td>
+                  <td style="padding:10px;">០៧:៣០ - ០៩:០០</td>
+                  <td style="padding:10px;"><strong style="color:#1e3a8a;">វិធីសាស្ត្របង្រៀនភាសាខ្មែរ</strong></td>
+                  <td style="padding:10px;">លោកស្រី ជា រចនា</td>
+                  <td style="padding:10px;">ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
+                  <td style="padding:10px;">បន្ទប់ ២០២</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// --------------------------------------------------------------------------
+// 7. ADMIN MODAL 5: អធិការកិច្ចវត្តមាន (ATTENDANCE AUDIT & DISCIPLINE)
+// --------------------------------------------------------------------------
+function openAdminAttendanceAuditModal() {
+  const trainees = stmsData.trainees || [];
+  const concernsList = trainees.filter(t => (t.attendanceSummary?.absent || 0) > 0);
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminAttendanceModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:850px; width:95%; max-height:90vh;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-clipboard-check" style="color:#fde047;"></i>
+            <span>អធិការកិច្ចវត្តមាន &amp; វិន័យទូទាំងសាលា (Attendance &amp; Discipline Audit)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:20px;">
+          
+          <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:14px; margin-bottom:16px; color:#92400e; font-size:0.85rem; line-height:1.6;">
+            <strong><i class="fas fa-exclamation-triangle"></i> បទបញ្ជាផ្ទៃក្នុងស្តីពីវត្តមានគរុសនិស្សិត (MoEYS Standard):</strong>
+            <div>• អវត្តមានឥតច្បាប់ <strong>លើសពី ៣ លើក</strong> ត្រូវទទួលការព្រមានជាលាយលក្ខណ៍អក្សរលើកទី ១</div>
+            <div>• អវត្តមានសរុបលើសពី <strong>២០%</strong> នៃម៉ោងសិក្សា គ្មានសិទ្ធិប្រឡងបញ្ចប់ឆមាសឡើយ</div>
+          </div>
+
+          <h4 style="color:#1e3a8a; margin-bottom:12px; font-size:0.95rem;">
+            <i class="fas fa-user-clock"></i> បញ្ជីគរុសិស្សដែលមានកំណត់ត្រាអវត្តមាន (${concernsList.length} នាក់)
+          </h4>
+
+          ${concernsList.length > 0 ? `
+            <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+              <table class="stms-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                  <tr>
+                    <th style="padding:10px;">អត្តលេខ</th>
+                    <th style="padding:10px;">ឈ្មោះគរុសិស្ស</th>
+                    <th style="padding:10px;">ថ្នាក់រៀន</th>
+                    <th style="padding:10px; text-align:center;">អវត្តមានឥតច្បាប់</th>
+                    <th style="padding:10px; text-align:center;">អត្រាវត្តមាន</th>
+                    <th style="padding:10px; text-align:center;">វិធានការ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${concernsList.map(t => `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                      <td style="padding:10px;"><code style="font-weight:700; color:#2563eb;">${t.id}</code></td>
+                      <td style="padding:10px;"><strong>${t.nameKh}</strong></td>
+                      <td style="padding:10px;">${t.className}</td>
+                      <td style="padding:10px; text-align:center;">
+                        <span class="badge badge-absent" style="font-size:0.85rem; font-weight:800; padding:4px 10px;">
+                          ${t.attendanceSummary?.absent || 0} ដង
+                        </span>
+                      </td>
+                      <td style="padding:10px; text-align:center; font-weight:700; color:#d97706;">
+                        ${t.attendanceSummary?.rate || 92}%
+                      </td>
+                      <td style="padding:10px; text-align:center;">
+                        <button class="btn btn-outline" style="height:28px; padding:0 10px; font-size:0.75rem; border-color:#ef4444; color:#dc2626;" onclick="issueAdminDisciplinaryWarning('${t.id}')">
+                          <i class="fas fa-file-invoice"></i> ចេញលិខិតព្រមាន
+                        </button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : `
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:20px; text-align:center; color:#166534;">
+              <i class="fas fa-check-circle fa-2x" style="margin-bottom:8px; display:block;"></i>
+              ពុំមានគរុសិស្សណាម្នាក់មានអវត្តមានឥតច្បាប់លើសកម្រិតកំណត់ឡើយ!
+            </div>
+          `}
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between;">
+          <button class="btn btn-primary" onclick="showToast('កំពុងទាញយករបាយការណ៍វត្តមានប្រចាំខែ (Excel)...', 'info')" style="font-size:0.8rem;">
+            <i class="fas fa-file-excel"></i> ទាញយករបាយការណ៍វត្តមាន
+          </button>
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// Issue Disciplinary Warning
+function issueAdminDisciplinaryWarning(traineeId) {
+  const t = (stmsData.trainees || []).find(x => x.id === traineeId);
+  if (!t) return;
+  showToast(`⚠️ បានចេញលិខិតព្រមានជាផ្លូវការលើកទី ១ ជូនគរុសិស្ស «${t.nameKh}» និងបានកត់ត្រាក្នុងសំណុំរឿងសិក្សា!`, 'warning');
+}
+
+// --------------------------------------------------------------------------
+// 8. ADMIN MODAL 6: ពិន្ទុ & សិក្សាធិការ (MASTER GRADEBOOK APPROVAL & PUBLISHING)
+// --------------------------------------------------------------------------
+function openAdminGradingModal() {
+  const trainees = stmsData.trainees || [];
+  const subjects = KTPTTC_ALL_SUBJECTS;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminGradingModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:1100px; width:96%; max-height:92vh;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-award" style="color:#c4b5fd;"></i>
+            <span>តារាងពិន្ទុរួម &amp; អនុម័តផ្សព្វផ្សាយជាផ្លូវការ (Master Gradebook Approval)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:20px;">
+          
+          <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; padding:14px 18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div style="font-size:0.85rem; color:#5b21b6; line-height:1.6;">
+              <strong>តួនាទី Admin សិក្សាធិការ៖</strong> ត្រួតពិនិត្យពិន្ទុដែលគ្រូឧទ្ទេសបានបញ្ចូល ធ្វើការគណនាចំណាត់ថ្នាក់ និងចុចអនុម័តដើម្បីផ្សព្វផ្សាយជាផ្លូវការទៅកាន់គណនីគរុសិស្ស។
+            </div>
+            <button class="btn btn-primary" onclick="publishAdminMasterGrades()" style="background:#7c3aed; border-color:#6d28d9; font-size:0.85rem; padding:8px 16px;">
+              <i class="fas fa-bullhorn"></i> អនុម័ត &amp; ផ្សព្វផ្សាយលទ្ធផល
+            </button>
+          </div>
+
+          <!-- Gradebook Table -->
+          <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:8px; overflow-x:auto;">
+            <table class="stms-table" style="width:100%; border-collapse:collapse; font-size:0.82rem; white-space:nowrap;">
+              <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                <tr>
+                  <th style="padding:8px 10px;">ល.រ</th>
+                  <th style="padding:8px 10px;">ឈ្មោះគរុសនិស្សិត</th>
+                  <th style="padding:8px 10px;">ថ្នាក់</th>
+                  ${subjects.map(s => `<th style="padding:8px 10px; text-align:center;">${s.code}</th>`).join('')}
+                  <th style="padding:8px 10px; text-align:center; background:#eff6ff;">មធ្យមភាគ</th>
+                  <th style="padding:8px 10px; text-align:center; background:#f0fdf4;">និទ្ទេស</th>
+                  <th style="padding:8px 10px; text-align:center;">ស្ថានភាព</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${trainees.map((t, idx) => {
+                  let sum = 0, count = 0;
+                  subjects.forEach(s => {
+                    const sc = t.scores?.[s.code]?.total;
+                    if (sc !== undefined) {
+                      sum += sc;
+                      count++;
+                    }
+                  });
+                  const avg = count > 0 ? (sum / count).toFixed(1) : '90.0';
+                  const grade = avg >= 90 ? 'A' : avg >= 85 ? 'B+' : avg >= 80 ? 'B' : avg >= 70 ? 'C' : 'D';
+
+                  return `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                      <td style="padding:8px 10px; font-weight:700; color:#64748b; text-align:center;">${idx + 1}</td>
+                      <td style="padding:8px 10px;"><strong>${t.nameKh}</strong></td>
+                      <td style="padding:8px 10px; font-size:0.75rem; color:#64748b;">${t.className}</td>
+                      ${subjects.map(s => {
+                        const sc = t.scores?.[s.code]?.total;
+                        return `
+                          <td style="padding:8px 10px; text-align:center; font-weight:600;">
+                            ${sc !== undefined ? sc : `<span style="color:#94a3b8;">-</span>`}
+                          </td>
+                        `;
+                      }).join('')}
+                      <td style="padding:8px 10px; text-align:center; font-weight:800; color:#1d4ed8; background:#eff6ff;">
+                        ${avg}
+                      </td>
+                      <td style="padding:8px 10px; text-align:center; font-weight:800; color:#15803d; background:#f0fdf4;">
+                        ${grade}
+                      </td>
+                      <td style="padding:8px 10px; text-align:center;">
+                        <span class="badge badge-published" style="font-size:0.72rem; padding:3px 8px;">បានផ្សាយ</span>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between;">
+          <button class="btn btn-outline" onclick="showToast('កំពុងរៀបចំពុម្ពតារាងពិន្ទុរួម...', 'info'); setTimeout(()=>window.print(), 300);">
+            <i class="fas fa-print"></i> បោះពុម្ពតារាងពិន្ទុរួម
+          </button>
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// Publish Master Grades
+function publishAdminMasterGrades() {
+  (stmsData.trainees || []).forEach(t => {
+    if (t.scores) {
+      Object.keys(t.scores).forEach(k => {
+        t.scores[k].status = 'published';
+      });
+    }
+  });
+  saveData();
+  showToast('🎉 បានអនុម័ត និងផ្សព្វផ្សាយលទ្ធផលប្រឡងជាផ្លូវការទូទាំងវិទ្យាស្ថាន! គរុសនិស្សិតទាំងអស់អាចពិនិត្យពិន្ទុក្នុងគណនីបានភ្លាមៗ។', 'success');
+  closeStmsModal();
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}
+
+// --------------------------------------------------------------------------
+// 9. ADMIN MODAL 7: សំណើពីគរុសិស្ស (STUDENT PROFILE REQUESTS APPROVAL)
+// --------------------------------------------------------------------------
+function openAdminRequestsModal() {
+  const requests = stmsData.studentRequests || [];
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminRequestsModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:780px; width:95%; max-height:90vh;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-envelope-open-text" style="color:#5eead4;"></i>
+            <span>សំណើសុំកែប្រែព័ត៌មានពីគរុសិស្ស (Student Change Requests)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:20px;">
+          
+          <div style="margin-bottom:14px; font-size:0.85rem; color:#64748b;">
+            សំណើដែលគរុសិស្សបានផ្ញើមកកាន់ការិយាល័យសិក្សាធិការ ដើម្បីសុំកែប្រែព័ត៌មានផ្ទាល់ខ្លួន៖
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            ${requests.map(req => `
+              <div style="border:1px solid ${req.status === 'pending' ? '#fde68a' : '#e2e8f0'}; background:${req.status === 'pending' ? '#fffdf5' : '#fff'}; border-radius:8px; padding:14px 16px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                  <div>
+                    <strong style="color:#1e3a8a; font-size:0.95rem;">${req.traineeName}</strong>
+                    <span style="font-size:0.75rem; color:#64748b; margin-left:6px;">(អត្តលេខ៖ <code>${req.traineeId}</code>)</span>
+                  </div>
+                  <span class="badge ${req.status === 'pending' ? 'badge-late' : req.status === 'approved' ? 'badge-present' : 'badge-absent'}" style="font-size:0.75rem; padding:4px 8px;">
+                    ${req.status === 'pending' ? 'រង់ចាំអនុម័ត' : req.status === 'approved' ? 'បានអនុម័ត' : 'បានបដិសេធ'}
+                  </span>
+                </div>
+
+                <div style="margin:8px 0; font-size:0.82rem; line-height:1.6; color:#334155;">
+                  <div><strong>ផ្នែកដែលសុំកែប្រែ៖</strong> ${req.field}</div>
+                  <div style="color:#b91c1c;"><strong>ព័ត៌មានចាស់៖</strong> ${req.oldValue}</div>
+                  <div style="color:#15803d;"><strong>ព័ត៌មានថ្មីដែលស្នើសុំ៖</strong> ${req.newValue}</div>
+                  <div style="color:#64748b;"><strong>មូលហេតុ៖</strong> ${req.reason}</div>
+                  <div style="font-size:0.72rem; color:#94a3b8; margin-top:4px;"><i class="fas fa-clock"></i> កាលបរិច្ឆេទ៖ ${req.date}</div>
+                </div>
+
+                ${req.status === 'pending' ? `
+                  <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px dashed #e2e8f0; padding-top:8px; margin-top:8px;">
+                    <button class="btn btn-outline" style="height:28px; padding:0 12px; font-size:0.75rem; color:#ef4444; border-color:#fca5a5;" onclick="resolveAdminStudentRequest('${req.id}', 'rejected')">
+                      <i class="fas fa-times"></i> បដិសេធ
+                    </button>
+                    <button class="btn btn-primary" style="height:28px; padding:0 14px; font-size:0.75rem; background:#10b981; border-color:#059669;" onclick="resolveAdminStudentRequest('${req.id}', 'approved')">
+                      <i class="fas fa-check"></i> អនុម័ត និងកែប្រែ
+                    </button>
+                  </div>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// Resolve Student Request (Approve or Reject)
+function resolveAdminStudentRequest(reqId, action) {
+  const req = (stmsData.studentRequests || []).find(r => r.id === reqId);
+  if (!req) return;
+
+  req.status = action;
+
+  if (action === 'approved') {
+    // If approved, update student's profile automatically
+    const t = (stmsData.trainees || []).find(x => x.id === req.traineeId);
+    if (t) {
+      if (req.field.includes('ទូរស័ព្ទ')) {
+        t.phone = req.newValue.split(' / ')[0];
+      }
+      if (req.field.includes('កំណើត')) {
+        t.pob = req.newValue;
+      }
+    }
+    showToast(`✅ បានអនុម័តសំណើរបស់ «${req.traineeName}» និងបានធ្វើបច្ចុប្បន្នភាពទិន្នន័យដោយស្វ័យប្រវត្តិ!`, 'success');
+  } else {
+    showToast(`❌ បានបដិសេធសំណើរបស់ «${req.traineeName}»`, 'info');
+  }
+
+  saveData();
+  openAdminRequestsModal();
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}
+
+// --------------------------------------------------------------------------
+// 10. ADMIN MODAL 8: បម្រុងទុក & ស្តារទិន្នន័យ (BACKUP & RESTORE JSON / EXCEL)
+// --------------------------------------------------------------------------
+function openAdminBackupModal() {
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminBackupModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:620px; width:95%;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-database" style="color:#7dd3fc;"></i>
+            <span>បម្រុងទុក &amp; ស្តារទិន្នន័យប្រព័ន្ធ (Database Backup &amp; Restore)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:22px;">
+          
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            
+            <!-- Tool 1: JSON Full Backup -->
+            <div style="border:1px solid #bfdbfe; background:#eff6ff; border-radius:10px; padding:16px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:40px; height:40px; border-radius:8px; background:#dbeafe; color:#1d4ed8; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                  <i class="fas fa-file-download"></i>
+                </div>
+                <div>
+                  <strong style="color:#1e3a8a; font-size:0.95rem;">ទាញយកទិន្នន័យបម្រុងទុក (Export Full Backup)</strong>
+                  <div style="font-size:0.75rem; color:#3b82f6;">ទាញយកទិន្នន័យទាំងអស់ (គ្រូ, សិស្ស, ពិន្ទុ, វត្តមាន) ជាឯកសារ JSON</div>
+                </div>
+              </div>
+              <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="exportAdminDataJSON()">
+                  <i class="fas fa-download"></i> ទាញយក JSON Backup
+                </button>
+              </div>
+            </div>
+
+            <!-- Tool 2: Restore from JSON -->
+            <div style="border:1px solid #e2e8f0; background:#f8fafc; border-radius:10px; padding:16px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:40px; height:40px; border-radius:8px; background:#e2e8f0; color:#475569; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                  <i class="fas fa-file-upload"></i>
+                </div>
+                <div>
+                  <strong style="color:#0f172a; font-size:0.95rem;">ស្តារទិន្នន័យពី JSON (Restore Database)</strong>
+                  <div style="font-size:0.75rem; color:#64748b;">ជ្រើសរើសឯកសារ JSON Backup ដើម្បីស្តារទិន្នន័យឡើងវិញ</div>
+                </div>
+              </div>
+              <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                <input type="file" id="adminRestoreFileInput" accept=".json" style="font-size:0.8rem;" onchange="importAdminDataJSON(this)">
+              </div>
+            </div>
+
+            <!-- Tool 3: Export CSVs -->
+            <div style="border:1px solid #bbf7d0; background:#f0fdf4; border-radius:10px; padding:16px;">
+              <strong style="color:#15803d; font-size:0.95rem;"><i class="fas fa-file-excel"></i> របាយការណ៍ជា Excel / CSV</strong>
+              <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-outline" style="border-color:#10b981; color:#047857; font-size:0.8rem;" onclick="exportStudentsCSV()">
+                  <i class="fas fa-download"></i> បញ្ជីគរុសិស្ស (CSV)
+                </button>
+                <button class="btn btn-outline" style="border-color:#10b981; color:#047857; font-size:0.8rem;" onclick="exportTeachersCSV()">
+                  <i class="fas fa-download"></i> បញ្ជីគ្រូឧទ្ទេស (CSV)
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// Export Full JSON Backup
+function exportAdminDataJSON() {
+  const jsonStr = JSON.stringify(stmsData, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `KTPTTC_STMS_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('💾 បានទាញយកទិន្នន័យបម្រុងទុក JSON ដោយជោគជ័យ!', 'success');
+}
+
+// Import JSON Backup
+function importAdminDataJSON(inputEl) {
+  const file = inputEl.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (parsed && (parsed.trainees || parsed.users)) {
+        if (confirm('តើអ្នកពិតជាចង់ស្តារទិន្នន័យពីឯកសារនេះមែនទេ? ទិន្នន័យបច្ចុប្បន្ននឹងត្រូវបានជំនួស។')) {
+          stmsData = parsed;
+          saveData();
+          showToast('🎉 បានស្តារទិន្នន័យប្រព័ន្ធដោយជោគជ័យ!', 'success');
+          closeStmsModal();
+          if (currentView === 'admin-portal') {
+            renderAdminPortalView(document.getElementById('stmsContentViewport'));
+          }
+        }
+      } else {
+        showToast('ឯកសារ JSON មិនត្រឹមត្រូវតាមទម្រង់ទិន្នន័យ STMS ឡើយ!', 'error');
+      }
+    } catch (err) {
+      showToast('បរាជ័យក្នុងការអានឯកសារ JSON!', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Export Students CSV
+function exportStudentsCSV() {
+  const list = stmsData.trainees || [];
+  let csv = 'ID,Name_Khmer,Name_English,Gender,Class,Cohort,Attendance_Rate\n';
+  list.forEach(t => {
+    csv += `"${t.id}","${t.nameKh}","${t.nameEn||''}","${t.gender||''}","${t.className||''}","${t.cohort||''}","${t.attendanceSummary?.rate||100}%"\n`;
+  });
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `KTPTTC_Students_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📄 បានទាញយកបញ្ជីគរុសិស្សជា CSV ដោយជោគជ័យ!', 'success');
+}
+
+// Export Teachers CSV
+function exportTeachersCSV() {
+  const list = (stmsData.users || []).filter(u => u.role === 'trainer');
+  let csv = 'ID,Name_Khmer,Name_English,Subject_Code,Subject_Name,Phone,Email,Status\n';
+  list.forEach(tr => {
+    csv += `"${tr.id}","${tr.nameKh}","${tr.nameEn||''}","${tr.subject||''}","${tr.subjectName||''}","${tr.phone||''}","${tr.email||''}","${tr.status||'active'}"\n`;
+  });
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `KTPTTC_Teachers_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📄 បានទាញយកបញ្ជីគ្រូឧទ្ទេសជា CSV ដោយជោគជ័យ!', 'success');
+}
+
+// --------------------------------------------------------------------------
+// 11. ADMIN SUBJECT DETAIL & TEACHER REASSIGNMENT MODAL
+// --------------------------------------------------------------------------
+function openAdminSubjectDetailModal(subjCode) {
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjCode) || {
+    code: subjCode,
+    nameKh: 'មុខវិជ្ជា',
+    credits: 3
+  };
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+  const assignedTrn = trainers.find(t => t.subject === subj.code);
+  const theme = getSubjectTheme(subj.code);
+
+  const hwList = (stmsData.assignments || []).filter(a => a.subjectCode === subj.code);
+  const lsnList = (stmsData.lessons || []).filter(l => l.subjectCode === subj.code);
+  const vidList = (stmsData.videoLessons || []).filter(v => v.subjectCode === subj.code);
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminSubjectDetailModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:820px; width:95%; max-height:90vh;">
+        <div class="modal-header-bar" style="background:${theme.color}; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="${theme.icon}"></i>
+            <span>គ្រប់គ្រងមុខវិជ្ជា៖ ${subj.nameKh} (${subj.code})</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:22px;">
+          
+          <!-- Faculty Reassignment Block -->
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:16px; margin-bottom:20px;">
+            <div style="font-size:0.85rem; font-weight:700; color:#1e40af; margin-bottom:8px;">
+              <i class="fas fa-user-edit"></i> សាស្ត្រាចារ្យទទួលបន្ទុកបង្រៀនមុខវិជ្ជានេះ៖
+            </div>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <select id="reassignSubjTeacherSelect" class="form-control" style="flex:1; min-width:260px; font-weight:700; color:#1e3a8a;">
+                <option value="">-- ជ្រើសរើសគ្រូឧទ្ទេស --</option>
+                ${trainers.map(tr => `
+                  <option value="${tr.id}" ${assignedTrn && assignedTrn.id === tr.id ? 'selected' : ''}>
+                    ${tr.nameKh} (${tr.phone || '012 345 678'})
+                  </option>
+                `).join('')}
+              </select>
+              <button class="btn btn-primary" onclick="saveAdminSubjectTeacher('${subj.code}')">
+                <i class="fas fa-check"></i> រក្សាទុកការចាត់តាំង
+              </button>
+            </div>
+          </div>
+
+          <!-- Content Overview -->
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:20px;">
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; text-align:center;">
+              <div style="font-size:1.5rem; font-weight:800; color:#2563eb;">${lsnList.length}</div>
+              <div style="font-size:0.75rem; color:#64748b; font-weight:600;">មេរៀន / Slide</div>
+            </div>
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; text-align:center;">
+              <div style="font-size:1.5rem; font-weight:800; color:#ea580c;">${vidList.length}</div>
+              <div style="font-size:0.75rem; color:#64748b; font-weight:600;">វីដេអូ E-Learning</div>
+            </div>
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; text-align:center;">
+              <div style="font-size:1.5rem; font-weight:800; color:#7c3aed;">${hwList.length}</div>
+              <div style="font-size:0.75rem; color:#64748b; font-weight:600;">កិច្ចការដែលបានដាក់</div>
+            </div>
+          </div>
+
+          <!-- Assignments & Lessons Preview -->
+          <h4 style="color:#1e3a8a; margin-bottom:10px; font-size:0.95rem;">
+            <i class="fas fa-tasks"></i> កិច្ចការដែលគ្រូបានដាក់ឱ្យសិស្សក្នុងមុខវិជ្ជានេះ
+          </h4>
+          ${hwList.length > 0 ? `
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              ${hwList.map(hw => `
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <strong style="color:#0f172a; font-size:0.88rem;">${hw.title}</strong>
+                    <div style="font-size:0.75rem; color:#64748b;">កាលបរិច្ឆេទកំណត់៖ ${hw.dueDate} • ពិន្ទុ៖ ${hw.points} • ដោយ៖ ${hw.trainerName}</div>
+                  </div>
+                  <span class="badge badge-published" style="font-size:0.72rem;">កំពុងដំណើរការ</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <div style="padding:14px; text-align:center; color:#94a3b8; font-size:0.85rem; border:1px dashed #cbd5e1; border-radius:8px;">
+              មិនទាន់មានកិច្ចការត្រូវបានដាក់ក្នុងមុខវិជ្ជានេះនៅឡើយទេ។
+            </div>
+          `}
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+
+// Save Subject Teacher Reassignment
+function saveAdminSubjectTeacher(subjCode) {
+  const select = document.getElementById('reassignSubjTeacherSelect');
+  if (!select) return;
+  const newTrnId = select.value;
+  if (!newTrnId) {
+    showToast('សូមជ្រើសរើសគ្រូឧទ្ទេស!', 'warning');
+    return;
+  }
+
+  // Remove this subject from any other teacher
+  (stmsData.users || []).forEach(u => {
+    if (u.role === 'trainer' && u.subject === subjCode && u.id !== newTrnId) {
+      u.subject = '';
+      u.subjectName = '';
+    }
+  });
+
+  // Assign to selected teacher
+  const tr = (stmsData.users || []).find(u => u.id === newTrnId);
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjCode);
+  if (tr) {
+    tr.subject = subjCode;
+    tr.subjectName = subj ? subj.nameKh : '';
+  }
+
+  saveData();
+  showToast(`✅ បានចាត់តាំងមុខវិជ្ជា «${subj ? subj.nameKh : subjCode}» ជូន «${tr ? tr.nameKh : ''}» ដោយជោគជ័យ!`, 'success');
+  closeStmsModal();
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}

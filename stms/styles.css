@@ -299,24 +299,30 @@ body.is-admin-session #navCenterRole {
   border-right: 1px solid #1e293b;
 }
 
-/* Trainee & Trainer View: Suppress Sidebar completely for clean standalone portal */
+/* Trainee, Trainer & Admin View: Suppress Sidebar completely for clean standalone portal */
 body.trainee-mode .stms-sidebar,
 body.trainer-mode .stms-sidebar,
+body.admin-mode .stms-sidebar,
 body.role-trainee .stms-sidebar,
 body.role-trainer .stms-sidebar,
+body.role-admin .stms-sidebar,
 body.role-student .stms-sidebar,
 body:has(.trainee-portal-container) .stms-sidebar,
-body:has(.trainer-portal-container) .stms-sidebar {
+body:has(.trainer-portal-container) .stms-sidebar,
+body:has(.admin-portal-container) .stms-sidebar {
   display: none !important;
 }
 
 body.trainee-mode .stms-content-viewport,
 body.trainer-mode .stms-content-viewport,
+body.admin-mode .stms-content-viewport,
 body.role-trainee .stms-content-viewport,
 body.role-trainer .stms-content-viewport,
+body.role-admin .stms-content-viewport,
 body.role-student .stms-content-viewport,
 body:has(.trainee-portal-container) .stms-content-viewport,
-body:has(.trainer-portal-container) .stms-content-viewport {
+body:has(.trainer-portal-container) .stms-content-viewport,
+body:has(.admin-portal-container) .stms-content-viewport {
   width: 100%;
   max-width: 100%;
   padding: 24px 28px 60px 28px;
@@ -2060,7 +2066,8 @@ body:has(.trainer-portal-container) .stms-content-viewport {
    ========================================================================== */
 
 .trainee-portal-container,
-.trainer-portal-container {
+.trainer-portal-container,
+.admin-portal-container {
   display: flex;
   flex-direction: column;
   gap: 20px;
