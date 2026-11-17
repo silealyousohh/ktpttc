@@ -5772,12 +5772,18 @@ function ensureSyncedCollections() {
   }
 }
 
-// 2. Active Trainer Profile Resolver
+// 2. Active Trainer Profile Resolver & RBAC Subject Enforcement
+let currentTrainerPreviewId = null;
+
 function getActiveTrainerProfile() {
+  if (currentTrainerPreviewId) {
+    const found = (stmsData.users || []).find(u => u.id === currentTrainerPreviewId);
+    if (found) return found;
+  }
   if (currentUser && currentUser.role === 'trainer' && currentUser.nameKh) {
     return currentUser;
   }
-  return stmsData.users?.find(u => u.role === 'trainer') || {
+  return (stmsData.users || []).find(u => u.role === 'trainer') || {
     id: "USR-TRN-001",
     nameKh: "សាស្ត្រាចារ្យ ហេង សំណាង",
     nameEn: "Heng Samnang",
@@ -5791,14 +5797,53 @@ function getActiveTrainerProfile() {
   };
 }
 
-// 3. Render Modern Teacher / Trainer Portal View (Matching Student Portal Layout)
+// Helper: Get all subject codes assigned to a specific trainer
+function getTrainerAssignedSubjectCodes(tr) {
+  if (!tr) return ['PED-101'];
+  const list = [];
+  if (Array.isArray(tr.subjects)) {
+    tr.subjects.forEach(s => { if (s && !list.includes(s)) list.push(s); });
+  }
+  if (tr.subject && !list.includes(tr.subject)) {
+    list.push(tr.subject);
+  }
+  // Check in KTPTTC_ALL_SUBJECTS where instructor name matches
+  if (list.length === 0 && tr.nameKh) {
+    const cleanName = tr.nameKh.replace(/^(សាស្ត្រាចារ្យ|លោកស្រី|លោក|អ្នកគ្រូ|លោកគ្រូ)\s+/, '').trim();
+    KTPTTC_ALL_SUBJECTS.forEach(s => {
+      if (s.trainer && s.trainer.includes(cleanName) && !list.includes(s.code)) {
+        list.push(s.code);
+      }
+    });
+  }
+  if (list.length === 0) {
+    list.push('PED-101');
+  }
+  return list;
+}
+
+// Switcher for Admin previewing specific teachers
+function previewSpecificTrainer(trainerId) {
+  const user = (stmsData.users || []).find(u => u.id === trainerId);
+  if (user) {
+    currentTrainerPreviewId = trainerId;
+    showToast(`កំពុងមើលក្នុងនាម៖ ${user.nameKh} (មុខវិជ្ជា៖ ${user.subject || 'PED-101'})`, 'info');
+    renderView('trainer-portal');
+  }
+}
+
+// 3. Render Modern Teacher / Trainer Portal View (Matching Student Portal Layout with Strict Subject Isolation)
 function renderTrainerPortalView(container) {
   const tr = getActiveTrainerProfile();
   const greeting = getKhmerGreeting();
   const khmerDate = getKhmerFormattedDate();
   const initialLetter = getKhmerFirstLetter(tr.nameKh);
   const activeStream = TRAINEE_STREAMS[currentStreamIndex];
-  const subjects = KTPTTC_ALL_SUBJECTS;
+  const allSubjects = KTPTTC_ALL_SUBJECTS;
+
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const mySubjects = allSubjects.filter(s => myCodes.includes(s.code));
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
 
   let avatarHtml = '';
   if (tr.photo && String(tr.photo).trim() !== '') {
@@ -5807,39 +5852,79 @@ function renderTrainerPortalView(container) {
     avatarHtml = `<span class="trainee-hero-avatar-letter" style="background:linear-gradient(135deg, #1d4ed8, #2563eb);">${initialLetter}</span>`;
   }
 
-  // Subject Cards for Teacher (Click opens Teacher Management Modal)
-  const subjectsHtml = subjects.map(subj => {
+  // Subject Cards for Teacher: Assigned subjects are active; non-assigned subjects are locked!
+  const subjectsHtml = allSubjects.map(subj => {
+    const isMine = myCodes.includes(subj.code);
     const theme = getSubjectTheme(subj.code);
     const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === subj.code).length;
     const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === subj.code).length;
 
-    return `
-      <div class="trainee-subject-card" style="--subj-bg:${theme.bg}; --subj-border:${theme.border}; --subj-color:${theme.color};" onclick="openTeacherSubjectDetailModal('${subj.code}')" title="ចុចដើម្បីគ្រប់គ្រងមុខវិជ្ជា ${subj.nameKh} (ដាក់ពិន្ទុ កិច្ចការ & Upload មេរៀន)">
-        <div class="subj-card-icon" style="color:${theme.color};">
-          <i class="${theme.icon}"></i>
+    if (isMine) {
+      return `
+        <div class="trainee-subject-card" style="--subj-bg:${theme.bg}; --subj-border:${theme.color}; --subj-color:${theme.color}; border:2px solid ${theme.color}; position:relative; box-shadow:0 4px 12px rgba(37,99,235,0.08);" onclick="openTeacherSubjectDetailModal('${subj.code}')" title="ចុចដើម្បីគ្រប់គ្រងមុខវិជ្ជា ${subj.nameKh} (ដាក់ពិន្ទុ កិច្ចការ & Upload មេរៀន)">
+          <div style="position:absolute; top:8px; right:8px; background:#10b981; color:#fff; font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:12px; display:flex; align-items:center; gap:3px;">
+            <i class="fas fa-check-circle"></i> មុខវិជ្ជាបង្រៀន
+          </div>
+          <div class="subj-card-icon" style="color:${theme.color};">
+            <i class="${theme.icon}"></i>
+          </div>
+          <div class="subj-card-name" style="font-weight:700;">
+            ${subj.nameKh}
+          </div>
+          <div style="font-size:0.75rem; color:#64748b; font-weight:600; margin-top:auto; display:flex; justify-content:space-between; width:100%; border-top:1px dashed #e2e8f0; padding-top:4px;">
+            <span>${subj.credits} ក្រេឌីត</span>
+            <span style="color:${theme.color}; font-weight:700;">${hwCount > 0 ? `${hwCount} កិច្ចការ` : `${lsnCount} មេរៀន`}</span>
+          </div>
         </div>
-        <div class="subj-card-name">
-          ${subj.nameKh}
+      `;
+    } else {
+      return `
+        <div class="trainee-subject-card" style="--subj-bg:#f8fafc; --subj-border:#e2e8f0; --subj-color:#94a3b8; opacity:0.65; cursor:not-allowed; background:#f8fafc; border:1px dashed #cbd5e1; position:relative;" onclick="showToast('🔒 លោកគ្រូ/អ្នកគ្រូគ្មានសិទ្ធិចូលមើល ឬគ្រប់គ្រងមុខវិជ្ជា «${subj.nameKh}» ឡើយ! (អាចគ្រប់គ្រងបានតែមុខវិជ្ជាដែលខ្លួនបង្រៀនប៉ុណ្ណោះ)', 'warning')" title="🔒 គ្មានសិទ្ធិចូលមើលទិន្នន័យមុខវិជ្ជានេះឡើយ">
+          <div style="position:absolute; top:8px; right:8px; background:#e2e8f0; color:#64748b; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:12px; display:flex; align-items:center; gap:3px;">
+            <i class="fas fa-lock"></i> ចាក់សោ
+          </div>
+          <div class="subj-card-icon" style="color:#94a3b8;">
+            <i class="fas fa-lock"></i>
+          </div>
+          <div class="subj-card-name" style="color:#64748b;">
+            ${subj.nameKh}
+          </div>
+          <div style="font-size:0.72rem; color:#94a3b8; font-weight:600; margin-top:auto; display:flex; justify-content:space-between; width:100%; border-top:1px dashed #e2e8f0; padding-top:4px;">
+            <span>${subj.credits} ក្រេឌីត</span>
+            <span style="color:#94a3b8;"><i class="fas fa-user-lock"></i> គ្រូផ្សេងទទួលបន្ទុក</span>
+          </div>
         </div>
-        <div style="font-size:0.75rem; color:#64748b; font-weight:600; margin-top:auto; display:flex; justify-content:space-between; width:100%;">
-          <span>${subj.credits} ក្រេឌីត</span>
-          <span style="color:${theme.color}; font-weight:700;">${hwCount > 0 ? `${hwCount} កិច្ចការ` : `${lsnCount} មេរៀន`}</span>
-        </div>
-      </div>
-    `;
+      `;
+    }
   }).join('');
 
-  // Calculate Overall Class Attendance Statistics
+  // Attendance metrics filtered for this teacher's subject sessions
   const totalStudents = stmsData.trainees.length || 1;
+  const mySessions = (stmsData.attendanceSessions || []).filter(s => myCodes.includes(s.subjectCode));
   let totalPresent = 0, totalPerm = 0, totalLate = 0, totalAbsent = 0;
-  stmsData.trainees.forEach(t => {
-    totalPresent += (t.attendanceSummary?.present || 0);
-    totalPerm += (t.attendanceSummary?.permission || 0);
-    totalLate += (t.attendanceSummary?.late || 0);
-    totalAbsent += (t.attendanceSummary?.absent || 0);
-  });
+  if (mySessions.length > 0) {
+    mySessions.forEach(sess => {
+      Object.values(sess.records || {}).forEach(st => {
+        if (st === 'present') totalPresent++;
+        else if (st === 'permission') totalPerm++;
+        else if (st === 'late') totalLate++;
+        else if (st === 'absent') totalAbsent++;
+      });
+    });
+  } else {
+    // Default fallback from student summary
+    stmsData.trainees.forEach(t => {
+      totalPresent += (t.attendanceSummary?.present || 0);
+      totalPerm += (t.attendanceSummary?.permission || 0);
+      totalLate += (t.attendanceSummary?.late || 0);
+      totalAbsent += (t.attendanceSummary?.absent || 0);
+    });
+  }
   const totalRecorded = totalPresent + totalPerm + totalLate + totalAbsent;
   const avgAttendanceRate = totalRecorded > 0 ? Math.round(((totalRecorded - totalAbsent) / totalRecorded) * 100) : 98;
+
+  // Homework count in teacher's assigned subjects
+  const myHwCount = (stmsData.assignments || []).filter(a => myCodes.includes(a.subjectCode)).length;
 
   let html = `
     <div class="trainer-portal-container">
@@ -5857,24 +5942,40 @@ function renderTrainerPortalView(container) {
             <div class="trainee-hero-badges">
               <span class="trainee-badge-pill role"><i class="fas fa-chalkboard-teacher"></i> ${tr.roleLabel || 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន'}</span>
               <span class="trainee-badge-pill class"><i class="fas fa-chalkboard"></i> ${activeStream.label.split(' • ')[0]}</span>
-              <span class="trainee-badge-pill class" style="background:rgba(255,255,255,0.18);"><i class="fas fa-book-reader"></i> ${tr.subject || 'PED-101'} គរុកោសល្យ</span>
+              <span class="trainee-badge-pill class" style="background:#10b981; color:#fff; font-weight:700;"><i class="fas fa-book-reader"></i> ${mySubjects.map(s => s.code + ' ' + s.nameKh).join(' & ')}</span>
             </div>
-            <div class="trainee-hero-date">
+            
+            ${(currentUser && currentUser.role === 'admin') ? `
+              <div style="margin-top:8px; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:3px 10px;">
+                <span style="font-size:0.75rem; color:#fff; font-weight:600;"><i class="fas fa-random"></i> ប្តូរគ្រូដើម្បីសាកល្បង RBAC៖</span>
+                <select onchange="previewSpecificTrainer(this.value)" style="background:#fff; color:#1e3a8a; font-size:0.75rem; font-weight:700; border-radius:4px; padding:2px 8px; border:none; cursor:pointer;">
+                  ${trainers.map(t => `<option value="${t.id}" ${t.id === tr.id ? 'selected' : ''}>${t.nameKh} (${t.subject || 'PED-101'})</option>`).join('')}
+                </select>
+              </div>
+            ` : ''}
+
+            <div class="trainee-hero-date" style="margin-top:6px;">
               ${khmerDate}
             </div>
           </div>
         </div>
         <div class="trainee-hero-actions">
-          <button class="btn-hero-action primary" onclick="openTeacherHomeworkModal()">
+          <button class="btn-hero-action primary" onclick="openTeacherHomeworkModal('${myCodes[0]}')">
             <i class="fas fa-plus-circle"></i> ដាក់កិច្ចការថ្មី
           </button>
-          <button class="btn-hero-action secondary" onclick="openTeacherAttendanceModal()">
+          <button class="btn-hero-action secondary" onclick="openTeacherAttendanceModal('${myCodes[0]}')">
             <i class="fas fa-calendar-check"></i> ស្រង់វត្តមាន
           </button>
-          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherGradingModal()">
+          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherGradingModal('${myCodes[0]}')">
             <i class="fas fa-calculator"></i> បញ្ចូលពិន្ទុ
           </button>
         </div>
+      </div>
+
+      <!-- Security Notice Banner -->
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px 16px; display:flex; align-items:center; gap:10px; font-size:0.83rem; color:#1e40af;">
+        <i class="fas fa-shield-alt" style="font-size:1.1rem; color:#2563eb;"></i>
+        <span><strong>សិទ្ធិអំណាចគ្រូឧទ្ទេស (RBAC Scope)៖</strong> លោកគ្រូ/អ្នកគ្រូមានសិទ្ធិដាក់ពិន្ទុ ស្រង់វត្តមាន ដាក់កិច្ចការ និង Upload មេរៀន/វីដេអូ <strong>តែចំពោះមុខវិជ្ជា «${mySubjects.map(s => s.nameKh).join(', ')}» ដែលខ្លួនទទួលបន្ទុកប៉ុណ្ណោះ</strong>។ មុខវិជ្ជាផ្សេងទៀតត្រូវបានចាក់សោសុវត្ថិភាព។</span>
       </div>
 
       <!-- 2. Teacher 8 Pastel Hub Menu Grid (Identical Layout to Student Portal) -->
@@ -5885,7 +5986,7 @@ function renderTrainerPortalView(container) {
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-chalkboard-teacher"></i></div>
           <div class="hub-card-title">មុខវិជ្ជា</div>
-          <div class="hub-card-sub">${subjects.length} មុខវិជ្ជាបង្រៀន</div>
+          <div class="hub-card-sub">${mySubjects.length} មុខវិជ្ជាទទួលបន្ទុក</div>
         </div>
 
         <!-- 2. កាលវិភាគ (Blue) -->
@@ -5897,7 +5998,7 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 3. វីដេអូ & មេរៀន (Orange) -->
-        <div class="trainee-hub-card card-orange" onclick="openTeacherUploadModal()">
+        <div class="trainee-hub-card card-orange" onclick="openTeacherUploadModal('${myCodes[0]}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-play-circle"></i></div>
           <div class="hub-card-title">វីដេអូ & មេរៀន</div>
@@ -5913,15 +6014,15 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 5. កិច្ចការសិស្ស (Amber) -->
-        <div class="trainee-hub-card card-amber" onclick="openTeacherHomeworkModal()">
+        <div class="trainee-hub-card card-amber" onclick="openTeacherHomeworkModal('${myCodes[0]}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-tasks"></i></div>
           <div class="hub-card-title">កិច្ចការសិស្ស</div>
-          <div class="hub-card-sub">${(stmsData.assignments||[]).length} កិច្ចការដែលបានដាក់</div>
+          <div class="hub-card-sub">${myHwCount} កិច្ចការមុខវិជ្ជាខ្លួន</div>
         </div>
 
         <!-- 6. បញ្ចូលពិន្ទុ (Purple) -->
-        <div class="trainee-hub-card card-purple" onclick="openTeacherGradingModal()">
+        <div class="trainee-hub-card card-purple" onclick="openTeacherGradingModal('${myCodes[0]}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-calculator"></i></div>
           <div class="hub-card-title">បញ្ចូលពិន្ទុ</div>
@@ -5929,7 +6030,7 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 7. វត្តមានសិស្ស (Teal) -->
-        <div class="trainee-hub-card card-teal" onclick="openTeacherAttendanceModal()">
+        <div class="trainee-hub-card card-teal" onclick="openTeacherAttendanceModal('${myCodes[0]}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-clipboard-check"></i></div>
           <div class="hub-card-title">វត្តមានសិស្ស</div>
@@ -5955,7 +6056,7 @@ function renderTrainerPortalView(container) {
           </button>
           <div class="ribbon-title">
             <i class="fas fa-bookmark" style="opacity:0.9;"></i>
-            <span>${activeStream.label} (ផ្ទាំងគ្រប់គ្រងមុខវិជ្ជាគ្រូឧទ្ទេស)</span>
+            <span>${activeStream.label} (មុខវិជ្ជាទទួលបន្ទុកបង្រៀនដោយ៖ ${tr.nameKh})</span>
           </div>
           <button class="ribbon-arrow-btn" onclick="nextTraineeSemester()" title="ឆមាសបន្ទាប់">
             <i class="fas fa-chevron-right"></i>
@@ -5976,8 +6077,8 @@ function renderTrainerPortalView(container) {
         <!-- Class Attendance Overview -->
         <div class="table-card">
           <div class="table-toolbar">
-            <strong style="color:#1e3a8a;"><i class="fas fa-calendar-check" style="color:#10b981;"></i> ស្ថិតិវត្តមានគរុសនិស្សិតប្រចាំថ្នាក់</strong>
-            <button class="btn btn-primary" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherAttendanceModal()">
+            <strong style="color:#1e3a8a;"><i class="fas fa-calendar-check" style="color:#10b981;"></i> ស្ថិតិវត្តមានគរុសនិស្សិត (មុខវិជ្ជា ${mySubjects.map(s => s.code).join('/')})</strong>
+            <button class="btn btn-primary" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherAttendanceModal('${myCodes[0]}')">
               <i class="fas fa-plus"></i> ស្រង់វត្តមានឥឡូវនេះ
             </button>
           </div>
@@ -5986,7 +6087,7 @@ function renderTrainerPortalView(container) {
               <span style="font-size:2.4rem; font-weight:800; color:#10b981; line-height:1;">
                 ${avgAttendanceRate}%
               </span>
-              <span style="font-size:0.85rem; color:#64748b; font-weight:600;">អត្រាវត្តមានសរុបប្រចាំថ្នាក់ (សរុប ${totalStudents} នាក់)</span>
+              <span style="font-size:0.85rem; color:#64748b; font-weight:600;">អត្រាវត្តមានសរុប (គរុសិស្ស ${totalStudents} នាក់)</span>
             </div>
             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center; font-size:0.82rem;">
               <div style="background:#f0fdf4; padding:10px 6px; border-radius:8px; border:1px solid #bbf7d0;">
@@ -6009,35 +6110,43 @@ function renderTrainerPortalView(container) {
           </div>
         </div>
 
-        <!-- Grading & Homework Status Overview -->
+        <!-- Grading & Homework Status Overview (Scoped to My Subjects Only) -->
         <div class="table-card">
           <div class="table-toolbar">
-            <strong style="color:#1e3a8a;"><i class="fas fa-tasks" style="color:#7c3aed;"></i> ស្ថានភាពកិច្ចការ &amp; ការដាក់ពិន្ទុ</strong>
-            <button class="btn btn-outline" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherGradingModal()">
-              <i class="fas fa-edit"></i> បញ្ចូលពិន្ទុប្រចាំមុខវិជ្ជា
+            <strong style="color:#1e3a8a;"><i class="fas fa-tasks" style="color:#7c3aed;"></i> ស្ថានភាពមុខវិជ្ជាទទួលបន្ទុក</strong>
+            <button class="btn btn-outline" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherGradingModal('${myCodes[0]}')">
+              <i class="fas fa-edit"></i> បញ្ចូលពិន្ទុ
             </button>
           </div>
           <div style="padding:20px;">
             <p style="font-size:0.83rem; color:#64748b; margin-bottom:12px;">
-              កិច្ចការ និងពិន្ទុដែលលោកគ្រូ/អ្នកគ្រូបានដាក់ នឹងលោតចូលក្នុងប្រព័ន្ធសិស្សភ្លាមៗ៖
+              ស្ថានភាពកិច្ចការ និងការដាក់ពិន្ទុក្នុងមុខវិជ្ជាដែលលោកគ្រូ/អ្នកគ្រូបង្រៀន៖
             </p>
             <div style="display:flex; flex-direction:column; gap:8px;">
-              ${subjects.slice(0, 4).map(s => {
+              ${mySubjects.map(s => {
                 const isGraded = stmsData.trainees.some(t => t.scores && t.scores[s.code] && t.scores[s.code].status === 'published');
                 const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === s.code).length;
+                const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === s.code).length;
                 return `
-                  <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:8px; font-size:0.85rem; border:1px solid rgba(0,0,0,0.04);">
+                  <div style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; padding:10px 14px; border-radius:8px; font-size:0.85rem; border:1px solid #bbf7d0;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                      <i class="fas ${isGraded ? 'fa-check-circle' : 'fa-clock'}" style="color:${isGraded ? '#10b981' : '#f59e0b'}; font-size:0.85rem;"></i>
-                      <span style="font-weight:600; color:#1e293b;">${s.nameKh}</span>
+                      <i class="fas fa-check-circle" style="color:#10b981; font-size:1rem;"></i>
+                      <div>
+                        <strong style="color:#1e3a8a;">${s.nameKh}</strong>
+                        <div style="font-size:0.75rem; color:#64748b;">${hwCount} កិច្ចការ • ${lsnCount} មេរៀន • ${s.credits} ក្រេឌីត</div>
+                      </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:6px;">
                       <span class="badge ${isGraded ? 'badge-present' : 'badge-draft'}">${isGraded ? 'បានផ្សព្វផ្សាយពិន្ទុ' : 'រង់ចាំដាក់ពិន្ទុ'}</span>
-                      <button class="btn btn-outline" style="height:24px; padding:0 8px; font-size:0.72rem;" onclick="openTeacherGradingModal('${s.code}')">ដាក់ពិន្ទុ</button>
+                      <button class="btn btn-primary" style="height:26px; padding:0 10px; font-size:0.72rem;" onclick="openTeacherGradingModal('${s.code}')">ដាក់ពិន្ទុ</button>
                     </div>
                   </div>
                 `;
               }).join('')}
+            </div>
+
+            <div style="margin-top:12px; font-size:0.75rem; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-user-shield"></i> មុខវិជ្ជាផ្សេងទៀតត្រូវបានការពារសុវត្ថិភាព និងមិនបង្ហាញក្នុងផ្ទាំងនេះឡើយ។
             </div>
           </div>
         </div>
@@ -6051,11 +6160,19 @@ function renderTrainerPortalView(container) {
 }
 
 // --------------------------------------------------------------------------
-// 4. TEACHER MODAL: ដាក់ពិន្ទុសិស្ស & ផ្សព្វផ្សាយ (GRADING & SCORING)
+// 4. TEACHER MODAL: ដាក់ពិន្ទុសិស្ស & ផ្សព្វផ្សាយ (GRADING & SCORING - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
-function openTeacherGradingModal(selectedSubjectCode = 'PED-101') {
-  const subjects = KTPTTC_ALL_SUBJECTS;
-  const currentSubject = subjects.find(s => s.code === selectedSubjectCode) || subjects[0];
+function openTeacherGradingModal(selectedSubjectCode) {
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+
+  // Access Control Guard: Teacher can only grade assigned subjects!
+  if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
+    selectedSubjectCode = myCodes[0];
+  }
+
+  const currentSubject = mySubjects.find(s => s.code === selectedSubjectCode) || mySubjects[0];
   const students = stmsData.trainees || [];
 
   let modalHtml = `
@@ -6075,12 +6192,12 @@ function openTeacherGradingModal(selectedSubjectCode = 'PED-101') {
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
-          <!-- Subject Selector & MoEYS Scale Banner -->
+          <!-- Subject Selector (Strictly Scoped to My Subjects) -->
           <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:14px 18px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; gap:10px;">
-              <label style="font-weight:700; color:#4c1d95; font-size:0.88rem;">ជ្រើសរើសមុខវិជ្ជា៖</label>
-              <select id="gradingSubjectSelect" class="form-input" style="width:auto; min-width:260px; font-weight:600;" onchange="openTeacherGradingModal(this.value)">
-                ${subjects.map(s => `
+              <label style="font-weight:700; color:#4c1d95; font-size:0.88rem;">មុខវិជ្ជាទទួលបន្ទុក៖</label>
+              <select id="gradingSubjectSelect" class="form-input" style="width:auto; min-width:260px; font-weight:700; color:#4c1d95;" onchange="openTeacherGradingModal(this.value)">
+                ${mySubjects.map(s => `
                   <option value="${s.code}" ${s.code === currentSubject.code ? 'selected' : ''}>
                     ${s.code} • ${s.nameKh} (${s.credits} ក្រេឌីត)
                   </option>
@@ -6206,8 +6323,17 @@ function calcGradingRow(inputEl) {
   }
 }
 
-// Save & Auto-Publish Teacher Grades to Student Portal
+// Save & Auto-Publish Teacher Grades to Student Portal (With Strict Scope Validation)
 function saveTeacherGrades(subjectCode) {
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+
+  // Security Verification: Reject grading on non-assigned subjects!
+  if (!myCodes.includes(subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ លោកគ្រូ/អ្នកគ្រូ គ្មានសិទ្ធិដាក់ពិន្ទុលើមុខវិជ្ជា «${subjectCode}» ឡើយ!`, 'error');
+    return;
+  }
+
   const rows = document.querySelectorAll('#teacherGradingTableBody tr');
   if (rows.length === 0) {
     showToast('មិនមានសិស្សសម្រាប់បញ្ចូលពិន្ទុ!', 'warning');
@@ -6215,7 +6341,6 @@ function saveTeacherGrades(subjectCode) {
   }
 
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
-  const trainer = getActiveTrainerProfile();
   let updatedCount = 0;
 
   rows.forEach(row => {
@@ -6247,19 +6372,20 @@ function saveTeacherGrades(subjectCode) {
         total: total,
         grade: grade,
         status: 'published',
-        publishedBy: trainer.nameKh,
-        updatedDate: new Date().toISOString().split('T')[0]
+        publishedBy: tr.nameKh,
+        updatedAt: new Date().toISOString()
       };
+      updatedCount++;
+
       if (currentTraineeUser && currentTraineeUser.id === trainee.id) {
         if (!currentTraineeUser.scores) currentTraineeUser.scores = {};
         currentTraineeUser.scores[subjectCode] = { ...trainee.scores[subjectCode] };
       }
-      updatedCount++;
     }
   });
 
   saveData();
-  showToast(`🎉 បានផ្សព្វផ្សាយពិន្ទុមុខវិជ្ជា «${subj.nameKh}» (${updatedCount} នាក់) ទៅកាន់ប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ!`, 'success');
+  showToast(`🎉 បានបញ្ចូល និងផ្សព្វផ្សាយពិន្ទុមុខវិជ្ជា «${subj.nameKh}» ជូនគរុសិស្ស ${updatedCount} នាក់ដោយជោគជ័យ!`, 'success');
   closeStmsModal();
   if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
     renderView(currentView);
@@ -6267,10 +6393,18 @@ function saveTeacherGrades(subjectCode) {
 }
 
 // --------------------------------------------------------------------------
-// 5. TEACHER MODAL: ដាក់វត្តមានសិស្ស (ATTENDANCE CONTROLLER)
+// 5. TEACHER MODAL: ដាក់វត្តមានសិស្ស (ATTENDANCE CONTROLLER - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
-function openTeacherAttendanceModal() {
-  const subjects = KTPTTC_ALL_SUBJECTS;
+function openTeacherAttendanceModal(selectedSubjectCode) {
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+
+  if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
+    selectedSubjectCode = myCodes[0];
+  }
+
+  const currentSubject = mySubjects.find(s => s.code === selectedSubjectCode) || mySubjects[0];
   const students = stmsData.trainees || [];
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -6306,10 +6440,10 @@ function openTeacherAttendanceModal() {
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; color:#166534; font-weight:700; display:block;">មុខវិជ្ជា</label>
-                <select id="teacherAttSubject" class="form-input" style="height:32px; font-size:0.82rem; width:220px;">
-                  ${subjects.map(s => `
-                    <option value="${s.code}">${s.code} • ${s.nameKh}</option>
+                <label style="font-size:0.75rem; color:#166534; font-weight:700; display:block;">មុខវិជ្ជាទទួលបន្ទុក</label>
+                <select id="teacherAttSubject" class="form-input" style="height:32px; font-size:0.82rem; width:220px; font-weight:700; color:#166534;">
+                  ${mySubjects.map(s => `
+                    <option value="${s.code}" ${s.code === currentSubject.code ? 'selected' : ''}>${s.code} • ${s.nameKh}</option>
                   `).join('')}
                 </select>
               </div>
@@ -6437,14 +6571,24 @@ function updateAttendanceModalCounters() {
   if (absEl) absEl.textContent = abs;
 }
 
-// Save & Auto-Sync Attendance to Student Portal
+// Save & Auto-Sync Attendance to Student Portal (With Strict Scope Validation)
 function saveTeacherAttendance() {
   const dateInput = document.getElementById('teacherAttDate');
   const subjInput = document.getElementById('teacherAttSubject');
   const sessionInput = document.getElementById('teacherAttSession');
 
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+
+  const subjectCode = subjInput ? subjInput.value : myCodes[0];
+
+  // Security Check: Reject if subject is not assigned to this teacher!
+  if (!myCodes.includes(subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ លោកគ្រូ/អ្នកគ្រូ គ្មានសិទ្ធិស្រង់វត្តមានមុខវិជ្ជា «${subjectCode}» ឡើយ!`, 'error');
+    return;
+  }
+
   const date = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
-  const subjectCode = subjInput ? subjInput.value : 'PED-101';
   const session = sessionInput ? sessionInput.value : 'ព្រឹក';
 
   const rows = document.querySelectorAll('#teacherAttTableBody tr');
@@ -6468,8 +6612,7 @@ function saveTeacherAttendance() {
     }
   });
 
-  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode, trainer: 'គ្រូឧទ្ទេស' };
-  const trainer = getActiveTrainerProfile();
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode, trainer: tr.nameKh };
 
   const newSession = {
     id: 'ATT-' + Date.now(),
@@ -6478,7 +6621,7 @@ function saveTeacherAttendance() {
     subjectName: subj.nameKh,
     session: session,
     cohort: 'ថ្នាក់បឋមសិក្សា ១២+២ ក្រុម ខ',
-    trainerName: trainer.nameKh,
+    trainerName: tr.nameKh,
     records: records,
     createdAt: new Date().toISOString()
   };
@@ -6516,7 +6659,7 @@ function saveTeacherAttendance() {
   });
 
   saveData();
-  showToast(`🎉 បានស្រង់វត្តមានសិស្ស (${Object.keys(records).length} នាក់) និងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយជោគជ័យ!`, 'success');
+  showToast(`🎉 បានស្រង់វត្តមានសិស្ស (${Object.keys(records).length} នាក់) មុខវិជ្ជា «${subj.nameKh}» ដោយជោគជ័យ!`, 'success');
   closeStmsModal();
   if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
     renderView(currentView);
@@ -6524,12 +6667,20 @@ function saveTeacherAttendance() {
 }
 
 // --------------------------------------------------------------------------
-// 6. TEACHER MODAL: ដាក់កិច្ចការឱ្យសិស្ស (ASSIGN HOMEWORK / TASKS)
+// 6. TEACHER MODAL: ដាក់កិច្ចការឱ្យសិស្ស (ASSIGN HOMEWORK - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
-function openTeacherHomeworkModal(selectedSubjectCode = 'PED-101', activeTab = 'create') {
-  const subjects = KTPTTC_ALL_SUBJECTS;
-  const currentSubject = subjects.find(s => s.code === selectedSubjectCode) || subjects[0];
-  const assignments = stmsData.assignments || [];
+function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+
+  if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
+    selectedSubjectCode = myCodes[0];
+  }
+
+  const currentSubject = mySubjects.find(s => s.code === selectedSubjectCode) || mySubjects[0];
+  // Strictly filter assignments to ONLY show this teacher's subject(s)!
+  const assignments = (stmsData.assignments || []).filter(a => myCodes.includes(a.subjectCode));
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherHomeworkModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -6554,7 +6705,7 @@ function openTeacherHomeworkModal(selectedSubjectCode = 'PED-101', activeTab = '
               <i class="fas fa-plus-circle"></i> ដាក់កិច្ចការថ្មី
             </button>
             <button class="modal-tab-btn ${activeTab==='list'?'active':''}" onclick="openTeacherHomeworkModal('${selectedSubjectCode}', 'list')">
-              <i class="fas fa-list"></i> បញ្ជីកិច្ចការដែលបានដាក់ (${assignments.length})
+              <i class="fas fa-list"></i> បញ្ជីកិច្ចការមុខវិជ្ជារបស់ខ្ញុំ (${assignments.length})
             </button>
           </div>
 
@@ -6562,9 +6713,9 @@ function openTeacherHomeworkModal(selectedSubjectCode = 'PED-101', activeTab = '
             <div style="display:flex; flex-direction:column; gap:14px;">
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
-                  <label class="form-label" style="font-weight:700;">មុខវិជ្ជាគរុកោសល្យ</label>
-                  <select id="hwSubjectSelect" class="form-input">
-                    ${subjects.map(s => `
+                  <label class="form-label" style="font-weight:700;">មុខវិជ្ជាទទួលបន្ទុក</label>
+                  <select id="hwSubjectSelect" class="form-input" style="font-weight:700; color:#b45309;">
+                    ${mySubjects.map(s => `
                       <option value="${s.code}" ${s.code === currentSubject.code ? 'selected' : ''}>
                         ${s.code} • ${s.nameKh}
                       </option>
@@ -6611,7 +6762,7 @@ function openTeacherHomeworkModal(selectedSubjectCode = 'PED-101', activeTab = '
                 <div style="background:#ffffff; border:1px solid #fed7aa; border-radius:12px; padding:16px;">
                   <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <div>
-                      <span class="badge badge-warning" style="font-size:0.75rem; margin-bottom:4px; display:inline-block;">${hw.subjectCode}</span>
+                      <span class="badge badge-warning" style="font-size:0.75rem; margin-bottom:4px; display:inline-block;">${hw.subjectCode} • ${hw.subjectName || ''}</span>
                       <h4 style="margin:2px 0 4px 0; color:#1e293b; font-size:1rem;">${hw.title}</h4>
                       <div style="font-size:0.78rem; color:#64748b;">
                         ផុតកំណត់៖ <strong>${hw.dueDate}</strong> • ពិន្ទុ៖ <strong>${hw.points} ពិន្ទុ</strong> • ដាក់ដោយ៖ ${hw.trainerName || 'គ្រូឧទ្ទេស'}
@@ -6628,7 +6779,8 @@ function openTeacherHomeworkModal(selectedSubjectCode = 'PED-101', activeTab = '
                 </div>
               `).join('') : `
                 <div style="text-align:center; padding:30px; color:#94a3b8;">
-                  មិនទាន់មានកិច្ចការដែលបានដាក់នៅឡើយទេ។
+                  <i class="fas fa-folder-open fa-2x" style="margin-bottom:8px; display:block; color:#cbd5e1;"></i>
+                  មិនទាន់មានកិច្ចការដែលបានដាក់ក្នុងមុខវិជ្ជារបស់លោកគ្រូ/អ្នកគ្រូនៅឡើយទេ។
                 </div>
               `}
             </div>
@@ -6642,7 +6794,7 @@ function openTeacherHomeworkModal(selectedSubjectCode = 'PED-101', activeTab = '
   showModal(modalHtml);
 }
 
-// Save & Auto-Sync Homework to Student System
+// Save & Auto-Sync Homework to Student System (Strictly Scoped)
 function saveTeacherHomework() {
   const subjEl = document.getElementById('hwSubjectSelect');
   const titleEl = document.getElementById('hwTitleInput');
@@ -6651,14 +6803,23 @@ function saveTeacherHomework() {
   const descEl = document.getElementById('hwDescInput');
   const attachEl = document.getElementById('hwAttachmentInput');
 
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+
+  const subjectCode = subjEl ? subjEl.value : myCodes[0];
+
+  // Security Check
+  if (!myCodes.includes(subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ លោកគ្រូ/អ្នកគ្រូ គ្មានសិទ្ធិដាក់កិច្ចការលើមុខវិជ្ជា «${subjectCode}» ឡើយ!`, 'error');
+    return;
+  }
+
   if (!titleEl || !titleEl.value.trim()) {
     showToast('សូមបញ្ចូលចំណងជើងកិច្ចការ!', 'warning');
     return;
   }
 
-  const subjectCode = subjEl ? subjEl.value : 'PED-101';
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
-  const trainer = getActiveTrainerProfile();
 
   const newHw = {
     id: 'HW-' + Date.now(),
@@ -6669,7 +6830,7 @@ function saveTeacherHomework() {
     points: pointsEl ? parseInt(pointsEl.value, 10) || 10 : 10,
     description: descEl ? descEl.value.trim() : '',
     attachment: attachEl && attachEl.value.trim() ? attachEl.value.trim() : 'ឯកសារណែនាំ_MoEYS.docx',
-    trainerName: trainer.nameKh,
+    trainerName: tr.nameKh,
     createdAt: new Date().toISOString().split('T')[0],
     status: 'active'
   };
@@ -6688,26 +6849,44 @@ function saveTeacherHomework() {
 }
 
 // Delete Homework
-function deleteTeacherAssignment(id) {
-  if (confirm('តើលោកគ្រូ/អ្នកគ្រូពិតជាចង់លុបកិច្ចការនេះមែនទេ?')) {
-    stmsData.assignments = (stmsData.assignments || []).filter(a => a.id !== id);
-    saveData();
-    showToast('បានលុបកិច្ចការជោគជ័យ!', 'info');
-    openTeacherHomeworkModal(null, 'list');
-    if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
-      renderView(currentView);
-    }
+function deleteTeacherAssignment(hwId) {
+  const hw = (stmsData.assignments || []).find(a => a.id === hwId);
+  if (!hw) return;
+
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  if (!myCodes.includes(hw.subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ អ្នកមិនអាចលុបកិច្ចការនៃមុខវិជ្ជាផ្សេងបានឡើយ!`, 'error');
+    return;
+  }
+
+  if (!confirm(`តើអ្នកពិតជាចង់លុបកិច្ចការ «${hw.title}» មែនទេ?`)) return;
+
+  stmsData.assignments = stmsData.assignments.filter(a => a.id !== hwId);
+  saveData();
+  showToast('បានលុបកិច្ចការដោយជោគជ័យ!', 'info');
+  openTeacherHomeworkModal(hw.subjectCode, 'list');
+  if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
+    renderView(currentView);
   }
 }
 
 // --------------------------------------------------------------------------
-// 7. TEACHER MODAL: UPLOAD មេរៀន & វីដេអូឱ្យសិស្ស (LESSONS & VIDEOS)
+// 7. TEACHER MODAL: UPLOAD មេរៀន & វីដេអូឱ្យសិស្ស (LESSONS & VIDEOS - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
-function openTeacherUploadModal(selectedSubjectCode = 'PED-101', activeTab = 'lesson') {
-  const subjects = KTPTTC_ALL_SUBJECTS;
-  const currentSubject = subjects.find(s => s.code === selectedSubjectCode) || subjects[0];
-  const lessons = stmsData.lessons || [];
-  const videos = stmsData.videoLessons || [];
+function openTeacherUploadModal(selectedSubjectCode, activeTab = 'lesson') {
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+
+  if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
+    selectedSubjectCode = myCodes[0];
+  }
+
+  const currentSubject = mySubjects.find(s => s.code === selectedSubjectCode) || mySubjects[0];
+  // Strictly filter lessons and videos to ONLY show this teacher's subject(s)!
+  const lessons = (stmsData.lessons || []).filter(l => myCodes.includes(l.subjectCode));
+  const videos = (stmsData.videoLessons || []).filter(v => myCodes.includes(v.subjectCode));
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherUploadModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -6740,9 +6919,9 @@ function openTeacherUploadModal(selectedSubjectCode = 'PED-101', activeTab = 'le
             <div style="display:flex; flex-direction:column; gap:14px;">
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
-                  <label class="form-label" style="font-weight:700;">មុខវិជ្ជា</label>
-                  <select id="lessonSubjectSelect" class="form-input">
-                    ${subjects.map(s => `
+                  <label class="form-label" style="font-weight:700;">មុខវិជ្ជាទទួលបន្ទុក</label>
+                  <select id="lessonSubjectSelect" class="form-input" style="font-weight:700; color:#ea580c;">
+                    ${mySubjects.map(s => `
                       <option value="${s.code}" ${s.code === currentSubject.code ? 'selected' : ''}>
                         ${s.code} • ${s.nameKh}
                       </option>
@@ -6777,12 +6956,12 @@ function openTeacherUploadModal(selectedSubjectCode = 'PED-101', activeTab = 'le
                 </button>
               </div>
 
-              <!-- List of Uploaded Lessons -->
+              <!-- List of Uploaded Lessons (Strictly Scoped) -->
               <h4 style="margin:16px 0 8px 0; color:#1e3a8a; font-size:0.92rem;">
-                <i class="fas fa-folder-open"></i> មេរៀនដែលបាន Upload រួច (${lessons.length})
+                <i class="fas fa-folder-open"></i> មេរៀនដែលបាន Upload ក្នុងមុខវិជ្ជារបស់ខ្ញុំ (${lessons.length})
               </h4>
               <div style="display:flex; flex-direction:column; gap:8px;">
-                ${lessons.map(l => `
+                ${lessons.length > 0 ? lessons.map(l => `
                   <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                       <strong style="color:#1e293b; font-size:0.88rem;"><i class="fas fa-file-pdf" style="color:#ef4444; margin-right:6px;"></i> ${l.title}</strong>
@@ -6792,16 +6971,20 @@ function openTeacherUploadModal(selectedSubjectCode = 'PED-101', activeTab = 'le
                       <i class="fas fa-trash"></i>
                     </button>
                   </div>
-                `).join('')}
+                `).join('') : `
+                  <div style="text-align:center; padding:20px; color:#94a3b8; font-size:0.82rem;">
+                    មិនទាន់មានមេរៀនដែលបាន Upload ក្នុងមុខវិជ្ជានេះនៅឡើយទេ។
+                  </div>
+                `}
               </div>
             </div>
           ` : `
             <div style="display:flex; flex-direction:column; gap:14px;">
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
-                  <label class="form-label" style="font-weight:700;">មុខវិជ្ជា</label>
-                  <select id="videoSubjectSelect" class="form-input">
-                    ${subjects.map(s => `
+                  <label class="form-label" style="font-weight:700;">មុខវិជ្ជាទទួលបន្ទុក</label>
+                  <select id="videoSubjectSelect" class="form-input" style="font-weight:700; color:#ea580c;">
+                    ${mySubjects.map(s => `
                       <option value="${s.code}" ${s.code === currentSubject.code ? 'selected' : ''}>
                         ${s.code} • ${s.nameKh}
                       </option>
@@ -6843,12 +7026,12 @@ function openTeacherUploadModal(selectedSubjectCode = 'PED-101', activeTab = 'le
                 </button>
               </div>
 
-              <!-- List of Uploaded Videos -->
+              <!-- List of Uploaded Videos (Strictly Scoped) -->
               <h4 style="margin:16px 0 8px 0; color:#1e3a8a; font-size:0.92rem;">
-                <i class="fas fa-play-circle"></i> វីដេអូដែលបាន Upload រួច (${videos.length})
+                <i class="fas fa-play-circle"></i> វីដេអូដែលបាន Upload ក្នុងមុខវិជ្ជារបស់ខ្ញុំ (${videos.length})
               </h4>
               <div style="display:flex; flex-direction:column; gap:8px;">
-                ${videos.map(v => `
+                ${videos.length > 0 ? videos.map(v => `
                   <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                       <strong style="color:#1e293b; font-size:0.88rem;"><i class="fas fa-play" style="color:#ea580c; margin-right:6px;"></i> ${v.title}</strong>
@@ -6858,7 +7041,11 @@ function openTeacherUploadModal(selectedSubjectCode = 'PED-101', activeTab = 'le
                       <i class="fas fa-trash"></i>
                     </button>
                   </div>
-                `).join('')}
+                `).join('') : `
+                  <div style="text-align:center; padding:20px; color:#94a3b8; font-size:0.82rem;">
+                    មិនទាន់មានវីដេអូដែលបាន Upload ក្នុងមុខវិជ្ជានេះនៅឡើយទេ។
+                  </div>
+                `}
               </div>
             </div>
           `}
@@ -6871,7 +7058,7 @@ function openTeacherUploadModal(selectedSubjectCode = 'PED-101', activeTab = 'le
   showModal(modalHtml);
 }
 
-// Save Lesson
+// Save Lesson (Strictly Scoped)
 function saveTeacherLesson() {
   const subjEl = document.getElementById('lessonSubjectSelect');
   const titleEl = document.getElementById('lessonTitleInput');
@@ -6879,14 +7066,22 @@ function saveTeacherLesson() {
   const descEl = document.getElementById('lessonDescInput');
   const fileEl = document.getElementById('lessonFileInput');
 
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const subjectCode = subjEl ? subjEl.value : myCodes[0];
+
+  // Security Check
+  if (!myCodes.includes(subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ លោកគ្រូ/អ្នកគ្រូ គ្មានសិទ្ធិ Upload លើមុខវិជ្ជា «${subjectCode}» ឡើយ!`, 'error');
+    return;
+  }
+
   if (!titleEl || !titleEl.value.trim()) {
     showToast('សូមបញ្ចូលចំណងជើងមេរៀន!', 'warning');
     return;
   }
 
-  const subjectCode = subjEl ? subjEl.value : 'PED-101';
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
-  const trainer = getActiveTrainerProfile();
 
   const newLesson = {
     id: 'LSN-' + Date.now(),
@@ -6897,7 +7092,7 @@ function saveTeacherLesson() {
     description: descEl ? descEl.value.trim() : '',
     fileUrl: '#',
     fileName: fileEl && fileEl.value.trim() ? fileEl.value.trim() : `${subjectCode}_Lesson_Material.pdf`,
-    uploadedBy: trainer.nameKh,
+    uploadedBy: tr.nameKh,
     date: new Date().toISOString().split('T')[0]
   };
 
@@ -6914,7 +7109,30 @@ function saveTeacherLesson() {
   }
 }
 
-// Save Video
+// Delete Lesson
+function deleteTeacherLesson(lessonId) {
+  const l = (stmsData.lessons || []).find(x => x.id === lessonId);
+  if (!l) return;
+
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  if (!myCodes.includes(l.subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ អ្នកមិនអាចលុបមេរៀននៃមុខវិជ្ជាផ្សេងបានឡើយ!`, 'error');
+    return;
+  }
+
+  if (!confirm(`តើអ្នកពិតជាចង់លុបមេរៀន «${l.title}» មែនទេ?`)) return;
+
+  stmsData.lessons = stmsData.lessons.filter(x => x.id !== lessonId);
+  saveData();
+  showToast('បានលុបមេរៀនដោយជោគជ័យ!', 'info');
+  openTeacherUploadModal(l.subjectCode, 'lesson');
+  if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
+    renderView(currentView);
+  }
+}
+
+// Save Video (Strictly Scoped)
 function saveTeacherVideo() {
   const subjEl = document.getElementById('videoSubjectSelect');
   const titleEl = document.getElementById('videoTitleInput');
@@ -6922,14 +7140,22 @@ function saveTeacherVideo() {
   const durEl = document.getElementById('videoDurationInput');
   const catEl = document.getElementById('videoCategorySelect');
 
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const subjectCode = subjEl ? subjEl.value : myCodes[0];
+
+  // Security Check
+  if (!myCodes.includes(subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ លោកគ្រូ/អ្នកគ្រូ គ្មានសិទ្ធិ Upload លើមុខវិជ្ជា «${subjectCode}» ឡើយ!`, 'error');
+    return;
+  }
+
   if (!titleEl || !titleEl.value.trim()) {
     showToast('សូមបញ្ចូលចំណងជើងវីដេអូ!', 'warning');
     return;
   }
 
-  const subjectCode = subjEl ? subjEl.value : 'PED-101';
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
-  const trainer = getActiveTrainerProfile();
 
   const newVideo = {
     id: 'VID-' + Date.now(),
@@ -6939,9 +7165,9 @@ function saveTeacherVideo() {
     videoUrl: urlEl && urlEl.value.trim() ? urlEl.value.trim() : 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     duration: durEl && durEl.value.trim() ? durEl.value.trim() : '២០ នាទី',
     category: catEl ? catEl.value : 'គរុកោសល្យ',
-    trainer: trainer.nameKh,
+    trainer: tr.nameKh,
     views: 1,
-    desc: `វីដេអូបង្រៀនគំរូនៃមុខវិជ្ជា ${subj.nameKh} បង្ហាញដោយ ${trainer.nameKh}`,
+    desc: `វីដេអូបង្រៀនគំរូនៃមុខវិជ្ជា ${subj.nameKh} បង្ហាញដោយ ${tr.nameKh}`,
     date: new Date().toISOString().split('T')[0]
   };
 
@@ -6958,33 +7184,47 @@ function saveTeacherVideo() {
   }
 }
 
-function deleteTeacherLesson(id) {
-  if (confirm('តើលោកគ្រូ/អ្នកគ្រូពិតជាចង់លុបមេរៀននេះមែនទេ?')) {
-    stmsData.lessons = (stmsData.lessons || []).filter(l => l.id !== id);
-    saveData();
-    showToast('បានលុបមេរៀនជោគជ័យ!', 'info');
-    openTeacherUploadModal(null, 'lesson');
-  }
-}
+// Delete Video
+function deleteTeacherVideo(videoId) {
+  const v = (stmsData.videoLessons || []).find(x => x.id === videoId);
+  if (!v) return;
 
-function deleteTeacherVideo(id) {
-  if (confirm('តើលោកគ្រូ/អ្នកគ្រូពិតជាចង់លុបវីដេអូនេះមែនទេ?')) {
-    stmsData.videoLessons = (stmsData.videoLessons || []).filter(v => v.id !== id);
-    saveData();
-    showToast('បានលុបវីដេអូជោគជ័យ!', 'info');
-    openTeacherUploadModal(null, 'video');
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  if (!myCodes.includes(v.subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ អ្នកមិនអាចលុបវីដេអូនៃមុខវិជ្ជាផ្សេងបានឡើយ!`, 'error');
+    return;
+  }
+
+  if (!confirm(`តើអ្នកពិតជាចង់លុបវីដេអូ «${v.title}» មែនទេ?`)) return;
+
+  stmsData.videoLessons = stmsData.videoLessons.filter(x => x.id !== videoId);
+  saveData();
+  showToast('បានលុបវីដេអូដោយជោគជ័យ!', 'info');
+  openTeacherUploadModal(v.subjectCode, 'video');
+  if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
+    renderView(currentView);
   }
 }
 
 // --------------------------------------------------------------------------
-// 8. TEACHER SUBJECT ACTION MODAL & CURRICULUM
+// 8. TEACHER MODAL: ផ្ទាំងគ្រប់គ្រងមុខវិជ្ជាផ្ទាល់ខ្លួន (SUBJECT DETAIL - RBAC PROTECTED)
 // --------------------------------------------------------------------------
 function openTeacherSubjectDetailModal(code) {
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+
+  // Security Check: Block access if this subject does not belong to the teacher!
+  if (!myCodes.includes(code)) {
+    showToast(`🔒 បដិសេធសិទ្ធិ៖ លោកគ្រូ/អ្នកគ្រូគ្មានសិទ្ធិចូលមើល ឬគ្រប់គ្រងទិន្នន័យមុខវិជ្ជា ${code} ឡើយ! (អាចគ្រប់គ្រងបានតែមុខវិជ្ជាដែលខ្លួនបង្រៀនប៉ុណ្ណោះ)`, 'error');
+    return;
+  }
+
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === code) || {
     code: code,
     nameKh: 'មុខវិជ្ជាគរុកោសល្យ',
     credits: 3,
-    trainer: 'សាស្ត្រាចារ្យ KTPTTC'
+    trainer: tr.nameKh
   };
   const theme = getSubjectTheme(code);
   const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === code).length;
@@ -7000,7 +7240,7 @@ function openTeacherSubjectDetailModal(code) {
             </div>
             <div>
               <h3 style="color:#1e293b; font-size:1.12rem; margin:0; line-height:1.4;">${subj.nameKh}</h3>
-              <p style="color:#64748b; font-size:0.8rem; margin:2px 0 0 0;">កូដ៖ <strong>${subj.code}</strong> • <strong>${subj.credits} ក្រេឌីត</strong> • ទទួលបន្ទុក៖ <strong>${subj.trainer}</strong></p>
+              <p style="color:#64748b; font-size:0.8rem; margin:2px 0 0 0;">កូដ៖ <strong>${subj.code}</strong> • <strong>${subj.credits} ក្រេឌីត</strong> • ទទួលបន្ទុក៖ <strong style="color:${theme.color};">${tr.nameKh}</strong></p>
             </div>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#1e293b;">&times;</button>
@@ -7008,49 +7248,49 @@ function openTeacherSubjectDetailModal(code) {
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
           <p style="font-size:0.88rem; color:#475569; margin-bottom:16px;">
-            សូមជ្រើសរើសសកម្មភាពគ្រប់គ្រងមុខវិជ្ជានេះ សម្រាប់គរុសនិស្សិត៖
+            សូមជ្រើសរើសសកម្មភាពគ្រប់គ្រងមុខវិជ្ជា «<strong>${subj.nameKh}</strong>» សម្រាប់គរុសនិស្សិត៖
           </p>
 
           <!-- 4 Core Teacher Actions Grid -->
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
             <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:14px; cursor:pointer; transition:all 0.2s;" onclick="closeStmsModal(); openTeacherGradingModal('${subj.code}')">
               <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                <div style="width:36px; height:36px; border-radius:8px; background:#7c3aed; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#ede9fe; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
                   <i class="fas fa-calculator"></i>
                 </div>
                 <strong style="color:#5b21b6; font-size:0.95rem;">ដាក់ពិន្ទុសិស្ស</strong>
               </div>
-              <p style="font-size:0.78rem; color:#6d28d9; margin:0;">បញ្ចូលពិន្ទុ កិច្ចការ វត្តមាន ប្រចាំខែ ឆមាស &amp; ផ្សព្វផ្សាយ</p>
+              <p style="margin:0; font-size:0.75rem; color:#6d28d9;">បញ្ចូលពិន្ទុ និងផ្សព្វផ្សាយលទ្ធផលផ្លូវការ</p>
             </div>
 
             <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px; cursor:pointer; transition:all 0.2s;" onclick="closeStmsModal(); openTeacherHomeworkModal('${subj.code}')">
               <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                <div style="width:36px; height:36px; border-radius:8px; background:#d97706; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
                   <i class="fas fa-tasks"></i>
                 </div>
                 <strong style="color:#92400e; font-size:0.95rem;">ដាក់កិច្ចការថ្មី</strong>
               </div>
-              <p style="font-size:0.78rem; color:#b45309; margin:0;">ដាក់កិច្ចការស្រាវជ្រាវ កំណត់ថ្ងៃប្រគល់ (${hwCount} កិច្ចការ)</p>
+              <p style="margin:0; font-size:0.75rem; color:#b45309;">ដាក់លំហាត់ &amp; ប្រធានបទស្រាវជ្រាវ (${hwCount})</p>
+            </div>
+
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; cursor:pointer; transition:all 0.2s;" onclick="closeStmsModal(); openTeacherAttendanceModal('${subj.code}')">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#dcfce7; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                  <i class="fas fa-clipboard-check"></i>
+                </div>
+                <strong style="color:#166534; font-size:0.95rem;">ស្រង់វត្តមាន</strong>
+              </div>
+              <p style="margin:0; font-size:0.75rem; color:#15803d;">កត់ត្រាវត្តមានសិស្សប្រចាំម៉ោងបង្រៀន</p>
             </div>
 
             <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:14px; cursor:pointer; transition:all 0.2s;" onclick="closeStmsModal(); openTeacherUploadModal('${subj.code}')">
               <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                <div style="width:36px; height:36px; border-radius:8px; background:#ea580c; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#ffedd5; color:#ea580c; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
                   <i class="fas fa-cloud-upload-alt"></i>
                 </div>
-                <strong style="color:#9a3412; font-size:0.95rem;">Upload មេរៀន &amp; វីដេអូ</strong>
+                <strong style="color:#9a3412; font-size:0.95rem;">Upload មេរៀន/វីដេអូ</strong>
               </div>
-              <p style="font-size:0.78rem; color:#c2410c; margin:0;">Upload ស្លាយ PDF និងវីដេអូបង្រៀន (${lsnCount} មេរៀន)</p>
-            </div>
-
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; cursor:pointer; transition:all 0.2s;" onclick="closeStmsModal(); openTeacherAttendanceModal()">
-              <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                <div style="width:36px; height:36px; border-radius:8px; background:#16a34a; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
-                  <i class="fas fa-clipboard-check"></i>
-                </div>
-                <strong style="color:#166534; font-size:0.95rem;">ស្រង់វត្តមានម៉ោងនេះ</strong>
-              </div>
-              <p style="font-size:0.78rem; color:#15803d; margin:0;">ស្រង់វត្តមានសិស្សប្រចាំថ្នាក់ និងគណនាអត្រាស្វ័យប្រវត្តិ</p>
+              <p style="margin:0; font-size:0.75rem; color:#c2410c;">បញ្ចូល Slide &amp; E-Learning (${lsnCount})</p>
             </div>
           </div>
 
@@ -7066,9 +7306,13 @@ function openTeacherSubjectDetailModal(code) {
   showModal(modalHtml);
 }
 
-// Teacher Subjects Catalog Modal
+// --------------------------------------------------------------------------
+// 9. TEACHER MODAL: មុខវិជ្ជា & កម្មវិធីបង្រៀនផ្ទាល់ខ្លួន (TEACHER CURRICULUM CATALOG)
+// --------------------------------------------------------------------------
 function openTeacherSubjectsModal() {
-  const subjects = KTPTTC_ALL_SUBJECTS;
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherSubjectsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -7079,29 +7323,41 @@ function openTeacherSubjectsModal() {
               <i class="fas fa-chalkboard-teacher"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">មុខវិជ្ជា &amp; កម្មវិធីបង្រៀនគរុកោសល្យ</h3>
-              <p style="color:#fbcfe8; font-size:0.82rem; margin:2px 0 0 0;">បញ្ជីមុខវិជ្ជាទាំង ៨ សម្រាប់គ្រូឧទ្ទេសគ្រប់គ្រង និងវាយតម្លៃ</p>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">មុខវិជ្ជាទទួលបន្ទុកបង្រៀនផ្ទាល់ខ្លួន</h3>
+              <p style="color:#fbcfe8; font-size:0.82rem; margin:2px 0 0 0;">${tr.nameKh} • ឆមាសទី ១ ឆ្នាំសិក្សា ២០២៦-២០២៧</p>
             </div>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            ${subjects.map(s => {
+          <!-- Security Policy Banner -->
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; margin-bottom:16px; color:#166534; font-size:0.83rem; line-height:1.6;">
+            <i class="fas fa-shield-alt"></i> <strong>គោលការណ៍សុវត្ថិភាពទិន្នន័យ៖</strong> លោកគ្រូ/អ្នកគ្រូមានសិទ្ធិចូលមើល និងគ្រប់គ្រងបានតែមុខវិជ្ជាដែលខ្លួនទទួលបន្ទុកបង្រៀនប៉ុណ្ណោះ។ មុខវិជ្ជាផ្សេងទៀតត្រូវបានការពារសុវត្ថិភាព និងមិនអាចចូលមើល ឬកែសម្រួលបានឡើយ។
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr; gap:12px;">
+            ${mySubjects.map(s => {
               const theme = getSubjectTheme(s.code);
+              const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === s.code).length;
+              const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === s.code).length;
               return `
-                <div style="background:#ffffff; border:1px solid ${theme.border}; border-radius:10px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
-                  <div>
-                    <span style="font-size:0.75rem; font-weight:700; color:${theme.color}; background:${theme.bg}; padding:2px 8px; border-radius:6px;">${s.code}</span>
-                    <h4 style="margin:6px 0 4px 0; color:#1e293b; font-size:0.92rem; line-height:1.4;">${s.nameKh}</h4>
-                    <p style="margin:0 0 10px 0; font-size:0.78rem; color:#64748b;">${s.credits} ក្រេឌីត • គ្រូឧទ្ទេស៖ ${s.trainer}</p>
+                <div style="background:#ffffff; border:2px solid ${theme.color}; border-radius:10px; padding:16px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 10px rgba(0,0,0,0.04);">
+                  <div style="display:flex; align-items:center; gap:14px;">
+                    <div style="width:48px; height:48px; border-radius:10px; background:${theme.bg}; color:${theme.color}; display:flex; align-items:center; justify-content:center; font-size:1.5rem; border:1px solid ${theme.border};">
+                      <i class="${theme.icon}"></i>
+                    </div>
+                    <div>
+                      <span style="font-size:0.75rem; font-weight:700; color:${theme.color}; background:${theme.bg}; padding:2px 8px; border-radius:6px;">${s.code}</span>
+                      <h4 style="margin:4px 0 2px 0; color:#1e293b; font-size:1rem;">${s.nameKh}</h4>
+                      <p style="margin:0; font-size:0.78rem; color:#64748b;">${s.credits} ក្រេឌីត • ${hwCount} កិច្ចការ • ${lsnCount} មេរៀន</p>
+                    </div>
                   </div>
-                  <div style="display:flex; gap:6px;">
-                    <button class="btn btn-outline" style="font-size:0.72rem; padding:3px 8px; height:26px;" onclick="closeStmsModal(); openTeacherGradingModal('${s.code}')">
+                  <div style="display:flex; gap:8px;">
+                    <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px; height:30px;" onclick="closeStmsModal(); openTeacherGradingModal('${s.code}')">
                       <i class="fas fa-calculator"></i> ដាក់ពិន្ទុ
                     </button>
-                    <button class="btn btn-primary" style="font-size:0.72rem; padding:3px 8px; height:26px;" onclick="closeStmsModal(); openTeacherHomeworkModal('${s.code}')">
+                    <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px; height:30px;" onclick="closeStmsModal(); openTeacherHomeworkModal('${s.code}')">
                       <i class="fas fa-plus"></i> កិច្ចការ
                     </button>
                   </div>
@@ -7122,9 +7378,13 @@ function openTeacherSubjectsModal() {
   showModal(modalHtml);
 }
 
-// Teacher Teaching Timetable Modal
+// --------------------------------------------------------------------------
+// 10. TEACHER TIMETABLE MODAL (TEACHING SCHEDULE)
+// --------------------------------------------------------------------------
 function openTeacherTimetableModal() {
   const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherTimetableModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -7143,6 +7403,10 @@ function openTeacherTimetableModal() {
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:0.83rem; color:#1e40af;">
+            <i class="fas fa-chalkboard-teacher"></i> មុខវិជ្ជាបង្រៀន៖ <strong>${mySubjects.map(s => s.nameKh).join(', ')}</strong>
+          </div>
+
           <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
             <table class="stms-table" style="font-size:0.85rem;">
               <thead style="background:#f8fafc;">
@@ -7150,43 +7414,36 @@ function openTeacherTimetableModal() {
                   <th>ថ្ងៃសិក្សា</th>
                   <th>ម៉ោងបង្រៀន</th>
                   <th>មុខវិជ្ជាគរុកោសល្យ</th>
-                  <th>ថ្នាក់ / ក្រុម</th>
-                  <th>បន្ទប់សិក្សា</th>
+                  <th>ថ្នាក់រៀន</th>
+                  <th>បន្ទប់រៀន</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td><strong>ថ្ងៃចន្ទ</strong></td>
-                  <td>០៧:៣០ - ០៩:០០</td>
-                  <td><strong style="color:#1e3a8a;">គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
-                  <td>ថ្នាក់បឋម ១២+២ ក្រុម ក</td>
-                  <td>បន្ទប់ ២០១</td>
-                </tr>
-                <tr>
-                  <td><strong>ថ្ងៃចន្ទ</strong></td>
                   <td>០៩:១៥ - ១០:៤៥</td>
-                  <td><strong style="color:#1e3a8a;">គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
+                  <td><strong style="color:#1e3a8a;">${mySubjects[0]?.nameKh || 'គរុកោសល្យទូទៅ'}</strong></td>
                   <td>ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
                   <td>បន្ទប់ ២០២</td>
                 </tr>
                 <tr>
                   <td><strong>ថ្ងៃពុធ</strong></td>
                   <td>០៧:៣០ - ០៩:០០</td>
-                  <td><strong style="color:#1e3a8a;">ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន</strong></td>
+                  <td><strong style="color:#1e3a8a;">${mySubjects[0]?.nameKh || 'គរុកោសល្យទូទៅ'}</strong></td>
                   <td>ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
                   <td>បន្ទប់ ២០២</td>
                 </tr>
                 <tr>
                   <td><strong>ថ្ងៃព្រហស្បតិ៍</strong></td>
                   <td>១៣:៣០ - ១៥:០០</td>
-                  <td><strong style="color:#1e3a8a;">ការចុះកម្មសិក្សាគរុកោសល្យ (Practicum)</strong></td>
+                  <td><strong style="color:#1e3a8a;">ការចុះកម្មសិក្សា / អនុវត្តន៍</strong></td>
                   <td>សាលាបឋមអនុវត្តន៍</td>
                   <td>ទីវាលអនុវត្តន៍</td>
                 </tr>
                 <tr>
                   <td><strong>ថ្ងៃសុក្រ</strong></td>
                   <td>០៧:៣០ - ០៩:០០</td>
-                  <td><strong style="color:#1e3a8a;">គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
+                  <td><strong style="color:#1e3a8a;">${mySubjects[0]?.nameKh || 'គរុកោសល្យទូទៅ'}</strong></td>
                   <td>ថ្នាក់បឋម ១២+២ ក្រុម ក/ខ</td>
                   <td>សាលប្រជុំធំ</td>
                 </tr>
@@ -7215,7 +7472,6 @@ function submitStudentHomework(hwId) {
   const title = hw ? hw.title : 'កិច្ចការ';
   showToast(`🎉 បានប្រគល់កិច្ចការ «${title}» ជូនលោកគ្រូ/អ្នកគ្រូដោយជោគជ័យ!`, 'success');
 }
-
 
 
 // ==========================================================================
