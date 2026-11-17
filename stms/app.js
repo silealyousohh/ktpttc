@@ -2306,6 +2306,19 @@ function renderTraineePortalView(container) {
   container.innerHTML = html;
 }
 
+// Universal Safe Modal Renderer (auto-creates container if missing, clears previous modals)
+function showModal(modalHtml) {
+  closeStmsModal();
+  let container = document.getElementById('modalContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'modalContainer';
+    document.body.appendChild(container);
+  }
+  container.innerHTML = modalHtml;
+}
+window.showModal = showModal;
+
 // --------------------------------------------------------------------------
 // 1. HUB MODAL: មុខវិជ្ជា (CURRICULUM & SUBJECTS CATALOG)
 // --------------------------------------------------------------------------
@@ -2361,7 +2374,7 @@ function openTraineeSubjectsModal() {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 function filterSubjectCatalog(query) {
@@ -2498,7 +2511,7 @@ function openTraineeTimetableModal() {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 // --------------------------------------------------------------------------
@@ -2576,7 +2589,7 @@ function openTraineeLessonsModal(activeCategory = 'all') {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 function playTraineeVideo(id) {
@@ -2651,7 +2664,7 @@ function playTraineeVideo(id) {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 // --------------------------------------------------------------------------
@@ -2719,7 +2732,7 @@ function openTraineeLibraryModal() {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 function filterDigitalBooks(q) {
@@ -2781,7 +2794,7 @@ function readTraineeBook(id) {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 // --------------------------------------------------------------------------
@@ -2967,7 +2980,7 @@ function openTraineeForumModal(activeTab = 'forum') {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 function showNewPostForm() {
@@ -3147,7 +3160,7 @@ function openTraineeReportsModal() {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 // --------------------------------------------------------------------------
@@ -3243,7 +3256,7 @@ function openTraineeGuidelinesModal(activeSection = 'rules') {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 // --------------------------------------------------------------------------
@@ -3366,7 +3379,7 @@ function openTraineeAttendanceModal() {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 // --------------------------------------------------------------------------
@@ -3472,229 +3485,7 @@ function openSubjectDetailModal(code) {
       </div>
     </div>
   `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
-}
-
-// Trainee Modal: Video Lessons & E-Learning
-function openTraineeLessonsModal() {
-  let modalHtml = `
-    <div class="stms-modal-backdrop" id="traineeLessonsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:680px;">
-        <div class="stms-modal-header" style="background:linear-gradient(135deg, #ea580c 0%, #c2410c 100%); color:#ffffff;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
-              <i class="fas fa-play-circle"></i>
-            </div>
-            <div>
-              <h3 style="color:#ffffff; font-size:1.1rem; margin:0;">វីដេអូ & មេរៀន E-Learning គរុកោសល្យ</h3>
-              <p style="color:#ffedd5; font-size:0.8rem; margin:2px 0 0 0;">កម្រងវីដេអូបង្រៀនគំរូ និងស្លាយបង្រៀនឌីជីថល KTPTTC</p>
-            </div>
-          </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
-        </div>
-        <div class="stms-modal-body" style="padding:22px; max-height:72vh; overflow-y:auto;">
-          
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            
-            <div style="display:flex; gap:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:12px; align-items:center;">
-              <div style="width:68px; height:50px; background:linear-gradient(135deg,#fed7aa,#fdba74); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#c2410c; font-size:1.5rem; flex-shrink:0;">
-                <i class="fas fa-play"></i>
-              </div>
-              <div style="flex:1;">
-                <h5 style="margin:0 0 3px 0; font-size:0.9rem; color:#1e293b;">បច្ចេកទេសបង្រៀនអំណានដំបូងតាមវិធីសាស្ត្រសូរសំឡេង (Phonics)</h5>
-                <p style="margin:0; font-size:0.77rem; color:#64748b;">គ្រូឧទ្ទេស៖ លោកស្រី ជា រចនា • រយៈពេល៖ ៣៥ នាទី • កម្រិតបឋមសិក្សា</p>
-              </div>
-              <button class="btn btn-outline" style="height:32px; padding:0 12px; font-size:0.8rem;" onclick="showToast('កំពុងបើកវីដេអូបង្រៀន...', 'info')">
-                ទស្សនា
-              </button>
-            </div>
-
-            <div style="display:flex; gap:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:12px; align-items:center;">
-              <div style="width:68px; height:50px; background:linear-gradient(135deg,#bae6fd,#7dd3fc); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#0284c7; font-size:1.5rem; flex-shrink:0;">
-                <i class="fas fa-play"></i>
-              </div>
-              <div style="flex:1;">
-                <h5 style="margin:0 0 3px 0; font-size:0.9rem; color:#1e293b;">ការអនុវត្តកិច្ចតែងការបង្រៀនគណិតវិទ្យាថ្នាក់ទី ១ ដល់ទី ៣</h5>
-                <p style="margin:0; font-size:0.77rem; color:#64748b;">គ្រូឧទ្ទេស៖ លោកគ្រូ យឹម វណ្ណា • រយៈពេល៖ ៤២ នាទី • កម្រិតបឋមសិក្សា</p>
-              </div>
-              <button class="btn btn-outline" style="height:32px; padding:0 12px; font-size:0.8rem;" onclick="showToast('កំពុងបើកវីដេអូបង្រៀន...', 'info')">
-                ទស្សនា
-              </button>
-            </div>
-
-            <div style="display:flex; gap:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:12px; align-items:center;">
-              <div style="width:68px; height:50px; background:linear-gradient(135deg,#fbcfe8,#f472b6); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#db2777; font-size:1.5rem; flex-shrink:0;">
-                <i class="fas fa-play"></i>
-              </div>
-              <div style="flex:1;">
-                <h5 style="margin:0 0 3px 0; font-size:0.9rem; color:#1e293b;">ការបង្កើត និងប្រើប្រាស់ឧបករណ៍បង្រៀនពីវត្ថុធាតុក្នុងមូលដ្ឋាន</h5>
-                <p style="margin:0; font-size:0.77rem; color:#64748b;">គ្រូឧទ្ទេស៖ សាស្ត្រាចារ្យ ហេង សំណាង • រយៈពេល៖ ២៨ នាទី</p>
-              </div>
-              <button class="btn btn-outline" style="height:32px; padding:0 12px; font-size:0.8rem;" onclick="showToast('កំពុងបើកវីដេអូបង្រៀន...', 'info')">
-                ទស្សនា
-              </button>
-            </div>
-
-            <div style="display:flex; gap:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:12px; align-items:center;">
-              <div style="width:68px; height:50px; background:linear-gradient(135deg,#ddd6fe,#c084fc); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#7c3aed; font-size:1.5rem; flex-shrink:0;">
-                <i class="fas fa-play"></i>
-              </div>
-              <div style="flex:1;">
-                <h5 style="margin:0 0 3px 0; font-size:0.9rem; color:#1e293b;">ការប្រើប្រាស់ ICT និងស្លាយបង្រៀនអន្តរកម្មក្នុងថ្នាក់បឋម</h5>
-                <p style="margin:0; font-size:0.77rem; color:#64748b;">គ្រូឧទ្ទេស៖ លោកគ្រូ ស៊ុយ សូលីដា • រយៈពេល៖ ៣០ នាទី</p>
-              </div>
-              <button class="btn btn-outline" style="height:32px; padding:0 12px; font-size:0.8rem;" onclick="showToast('កំពុងបើកវីដេអូបង្រៀន...', 'info')">
-                ទស្សនា
-              </button>
-            </div>
-
-          </div>
-
-          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
-            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
-}
-
-// Trainee Modal: Digital Library
-function openTraineeLibraryModal() {
-  let modalHtml = `
-    <div class="stms-modal-backdrop" id="traineeLibraryModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:680px;">
-        <div class="stms-modal-header" style="background:linear-gradient(135deg, #15803d 0%, #166534 100%); color:#ffffff;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
-              <i class="fas fa-book-open"></i>
-            </div>
-            <div>
-              <h3 style="color:#ffffff; font-size:1.1rem; margin:0;">បណ្ណាល័យឌីជីថល (Digital Library KTPTTC)</h3>
-              <p style="color:#bbf7d0; font-size:0.8rem; margin:2px 0 0 0;">កម្រងសៀវភៅគរុកោសល្យ សៀវភៅសិក្សាគោល និងឯកសារស្រាវជ្រាវ MoEYS</p>
-            </div>
-          </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
-        </div>
-        <div class="stms-modal-body" style="padding:22px; max-height:72vh; overflow-y:auto;">
-          
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            
-            <div style="display:flex; gap:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center;">
-              <div style="width:48px; height:48px; border-radius:8px; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
-                <i class="fas fa-book"></i>
-              </div>
-              <div style="flex:1;">
-                <h5 style="margin:0 0 3px 0; font-size:0.9rem; color:#1e293b;">សៀវភៅគរុកោសល្យទូទៅសម្រាប់គរុសិស្សបឋម ១២+២</h5>
-                <p style="margin:0; font-size:0.77rem; color:#64748b;">ក្រសួងអប់រំ យុវជន និងកីឡា (MoEYS) • ២៤០ ទំព័រ • PDF ផ្លូវការ</p>
-              </div>
-              <button class="btn btn-primary" style="height:32px; padding:0 12px; font-size:0.8rem;" onclick="showToast('បានទាញយកសៀវភៅជា PDF!', 'success')">
-                <i class="fas fa-file-pdf"></i> ទាញយក
-              </button>
-            </div>
-
-            <div style="display:flex; gap:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center;">
-              <div style="width:48px; height:48px; border-radius:8px; background:#fef3c7; color:#b45309; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
-                <i class="fas fa-book"></i>
-              </div>
-              <div style="flex:1;">
-                <h5 style="margin:0 0 3px 0; font-size:0.9rem; color:#1e293b;">សៀវភៅណែនាំគ្រូបង្រៀនភាសាខ្មែរ ថ្នាក់ទី ១ ដល់ទី ៦</h5>
-                <p style="margin:0; font-size:0.77rem; color:#64748b;">នាយកដ្ឋានអភិវឌ្ឍកម្មវិធីសិក្សា • ៣១០ ទំព័រ • PDF ផ្លូវការ</p>
-              </div>
-              <button class="btn btn-primary" style="height:32px; padding:0 12px; font-size:0.8rem;" onclick="showToast('បានទាញយកសៀវភៅជា PDF!', 'success')">
-                <i class="fas fa-file-pdf"></i> ទាញយក
-              </button>
-            </div>
-
-            <div style="display:flex; gap:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center;">
-              <div style="width:48px; height:48px; border-radius:8px; background:#e0f2fe; color:#0369a1; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
-                <i class="fas fa-book"></i>
-              </div>
-              <div style="flex:1;">
-                <h5 style="margin:0 0 3px 0; font-size:0.9rem; color:#1e293b;">វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋមសិក្សា (STEM)</h5>
-                <p style="margin:0; font-size:0.77rem; color:#64748b;">KTPTTC Kratie • ១៨៥ ទំព័រ • PDF ផ្លូវការ</p>
-              </div>
-              <button class="btn btn-primary" style="height:32px; padding:0 12px; font-size:0.8rem;" onclick="showToast('បានទាញយកសៀវភៅជា PDF!', 'success')">
-                <i class="fas fa-file-pdf"></i> ទាញយក
-              </button>
-            </div>
-
-            <div style="display:flex; gap:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center;">
-              <div style="width:48px; height:48px; border-radius:8px; background:#f3e8ff; color:#7e22ce; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
-                <i class="fas fa-book"></i>
-              </div>
-              <div style="flex:1;">
-                <h5 style="margin:0 0 3px 0; font-size:0.9rem; color:#1e293b;">ចិត្តវិទ្យាគរុកោសល្យ និងការគ្រប់គ្រងថ្នាក់រៀនបែបវិជ្ជមាន</h5>
-                <p style="margin:0; font-size:0.77rem; color:#64748b;">វិទ្យាស្ថានជាតិអប់រំ (NIE) • ២១៥ ទំព័រ • PDF ផ្លូវការ</p>
-              </div>
-              <button class="btn btn-primary" style="height:32px; padding:0 12px; font-size:0.8rem;" onclick="showToast('បានទាញយកសៀវភៅជា PDF!', 'success')">
-                <i class="fas fa-file-pdf"></i> ទាញយក
-              </button>
-            </div>
-
-          </div>
-
-          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
-            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
-}
-
-// Trainee Modal: Guidelines & Agreement
-function openTraineeGuidelinesModal() {
-  let modalHtml = `
-    <div class="stms-modal-backdrop" id="traineeGuidelinesModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:640px;">
-        <div class="stms-modal-header" style="background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color:#ffffff;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
-              <i class="fas fa-clipboard-check"></i>
-            </div>
-            <div>
-              <h3 style="color:#ffffff; font-size:1.1rem; margin:0;">កិច្ចព្រមព្រៀង និងបទបញ្ជាផ្ទៃក្នុងគរុសនិស្សិត</h3>
-              <p style="color:#ccfbf1; font-size:0.8rem; margin:2px 0 0 0;">បទបញ្ញត្តិ និងគោលការណ៍ណែនាំស្តីពីការបណ្តុះបណ្តាលគរុកោសល្យ KTPTTC</p>
-            </div>
-          </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
-        </div>
-        <div class="stms-modal-body" style="padding:22px; max-height:72vh; overflow-y:auto; font-size:0.88rem; line-height:1.7; color:#334155;">
-          
-          <div style="margin-bottom:16px;">
-            <h4 style="font-size:0.95rem; color:#0f766e; margin-bottom:6px;"><i class="fas fa-check-circle"></i> ១. លក្ខខណ្ឌវត្តមាន និងវិន័យ</h4>
-            <p style="margin:0;">គរុសនិស្សិតត្រូវមានវត្តមានយ៉ាងតិច <strong>៨០%</strong> នៃម៉ោងសិក្សាសរុប។ ករណីអវត្តមានត្រូវមានច្បាប់អនុញ្ញាតត្រឹមត្រូវពីការិយាល័យសិក្សាធិការ និងមិនត្រូវមកយឺត ឬចេញមុនម៉ោងឡើយ។</p>
-          </div>
-
-          <div style="margin-bottom:16px;">
-            <h4 style="font-size:0.95rem; color:#0f766e; margin-bottom:6px;"><i class="fas fa-check-circle"></i> ២. ក្រមសីលធម៌វិជ្ជាជីវៈគ្រូបង្រៀន</h4>
-            <p style="margin:0;">ប្រកាន់ខ្ជាប់នូវសេចក្តីថ្លៃថ្នូរ ស្លៀកពាក់ឯកសណ្ឋានគរុសិស្សឱ្យបានត្រឹមត្រូវ គោរពពេលវេលា គរុគ្រូឧទ្ទេស មិត្តរួមថ្នាក់ និងសហគមន៍ជុំវិញ។</p>
-          </div>
-
-          <div style="margin-bottom:16px;">
-            <h4 style="font-size:0.95rem; color:#0f766e; margin-bottom:6px;"><i class="fas fa-check-circle"></i> ៣. ការចុះកម្មសិក្សាគរុកោសល្យ (Practicum)</h4>
-            <p style="margin:0;">ត្រូវអនុវត្តការបង្រៀនសាកល្បងនៅសាលាបឋមសិក្សាអនុវត្តន៍ឱ្យបានគ្រប់ចំនួនម៉ោង និងមានកិច្ចតែងការបង្រៀន (Lesson Plan) ពេញលេញរាល់ម៉ោងបង្រៀន។</p>
-          </div>
-
-          <div style="margin-bottom:16px;">
-            <h4 style="font-size:0.95rem; color:#0f766e; margin-bottom:6px;"><i class="fas fa-check-circle"></i> ៤. ការវាយតម្លៃ និងប្រឡងបញ្ចប់វគ្គ</h4>
-            <p style="margin:0;">ការវាយតម្លៃលទ្ធផលរួមមាន កិច្ចការស្រាវជ្រាវ (១០%), វត្តមាន/វិន័យ (១០%), ប្រឡងប្រចាំខែ (៣០%) និងប្រឡងបញ្ចប់ឆមាស (៥០%) តាមស្តង់ដារក្រសួងអប់រំ យុវជន និងកីឡា។</p>
-          </div>
-
-          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
-            <button class="btn btn-primary" onclick="closeStmsModal()">យល់ព្រម & បិទ</button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  `;
-  document.getElementById('modalContainer').innerHTML = modalHtml;
+  showModal(modalHtml);
 }
 
 function renderTraineeAttendanceView(container) {
@@ -4611,6 +4402,8 @@ function exportFullSummaryExcel() {
 // Close Active Modal Helper
 function closeStmsModal() {
   document.querySelectorAll('.stms-modal-backdrop').forEach(m => m.remove());
+  const c = document.getElementById('modalContainer');
+  if (c) c.innerHTML = '';
 }
 
 // Initial Shell Render
