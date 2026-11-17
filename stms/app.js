@@ -6047,31 +6047,7 @@ function renderTrainerPortalView(container) {
 
       </div>
 
-      <!-- 3. Blue Ribbon Strip & Course Row -->
-      <div class="trainee-subjects-section" id="teacherSubjectsSection">
-        
-        <div class="trainee-ribbon-bar">
-          <button class="ribbon-arrow-btn" onclick="prevTraineeSemester()" title="ឆមាសមុន">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <div class="ribbon-title">
-            <i class="fas fa-bookmark" style="opacity:0.9;"></i>
-            <span>${activeStream.label} (មុខវិជ្ជាទទួលបន្ទុកបង្រៀនដោយ៖ ${tr.nameKh})</span>
-          </div>
-          <button class="ribbon-arrow-btn" onclick="nextTraineeSemester()" title="ឆមាសបន្ទាប់">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
-
-        <div class="trainee-subjects-body">
-          <div class="trainee-subjects-grid">
-            ${subjectsHtml}
-          </div>
-        </div>
-
-      </div>
-
-      <!-- 4. Real Stats & Teaching Work Overview -->
+      <!-- 3. Real Stats & Teaching Work Overview -->
       <div class="trainee-stats-row">
         
         <!-- Class Attendance Overview -->
