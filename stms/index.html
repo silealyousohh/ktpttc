@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- STMS Custom Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=2.5">
+  <link rel="stylesheet" href="styles.css?v=2.6">
 </head>
 <body>
 
@@ -215,27 +215,11 @@
 
       <!-- Right Column: Login Form -->
       <div class="login-right-form">
-        
-        <!-- Fast Demo Credentials Helper -->
-        <div class="login-quick-roles">
-          <div class="login-quick-roles-title">
-            <i class="fas fa-key" style="color:#38bdf8;"></i> ចុចដើម្បីបំពេញគណនីសាកល្បង (Quick Fill):
-          </div>
-          <div class="quick-role-badges">
-            <button type="button" class="quick-role-btn" onclick="quickFillLogin('admin', 'admin123')">
-              <i class="fas fa-shield-alt" style="color:#60a5fa;"></i> Admin
-            </button>
-            <button type="button" class="quick-role-btn" onclick="quickFillLogin('trainer', 'trainer123')">
-              <i class="fas fa-chalkboard-teacher" style="color:#34d399;"></i> Trainer
-            </button>
-            <button type="button" class="quick-role-btn" onclick="quickFillLogin('trainee', 'trainee123')">
-              <i class="fas fa-user-graduate" style="color:#fbbf24;"></i> Trainee
-            </button>
-          </div>
-        </div>
-
-        <div class="login-form-divider">
-          <span>ឬ វាយបញ្ចូល Username &amp; Password</span>
+        <div style="margin-bottom: 24px;">
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin: 0 0 6px 0;">
+            <i class="fas fa-lock" style="color:#38bdf8; margin-right: 6px;"></i> ផ្ទៀងផ្ទាត់ការចូលប្រើ
+          </h3>
+          <p style="font-size: 0.82rem; color: #94a3b8; margin: 0;">សូមវាយបញ្ចូលឈ្មោះគណនី និងពាក្យសម្ងាត់របស់អ្នក</p>
         </div>
 
         <form id="stmsLoginForm" onsubmit="event.preventDefault(); handleLoginSubmit();">
@@ -276,7 +260,7 @@
   </div>
 
   <!-- Application Core Scripts -->
-  <script src="data.js?v=2.5"></script>
-  <script src="app.js?v=2.5"></script>
+  <script src="data.js?v=2.6"></script>
+  <script src="app.js?v=2.6"></script>
 </body>
 </html>
