@@ -1350,12 +1350,51 @@ function resetFormForNextTeacher() {
 }
 
 // --------------------------------------------------------------------------
-// EXCEL / CSV TEMPLATE & IMPORT
+// EXCEL / CSV TEMPLATE & IMPORT UTILITIES
 // --------------------------------------------------------------------------
 
+// Format Excel Date (Supports Date objects, serial numbers, strings, and Khmer digits)
+function parseExcelDate(val) {
+  if (!val) return '';
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return '';
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  if (typeof val === 'number') {
+    // Excel serial number conversion
+    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+    if (!isNaN(d.getTime())) {
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+  }
+  let str = String(val).trim();
+  const khmerDigits = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+  khmerDigits.forEach((kd, idx) => {
+    str = str.split(kd).join(String(idx));
+  });
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const parts = str.split(/[/\-.]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    } else if (parts[2].length === 4) {
+      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+  }
+  return str;
+}
+
+// Download Excel (.xlsx) or CSV Template
 function downloadExcelTemplate() {
-  if (currentRegistrationRole === 'teacher') {
-    // Teacher Template
+  const isTeacher = currentRegistrationRole === 'teacher';
+
+  if (isTeacher) {
     const headers = [
       'អត្តលេខគ្រូ',
       'មុខវិជ្ជា_កូដ',
@@ -1363,14 +1402,14 @@ function downloadExcelTemplate() {
       'ឈ្មោះគ្រូ_ខ្មែរ',
       'ឈ្មោះជាឡាតាំង',
       'ភេទ',
-      'ថ្ងៃខែឆ្នាំកំណើត_YYYY-MM-DD',
+      'ថ្ងៃខែឆ្នាំកំណើត',
       'លេខទូរស័ព្ទ',
       'អ៊ីមែល',
       'ខេត្តកំណើត',
       'ស្រុកកំណើត',
       'ឃុំកំណើត',
       'ភូមិកំណើត',
-      'ខេត្តបច្ចុប្បន្ន'
+      'អាសយដ្ឋានបច្ចុប្បន្ន'
     ];
 
     const sampleRow1 = [
@@ -1390,17 +1429,51 @@ function downloadExcelTemplate() {
       'ខេត្តក្រចេះ'
     ];
 
-    const csvContent = '\uFEFF' + [headers.join(','), sampleRow1.join(',')].join('\r\n');
+    const sampleRow2 = [
+      'USR-TRN-002',
+      'MATH-101',
+      'បរិញ្ញាបត្រគរុកោសល្យ',
+      'សុខ សោភា',
+      'Sok Sophea',
+      'ស្រី',
+      '1987-11-20',
+      '092333444',
+      'sophea.sok@ktpttc.edu.kh',
+      'ខេត្តក្រចេះ',
+      'ស្រុកស្នួល',
+      'ឃុំស្នួល',
+      'ភូមិស្នួល',
+      'ខេត្តក្រចេះ'
+    ];
+
+    if (typeof XLSX !== 'undefined') {
+      const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow1, sampleRow2]);
+      ws['!cols'] = [
+        { wch: 16 }, { wch: 14 }, { wch: 22 }, { wch: 20 },
+        { wch: 18 }, { wch: 10 }, { wch: 16 }, { wch: 16 },
+        { wch: 26 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+        { wch: 16 }, { wch: 20 }
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'គំរូនាំចូល_គ្រូឧទ្ទេស');
+      XLSX.writeFile(wb, 'គំរូនាំចូល_បញ្ជីគ្រូឧទ្ទេស_KTPTTC.xlsx');
+      showToast('🎉 បានទាញយកឯកសារគំរូគ្រូឧទ្ទេស Excel (.xlsx) ដោយជោគជ័យ!', 'success');
+      return;
+    }
+
+    // Fallback to UTF-8 CSV with BOM
+    const csvContent = '\uFEFF' + [headers.join(','), sampleRow1.join(','), sampleRow2.join(',')].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'គំរូបញ្ជីគ្រូឧទ្ទេស_KTPTTC_Template.csv';
+    a.download = 'គំរូនាំចូល_បញ្ជីគ្រូឧទ្ទេស_KTPTTC.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast('បានទាញយកឯកសារគំរូគ្រូឧទ្ទេស CSV ដោយជោគជ័យ!', 'success');
+
   } else {
     // Student Template
     const headers = [
@@ -1410,13 +1483,13 @@ function downloadExcelTemplate() {
       'ឈ្មោះសិស្ស_ខ្មែរ',
       'ឈ្មោះជាឡាតាំង',
       'ភេទ',
-      'ថ្ងៃខែឆ្នាំកំណើត_YYYY-MM-DD',
+      'ថ្ងៃខែឆ្នាំកំណើត',
       'លេខទូរស័ព្ទអាណាព្យាបាល',
       'ខេត្តកំណើត',
       'ស្រុកកំណើត',
       'ឃុំកំណើត',
       'ភូមិកំណើត',
-      'ខេត្តបច្ចុប្បន្ន',
+      'អាសយដ្ឋានបច្ចុប្បន្ន',
       'ឈ្មោះឪពុក',
       'មុខរបរឪពុក',
       'ឈ្មោះម្តាយ',
@@ -1443,12 +1516,49 @@ function downloadExcelTemplate() {
       'មេផ្ទះ'
     ];
 
-    const csvContent = '\uFEFF' + [headers.join(','), sampleRow1.join(',')].join('\r\n');
+    const sampleRow2 = [
+      'KTPTTC-2026-12P2-002',
+      '១២+២',
+      'ក្រុម ក',
+      'ចាន់ ធីតា',
+      'Chan Thida',
+      'ស្រី',
+      '2005-08-25',
+      '098765432',
+      'ខេត្តក្រចេះ',
+      'ស្រុកឆ្លូង',
+      'ឃុំឆ្លូង',
+      'ភូមិឆ្លូង',
+      'ខេត្តក្រចេះ',
+      'ចាន់ រិទ្ធី',
+      'គ្រូបង្រៀន',
+      'សួន ផល្លា',
+      'អាជីវករ'
+    ];
+
+    if (typeof XLSX !== 'undefined') {
+      const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow1, sampleRow2]);
+      ws['!cols'] = [
+        { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 20 },
+        { wch: 18 }, { wch: 10 }, { wch: 16 }, { wch: 20 },
+        { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+        { wch: 20 }, { wch: 18 }, { wch: 14 }, { wch: 18 },
+        { wch: 14 }
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'គំរូនាំចូល_សិស្ស');
+      XLSX.writeFile(wb, 'គំរូនាំចូល_បញ្ជីចុះឈ្មោះសិស្ស_MoEYS.xlsx');
+      showToast('🎉 បានទាញយកឯកសារគំរូសិស្ស Excel (.xlsx) ដោយជោគជ័យ!', 'success');
+      return;
+    }
+
+    // Fallback to UTF-8 CSV with BOM
+    const csvContent = '\uFEFF' + [headers.join(','), sampleRow1.join(','), sampleRow2.join(',')].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'គំរូបញ្ជីចុះឈ្មោះសិស្ស_MoEYS_Template.csv';
+    a.download = 'គំរូនាំចូល_បញ្ជីចុះឈ្មោះសិស្ស_MoEYS.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1458,180 +1568,251 @@ function downloadExcelTemplate() {
 }
 window.downloadExcelTemplate = downloadExcelTemplate;
 
-// Handle Excel / CSV File Import
+// Handle Excel (.xlsx, .xls) & CSV File Import
 function handleExcelImport(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
-
-  if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
-    showToast('សូមរក្សាទុកឯកសារជាទម្រង់ CSV (Comma Delimited ឬ UTF-8 CSV) មុននឹងនាំចូល!', 'warning');
-    input.value = '';
-    return;
-  }
+  const isTeacher = currentRegistrationRole === 'teacher';
 
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
-      const text = e.target.result;
-      if (text.startsWith('PK') || /[\x00-\x08\x0E-\x1F\x7F]/.test(text.substring(0, 50))) {
-        showToast('ឯកសារនេះជាប្រភេទ Binary មិនអាចអានជាអត្ថបទបានឡើយ។ សូមជ្រើសរើសឯកសារ CSV!', 'error');
-        return;
-      }
-      const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
-      if (lines.length <= 1) {
-        showToast('ឯកសារពុំមានទិន្នន័យទេ!', 'error');
-        return;
-      }
+      let rows = [];
 
-      if (currentRegistrationRole === 'teacher') {
-        // Import Teachers
-        let rawStms = localStorage.getItem('ktpttc_stms_data_v2');
-        let stmsObj = rawStms ? JSON.parse(rawStms) : (window.KTPTTC_INITIAL_DATA || {});
-        if (!Array.isArray(stmsObj.users)) stmsObj.users = [];
-
-        let imported = 0;
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
-          if (cols.length >= 4 && (cols[0] || cols[3])) {
-            const id = cols[0] || `USR-TRN-${String(stmsObj.users.length + 1).padStart(3, '0')}`;
-            const subject = cols[1] || 'PED-101';
-            const qualification = cols[2] || 'អនុបណ្ឌិតគរុកោសល្យ';
-            const nameKh = cols[3];
-            const nameEn = cols[4] || '';
-            const gender = cols[5] && cols[5].includes('ស្រី') ? 'ស្រី' : 'ប្រុស';
-            const dob = cols[6] || '1985-05-15';
-            const phone = cols[7] || '';
-            const email = cols[8] || `${id.toLowerCase()}@ktpttc.edu.kh`;
-
-            const teacherRecord = {
-              id,
-              nameKh,
-              nameEn,
-              gender,
-              dob,
-              qualification,
-              phone,
-              email,
-              username: id.toLowerCase(),
-              password: 'ktpttc123',
-              role: 'trainer',
-              roleLabel: 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន',
-              subject,
-              status: 'active',
-              avatar: gender === 'ស្រី' ? '👩‍🏫' : '👨‍🏫',
-              birthplace: { province: cols[9] || 'ខេត្តក្រចេះ', district: cols[10] || '', commune: cols[11] || '', village: cols[12] || '' },
-              address: { province: cols[13] || cols[9] || 'ខេត្តក្រចេះ', district: '', commune: '', village: '' }
-            };
-
-            const existingIdx = stmsObj.users.findIndex(u => u.id === id);
-            if (existingIdx !== -1) {
-              stmsObj.users[existingIdx] = { ...stmsObj.users[existingIdx], ...teacherRecord };
-            } else {
-              stmsObj.users.push(teacherRecord);
-            }
-            imported++;
-          }
+      // 1. Try parsing with SheetJS (supports .xlsx, .xls, and .csv)
+      if (typeof XLSX !== 'undefined') {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          showToast('ឯកសារគ្មានសន្លឹកកិច្ចការ (Sheet) ណាមួយឡើយ!', 'error');
+          return;
         }
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+      } else {
+        // Fallback for CSV when XLSX is not loaded
+        const decoder = new TextDecoder('utf-8');
+        const text = decoder.decode(e.target.result);
+        if (text.startsWith('PK') || /[\x00-\x08\x0E-\x1F\x7F]/.test(text.substring(0, 50))) {
+          showToast('ឯកសារ Excel Binary នេះត្រូវការបណ្ណាល័យ SheetJS ដើម្បីអាន។ សូមផ្ទុកទំព័រឡើងវិញ!', 'error');
+          return;
+        }
+        rows = text.split(/\r?\n/)
+          .filter(line => line.trim().length > 0)
+          .map(line => line.split(',').map(c => c.trim().replace(/^["']|["']$/g, '')));
+      }
+
+      // Filter out completely blank rows
+      rows = rows.filter(r => Array.isArray(r) && r.some(c => c !== null && c !== undefined && String(c).trim() !== ''));
+
+      if (rows.length === 0) {
+        showToast('ឯកសារពុំមានទិន្នន័យឡើយ!', 'error');
+        return;
+      }
+
+      // Detect if row 0 is Header
+      const headerRow = rows[0].map(c => String(c).trim().toLowerCase());
+      const hasHeader = headerRow.some(h => 
+        h.includes('អត្តលេខ') || h.includes('ឈ្មោះ') || h.includes('ភេទ') || 
+        h.includes('ថ្នាក់') || h.includes('មុខវិជ្ជា') || h.includes('name') || 
+        h.includes('id') || h.includes('gender')
+      );
+
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+      if (dataRows.length === 0) {
+        showToast('ឯកសារពុំមានជួរទិន្នន័យសម្រាប់នាំចូលឡើយ!', 'warning');
+        return;
+      }
+
+      let rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+      let stmsObj = rawStms ? JSON.parse(rawStms) : (window.KTPTTC_INITIAL_DATA || {});
+      if (!Array.isArray(stmsObj.users)) stmsObj.users = [];
+      if (!Array.isArray(stmsObj.trainees)) stmsObj.trainees = [];
+
+      if (isTeacher) {
+        // ================= IMPORT TEACHERS =================
+        let imported = 0;
+        let nextNum = stmsObj.users.filter(u => u.role === 'trainer').length + 1;
+
+        dataRows.forEach((cols, idx) => {
+          if (!cols || cols.length === 0) return;
+          // Clean column values
+          const cleanCols = cols.map(c => (c !== null && c !== undefined) ? String(c).trim() : '');
+          
+          let id = cleanCols[0] || `USR-TRN-${String(nextNum++).padStart(3, '0')}`;
+          let subject = cleanCols[1] || 'PED-101';
+          let qualification = cleanCols[2] || 'អនុបណ្ឌិតគរុកោសល្យ';
+          let nameKh = cleanCols[3] || cleanCols[0];
+          let nameEn = cleanCols[4] || '';
+          let genderRaw = cleanCols[5] || '';
+          let dobRaw = cols[6]; // might be Date object or number
+          let phone = cleanCols[7] || '';
+          let email = cleanCols[8] || `${id.toLowerCase()}@ktpttc.edu.kh`;
+          let pobProvince = cleanCols[9] || 'ខេត្តក្រចេះ';
+          let pobDistrict = cleanCols[10] || '';
+          let pobCommune = cleanCols[11] || '';
+          let pobVillage = cleanCols[12] || '';
+          let curAddress = cleanCols[13] || pobProvince;
+
+          // If col 0 looks like a name and not ID
+          if (id && !id.toUpperCase().startsWith('USR') && !id.toUpperCase().startsWith('TRN') && !/\d/.test(id) && !cleanCols[3]) {
+            nameKh = id;
+            id = `USR-TRN-${String(nextNum++).padStart(3, '0')}`;
+          }
+
+          if (!nameKh || nameKh === id) return; // Skip invalid rows
+
+          const gender = (genderRaw.includes('ស្រី') || genderRaw.toLowerCase().includes('female') || genderRaw.toLowerCase() === 'f') ? 'ស្រី' : 'ប្រុស';
+          const dob = parseExcelDate(dobRaw) || '1985-05-15';
+
+          const teacherRecord = {
+            id,
+            nameKh,
+            nameEn,
+            gender,
+            dob,
+            qualification,
+            phone,
+            email,
+            username: id.toLowerCase(),
+            password: 'ktpttc123',
+            role: 'trainer',
+            roleLabel: 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន',
+            subject,
+            status: 'active',
+            avatar: gender === 'ស្រី' ? '👩‍🏫' : '👨‍🏫',
+            birthplace: { province: pobProvince, district: pobDistrict, commune: pobCommune, village: pobVillage },
+            address: { province: curAddress, district: '', commune: '', village: '' }
+          };
+
+          const existingIdx = stmsObj.users.findIndex(u => (u.id && u.id.toLowerCase() === id.toLowerCase()) || (u.nameKh === nameKh && u.role === 'trainer'));
+          if (existingIdx !== -1) {
+            stmsObj.users[existingIdx] = { ...stmsObj.users[existingIdx], ...teacherRecord };
+          } else {
+            stmsObj.users.push(teacherRecord);
+          }
+          imported++;
+        });
+
         localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
-        showToast(`បាននាំចូលទិន្នន័យគ្រូឧទ្ទេសចំនួន ${imported} នាក់ពី Excel ដោយជោគជ័យ!`, 'success');
+        showToast(`🎉 បាននាំចូលទិន្នន័យគ្រូឧទ្ទេសចំនួន ${imported} នាក់ពី Excel/CSV ដោយជោគជ័យ!`, 'success');
         setTimeout(() => {
           sessionStorage.setItem('stms_target_view', 'trainers');
           window.location.href = 'index.html';
-        }, 1500);
+        }, 1200);
 
       } else {
-        // Import Students
-        const students = getSavedStudents();
-        let importedCount = 0;
+        // ================= IMPORT STUDENTS =================
+        let imported = 0;
+        let nextRoll = stmsObj.trainees.length + 1;
 
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
-          if (cols.length >= 3 && (cols[2] || cols[3])) {
-            const id = cols[0] || `STU-${String(students.length + 1).padStart(3, '0')}`;
-            const hasGroupCol = cols[2] && cols[2].includes('ក្រុម');
-            const classGrade = cols[1] || '១២+២';
-            const group = hasGroupCol ? cols[2] : 'ក្រុម ក';
-            const nameKh = hasGroupCol ? cols[3] : cols[2];
-            const nameEn = hasGroupCol ? (cols[4] || '') : (cols[3] || '');
-            const genderCol = hasGroupCol ? cols[5] : cols[4];
-            const dobCol = hasGroupCol ? cols[6] : cols[5];
-            const phoneCol = hasGroupCol ? cols[7] : cols[6];
-            const className = `${classGrade} ${group}`.trim();
+        dataRows.forEach((cols, idx) => {
+          if (!cols || cols.length === 0) return;
+          const cleanCols = cols.map(c => (c !== null && c !== undefined) ? String(c).trim() : '');
 
-            let gender = 'ប្រុស';
-            if (genderCol && (genderCol.includes('ស្រី') || genderCol.toLowerCase().includes('female') || genderCol.toLowerCase() === 'f')) {
-              gender = 'ស្រី';
-            }
-            const dob = dobCol || '2005-01-01';
-            const parentPhone = phoneCol || '';
+          let id = cleanCols[0] || `KTPTTC-2026-12P2-${String(nextRoll).padStart(3, '0')}`;
+          let classGrade = cleanCols[1] || '១២+២';
+          let group = cleanCols[2] || 'ក្រុម ក';
+          let nameKh = cleanCols[3];
+          let nameEn = cleanCols[4] || '';
+          let genderRaw = cleanCols[5] || '';
+          let dobRaw = cols[6];
+          let parentPhone = cleanCols[7] || '';
+          let pobProvince = cleanCols[8] || 'ខេត្តក្រចេះ';
+          let pobDistrict = cleanCols[9] || '';
+          let pobCommune = cleanCols[10] || '';
+          let pobVillage = cleanCols[11] || '';
+          let curAddress = cleanCols[12] || pobProvince;
+          let fatherName = cleanCols[13] || '';
+          let fatherJob = cleanCols[14] || '';
+          let motherName = cleanCols[15] || '';
+          let motherJob = cleanCols[16] || '';
 
-            students.push({
-              id,
-              roll: students.length + 1,
-              className,
-              nameKh,
-              nameEn,
-              gender,
-              dob,
-              age: '',
-              parentPhone,
-              username: id.toLowerCase(),
-              password: 'ktpttc123',
-              avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
-              behaviorScore: 100,
-              scores: { KH: 0, MATH: 0, PHY: 0, CHEM: 0, BIO: 0, HIST: 0, GEO: 0, ENG: 0, MOR: 0 },
-              absentYearCount: 0,
-              attendance: 'present',
-              birthplace: { province: cols[7] || '', district: cols[8] || '', commune: cols[9] || '', village: cols[10] || '' },
-              address: { province: cols[11] || cols[7] || '', district: '', commune: '', village: '' },
-              parents: { fatherName: cols[12] || '', fatherJob: cols[13] || '', motherName: cols[14] || '', motherJob: cols[15] || '' }
-            });
-            importedCount++;
+          // Support shifting if group col was omitted
+          if (group && !group.includes('ក្រុម') && !nameKh) {
+            nameKh = group;
+            group = 'ក្រុម ក';
           }
-        }
+          if (!nameKh && cleanCols[2]) {
+            nameKh = cleanCols[2];
+          }
 
-        saveStudentsToStorage(students);
+          if (!nameKh) return; // Skip invalid row
 
-        // Sync login users
-        try {
-          let rawStms = localStorage.getItem('ktpttc_stms_data_v2');
-          let stmsObj = rawStms ? JSON.parse(rawStms) : (window.KTPTTC_INITIAL_DATA || {});
-          if (!Array.isArray(stmsObj.users)) stmsObj.users = [];
-          students.forEach(st => {
-            if (!stmsObj.users.some(u => (u.studentId && u.studentId.toLowerCase() === st.id.toLowerCase()) || (u.username && u.username.toLowerCase() === st.id.toLowerCase()))) {
-              stmsObj.users.push({
-                id: `USR-STU-${String(stmsObj.users.length + 1).padStart(3, '0')}`,
-                nameKh: st.nameKh,
-                nameEn: st.nameEn || '',
-                studentId: st.id,
-                username: st.id.toLowerCase(),
-                password: 'ktpttc123',
-                role: 'trainee',
-                roleLabel: 'គរុសនិស្សិត',
-                phone: st.parentPhone || '',
-                className: st.className,
-                status: 'active',
-                avatar: st.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
-              });
-            }
-          });
-          localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
-        } catch (err) {}
+          const gender = (genderRaw.includes('ស្រី') || genderRaw.toLowerCase().includes('female') || genderRaw.toLowerCase() === 'f') ? 'ស្រី' : 'ប្រុស';
+          const dob = parseExcelDate(dobRaw) || '2005-01-01';
+          const className = `${classGrade} ${group}`.trim();
 
-        showToast(`បាននាំចូលទិន្នន័យសិស្សចំនួន ${importedCount} នាក់ពី Excel ដោយជោគជ័យ!`, 'success');
+          const studentRecord = {
+            id,
+            roll: nextRoll++,
+            className,
+            nameKh,
+            nameEn,
+            gender,
+            dob,
+            age: '',
+            parentPhone,
+            username: id.toLowerCase(),
+            password: 'ktpttc123',
+            avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
+            behaviorScore: 100,
+            scores: { KH: 0, MATH: 0, PHY: 0, CHEM: 0, BIO: 0, HIST: 0, GEO: 0, ENG: 0, MOR: 0 },
+            absentYearCount: 0,
+            attendance: 'present',
+            birthplace: { province: pobProvince, district: pobDistrict, commune: pobCommune, village: pobVillage },
+            address: { province: curAddress, district: '', commune: '', village: '' },
+            parents: { fatherName, fatherJob, motherName, motherJob }
+          };
+
+          const existingIdx = stmsObj.trainees.findIndex(t => (t.id && t.id.toLowerCase() === id.toLowerCase()) || (t.nameKh === nameKh && t.className === className));
+          if (existingIdx !== -1) {
+            stmsObj.trainees[existingIdx] = { ...stmsObj.trainees[existingIdx], ...studentRecord };
+          } else {
+            stmsObj.trainees.push(studentRecord);
+          }
+
+          // Sync student login user
+          const userIdx = stmsObj.users.findIndex(u => (u.studentId && u.studentId.toLowerCase() === id.toLowerCase()) || (u.username && u.username.toLowerCase() === id.toLowerCase()));
+          const userRecord = {
+            id: `USR-STU-${String(stmsObj.users.length + 1).padStart(3, '0')}`,
+            nameKh,
+            nameEn,
+            studentId: id,
+            username: id.toLowerCase(),
+            password: 'ktpttc123',
+            role: 'trainee',
+            roleLabel: 'គរុសនិស្សិត',
+            phone: parentPhone,
+            className,
+            status: 'active',
+            avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
+          };
+          if (userIdx !== -1) {
+            stmsObj.users[userIdx] = { ...stmsObj.users[userIdx], ...userRecord };
+          } else {
+            stmsObj.users.push(userRecord);
+          }
+
+          imported++;
+        });
+
+        localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+        localStorage.setItem('krusmart_teacher_custom_students', JSON.stringify(stmsObj.trainees));
+        showToast(`🎉 បាននាំចូលទិន្នន័យសិស្សចំនួន ${imported} នាក់ពី Excel/CSV ដោយជោគជ័យ!`, 'success');
         setTimeout(() => {
           sessionStorage.setItem('stms_target_view', 'trainees');
           window.location.href = 'index.html';
-        }, 1500);
+        }, 1200);
       }
 
     } catch (err) {
-      console.error(err);
+      console.error('Import error:', err);
       showToast('មានបញ្ហាក្នុងការអានឯកសារ Excel/CSV៖ ' + err.message, 'error');
     }
   };
 
-  reader.readAsText(file, 'utf-8');
+  reader.readAsArrayBuffer(file);
   input.value = '';
 }
 window.handleExcelImport = handleExcelImport;

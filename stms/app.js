@@ -1013,6 +1013,9 @@ function exportOrPrintRoster() {
           <button class="btn btn-success" onclick="closeStmsModal(); exportTraineeRosterExcel();" style="height:42px; font-size:0.9rem; justify-content:center;">
             <i class="fas fa-file-excel"></i> ទាញយកជា Excel / CSV Spreadsheet
           </button>
+          <button class="btn btn-outline" onclick="closeStmsModal(); openBulkImportModal('student');" style="height:42px; font-size:0.9rem; justify-content:center; border-color:#10b981; color:#047857; font-weight:700;">
+            <i class="fas fa-file-import"></i> នាំចូលទិន្នន័យពី Excel / CSV (Bulk Import)
+          </button>
           <button class="btn btn-outline" onclick="closeStmsModal()" style="height:38px; font-size:0.85rem; justify-content:center;">
             បោះបង់
           </button>
@@ -1085,6 +1088,9 @@ function renderTraineesView(container) {
           <button class="roster-btn-print" onclick="exportOrPrintRoster()">
             <i class="fas fa-print"></i> ទម្រង់បោះពុម្ព និង ទាញយក
           </button>
+          <button class="btn btn-outline" onclick="openBulkImportModal('student')" style="font-size:0.85rem; height:36px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; border-color:#10b981; color:#059669; font-weight:700;">
+            <i class="fas fa-file-excel"></i> នាំចូល Excel / CSV
+          </button>
           <button class="btn btn-primary" onclick="openEnrollModal()" style="font-size:0.85rem; height:36px; padding:0 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
             <i class="fas fa-user-plus"></i> ចុះឈ្មោះសិស្សថ្មី
           </button>
@@ -1142,6 +1148,7 @@ function renderTraineesView(container) {
                     សូមចុចប៊ូតុងខាងក្រោមដើម្បីបង្កើតគណនី ឬចុះឈ្មោះគរុសនិស្សិតថ្មី
                   </p>
                   <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិត</button>
+                  <button class="btn btn-outline" onclick="openBulkImportModal('student')" style="margin-left:8px; border-color:#10b981; color:#059669; font-weight:700;"><i class="fas fa-file-excel"></i> នាំចូល Excel / CSV</button>
                 </td>
               </tr>
             ` : displayed.map((t, idx) => {
@@ -1261,6 +1268,9 @@ function exportOrPrintTrainerRoster() {
           <button class="btn btn-success" onclick="closeStmsModal(); exportTeachersCSV();" style="height:42px; font-size:0.9rem; justify-content:center;">
             <i class="fas fa-file-excel"></i> ទាញយកជា Excel / CSV Spreadsheet
           </button>
+          <button class="btn btn-outline" onclick="closeStmsModal(); openBulkImportModal('teacher');" style="height:42px; font-size:0.9rem; justify-content:center; border-color:#10b981; color:#047857; font-weight:700;">
+            <i class="fas fa-file-import"></i> នាំចូលទិន្នន័យគ្រូពី Excel / CSV (Bulk Import)
+          </button>
           <button class="btn btn-outline" onclick="closeStmsModal()" style="height:38px; font-size:0.85rem; justify-content:center;">
             បោះបង់
           </button>
@@ -1329,6 +1339,9 @@ function renderTrainersView(container) {
           <button class="roster-btn-print" onclick="exportOrPrintTrainerRoster()">
             <i class="fas fa-print"></i> ទម្រង់បោះពុម្ព និង ទាញយក
           </button>
+          <button class="btn btn-outline" onclick="openBulkImportModal('teacher')" style="font-size:0.85rem; height:36px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; border-color:#10b981; color:#059669; font-weight:700;">
+            <i class="fas fa-file-excel"></i> នាំចូល Excel / CSV
+          </button>
           <button class="btn btn-primary" onclick="openAdminAddTeacherModal()" style="font-size:0.85rem; height:36px; padding:0 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
             <i class="fas fa-user-plus"></i> ចុះឈ្មោះគ្រូថ្មី
           </button>
@@ -1386,6 +1399,7 @@ function renderTrainersView(container) {
                     សូមចុចប៊ូតុងខាងក្រោមដើម្បីបន្ថែម ឬចុះឈ្មោះគ្រូឧទ្ទេសថ្មី
                   </p>
                   <button class="btn btn-primary" onclick="openAdminAddTeacherModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគ្រូថ្មី</button>
+                  <button class="btn btn-outline" onclick="openBulkImportModal('teacher')" style="margin-left:8px; border-color:#10b981; color:#059669; font-weight:700;"><i class="fas fa-file-excel"></i> នាំចូល Excel / CSV</button>
                 </td>
               </tr>
             ` : displayed.map((tr, idx) => {
@@ -2063,6 +2077,7 @@ function renderGradingView(container) {
                     សូមចុះឈ្មោះគរុសនិស្សិតចូលក្នុងថ្នាក់រៀនជាមុនសិន ដើម្បីគ្រូឧទ្ទេសអាចបញ្ចូលពិន្ទុ និងគណនាលទ្ធផលស្វ័យប្រវត្តិ។
                   </p>
                   <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិត</button>
+                  <button class="btn btn-outline" onclick="openBulkImportModal('student')" style="margin-left:8px; border-color:#10b981; color:#059669; font-weight:700;"><i class="fas fa-file-excel"></i> នាំចូល Excel / CSV</button>
                 </td>
               </tr>
             ` : classTrainees.map((t, idx) => {
@@ -5197,6 +5212,747 @@ function importDatabaseJson(input) {
   };
   reader.readAsText(file);
 }
+
+// --------------------------------------------------------------------------
+// BULK IMPORT & TEMPLATE MANAGEMENT (EXCEL .xlsx, .xls & CSV)
+// --------------------------------------------------------------------------
+
+// Format Excel Date (Supports Date objects, serial numbers, strings, and Khmer digits)
+function parseExcelDate(val) {
+  if (!val) return '';
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return '';
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  if (typeof val === 'number') {
+    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+    if (!isNaN(d.getTime())) {
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+  }
+  let str = String(val).trim();
+  const khmerDigits = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+  khmerDigits.forEach((kd, idx) => {
+    str = str.split(kd).join(String(idx));
+  });
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const parts = str.split(/[/\-.]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    } else if (parts[2].length === 4) {
+      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+  }
+  return str;
+}
+window.parseExcelDate = parseExcelDate;
+
+let pendingBulkImportData = {
+  role: 'student',
+  rows: [],
+  fileName: '',
+  validCount: 0
+};
+
+// Open Universal Bulk Import Modal for Teachers or Students
+function openBulkImportModal(role = 'student') {
+  closeStmsModal();
+  pendingBulkImportData = {
+    role,
+    rows: [],
+    fileName: '',
+    validCount: 0
+  };
+
+  const isTeacher = role === 'teacher' || role === 'trainer';
+  const roleKhmer = isTeacher ? 'គ្រូឧទ្ទេស និងសាស្ត្រាចារ្យ' : 'គរុសិស្សានុសិស្ស';
+  const accentColor = isTeacher ? '#059669' : '#2563eb';
+  const icon = isTeacher ? 'fa-chalkboard-teacher' : 'fa-user-graduate';
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="bulkImportModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width: 840px; width: 95%;">
+        
+        <!-- Header -->
+        <div class="stms-modal-header" style="background: linear-gradient(135deg, ${accentColor} 0%, #1e293b 100%); color: #ffffff; padding: 18px 24px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+              <i class="fas ${icon}"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #ffffff;">
+                នាំចូលទិន្នន័យ${roleKhmer} (Bulk Import)
+              </h3>
+              <div style="font-size: 0.8rem; opacity: 0.9; margin-top: 2px;">
+                គាំទ្រឯកសារ Excel (.xlsx, .xls) និង CSV (UTF-8) តាមទម្រង់ក្រសួងអប់រំ យុវជន និងកីឡា
+              </div>
+            </div>
+          </div>
+          <button type="button" class="stms-modal-close" onclick="closeStmsModal()" style="background: transparent; border: none; color: #ffffff; font-size: 1.25rem; cursor: pointer;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="stms-modal-body" style="padding: 24px;">
+          
+          <!-- Step 1: Template Download Section -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <strong style="color: #1e293b; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+                  <i class="fas fa-download" style="color: ${accentColor};"></i> ជំហានទី១៖ ទាញយកឯកសារគំរូជាមុន
+                </strong>
+                <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #64748b;">
+                  សូមទាញយកឯកសារគំរូផ្លូវការដើម្បីបំពេញទិន្នន័យ${roleKhmer}តាមជួរឈរត្រឹមត្រូវ
+                </p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-outline" onclick="downloadBulkImportTemplate('${role}', 'xlsx')" style="height: 36px; font-size: 0.82rem; border-color: #10b981; color: #047857; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="fas fa-file-excel"></i> គំរូ Excel (.xlsx)
+                </button>
+                <button type="button" class="btn btn-outline" onclick="downloadBulkImportTemplate('${role}', 'csv')" style="height: 36px; font-size: 0.82rem; border-color: #3b82f6; color: #1d4ed8; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="fas fa-file-csv"></i> គំរូ CSV (UTF-8)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Upload Dropzone -->
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 700; color: #1e293b; font-size: 0.92rem; margin-bottom: 8px;">
+              <i class="fas fa-cloud-upload-alt" style="color: ${accentColor};"></i> ជំហានទី២៖ ជ្រើសរើស ឬអូសទម្លាក់ឯកសារ Excel/CSV
+            </label>
+            <input type="file" id="stmsBulkFileInput" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleBulkImportFileSelect(event, '${role}')">
+            
+            <div id="bulkDropzoneArea" 
+                 class="stms-file-dropzone" 
+                 onclick="document.getElementById('stmsBulkFileInput').click()"
+                 ondragover="handleBulkDropzoneDragOver(event, this)"
+                 ondragleave="handleBulkDropzoneDragLeave(event, this)"
+                 ondrop="handleBulkDropzoneDrop(event, '${role}')"
+                 style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 28px 20px; text-align: center; background: #ffffff; cursor: pointer; transition: all 0.2s ease;">
+              <div style="width: 52px; height: 52px; border-radius: 50%; background: #eff6ff; color: ${accentColor}; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 10px auto;">
+                <i class="fas fa-file-excel"></i>
+              </div>
+              <div style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">
+                ចុចទីនេះដើម្បីជ្រើសរើសឯកសារ ឬអូសទម្លាក់ឯកសារមកទីនេះ
+              </div>
+              <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">
+                គាំទ្រប្រភេទឯកសារ៖ <strong>.xlsx, .xls, .csv</strong> (ទំហំឯកសារអតិបរមា 20MB)
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Preview Container (Hidden until file selected) -->
+          <div id="bulkPreviewContainer" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <strong style="color: #1e293b; font-size: 0.92rem; display: flex; align-items: center; gap: 8px;">
+                <span id="bulkValidBadge" class="badge" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 4px 10px; font-size: 0.82rem;">
+                  <i class="fas fa-check-circle"></i> រកឃើញទិន្នន័យ 0 នាក់
+                </span>
+                <span id="bulkFileNameDisplay" style="color: #64748b; font-size: 0.82rem; font-weight: normal;"></span>
+              </strong>
+              <button type="button" class="btn btn-outline" onclick="resetBulkImportUI()" style="height: 28px; padding: 0 10px; font-size: 0.76rem;">
+                <i class="fas fa-sync-alt"></i> ប្តូរឯកសារថ្មី
+              </button>
+            </div>
+
+            <div style="max-height: 240px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px;">
+              <table class="roster-table" style="width: 100%; font-size: 0.82rem; margin: 0;">
+                <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 2;">
+                  <tr>
+                    <th style="width: 40px; text-align: center;">ល.រ</th>
+                    <th>អត្តលេខ</th>
+                    <th>គោត្តនាម និងនាម</th>
+                    <th>ឈ្មោះឡាតាំង</th>
+                    <th style="text-align: center;">ភេទ</th>
+                    <th style="text-align: center;">ថ្ងៃខែឆ្នាំកំណើត</th>
+                    <th>${isTeacher ? 'មុខវិជ្ជា' : 'ថ្នាក់/ក្រុម'}</th>
+                    <th>ទូរស័ព្ទ</th>
+                  </tr>
+                </thead>
+                <tbody id="bulkPreviewTableBody">
+                  <!-- Injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bottom Actions -->
+          <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+            <button type="button" class="btn btn-outline" onclick="closeStmsModal()">
+              បោះបង់
+            </button>
+            <button type="button" class="btn btn-primary" id="btnConfirmBulkImport" onclick="executeBulkImport('${role}')" disabled style="opacity: 0.5; cursor: not-allowed; display: inline-flex; align-items: center; gap: 8px;">
+              <i class="fas fa-check-circle"></i> 🚀 បញ្ជាក់ការនាំចូលទិន្នន័យ
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+window.openBulkImportModal = openBulkImportModal;
+
+// Dropzone drag-and-drop helpers
+function handleBulkDropzoneDragOver(e, el) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (el) {
+    el.style.borderColor = '#2563eb';
+    el.style.backgroundColor = '#eff6ff';
+  }
+}
+window.handleBulkDropzoneDragOver = handleBulkDropzoneDragOver;
+
+function handleBulkDropzoneDragLeave(e, el) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (el) {
+    el.style.borderColor = '#cbd5e1';
+    el.style.backgroundColor = '#ffffff';
+  }
+}
+window.handleBulkDropzoneDragLeave = handleBulkDropzoneDragLeave;
+
+function handleBulkDropzoneDrop(e, role) {
+  e.preventDefault();
+  e.stopPropagation();
+  const el = document.getElementById('bulkDropzoneArea');
+  if (el) {
+    el.style.borderColor = '#cbd5e1';
+    el.style.backgroundColor = '#ffffff';
+  }
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+    processBulkImportFile(e.dataTransfer.files[0], role);
+  }
+}
+window.handleBulkDropzoneDrop = handleBulkDropzoneDrop;
+
+function handleBulkImportFileSelect(e, role) {
+  if (e.target.files && e.target.files[0]) {
+    processBulkImportFile(e.target.files[0], role);
+  }
+}
+window.handleBulkImportFileSelect = handleBulkImportFileSelect;
+
+function resetBulkImportUI() {
+  const fileInput = document.getElementById('stmsBulkFileInput');
+  if (fileInput) fileInput.value = '';
+  const preview = document.getElementById('bulkPreviewContainer');
+  if (preview) preview.style.display = 'none';
+  const dropzone = document.getElementById('bulkDropzoneArea');
+  if (dropzone) dropzone.style.display = 'block';
+  const confirmBtn = document.getElementById('btnConfirmBulkImport');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.style.opacity = '0.5';
+    confirmBtn.style.cursor = 'not-allowed';
+  }
+  pendingBulkImportData.rows = [];
+  pendingBulkImportData.validCount = 0;
+}
+window.resetBulkImportUI = resetBulkImportUI;
+
+// Process selected file with SheetJS or CSV
+function processBulkImportFile(file, role) {
+  if (!file) return;
+  const isTeacher = role === 'teacher' || role === 'trainer';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      let rawRows = [];
+
+      if (typeof XLSX !== 'undefined') {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          showToast('ឯកសារគ្មានសន្លឹកកិច្ចការ (Sheet) ណាមួយឡើយ!', 'error');
+          return;
+        }
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+      } else {
+        const decoder = new TextDecoder('utf-8');
+        const text = decoder.decode(e.target.result);
+        if (text.startsWith('PK') || /[\x00-\x08\x0E-\x1F\x7F]/.test(text.substring(0, 50))) {
+          showToast('ឯកសារ Excel Binary នេះត្រូវការបណ្ណាល័យ SheetJS ដើម្បីអាន។', 'error');
+          return;
+        }
+        rawRows = text.split(/\r?\n/)
+          .filter(l => l.trim().length > 0)
+          .map(l => l.split(',').map(c => c.trim().replace(/^["']|["']$/g, '')));
+      }
+
+      // Filter blank rows
+      const rows = rawRows.filter(r => Array.isArray(r) && r.some(c => c !== null && c !== undefined && String(c).trim() !== ''));
+      if (rows.length === 0) {
+        showToast('ឯកសារពុំមានទិន្នន័យឡើយ!', 'error');
+        return;
+      }
+
+      // Check header
+      const headerRow = rows[0].map(c => String(c).trim().toLowerCase());
+      const hasHeader = headerRow.some(h => 
+        h.includes('អត្តលេខ') || h.includes('ឈ្មោះ') || h.includes('ភេទ') || 
+        h.includes('ថ្នាក់') || h.includes('មុខវិជ្ជា') || h.includes('name') || 
+        h.includes('id') || h.includes('gender')
+      );
+
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+      if (dataRows.length === 0) {
+        showToast('ឯកសារពុំមានជួរទិន្នន័យសម្រាប់នាំចូលឡើយ!', 'warning');
+        return;
+      }
+
+      // Map rows
+      const parsedRecords = [];
+      if (isTeacher) {
+        let nextNum = (stmsData.users || []).filter(u => u.role === 'trainer').length + 1;
+        dataRows.forEach(cols => {
+          const cleanCols = cols.map(c => (c !== null && c !== undefined) ? String(c).trim() : '');
+          let id = cleanCols[0] || `USR-TRN-${String(nextNum++).padStart(3, '0')}`;
+          let subject = cleanCols[1] || 'PED-101';
+          let qualification = cleanCols[2] || 'អនុបណ្ឌិតគរុកោសល្យ';
+          let nameKh = cleanCols[3] || cleanCols[0];
+          let nameEn = cleanCols[4] || '';
+          let genderRaw = cleanCols[5] || '';
+          let dobRaw = cols[6];
+          let phone = cleanCols[7] || '';
+          let email = cleanCols[8] || `${id.toLowerCase()}@ktpttc.edu.kh`;
+          let pobProvince = cleanCols[9] || 'ខេត្តក្រចេះ';
+          let pobDistrict = cleanCols[10] || '';
+          let pobCommune = cleanCols[11] || '';
+          let pobVillage = cleanCols[12] || '';
+          let curAddress = cleanCols[13] || pobProvince;
+
+          if (id && !id.toUpperCase().startsWith('USR') && !id.toUpperCase().startsWith('TRN') && !/\d/.test(id) && !cleanCols[3]) {
+            nameKh = id;
+            id = `USR-TRN-${String(nextNum++).padStart(3, '0')}`;
+          }
+          if (!nameKh || nameKh === id) return;
+
+          const gender = (genderRaw.includes('ស្រី') || genderRaw.toLowerCase().includes('female') || genderRaw.toLowerCase() === 'f') ? 'ស្រី' : 'ប្រុស';
+          const dob = parseExcelDate(dobRaw) || '1985-05-15';
+
+          parsedRecords.push({
+            id,
+            nameKh,
+            nameEn,
+            gender,
+            dob,
+            qualification,
+            phone,
+            email,
+            username: id.toLowerCase(),
+            password: 'ktpttc123',
+            role: 'trainer',
+            roleLabel: 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន',
+            subject,
+            status: 'active',
+            avatar: gender === 'ស្រី' ? '👩‍🏫' : '👨‍🏫',
+            birthplace: { province: pobProvince, district: pobDistrict, commune: pobCommune, village: pobVillage },
+            address: { province: curAddress, district: '', commune: '', village: '' }
+          });
+        });
+      } else {
+        let nextRoll = (stmsData.trainees || []).length + 1;
+        dataRows.forEach(cols => {
+          const cleanCols = cols.map(c => (c !== null && c !== undefined) ? String(c).trim() : '');
+          let id = cleanCols[0] || `KTPTTC-2026-12P2-${String(nextRoll).padStart(3, '0')}`;
+          let classGrade = cleanCols[1] || '១២+២';
+          let group = cleanCols[2] || 'ក្រុម ក';
+          let nameKh = cleanCols[3];
+          let nameEn = cleanCols[4] || '';
+          let genderRaw = cleanCols[5] || '';
+          let dobRaw = cols[6];
+          let parentPhone = cleanCols[7] || '';
+          let pobProvince = cleanCols[8] || 'ខេត្តក្រចេះ';
+          let pobDistrict = cleanCols[9] || '';
+          let pobCommune = cleanCols[10] || '';
+          let pobVillage = cleanCols[11] || '';
+          let curAddress = cleanCols[12] || pobProvince;
+          let fatherName = cleanCols[13] || '';
+          let fatherJob = cleanCols[14] || '';
+          let motherName = cleanCols[15] || '';
+          let motherJob = cleanCols[16] || '';
+
+          if (group && !group.includes('ក្រុម') && !nameKh) {
+            nameKh = group;
+            group = 'ក្រុម ក';
+          }
+          if (!nameKh && cleanCols[2]) {
+            nameKh = cleanCols[2];
+          }
+          if (!nameKh) return;
+
+          const gender = (genderRaw.includes('ស្រី') || genderRaw.toLowerCase().includes('female') || genderRaw.toLowerCase() === 'f') ? 'ស្រី' : 'ប្រុស';
+          const dob = parseExcelDate(dobRaw) || '2005-01-01';
+          const className = `${classGrade} ${group}`.trim();
+
+          parsedRecords.push({
+            id,
+            roll: nextRoll++,
+            className,
+            nameKh,
+            nameEn,
+            gender,
+            dob,
+            age: '',
+            parentPhone,
+            username: id.toLowerCase(),
+            password: 'ktpttc123',
+            avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
+            behaviorScore: 100,
+            scores: { KH: 0, MATH: 0, PHY: 0, CHEM: 0, BIO: 0, HIST: 0, GEO: 0, ENG: 0, MOR: 0 },
+            absentYearCount: 0,
+            attendance: 'present',
+            birthplace: { province: pobProvince, district: pobDistrict, commune: pobCommune, village: pobVillage },
+            address: { province: curAddress, district: '', commune: '', village: '' },
+            parents: { fatherName, fatherJob, motherName, motherJob }
+          });
+        });
+      }
+
+      if (parsedRecords.length === 0) {
+        showToast('ពុំអាចទាញយកទិន្នន័យត្រឹមត្រូវពីឯកសារនេះឡើយ។ សូមពិនិត្យមើលឯកសារគំរូ!', 'warning');
+        return;
+      }
+
+      // Save pending records
+      pendingBulkImportData.rows = parsedRecords;
+      pendingBulkImportData.validCount = parsedRecords.length;
+      pendingBulkImportData.fileName = file.name;
+
+      // Update UI
+      const preview = document.getElementById('bulkPreviewContainer');
+      const badge = document.getElementById('bulkValidBadge');
+      const nameDisp = document.getElementById('bulkFileNameDisplay');
+      const tbody = document.getElementById('bulkPreviewTableBody');
+      const confirmBtn = document.getElementById('btnConfirmBulkImport');
+
+      if (preview) preview.style.display = 'block';
+      if (badge) badge.innerHTML = `<i class="fas fa-check-circle"></i> រកឃើញទិន្នន័យ ${parsedRecords.length} នាក់`;
+      if (nameDisp) nameDisp.textContent = `(ឯកសារ៖ ${file.name})`;
+
+      if (tbody) {
+        tbody.innerHTML = parsedRecords.slice(0, 10).map((r, i) => `
+          <tr>
+            <td style="text-align: center; color: #64748b;">${i + 1}</td>
+            <td><code style="color: #2563eb; font-weight: 700;">${r.id}</code></td>
+            <td style="font-weight: 700; color: #0f172a;">${r.nameKh}</td>
+            <td style="color: #64748b;">${r.nameEn || '-'}</td>
+            <td style="text-align: center;">
+              <span class="badge ${r.gender === 'ស្រី' ? 'badge-female' : 'badge-male'}" style="font-size: 0.72rem;">${r.gender}</span>
+            </td>
+            <td style="text-align: center;">${r.dob}</td>
+            <td><span class="badge" style="background: #f1f5f9; color: #334155; font-size: 0.72rem;">${isTeacher ? r.subject : r.className}</span></td>
+            <td>${isTeacher ? (r.phone || '-') : (r.parentPhone || '-')}</td>
+          </tr>
+        `).join('') + (parsedRecords.length > 10 ? `
+          <tr>
+            <td colspan="8" style="text-align: center; color: #64748b; font-size: 0.78rem; padding: 8px; background: #f8fafc;">
+              ... និងទិន្នន័យចំនួន ${parsedRecords.length - 10} នាក់ផ្សេងទៀត
+            </td>
+          </tr>
+        ` : '');
+      }
+
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+        confirmBtn.style.cursor = 'pointer';
+      }
+
+      showToast(`✅ អានឯកសារបានជោគជ័យ! រកឃើញទិន្នន័យចំនួន ${parsedRecords.length} នាក់។`, 'success');
+
+    } catch (err) {
+      console.error('File parsing error:', err);
+      showToast('កំហុសក្នុងការអានឯកសារ៖ ' + err.message, 'error');
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+window.processBulkImportFile = processBulkImportFile;
+
+// Execute and Commit Bulk Import into STMS Data
+function executeBulkImport(role) {
+  if (!pendingBulkImportData || !pendingBulkImportData.rows || pendingBulkImportData.rows.length === 0) {
+    showToast('ពុំមានទិន្នន័យសម្រាប់នាំចូលឡើយ!', 'warning');
+    return;
+  }
+
+  const isTeacher = role === 'teacher' || role === 'trainer';
+  const records = pendingBulkImportData.rows;
+  let importedCount = 0;
+
+  if (isTeacher) {
+    if (!Array.isArray(stmsData.users)) stmsData.users = [];
+    records.forEach(tr => {
+      const idx = stmsData.users.findIndex(u => (u.id && u.id.toLowerCase() === tr.id.toLowerCase()) || (u.nameKh === tr.nameKh && u.role === 'trainer'));
+      if (idx !== -1) {
+        stmsData.users[idx] = { ...stmsData.users[idx], ...tr };
+      } else {
+        stmsData.users.push(tr);
+      }
+      importedCount++;
+    });
+
+    saveData();
+    closeStmsModal();
+    showToast(`🎉 បាននាំចូលទិន្នន័យគ្រូឧទ្ទេសចំនួន ${importedCount} នាក់ដោយជោគជ័យ!`, 'success');
+    
+    if (currentView === 'trainers') {
+      renderTrainersView(document.getElementById('mainContentArea'));
+    } else if (currentView === 'admin-portal') {
+      renderAdminPortalView(document.getElementById('stmsContentViewport'));
+    } else {
+      navigateView('trainers');
+    }
+
+  } else {
+    if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+    if (!Array.isArray(stmsData.users)) stmsData.users = [];
+
+    records.forEach(st => {
+      const idx = stmsData.trainees.findIndex(t => (t.id && t.id.toLowerCase() === st.id.toLowerCase()) || (t.nameKh === st.nameKh && t.className === st.className));
+      if (idx !== -1) {
+        stmsData.trainees[idx] = { ...stmsData.trainees[idx], ...st };
+      } else {
+        stmsData.trainees.push(st);
+      }
+
+      // Sync user login
+      const uIdx = stmsData.users.findIndex(u => (u.studentId && u.studentId.toLowerCase() === st.id.toLowerCase()) || (u.username && u.username.toLowerCase() === st.id.toLowerCase()));
+      const userObj = {
+        id: `USR-STU-${String(stmsData.users.length + 1).padStart(3, '0')}`,
+        nameKh: st.nameKh,
+        nameEn: st.nameEn || '',
+        studentId: st.id,
+        username: st.id.toLowerCase(),
+        password: 'ktpttc123',
+        role: 'trainee',
+        roleLabel: 'គរុសនិស្សិត',
+        phone: st.parentPhone,
+        className: st.className,
+        status: 'active',
+        avatar: st.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
+      };
+      if (uIdx !== -1) {
+        stmsData.users[uIdx] = { ...stmsData.users[uIdx], ...userObj };
+      } else {
+        stmsData.users.push(userObj);
+      }
+
+      importedCount++;
+    });
+
+    saveData();
+    try {
+      localStorage.setItem('krusmart_teacher_custom_students', JSON.stringify(stmsData.trainees));
+    } catch (e) {}
+
+    closeStmsModal();
+    showToast(`🎉 បាននាំចូលទិន្នន័យគរុសិស្សចំនួន ${importedCount} នាក់ដោយជោគជ័យ!`, 'success');
+
+    if (currentView === 'trainees') {
+      renderTraineesView(document.getElementById('mainContentArea'));
+    } else if (currentView === 'admin-portal') {
+      renderAdminPortalView(document.getElementById('stmsContentViewport'));
+    } else {
+      navigateView('trainees');
+    }
+  }
+}
+window.executeBulkImport = executeBulkImport;
+
+// Download Official Bulk Import Template (Excel .xlsx or UTF-8 CSV)
+function downloadBulkImportTemplate(role, format = 'xlsx') {
+  const isTeacher = role === 'teacher' || role === 'trainer';
+
+  if (isTeacher) {
+    const headers = [
+      'អត្តលេខគ្រូ',
+      'មុខវិជ្ជា_កូដ',
+      'កម្រិតវប្បធម៌',
+      'ឈ្មោះគ្រូ_ខ្មែរ',
+      'ឈ្មោះជាឡាតាំង',
+      'ភេទ',
+      'ថ្ងៃខែឆ្នាំកំណើត',
+      'លេខទូរស័ព្ទ',
+      'អ៊ីមែល',
+      'ខេត្តកំណើត',
+      'ស្រុកកំណើត',
+      'ឃុំកំណើត',
+      'ភូមិកំណើត',
+      'អាសយដ្ឋានបច្ចុប្បន្ន'
+    ];
+
+    const sampleRow1 = [
+      'USR-TRN-001',
+      'PED-101',
+      'អនុបណ្ឌិតគរុកោសល្យ',
+      'ហេង សំណាង',
+      'Heng Samnang',
+      'ប្រុស',
+      '1983-05-12',
+      '016777888',
+      'samnang.heng@ktpttc.edu.kh',
+      'ខេត្តក្រចេះ',
+      'ក្រុងក្រចេះ',
+      'សង្កាត់ក្រចេះ',
+      'ភូមិ១',
+      'ខេត្តក្រចេះ'
+    ];
+
+    const sampleRow2 = [
+      'USR-TRN-002',
+      'MATH-101',
+      'បរិញ្ញាបត្រគរុកោសល្យ',
+      'សុខ សោភា',
+      'Sok Sophea',
+      'ស្រី',
+      '1987-11-20',
+      '092333444',
+      'sophea.sok@ktpttc.edu.kh',
+      'ខេត្តក្រចេះ',
+      'ស្រុកស្នួល',
+      'ឃុំស្នួល',
+      'ភូមិស្នួល',
+      'ខេត្តក្រចេះ'
+    ];
+
+    if (format === 'xlsx' && typeof XLSX !== 'undefined') {
+      const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow1, sampleRow2]);
+      ws['!cols'] = [
+        { wch: 16 }, { wch: 14 }, { wch: 22 }, { wch: 20 },
+        { wch: 18 }, { wch: 10 }, { wch: 16 }, { wch: 16 },
+        { wch: 26 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+        { wch: 16 }, { wch: 20 }
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'គំរូនាំចូល_គ្រូឧទ្ទេស');
+      XLSX.writeFile(wb, 'គំរូនាំចូល_បញ្ជីគ្រូឧទ្ទេស_KTPTTC.xlsx');
+      showToast('🎉 បានទាញយកឯកសារគំរូគ្រូឧទ្ទេស Excel (.xlsx) ដោយជោគជ័យ!', 'success');
+      return;
+    }
+
+    const csvContent = '\uFEFF' + [headers.join(','), sampleRow1.join(','), sampleRow2.join(',')].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'គំរូនាំចូល_បញ្ជីគ្រូឧទ្ទេស_KTPTTC.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('បានទាញយកឯកសារគំរូគ្រូឧទ្ទេស CSV ដោយជោគជ័យ!', 'success');
+
+  } else {
+    const headers = [
+      'អត្តលេខ',
+      'ថ្នាក់ទី',
+      'ក្រុម',
+      'ឈ្មោះសិស្ស_ខ្មែរ',
+      'ឈ្មោះជាឡាតាំង',
+      'ភេទ',
+      'ថ្ងៃខែឆ្នាំកំណើត',
+      'លេខទូរស័ព្ទអាណាព្យាបាល',
+      'ខេត្តកំណើត',
+      'ស្រុកកំណើត',
+      'ឃុំកំណើត',
+      'ភូមិកំណើត',
+      'អាសយដ្ឋានបច្ចុប្បន្ន',
+      'ឈ្មោះឪពុក',
+      'មុខរបរឪពុក',
+      'ឈ្មោះម្តាយ',
+      'មុខរបរម្តាយ'
+    ];
+
+    const sampleRow1 = [
+      'KTPTTC-2026-12P2-001',
+      '១២+២',
+      'ក្រុម ក',
+      'កែវ វិសាល',
+      'Keo Visal',
+      'ប្រុស',
+      '2005-05-12',
+      '012345678',
+      'ខេត្តក្រចេះ',
+      'ក្រុងក្រចេះ',
+      'សង្កាត់ក្រចេះ',
+      'ភូមិ១',
+      'ខេត្តក្រចេះ',
+      'កែវ សុខា',
+      'កសិករ',
+      'ម៉ៅ ស្រី',
+      'មេផ្ទះ'
+    ];
+
+    const sampleRow2 = [
+      'KTPTTC-2026-12P2-002',
+      '១២+២',
+      'ក្រុម ក',
+      'ចាន់ ធីតា',
+      'Chan Thida',
+      'ស្រី',
+      '2005-08-25',
+      '098765432',
+      'ខេត្តក្រចេះ',
+      'ស្រុកឆ្លូង',
+      'ឃុំឆ្លូង',
+      'ភូមិឆ្លូង',
+      'ខេត្តក្រចេះ',
+      'ចាន់ រិទ្ធី',
+      'គ្រូបង្រៀន',
+      'សួន ផល្លា',
+      'អាជីវករ'
+    ];
+
+    if (format === 'xlsx' && typeof XLSX !== 'undefined') {
+      const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow1, sampleRow2]);
+      ws['!cols'] = [
+        { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 20 },
+        { wch: 18 }, { wch: 10 }, { wch: 16 }, { wch: 20 },
+        { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+        { wch: 20 }, { wch: 18 }, { wch: 14 }, { wch: 18 },
+        { wch: 14 }
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'គំរូនាំចូល_សិស្ស');
+      XLSX.writeFile(wb, 'គំរូនាំចូល_បញ្ជីចុះឈ្មោះសិស្ស_MoEYS.xlsx');
+      showToast('🎉 បានទាញយកឯកសារគំរូសិស្ស Excel (.xlsx) ដោយជោគជ័យ!', 'success');
+      return;
+    }
+
+    const csvContent = '\uFEFF' + [headers.join(','), sampleRow1.join(','), sampleRow2.join(',')].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'គំរូនាំចូល_បញ្ជីចុះឈ្មោះសិស្ស_MoEYS.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('បានទាញយកឯកសារគំរូសិស្ស CSV ដោយជោគជ័យ!', 'success');
+  }
+}
+window.downloadBulkImportTemplate = downloadBulkImportTemplate;
 
 // Excel Export Helpers
 function exportTraineeRosterExcel() {
