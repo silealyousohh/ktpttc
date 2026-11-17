@@ -1919,7 +1919,24 @@ function submitAddSlot() {
 // 6. TRAINEE PORTAL VIEW (ផតថលផ្ទាល់ខ្លួនគរុសនិស្សិត - MODELED AFTER MOCKUP)
 // ==========================================================================
 
-let currentTraineeSemester = 1;
+const TRAINEE_STREAMS = [
+  { id: 'BAC1-B-S1', label: 'បរិញ្ញាបត្រ+១ ក្រុម ខ • ឆមាសទី ១', cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤' },
+  { id: '12P2-A-S1', label: 'ថ្នាក់បឋម ១២+២ ក្រុម ក • ឆមាសទី ១', cohort: 'ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤' },
+  { id: '12P2-B-S1', label: 'ថ្នាក់បឋម ១២+២ ក្រុម ខ • ឆមាសទី ១', cohort: 'ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤' },
+  { id: '12P2-A-S2', label: 'ថ្នាក់បឋម ១២+២ ក្រុម ក • ឆមាសទី ២', cohort: 'ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤' }
+];
+let currentStreamIndex = 0;
+
+const KTPTTC_ALL_SUBJECTS = [
+  { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", credits: 3, trainer: "សាស្ត្រាចារ្យ ហេង សំណាង" },
+  { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", credits: 2, trainer: "លោកស្រី ម៉ៅ សុភា" },
+  { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", credits: 3, trainer: "លោកគ្រូ យឹម វណ្ណា" },
+  { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", credits: 3, trainer: "លោកស្រី ជា រចនា" },
+  { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: "លោកគ្រូ ស៊ុយ សូលីដា" },
+  { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", credits: 2, trainer: "សាស្ត្រាចារ្យ ហេង សំណាង" },
+  { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "លោកគ្រូ យឹម វណ្ណា" },
+  { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, trainer: "លោកគ្រូ ស៊ុយ សូលីដា" }
+];
 
 function toKhmerNum(num) {
   const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
@@ -1952,15 +1969,16 @@ function getKhmerFirstLetter(name) {
 
 function getSubjectTheme(code) {
   const themes = {
-    'PED-101': { bg: '#fff1f2', color: '#db2777', icon: 'fas fa-chalkboard-teacher', label: 'គរុកោសល្យ' },
-    'KHM-104': { bg: '#fff7ed', color: '#c2410c', icon: 'fas fa-book-reader', label: 'ភាសាខ្មែរ' },
-    'MTH-103': { bg: '#f0f9ff', color: '#0284c7', icon: 'fas fa-calculator', label: 'គណិតវិទ្យា' },
-    'ICT-105': { bg: '#f5f3ff', color: '#7c3aed', icon: 'fas fa-laptop-code', label: 'បច្ចេកវិទ្យា ICT' },
-    'PSY-102': { bg: '#f0fdfa', color: '#0d9488', icon: 'fas fa-brain', label: 'ចិត្តវិទ្យា' },
-    'RES-106': { bg: '#fffbeb', color: '#d97706', icon: 'fas fa-microscope', label: 'ការស្រាវជ្រាវ' },
-    'PRAC-107': { bg: '#f0fdf4', color: '#16a34a', icon: 'fas fa-school', label: 'កម្មសិក្សា' }
+    'PED-101': { bg: '#fff1f2', border: '#fecdd3', color: '#e11d48', icon: 'fas fa-chalkboard-teacher', label: 'គរុកោសល្យ' },
+    'PSY-102': { bg: '#ecfeff', border: '#a5f3fc', color: '#0891b2', icon: 'fas fa-brain', label: 'ចិត្តវិទ្យា' },
+    'MTH-103': { bg: '#eff6ff', border: '#bfdbfe', color: '#2563eb', icon: 'fas fa-calculator', label: 'គណិតវិទ្យា' },
+    'KHM-104': { bg: '#fff7ed', border: '#fed7aa', color: '#ea580c', icon: 'fas fa-book-reader', label: 'ភាសាខ្មែរ' },
+    'ICT-105': { bg: '#faf5ff', border: '#e9d5ff', color: '#9333ea', icon: 'fas fa-laptop-code', label: 'បច្ចេកវិទ្យា ICT' },
+    'RES-106': { bg: '#fffbeb', border: '#fde68a', color: '#d97706', icon: 'fas fa-feather-alt', label: 'ការស្រាវជ្រាវ' },
+    'PRAC-107': { bg: '#f0fdf4', border: '#bbf7d0', color: '#16a34a', icon: 'fas fa-school', label: 'កម្មសិក្សា' },
+    'COM-108': { bg: '#f0f9ff', border: '#bae6fd', color: '#0284c7', icon: 'fas fa-book-bookmark', label: 'សារគមនាគមន៍' }
   };
-  return themes[code] || { bg: '#f8fafc', color: '#2563eb', icon: 'fas fa-book', label: 'មុខវិជ្ជា' };
+  return themes[code] || { bg: '#f8fafc', border: '#e2e8f0', color: '#2563eb', icon: 'fas fa-book', label: 'មុខវិជ្ជា' };
 }
 
 function getActiveTraineeProfile() {
@@ -1975,8 +1993,8 @@ function getActiveTraineeProfile() {
         nameEn: 'Yousoh Silal',
         gender: 'ប្រុស',
         dob: '2001-11-16',
-        className: 'ថ្នាក់បឋម ១២+២ ក្រុម ក',
-        cohort: 'ថ្នាក់បឋមសិក្សា ១២+២ ជំនាន់ទី ៣៤',
+        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
+        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
         roleLabel: 'គរុបង្រៀន',
         status: 'កំពុងសិក្សា',
         phone: '098765432',
@@ -1990,9 +2008,13 @@ function getActiveTraineeProfile() {
         },
         scores: {
           'PED-101': { total: 92, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 28, semester: 44, final: 44 },
-          'KHM-104': { total: 88, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 43, final: 43 },
+          'PSY-102': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 43, final: 43 },
           'MTH-103': { total: 95, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 46, final: 46 },
-          'ICT-105': { total: 90, grade: 'A', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 44, final: 44 }
+          'KHM-104': { total: 88, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 43, final: 43 },
+          'ICT-105': { total: 90, grade: 'A', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 44, final: 44 },
+          'RES-106': { total: 91, grade: 'A', status: 'published', homework: 10, attendance: 9, monthly: 27, semester: 45, final: 45 },
+          'PRAC-107': { total: 97, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 48, final: 48 },
+          'COM-108': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 44, final: 44 }
         }
       };
     }
@@ -2001,13 +2023,13 @@ function getActiveTraineeProfile() {
 }
 
 function prevTraineeSemester() {
-  currentTraineeSemester = currentTraineeSemester > 1 ? currentTraineeSemester - 1 : 2;
+  currentStreamIndex = currentStreamIndex > 0 ? currentStreamIndex - 1 : TRAINEE_STREAMS.length - 1;
   const area = document.getElementById('mainContentArea');
   if (area) renderTraineePortalView(area);
 }
 
 function nextTraineeSemester() {
-  currentTraineeSemester = currentTraineeSemester < 2 ? currentTraineeSemester + 1 : 1;
+  currentStreamIndex = currentStreamIndex < TRAINEE_STREAMS.length - 1 ? currentStreamIndex + 1 : 0;
   const area = document.getElementById('mainContentArea');
   if (area) renderTraineePortalView(area);
 }
@@ -2024,6 +2046,7 @@ function renderTraineePortalView(container) {
   const greeting = getKhmerGreeting();
   const khmerDate = getKhmerFormattedDate();
   const initialLetter = getKhmerFirstLetter(t.nameKh);
+  const activeStream = TRAINEE_STREAMS[currentStreamIndex];
 
   let avatarHtml = '';
   if (t.photo && String(t.photo).trim() !== '') {
@@ -2032,34 +2055,21 @@ function renderTraineePortalView(container) {
     avatarHtml = `<span class="trainee-hero-avatar-letter">${initialLetter}</span>`;
   }
 
-  // Active subjects list
-  const subjects = (stmsData.subjects && stmsData.subjects.length > 0) ? stmsData.subjects : [
-    { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", credits: 3, trainer: "សាស្ត្រាចារ្យ ហេង សំណាង" },
-    { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", credits: 3, trainer: "លោកស្រី ជា រចនា" },
-    { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", credits: 3, trainer: "លោកគ្រូ យឹម វណ្ណា" },
-    { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: "លោកគ្រូ ស៊ុយ សូលីដា" },
-    { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", credits: 2, trainer: "លោកស្រី ម៉ៅ សុភា" },
-    { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន", credits: 2, trainer: "សាស្ត្រាចារ្យ ហេង សំណាង" },
-    { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យ (Practicum)", credits: 4, trainer: "លោកគ្រូ យឹម វណ្ណា" }
-  ];
+  // Active 8 subjects
+  const subjects = KTPTTC_ALL_SUBJECTS;
 
   const subjectsHtml = subjects.map(subj => {
     const theme = getSubjectTheme(subj.code);
-    const score = t && t.scores ? t.scores[subj.code] : null;
-    const gradeBadge = (score && score.status === 'published')
-      ? `<span class="subj-badge-grade">${score.grade} (${score.total}ពិន្ទុ)</span>`
-      : `<span style="font-size:0.75rem; color:#64748b; font-weight:600;">${subj.credits} ក្រេឌីត</span>`;
-
     return `
-      <div class="trainee-subject-card" style="--subj-bg:${theme.bg}; --subj-color:${theme.color};" onclick="openSubjectDetailModal('${subj.code}')" title="ចុចដើម្បីមើលមេរៀន និងលម្អិតមុខវិជ្ជា ${subj.nameKh}">
+      <div class="trainee-subject-card" style="--subj-bg:${theme.bg}; --subj-border:${theme.border}; --subj-color:${theme.color};" onclick="openSubjectDetailModal('${subj.code}')" title="ចុចដើម្បីមើលមេរៀន និងលម្អិតមុខវិជ្ជា ${subj.nameKh}">
         <div class="subj-card-icon" style="color:${theme.color};">
           <i class="${theme.icon}"></i>
         </div>
         <div class="subj-card-name">
           ${subj.nameKh}
         </div>
-        <div style="margin-top:auto; padding-top:6px; display:flex; align-items:center; justify-content:center; gap:6px;">
-          ${gradeBadge}
+        <div class="subj-card-sub" style="font-size:0.8rem; color:#64748b; font-weight:600; margin-top:auto;">
+          ${subj.credits} ក្រេឌីត
         </div>
       </div>
     `;
@@ -2080,7 +2090,7 @@ function renderTraineePortalView(container) {
             <h1 class="trainee-hero-name">${t.nameKh || 'យូសុះ ស៊ីលាល'}</h1>
             <div class="trainee-hero-badges">
               <span class="trainee-badge-pill role"><i class="fas fa-graduation-cap"></i> ${t.roleLabel || 'គរុបង្រៀន'}</span>
-              <span class="trainee-badge-pill class"><i class="fas fa-chalkboard"></i> ${t.className || 'ថ្នាក់បឋម ១២+២'}</span>
+              <span class="trainee-badge-pill class"><i class="fas fa-chalkboard"></i> ${activeStream.label.split(' • ')[0]}</span>
               <span class="trainee-badge-pill class"><i class="fas fa-id-badge"></i> ${t.id || 'ktpttc-2026-st-001'}</span>
             </div>
             <div class="trainee-hero-date">
@@ -2092,7 +2102,7 @@ function renderTraineePortalView(container) {
           <button class="btn-hero-action primary" onclick="viewTraineeCard('${t.id}')">
             <i class="fas fa-id-card"></i> កាតសិស្ស
           </button>
-          <button class="btn-hero-action secondary" onclick="navigateView('trainee-request')">
+          <button class="btn-hero-action secondary" onclick="openTraineeForumModal('requests')">
             <i class="fas fa-user-edit"></i> ស្នើសុំកែប្រែ
           </button>
         </div>
@@ -2102,7 +2112,7 @@ function renderTraineePortalView(container) {
       <div class="trainee-hub-grid">
         
         <!-- 1. មុខវិជ្ជា (Subjects - Pink) -->
-        <div class="trainee-hub-card card-pink" onclick="scrollToSubjectsSection()">
+        <div class="trainee-hub-card card-pink" onclick="openTraineeSubjectsModal()">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-chalkboard-teacher"></i></div>
           <div class="hub-card-title">មុខវិជ្ជា</div>
@@ -2110,7 +2120,7 @@ function renderTraineePortalView(container) {
         </div>
 
         <!-- 2. ថ្នាក់ (Class / Timetable - Blue) -->
-        <div class="trainee-hub-card card-blue" onclick="navigateView('timetable')">
+        <div class="trainee-hub-card card-blue" onclick="openTraineeTimetableModal()">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-globe"></i></div>
           <div class="hub-card-title">ថ្នាក់</div>
@@ -2134,7 +2144,7 @@ function renderTraineePortalView(container) {
         </div>
 
         <!-- 5. វេទិកា (Forum / Requests - Amber) -->
-        <div class="trainee-hub-card card-amber" onclick="navigateView('trainee-request')">
+        <div class="trainee-hub-card card-amber" onclick="openTraineeForumModal()">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-comment-dots"></i></div>
           <div class="hub-card-title">វេទិកា</div>
@@ -2142,7 +2152,7 @@ function renderTraineePortalView(container) {
         </div>
 
         <!-- 6. របាយការណ៍ (Score Reports - Purple) -->
-        <div class="trainee-hub-card card-purple" onclick="navigateView('trainee-grades')">
+        <div class="trainee-hub-card card-purple" onclick="openTraineeReportsModal()">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-chart-line"></i></div>
           <div class="hub-card-title">របាយការណ៍</div>
@@ -2158,7 +2168,7 @@ function renderTraineePortalView(container) {
         </div>
 
         <!-- 8. ផែនការ (Study Plan & Attendance - Sky) -->
-        <div class="trainee-hub-card card-sky" onclick="navigateView('trainee-attendance')">
+        <div class="trainee-hub-card card-sky" onclick="openTraineeAttendanceModal()">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-calendar-alt"></i></div>
           <div class="hub-card-title">ផែនការ</div>
@@ -2171,14 +2181,14 @@ function renderTraineePortalView(container) {
       <div class="trainee-subjects-section" id="traineeSubjectsSection">
         
         <div class="trainee-ribbon-bar">
-          <button class="ribbon-nav-btn" onclick="prevTraineeSemester()" title="ឆមាសមុន">
+          <button class="ribbon-arrow-btn" onclick="prevTraineeSemester()" title="ឆមាសមុន">
             <i class="fas fa-chevron-left"></i>
           </button>
           <div class="ribbon-title">
-            <i class="fas fa-bookmark" style="opacity:0.85;"></i>
-            <span>${t.className || 'ថ្នាក់បឋម ១២+២'} • ឆមាសទី ${currentTraineeSemester === 1 ? '១' : '២'}</span>
+            <i class="fas fa-bookmark" style="opacity:0.9;"></i>
+            <span>${activeStream.label}</span>
           </div>
-          <button class="ribbon-nav-btn" onclick="nextTraineeSemester()" title="ឆមាសបន្ទាប់">
+          <button class="ribbon-arrow-btn" onclick="nextTraineeSemester()" title="ឆមាសបន្ទាប់">
             <i class="fas fa-chevron-right"></i>
           </button>
         </div>
@@ -2198,7 +2208,7 @@ function renderTraineePortalView(container) {
         <div class="table-card">
           <div class="table-toolbar">
             <strong style="color:#1e3a8a;"><i class="fas fa-calendar-check" style="color:#10b981;"></i> វត្តមានផ្ទាល់ខ្លួន</strong>
-            <button class="btn btn-outline" style="height:28px; padding:0 10px; font-size:0.75rem;" onclick="navigateView('trainee-attendance')">ពិនិត្យលម្អិត →</button>
+            <button class="btn btn-outline" style="height:28px; padding:0 10px; font-size:0.75rem;" onclick="openTraineeAttendanceModal()">ពិនិត្យលម្អិត →</button>
           </div>
           <div style="padding:22px;">
             <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:14px;">
@@ -2232,7 +2242,7 @@ function renderTraineePortalView(container) {
         <div class="table-card">
           <div class="table-toolbar">
             <strong style="color:#1e3a8a;"><i class="fas fa-award" style="color:#7c3aed;"></i> លទ្ធផលពិន្ទុ & និទ្ទេសផ្លូវការ</strong>
-            <button class="btn btn-outline" style="height:28px; padding:0 10px; font-size:0.75rem;" onclick="navigateView('trainee-grades')">ពិនិត្យលម្អិត →</button>
+            <button class="btn btn-outline" style="height:28px; padding:0 10px; font-size:0.75rem;" onclick="openTraineeReportsModal()">ពិនិត្យលម្អិត →</button>
           </div>
           <div style="padding:20px;">
             <p style="font-size:0.83rem; color:#64748b; margin-bottom:12px;">
@@ -2265,10 +2275,1075 @@ function renderTraineePortalView(container) {
   container.innerHTML = html;
 }
 
-// Trainee Modal: Subject Details & Syllabus
+// --------------------------------------------------------------------------
+// 1. HUB MODAL: មុខវិជ្ជា (CURRICULUM & SUBJECTS CATALOG)
+// --------------------------------------------------------------------------
+function openTraineeSubjectsModal() {
+  const activeStream = TRAINEE_STREAMS[currentStreamIndex];
+  const subjects = KTPTTC_ALL_SUBJECTS;
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="traineeSubjectsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:760px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #be185d 0%, #db2777 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">មុខវិជ្ជា & កម្មវិធីសិក្សាគរុកោសល្យ</h3>
+              <p style="color:#fbcfe8; font-size:0.82rem; margin:2px 0 0 0;">${activeStream.label} • សរុប ៨ មុខវិជ្ជា (២១ ក្រេឌីត)</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <div style="margin-bottom:16px; display:flex; gap:10px;">
+            <input type="text" id="subjectFilterInput" class="form-input" placeholder="🔍 ស្វែងរកមុខវិជ្ជា ឬឈ្មោះគ្រូឧទ្ទេស..." oninput="filterSubjectCatalog(this.value)">
+          </div>
+
+          <div id="subjectCatalogList" style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+            ${subjects.map(s => {
+              const th = getSubjectTheme(s.code);
+              return `
+                <div class="subject-item-box" style="background:#ffffff; border:1px solid ${th.border}; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <span style="font-size:0.75rem; font-weight:700; color:${th.color}; background:${th.bg}; padding:3px 8px; border-radius:6px;">${s.code}</span>
+                    <span style="font-size:0.78rem; font-weight:600; color:#64748b;">${s.credits} ក្រេឌីត</span>
+                  </div>
+                  <h4 style="margin:0; font-size:0.92rem; color:#1e293b; line-height:1.4;">${s.nameKh}</h4>
+                  <div style="font-size:0.78rem; color:#64748b; margin-top:auto; display:flex; justify-content:space-between; align-items:center;">
+                    <span>👨‍🏫 ${s.trainer}</span>
+                    <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.74rem;" onclick="closeStmsModal(); openSubjectDetailModal('${s.code}');">លម្អិត →</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+function filterSubjectCatalog(query) {
+  const q = (query || '').toLowerCase().trim();
+  const items = document.querySelectorAll('#subjectCatalogList .subject-item-box');
+  items.forEach(el => {
+    const text = el.textContent.toLowerCase();
+    el.style.display = text.includes(q) ? 'flex' : 'none';
+  });
+}
+
+// --------------------------------------------------------------------------
+// 2. HUB MODAL: ថ្នាក់ & កាលវិភាគសិក្សា (CLASS & TIMETABLE)
+// --------------------------------------------------------------------------
+function openTraineeTimetableModal() {
+  const activeStream = TRAINEE_STREAMS[currentStreamIndex];
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="traineeTimetableModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:820px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #0369a1 0%, #0284c7 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">កាលវិភាគសិក្សាប្រចាំសប្តាហ៍</h3>
+              <p style="color:#e0f2fe; font-size:0.82rem; margin:2px 0 0 0;">${activeStream.label} • បន្ទប់ ១០១ & បន្ទប់កុំព្យូទ័រ KTPTTC</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <div style="font-size:0.86rem; color:#334155;">
+              <span style="font-weight:700; color:#1e3a8a;">ម៉ោងសិក្សា៖</span> ពេលព្រឹក (០៧:៣០ - ១១:០០) • ពេលរសៀល (១៣:៣០ - ១៧:០០)
+            </div>
+            <button class="btn btn-primary" onclick="showToast('កំពុងរៀបចំទម្រង់បោះពុម្ពកាលវិភាគ...', 'info'); setTimeout(()=>window.print(), 300);">
+              <i class="fas fa-print"></i> បោះពុម្ពកាលវិភាគ
+            </button>
+          </div>
+
+          <div class="data-table-responsive" style="border:1px solid var(--border-color); border-radius:10px; overflow:hidden;">
+            <table class="stms-table" style="font-size:0.85rem;">
+              <thead style="background:#f1f5f9;">
+                <tr>
+                  <th style="width:100px;">ថ្ងៃ</th>
+                  <th style="width:140px;">ម៉ោង</th>
+                  <th>មុខវិជ្ជាគរុកោសល្យ</th>
+                  <th>គ្រូឧទ្ទេសទទួលបន្ទុក</th>
+                  <th>បន្ទប់រៀន</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">ចន្ទ</td>
+                  <td>07:30 - 09:00</td>
+                  <td><strong>គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
+                  <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
+                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
+                </tr>
+                <tr>
+                  <td>09:15 - 10:45</td>
+                  <td><strong>វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង</strong></td>
+                  <td>លោកស្រី ជា រចនា</td>
+                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">អង្គារ</td>
+                  <td>07:30 - 09:00</td>
+                  <td><strong>វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម</strong></td>
+                  <td>លោកគ្រូ យឹម វណ្ណា</td>
+                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
+                </tr>
+                <tr>
+                  <td>09:15 - 10:45</td>
+                  <td><strong>បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)</strong></td>
+                  <td>លោកគ្រូ ស៊ុយ សូលីដា</td>
+                  <td><span class="badge badge-present">បន្ទប់កុំព្យូទ័រ</span></td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">ពុធ</td>
+                  <td>07:30 - 09:00</td>
+                  <td><strong>ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ</strong></td>
+                  <td>លោកស្រី ម៉ៅ សុភា</td>
+                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
+                </tr>
+                <tr>
+                  <td>13:30 - 15:00</td>
+                  <td><strong>ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)</strong></td>
+                  <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
+                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">ព្រហស្បតិ៍</td>
+                  <td>07:30 - 09:00</td>
+                  <td><strong>បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍</strong></td>
+                  <td>លោកគ្រូ ស៊ុយ សូលីដា</td>
+                  <td><span class="badge badge-present">បន្ទប់កុំព្យូទ័រ</span></td>
+                </tr>
+                <tr>
+                  <td>09:15 - 10:45</td>
+                  <td><strong>គរុកោសល្យទូទៅ (អនុវត្តវិធីសាស្ត្របង្រៀន)</strong></td>
+                  <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
+                  <td><span class="badge badge-published">បន្ទប់ ១០១</span></td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">សុក្រ</td>
+                  <td>07:30 - 10:30</td>
+                  <td><strong>ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)</strong></td>
+                  <td>លោកគ្រូ យឹម វណ្ណា</td>
+                  <td><span class="badge badge-late">សាលាបឋមអនុវត្តន៍</span></td>
+                </tr>
+                <tr>
+                  <td>14:00 - 16:30</td>
+                  <td><strong>សិក្ខាសាលាឆ្លុះបញ្ចាំងគរុកោសល្យ និងតាក់តែងកិច្ចតែងការ</strong></td>
+                  <td>ក្រុមគ្រូឧទ្ទេស KTPTTC</td>
+                  <td><span class="badge badge-published">សាលប្រជុំធំ</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+// --------------------------------------------------------------------------
+// 3. HUB MODAL: វីដេអូ & មេរៀន E-LEARNING (PEDAGOGICAL VIDEO HUB)
+// --------------------------------------------------------------------------
+const KTPTTC_VIDEO_LESSONS = [
+  { id: "VID-01", subject: "KHM-104", category: "ភាសាខ្មែរ", title: "បច្ចេកទេសបង្រៀនអំណានដំបូងតាមវិធីសាស្ត្រសូរសំឡេង (Phonics)", trainer: "លោកស្រី ជា រចនា", duration: "៣៥ នាទី", views: 248, desc: "វិធីសាស្ត្របង្រៀនព្យញ្ជនៈ ស្រៈ និងការប្រកបពាក្យតាមសូរសំឡេងសម្រាប់សិស្សថ្នាក់ទី១ និងទី២។" },
+  { id: "VID-02", subject: "MTH-103", category: "គណិតវិទ្យា", title: "ការអនុវត្តកិច្ចតែងការបង្រៀនគណិតវិទ្យាថ្នាក់ទី ១ ដល់ទី ៣", trainer: "លោកគ្រូ យឹម វណ្ណា", duration: "៤២ នាទី", views: 310, desc: "ការប្រើប្រាស់ឧបករណ៍រូបវន្ត (Manipulatives) ដើម្បីពន្យល់ពីគោលគំនិតបូកដក និងប្រមាណវិធីគណិតវិទ្យា។" },
+  { id: "VID-03", subject: "PED-101", category: "គរុកោសល្យ", title: "ការបង្កើត និងប្រើប្រាស់ឧបករណ៍បង្រៀនពីវត្ថុធាតុក្នុងមូលដ្ឋាន", trainer: "សាស្ត្រាចារ្យ ហេង សំណាង", duration: "២៨ នាទី", views: 420, desc: "ការកែច្នៃសម្ភារក្នុងស្រុកសម្រាប់បម្រើឱ្យសកម្មភាពបង្រៀនសកម្មបែបសន្សំសំចៃ និងមានប្រសិទ្ធភាព។" },
+  { id: "VID-04", subject: "ICT-105", category: "ICT", title: "ការប្រើប្រាស់ ICT និងស្លាយបង្រៀនអន្តរកម្មក្នុងថ្នាក់បឋម", trainer: "លោកគ្រូ ស៊ុយ សូលីដា", duration: "៣០ នាទី", views: 195, desc: "ការប្រើប្រាស់ Canva, Google Slides និង PowerPoint ដើម្បីបង្កើតស្លាយបង្រៀនរស់រវើក។" },
+  { id: "VID-05", subject: "PSY-102", category: "ចិត្តវិទ្យា", title: "ចិត្តវិទ្យាគរុកោសល្យ និងការគ្រប់គ្រងថ្នាក់រៀនបែបវិជ្ជមាន", trainer: "លោកស្រី ម៉ៅ សុភា", duration: "៣៨ នាទី", views: 275, desc: "ការដោះស្រាយអាកប្បកិរិយារបស់កុមារ និងការលើកទឹកចិត្តឱ្យសិស្សចូលរួមសកម្មភាពដោយភាពរីករាយ។" },
+  { id: "VID-06", subject: "RES-106", category: "ការស្រាវជ្រាវ", title: "វិធីសាស្ត្រធ្វើការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", trainer: "សាស្ត្រាចារ្យ ហេង សំណាង", duration: "៤៥ នាទី", views: 180, desc: "ជំហានក្នុងការកំណត់បញ្ហា ការប្រមូលទិន្នន័យ និងការកែលម្អការបង្រៀនជាប្រចាំ។" }
+];
+
+function openTraineeLessonsModal(activeCategory = 'all') {
+  const filtered = activeCategory === 'all' 
+    ? KTPTTC_VIDEO_LESSONS 
+    : KTPTTC_VIDEO_LESSONS.filter(v => v.category === activeCategory);
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="traineeLessonsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:760px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #c2410c 0%, #ea580c 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-play-circle"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">វីដេអូ & មេរៀន E-Learning គរុកោសល្យ</h3>
+              <p style="color:#ffedd5; font-size:0.82rem; margin:2px 0 0 0;">កម្រងវីដេអូបង្រៀនគំរូ និងស្លាយបង្រៀនឌីជីថល KTPTTC</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <!-- Category Tabs -->
+          <div class="stms-modal-tabs">
+            <button class="modal-tab-btn ${activeCategory==='all'?'active':''}" onclick="openTraineeLessonsModal('all')">ទាំងអស់</button>
+            <button class="modal-tab-btn ${activeCategory==='គរុកោសល្យ'?'active':''}" onclick="openTraineeLessonsModal('គរុកោសល្យ')">គរុកោសល្យ</button>
+            <button class="modal-tab-btn ${activeCategory==='ភាសាខ្មែរ'?'active':''}" onclick="openTraineeLessonsModal('ភាសាខ្មែរ')">ភាសាខ្មែរ</button>
+            <button class="modal-tab-btn ${activeCategory==='គណិតវិទ្យា'?'active':''}" onclick="openTraineeLessonsModal('គណិតវិទ្យា')">គណិតវិទ្យា</button>
+            <button class="modal-tab-btn ${activeCategory==='ICT'?'active':''}" onclick="openTraineeLessonsModal('ICT')">ICT</button>
+            <button class="modal-tab-btn ${activeCategory==='ការស្រាវជ្រាវ'?'active':''}" onclick="openTraineeLessonsModal('ការស្រាវជ្រាវ')">ការស្រាវជ្រាវ</button>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            ${filtered.map(v => `
+              <div style="display:flex; gap:16px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center; transition:all 0.2s;" onmouseover="this.style.borderColor='#fdba74'" onmouseout="this.style.borderColor='var(--border-color)'">
+                <div style="width:96px; height:68px; border-radius:10px; background:linear-gradient(135deg, #09204a 0%, #1e3a8a 100%); display:flex; align-items:center; justify-content:center; color:#ffffff; flex-shrink:0; position:relative; cursor:pointer;" onclick="playTraineeVideo('${v.id}')">
+                  <i class="fas fa-play" style="font-size:1.4rem; color:#f97316;"></i>
+                  <span style="position:absolute; bottom:4px; right:6px; font-size:0.65rem; background:rgba(0,0,0,0.7); padding:1px 5px; border-radius:4px;">${v.duration}</span>
+                </div>
+                <div style="flex:1;">
+                  <span style="font-size:0.72rem; font-weight:700; color:#ea580c; background:#fff7ed; padding:2px 8px; border-radius:6px;">${v.category}</span>
+                  <h4 style="margin:4px 0 3px 0; font-size:0.92rem; color:#1e293b; line-height:1.4; cursor:pointer;" onclick="playTraineeVideo('${v.id}')">${v.title}</h4>
+                  <p style="margin:0 0 4px 0; font-size:0.78rem; color:#64748b; line-height:1.4;">${v.desc}</p>
+                  <div style="font-size:0.75rem; color:#94a3b8; display:flex; gap:12px;">
+                    <span>👨‍🏫 ${v.trainer}</span>
+                    <span>👁️ ${v.views} នាក់បានទស្សនា</span>
+                  </div>
+                </div>
+                <button class="btn btn-primary" style="height:34px; padding:0 14px; font-size:0.82rem;" onclick="playTraineeVideo('${v.id}')">
+                  <i class="fas fa-play"></i> ទស្សនា
+                </button>
+              </div>
+            `).join('')}
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+function playTraineeVideo(id) {
+  const v = KTPTTC_VIDEO_LESSONS.find(item => item.id === id) || KTPTTC_VIDEO_LESSONS[0];
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="videoPlayerModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:760px;">
+        <div class="stms-modal-header" style="background:#09204a; color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <i class="fas fa-play-circle" style="color:#ea580c; font-size:1.3rem;"></i>
+            <h3 style="color:#ffffff; font-size:1.05rem; margin:0;">${v.title}</h3>
+          </div>
+          <button class="modal-close-icon" onclick="openTraineeLessonsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:20px;">
+          
+          <!-- Mock HTML5 Video Player -->
+          <div class="stms-video-player-wrap">
+            <div class="video-screen-mock">
+              <div class="video-play-big-btn" onclick="showToast('កំពុងចាក់វីដេអូមេរៀន...', 'success')">
+                <i class="fas fa-play"></i>
+              </div>
+              <h4 style="color:#ffffff; margin:0 0 6px 0; font-size:1rem;">${v.title}</h4>
+              <p style="color:#cbd5e1; font-size:0.82rem; margin:0;">គ្រូឧទ្ទេស៖ ${v.trainer} • រយៈពេល ${v.duration}</p>
+            </div>
+            <div class="video-player-bar">
+              <i class="fas fa-play" style="cursor:pointer;" onclick="showToast('ចាក់/ផ្អាកវីដេអូ', 'info')"></i>
+              <div class="video-prog-track" onclick="showToast('បានរំកិលម៉ោងវីដេអូ', 'info')">
+                <div class="video-prog-fill"></div>
+              </div>
+              <span>12:15 / ${v.duration}</span>
+              <i class="fas fa-volume-up" style="cursor:pointer;"></i>
+              <i class="fas fa-expand" style="cursor:pointer;" onclick="showToast('បើកពេញអេក្រង់', 'info')"></i>
+            </div>
+          </div>
+
+          <!-- Video Details & Actions -->
+          <div style="background:#f8fafc; border-radius:10px; padding:16px; border:1px solid var(--border-color); margin-bottom:16px;">
+            <h4 style="font-size:0.92rem; color:#1e3a8a; margin-bottom:8px;"><i class="fas fa-info-circle"></i> ខ្លឹមសារសង្ខេបនៃមេរៀន</h4>
+            <p style="font-size:0.86rem; color:#334155; line-height:1.6; margin:0 0 12px 0;">${v.desc}</p>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-outline" style="font-size:0.8rem;" onclick="showToast('បានទាញយកស្លាយបង្រៀន (PowerPoint) ដោយជោគជ័យ!', 'success')">
+                <i class="fas fa-file-powerpoint" style="color:#ea580c;"></i> ទាញយកស្លាយបង្រៀន (PPTX)
+              </button>
+              <button class="btn btn-outline" style="font-size:0.8rem;" onclick="showToast('បានទាញយកកម្រងលំហាត់ (PDF) ដោយជោគជ័យ!', 'success')">
+                <i class="fas fa-file-pdf" style="color:#e11d48;"></i> ទាញយកឯកសារជំនួយ (PDF)
+              </button>
+            </div>
+          </div>
+
+          <!-- Knowledge Check Quiz -->
+          <div style="border:1px solid #fed7aa; background:#fff7ed; border-radius:10px; padding:14px;">
+            <h5 style="color:#c2410c; margin:0 0 8px 0; font-size:0.88rem;"><i class="fas fa-question-circle"></i> សំណួរស្វ័យវាយតម្លៃបន្ទាប់ពីទស្សនា</h5>
+            <p style="font-size:0.84rem; color:#431407; margin-bottom:10px;">តើជំហានដំបូងនៃវិធីសាស្ត្រសូរសំឡេង គឺត្រូវបង្រៀនអ្វីដល់សិស្ស?</p>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <button class="btn btn-outline" style="background:#ffffff; justify-content:flex-start; font-size:0.82rem; height:auto; padding:8px 12px;" onclick="showToast('សូមព្យាយាមម្តងទៀត!', 'warning')">
+                ក. ការអានអត្ថបទវែងៗភ្លាមៗ
+              </button>
+              <button class="btn btn-outline" style="background:#ffffff; justify-content:flex-start; font-size:0.82rem; height:auto; padding:8px 12px;" onclick="showToast('ចម្លើយត្រឹមត្រូវ! ទទួលពិន្ទុពេញ ១០/១០ 🎉', 'success')">
+                ខ. ការស្គាល់សូរ និងរូបរាងនៃព្យញ្ជនៈ និងស្រៈ (Phonemic Awareness)
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top:18px; display:flex; justify-content:space-between;">
+            <button class="btn btn-outline" onclick="openTraineeLessonsModal()">← ត្រឡប់ទៅបញ្ជីវីដេអូ</button>
+            <button class="btn btn-primary" onclick="closeStmsModal()">រួចរាល់</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+// --------------------------------------------------------------------------
+// 4. HUB MODAL: សៀវភៅ & បណ្ណាល័យឌីជីថល (DIGITAL LIBRARY KTPTTC)
+// --------------------------------------------------------------------------
+const KTPTTC_DIGITAL_BOOKS = [
+  { id: "BK-01", category: "សៀវភៅគរុកោសល្យ", title: "សៀវភៅគរុកោសល្យទូទៅសម្រាប់គរុសិស្សបឋម ១២+២", author: "ក្រសួងអប់រំ យុវជន និងកីឡា (MoEYS)", pages: 240, size: "14.5 MB", previewText: "មាតិកា៖ ជំពូកទី ១ ទ្រឹស្ដីនៃការបង្រៀន និងរៀន, ជំពូកទី ២ ការរៀបចំកិច្ចតែងការបង្រៀន, ជំពូកទី ៣ ការគ្រប់គ្រងថ្នាក់រៀនបែបស្ថាបនានិយម..." },
+  { id: "BK-02", category: "សៀវភៅណែនាំគ្រូ", title: "សៀវភៅណែនាំគ្រូបង្រៀនភាសាខ្មែរ ថ្នាក់ទី ១ ដល់ទី ៦", author: "នាយកដ្ឋានអភិវឌ្ឍកម្មវិធីសិក្សា", pages: 310, size: "18.2 MB", previewText: "គោលបំណង៖ ណែនាំអំពីវិធីសាស្ត្របង្រៀនអំណានដំបូង ការសរសេរតាមអាន និងការយល់ដឹងពីអត្ថបទ..." },
+  { id: "BK-03", category: "សៀវភៅគោល", title: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋមសិក្សា (STEM Edition)", author: "គណៈកម្មការគណិតវិទ្យា KTPTTC", pages: 185, size: "12.0 MB", previewText: "ការបង្រៀនប្រមាណវិធីគណិតវិទ្យា ការដោះស្រាយចំណោទ និងការប្រើប្រាស់ឧបករណ៍បង្រៀនអន្តរកម្ម..." },
+  { id: "BK-04", category: "សៀវភៅគរុកោសល្យ", title: "ចិត្តវិទ្យាគរុកោសល្យ និងការគ្រប់គ្រងថ្នាក់រៀនបែបវិជ្ជមាន", author: "វិទ្យាស្ថានជាតិអប់រំ (NIE)", pages: 215, size: "16.1 MB", previewText: "ទ្រឹស្ដីនៃការលូតលាស់របស់កុមារ ការលើកទឹកចិត្ត និងដំណោះស្រាយចំពោះវិបត្តិអាកប្បកិរិយាក្នុងថ្នាក់..." },
+  { id: "BK-05", category: "ICT & បច្ចេកវិទ្យា", title: "សៀវភៅណែនាំការប្រើប្រាស់ ICT ក្នុងការបង្រៀនបឋមសិក្សា", author: "នាយកដ្ឋានបច្ចេកវិទ្យាព័ត៌មាន MoEYS", pages: 160, size: "11.8 MB", previewText: "ការទាញយកប្រយោជន៍ពីឧបករណ៍បច្ចេកវិទ្យា កម្មវិធីបង្រៀនអន្តរកម្ម និងការបង្កើតមេរៀនពហុព័ត៌មាន..." },
+  { id: "BK-06", category: "ការស្រាវជ្រាវ", title: "កម្រងប្រធានបទស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research Toolkit)", author: "ការិយាល័យស្រាវជ្រាវ KTPTTC", pages: 140, size: "9.5 MB", previewText: "គំរូនៃរបាយការណ៍ស្រាវជ្រាវសកម្មភាព ឧបករណ៍វាស់វែង និងករណីសិក្សានៅសាលាបឋមអនុវត្តន៍..." }
+];
+
+function openTraineeLibraryModal() {
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="traineeLibraryModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:780px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-book-open"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">បណ្ណាល័យឌីជីថលគរុកោសល្យ (Digital Library KTPTTC)</h3>
+              <p style="color:#bbf7d0; font-size:0.82rem; margin:2px 0 0 0;">កម្រងសៀវភៅគរុកោសល្យ សៀវភៅសិក្សាគោល និងឯកសារស្រាវជ្រាវ MoEYS</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <div style="margin-bottom:16px;">
+            <input type="text" class="form-input" placeholder="🔍 ស្វែងរកចំណងជើងសៀវភៅ អ្នកនិពន្ធ ឬមុខវិជ្ជា..." oninput="filterDigitalBooks(this.value)">
+          </div>
+
+          <div id="digitalBookList" style="display:flex; flex-direction:column; gap:12px;">
+            ${KTPTTC_DIGITAL_BOOKS.map(b => `
+              <div class="book-card-item" style="display:flex; gap:16px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+                <div style="width:58px; height:74px; border-radius:8px; background:linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); display:flex; align-items:center; justify-content:center; color:#15803d; font-size:1.8rem; flex-shrink:0; border:1px solid #86efac;">
+                  <i class="fas fa-book"></i>
+                </div>
+                <div style="flex:1;">
+                  <span style="font-size:0.72rem; font-weight:700; color:#16a34a; background:#f0fdf4; padding:2px 8px; border-radius:6px;">${b.category}</span>
+                  <h4 style="margin:4px 0 3px 0; font-size:0.92rem; color:#1e293b; line-height:1.4;">${b.title}</h4>
+                  <p style="margin:0 0 4px 0; font-size:0.78rem; color:#64748b;">${b.author} • ${b.pages} ទំព័រ • ទំហំ ${b.size}</p>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <button class="btn btn-outline" style="height:32px; padding:0 12px; font-size:0.78rem;" onclick="readTraineeBook('${b.id}')">
+                    <i class="fas fa-eye"></i> អានអនឡាញ
+                  </button>
+                  <button class="btn btn-primary" style="height:32px; padding:0 12px; font-size:0.78rem;" onclick="showToast('បានទាញយកសៀវភៅ «${b.title}» ជា PDF ដោយជោគជ័យ!', 'success')">
+                    <i class="fas fa-file-pdf"></i> ទាញយក
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+function filterDigitalBooks(q) {
+  const query = (q || '').toLowerCase().trim();
+  document.querySelectorAll('#digitalBookList .book-card-item').forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(query) ? 'flex' : 'none';
+  });
+}
+
+function readTraineeBook(id) {
+  const b = KTPTTC_DIGITAL_BOOKS.find(item => item.id === id) || KTPTTC_DIGITAL_BOOKS[0];
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="bookReaderModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:780px;">
+        <div class="stms-modal-header" style="background:#166534; color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <i class="fas fa-book-open" style="font-size:1.3rem;"></i>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.05rem; margin:0;">${b.title}</h3>
+              <p style="color:#bbf7d0; font-size:0.78rem; margin:2px 0 0 0;">${b.author} • ${b.pages} ទំព័រ</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="openTraineeLibraryModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:20px;">
+          
+          <div class="book-reader-toolbar">
+            <span><i class="fas fa-file-alt"></i> ទំព័រទី ១ នៃ ${b.pages}</span>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.75rem;" onclick="showToast('ទំព័រមុន', 'info')">← មុន</button>
+              <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.75rem;" onclick="showToast('ទំព័របន្ទាប់', 'info')">បន្ទាប់ →</button>
+            </div>
+            <button class="btn btn-primary" style="height:26px; padding:0 8px; font-size:0.75rem;" onclick="showToast('បានទាញយកសៀវភៅ PDF ពេញលេញ!', 'success')">
+              <i class="fas fa-download"></i> ទាញយក PDF
+            </button>
+          </div>
+
+          <div class="stms-book-reader">
+            <h3 style="text-align:center; color:#1e3a8a; font-family:var(--font-moul); margin-bottom:14px;">${b.title}</h3>
+            <p style="text-align:center; font-size:0.85rem; color:#64748b; margin-bottom:20px;">បោះពុម្ព និងផ្សព្វផ្សាយជាផ្លូវការដោយ៖ ${b.author}</p>
+            <hr style="border:none; border-top:1px dashed #d4d4d8; margin:16px 0;">
+            <h4 style="color:#15803d; font-size:0.95rem; margin-bottom:10px;">អារម្ភកថា</h4>
+            <p>
+              សៀវភៅនេះត្រូវបានរៀបចំឡើងជាពិសេសសម្រាប់បម្រើឱ្យការបណ្ដុះបណ្ដាលគរុសិស្ស-គរុនិស្សិតនៅសាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)។ ខ្លឹមសារត្រូវបានរៀបចំឡើងយ៉ាងក្បោះក្បាយ ស្របតាមក្របខ័ណ្ឌកម្មវិធីសិក្សាស្តង់ដារជាតិរបស់ក្រសួងអប់រំ យុវជន និងកីឡា ដោយផ្តោតសំខាន់លើវិធីសាស្ត្របង្រៀនសកម្មបែបស្ថាបនានិយម (Constructivism) ការគ្រប់គ្រងថ្នាក់រៀន ការប្រើប្រាស់សម្ភារឧបទេស និងការវាស់វែងវាយតម្លៃលទ្ធផលសិក្សារបស់សិស្សបឋមសិក្សា។
+            </p>
+            <h4 style="color:#15803d; font-size:0.95rem; margin-top:18px; margin-bottom:10px;">មាតិកាសំខាន់ៗនៃជំពូកទី ១</h4>
+            <p>
+              ${b.previewText}
+            </p>
+          </div>
+
+          <div style="margin-top:18px; display:flex; justify-content:space-between;">
+            <button class="btn btn-outline" onclick="openTraineeLibraryModal()">← ត្រឡប់ទៅបណ្ណាល័យ</button>
+            <button class="btn btn-primary" onclick="closeStmsModal()">រួចរាល់</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+// --------------------------------------------------------------------------
+// 5. HUB MODAL: វេទិកា & សំណើ (DISCUSSION FORUM & REQUESTS)
+// --------------------------------------------------------------------------
+let KTPTTC_FORUM_POSTS = [
+  {
+    id: "POST-01",
+    author: "យូសុះ ស៊ីលាល",
+    role: "គរុសិស្ស",
+    avatar: "👨‍🎓",
+    time: "២ ម៉ោងមុន",
+    category: "វិធីសាស្ត្របង្រៀន",
+    title: "តើវិធីសាស្ត្របង្រៀនតាមបែប 5E អនុវត្តយ៉ាងដូចម្តេចក្នុងមុខវិជ្ជាវិទ្យាសាស្ត្របឋម?",
+    content: "ខ្ញុំបាទកំពុងរៀបចំកិច្ចតែងការបង្រៀនស្តីពីប្រធានបទ 'វដ្តនៃទឹក'។ តើលោកគ្រូអ្នកគ្រូអាចផ្តល់យោបល់បន្ថែមពីដំណាក់កាល Engage និង Explore បានទេ?",
+    replies: [
+      { author: "សាស្ត្រាចារ្យ ហេង សំណាង", role: "គ្រូឧទ្ទេស", text: "សម្រាប់ដំណាក់កាល Engage គ្រូអាចចាក់វីដេអូខ្លីពីភ្លៀង ឬយកកែវទឹកកកមកបង្ហាញសិស្ស ដើម្បីឱ្យកុមារសង្កេតឃើញតំណក់ទឹកនៅជញ្ជាំងកែវ!", time: "១ ម៉ោងមុន" }
+    ]
+  },
+  {
+    id: "POST-02",
+    author: "កែវ សុជាតា",
+    role: "គរុសិស្ស",
+    avatar: "👩‍🎓",
+    time: "១ ថ្ងៃមុន",
+    category: "ភាសាខ្មែរ",
+    title: "ការរៀបចំកិច្ចតែងការបង្រៀនអំណានដំបូង សម្រាប់សិស្សរៀនយឺត",
+    content: "តើមានបច្ចេកទេសអ្វីខ្លះដើម្បីជួយសិស្សដែលពិបាកក្នុងការផ្សំសូរ និងប្រកបពាក្យព្យញ្ជនៈពួក អ និង អ៊?",
+    replies: [
+      { author: "លោកស្រី ជា រចនា", role: "គ្រូឧទ្ទេស", text: "ត្រូវប្រើកាតអក្សរចល័ត (Letter Cards) និងអនុវត្តការអានជាគូ (Peer Reading) ជារៀងរាល់ព្រឹក។", time: "៥ ម៉ោងមុន" }
+    ]
+  }
+];
+
+function openTraineeForumModal(activeTab = 'forum') {
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="traineeForumModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:780px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #b45309 0%, #d97706 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-comment-dots"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">វេទិកាពិភាក្សា & លិខិតស្នើសុំផ្លូវការ</h3>
+              <p style="color:#fef3c7; font-size:0.82rem; margin:2px 0 0 0;">ប្រព័ន្ធពិភាក្សាគរុកោសល្យ និងទំនាក់ទំនងរដ្ឋបាល KTPTTC</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <!-- Forum Tabs -->
+          <div class="stms-modal-tabs">
+            <button class="modal-tab-btn ${activeTab==='forum'?'active':''}" onclick="openTraineeForumModal('forum')">
+              <i class="fas fa-comments"></i> វេទិកាពិភាក្សាគរុកោសល្យ
+            </button>
+            <button class="modal-tab-btn ${activeTab==='requests'?'active':''}" onclick="openTraineeForumModal('requests')">
+              <i class="fas fa-paper-plane"></i> លិខិតស្នើសុំរដ្ឋបាល
+            </button>
+          </div>
+
+          ${activeTab === 'forum' ? `
+            <!-- Forum Tab -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <span style="font-size:0.86rem; color:#64748b; font-weight:600;">ប្រធានបទពិភាក្សាថ្មីៗ៖</span>
+              <button class="btn btn-primary" onclick="showNewPostForm()">
+                <i class="fas fa-plus"></i> បង្កើតប្រធានបទថ្មី
+              </button>
+            </div>
+
+            <!-- New Post Box (Hidden by default) -->
+            <div id="newPostBox" style="display:none; background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:16px; margin-bottom:16px;">
+              <h5 style="margin:0 0 10px 0; color:#1e3a8a;">បង្កើតសំណួរ ឬប្រធានបទពិភាក្សា</h5>
+              <div style="margin-bottom:10px;">
+                <input type="text" id="forumPostTitle" class="form-input" placeholder="ចំណងជើងសំណួរ ឬប្រធានបទ..." required>
+              </div>
+              <div style="margin-bottom:10px;">
+                <textarea id="forumPostContent" class="form-input" style="height:70px;" placeholder="សរសេរខ្លឹមសារលម្អិតនៅទីនេះ..." required></textarea>
+              </div>
+              <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button class="btn btn-outline" onclick="document.getElementById('newPostBox').style.display='none'">បោះបង់</button>
+                <button class="btn btn-primary" onclick="submitForumPost()">ចុះផ្សាយ</button>
+              </div>
+            </div>
+
+            <!-- Posts Stream -->
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${KTPTTC_FORUM_POSTS.map(p => `
+                <div class="forum-thread-item">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div style="width:36px; height:36px; border-radius:50%; background:#eff6ff; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">${p.avatar}</div>
+                      <div>
+                        <div style="font-size:0.86rem; font-weight:700; color:#1e293b;">${p.author} <span style="font-size:0.75rem; color:#64748b; font-weight:normal;">(${p.role})</span></div>
+                        <div style="font-size:0.72rem; color:#94a3b8;">${p.time}</div>
+                      </div>
+                    </div>
+                    <span style="font-size:0.72rem; font-weight:700; color:#d97706; background:#fffbeb; padding:2px 8px; border-radius:6px;">${p.category}</span>
+                  </div>
+                  <h4 style="margin:0 0 6px 0; font-size:0.92rem; color:#1e3a8a;">${p.title}</h4>
+                  <p style="margin:0 0 10px 0; font-size:0.84rem; color:#334155; line-height:1.5;">${p.content}</p>
+                  
+                  <!-- Replies -->
+                  ${p.replies && p.replies.length > 0 ? p.replies.map(r => `
+                    <div class="forum-reply-box">
+                      <div style="font-weight:700; color:#1d4ed8; font-size:0.8rem; margin-bottom:2px;">👨‍🏫 ${r.author} (${r.role}) • <span style="font-size:0.72rem; color:#94a3b8; font-weight:normal;">${r.time}</span></div>
+                      <div>${r.text}</div>
+                    </div>
+                  `).join('') : ''}
+
+                  <!-- Reply Box Form -->
+                  <div style="display:flex; gap:8px; margin-top:12px;">
+                    <input type="text" id="replyInput_${p.id}" class="form-input" style="height:32px; font-size:0.8rem;" placeholder="សរសេរការឆ្លើយតបរបស់អ្នក...">
+                    <button class="btn btn-outline" style="height:32px; padding:0 12px; font-size:0.78rem;" onclick="addForumReply('${p.id}')">ឆ្លើយតប</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <!-- Requests Tab -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+              
+              <!-- Submit Form -->
+              <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:18px;">
+                <h4 style="margin:0 0 14px 0; color:#1e3a8a; font-size:0.95rem;"><i class="fas fa-edit"></i> ដាក់ពាក្យស្នើសុំថ្មី</h4>
+                <form onsubmit="event.preventDefault(); submitAdministrativeRequest();">
+                  <div style="margin-bottom:12px;">
+                    <label class="form-label">ប្រភេទនៃសំណើ</label>
+                    <select id="admReqType" class="form-input">
+                      <option value="លិខិតសុំច្បាប់ឈប់សម្រាក">លិខិតសុំច្បាប់ឈប់សម្រាក (Leave Request)</option>
+                      <option value="លិខិតបញ្ជាក់ការសិក្សា">លិខិតបញ្ជាក់ការសិក្សា (Enrollment Certificate)</option>
+                      <option value="ស្នើសុំកែប្រែព័ត៌មានផ្ទាល់ខ្លួន">ស្នើសុំកែប្រែព័ត៌មានផ្ទាល់ខ្លួន (Profile Edit)</option>
+                      <option value="ស្នើសុំពិនិត្យពិន្ទុឡើងវិញ">ស្នើសុំពិនិត្យពិន្ទុឡើងវិញ (Grade Appeal)</option>
+                    </select>
+                  </div>
+                  <div style="margin-bottom:12px;">
+                    <label class="form-label">ខ្លឹមសារ ឬព័ត៌មានស្នើសុំ</label>
+                    <input type="text" id="admReqDetails" class="form-input" placeholder="បញ្ជាក់ព័ត៌មានលម្អិត..." required>
+                  </div>
+                  <div style="margin-bottom:14px;">
+                    <label class="form-label">មូលហេតុច្បាស់លាស់</label>
+                    <textarea id="admReqReason" class="form-input" style="height:70px;" placeholder="បញ្ជាក់មូលហេតុ..." required></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+                    <i class="fas fa-paper-plane"></i> ផ្ញើសំណើទៅកាន់ការិយាល័យរដ្ឋបាល
+                  </button>
+                </form>
+              </div>
+
+              <!-- My Past Requests -->
+              <div>
+                <h4 style="margin:0 0 14px 0; color:#1e3a8a; font-size:0.95rem;"><i class="fas fa-history"></i> ប្រវត្តិសំណើរបស់អ្នក</h4>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  ${(stmsData.profileRequests && stmsData.profileRequests.length > 0) ? stmsData.profileRequests.map(r => `
+                    <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; padding:12px;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <strong style="font-size:0.85rem; color:#1e293b;">${r.field || 'សំណើសុំច្បាប់'}</strong>
+                        <span class="badge ${r.status==='approved'?'badge-present':'badge-permission'}">${r.status==='approved'?'បានអនុម័ត':'កំពុងរង់ចាំ'}</span>
+                      </div>
+                      <div style="font-size:0.8rem; color:#475569;">${r.newValue || r.reason || 'រដ្ឋបាល KTPTTC កំពុងត្រួតពិនិត្យ'}</div>
+                    </div>
+                  `).join('') : `
+                    <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; padding:12px;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <strong style="font-size:0.85rem; color:#1e293b;">លិខិតបញ្ជាក់ការសិក្សា (ឆមាសទី ១)</strong>
+                        <span class="badge badge-present">បានអនុម័ត</span>
+                      </div>
+                      <div style="font-size:0.78rem; color:#64748b;">បានចេញលិខិតបញ្ជាក់ដោយជោគជ័យ កាលពីថ្ងៃទី 10/11/2026</div>
+                    </div>
+                  `}
+                </div>
+              </div>
+
+            </div>
+          `}
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+function showNewPostForm() {
+  const box = document.getElementById('newPostBox');
+  if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitForumPost() {
+  const t = getActiveTraineeProfile();
+  const title = document.getElementById('forumPostTitle').value.trim();
+  const content = document.getElementById('forumPostContent').value.trim();
+
+  if (!title || !content) {
+    showToast('សូមបំពេញចំណងជើង និងខ្លឹមសារប្រធានបទ!', 'warning');
+    return;
+  }
+
+  KTPTTC_FORUM_POSTS.unshift({
+    id: `POST-${Date.now()}`,
+    author: t.nameKh,
+    role: "គរុសិស្ស",
+    avatar: "👨‍🎓",
+    time: "ទើបតែផ្សាយ",
+    category: "វិធីសាស្ត្របង្រៀន",
+    title,
+    content,
+    replies: []
+  });
+
+  showToast('បានចុះផ្សាយប្រធានបទពិភាក្សាដោយជោគជ័យ!', 'success');
+  openTraineeForumModal('forum');
+}
+
+function addForumReply(postId) {
+  const t = getActiveTraineeProfile();
+  const input = document.getElementById(`replyInput_${postId}`);
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) {
+    showToast('សូមវាយបញ្ចូលការឆ្លើយតប!', 'warning');
+    return;
+  }
+
+  const p = KTPTTC_FORUM_POSTS.find(item => item.id === postId);
+  if (p) {
+    if (!p.replies) p.replies = [];
+    p.replies.push({
+      author: t.nameKh,
+      role: "គរុសិស្ស",
+      text: val,
+      time: "ទើបតែឆ្លើយ"
+    });
+    showToast('បានបន្ថែមការឆ្លើយតប!', 'success');
+    openTraineeForumModal('forum');
+  }
+}
+
+function submitAdministrativeRequest() {
+  const t = getActiveTraineeProfile();
+  const type = document.getElementById('admReqType').value;
+  const details = document.getElementById('admReqDetails').value.trim();
+  const reason = document.getElementById('admReqReason').value.trim();
+
+  if (!stmsData.profileRequests) stmsData.profileRequests = [];
+
+  stmsData.profileRequests.unshift({
+    id: `REQ-${Date.now()}`,
+    studentId: t.id,
+    studentName: t.nameKh,
+    field: type,
+    oldValue: "ស្នើសុំថ្មី",
+    newValue: details,
+    reason,
+    status: "pending",
+    requestedAt: new Date().toISOString()
+  });
+
+  saveData();
+  showToast('បានផ្ញើសំណើផ្លូវការទៅកាន់ការិយាល័យរដ្ឋបាល KTPTTC រួចរាល់!', 'success');
+  openTraineeForumModal('requests');
+}
+
+// --------------------------------------------------------------------------
+// 6. HUB MODAL: របាយការណ៍ & លទ្ធផលពិន្ទុ (SCORE REPORTS & TRANSCRIPT)
+// --------------------------------------------------------------------------
+function openTraineeReportsModal() {
+  const t = getActiveTraineeProfile();
+  const activeStream = TRAINEE_STREAMS[currentStreamIndex];
+  const subjects = KTPTTC_ALL_SUBJECTS;
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="traineeReportsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:840px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">របាយការណ៍លទ្ធផលពិន្ទុ & ព្រឹត្តិបត្រផ្លូវការ</h3>
+              <p style="color:#ede9fe; font-size:0.82rem; margin:2px 0 0 0;">${t.nameKh} (${t.id}) • ${activeStream.label}</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <!-- GPA & Performance Highlights -->
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:18px;">
+            <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:14px; text-align:center;">
+              <div style="font-size:0.75rem; color:#7c3aed; font-weight:700;">មធ្យមភាគសរុប (Average)</div>
+              <div style="font-size:1.8rem; font-weight:800; color:#5b21b6; margin:4px 0;">91.4 <span style="font-size:0.9rem;">/ 100</span></div>
+              <span class="badge badge-present">និទ្ទេស A (ល្អប្រសើរ)</span>
+            </div>
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px; text-align:center;">
+              <div style="font-size:0.75rem; color:#2563eb; font-weight:700;">ពិន្ទុរួម GPA (Max 4.00)</div>
+              <div style="font-size:1.8rem; font-weight:800; color:#1d4ed8; margin:4px 0;">3.75 <span style="font-size:0.9rem;">/ 4.00</span></div>
+              <span class="badge badge-published">២១ ក្រេឌីតជាប់ពេញលេញ</span>
+            </div>
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; text-align:center;">
+              <div style="font-size:0.75rem; color:#16a34a; font-weight:700;">ចំណាត់ថ្នាក់ក្នុងថ្នាក់ (Rank)</div>
+              <div style="font-size:1.8rem; font-weight:800; color:#15803d; margin:4px 0;">លេខ ២ <span style="font-size:0.9rem;">/ ៣២ នាក់</span></div>
+              <span class="badge badge-present">សិស្សពូកែគរុកោសល្យ</span>
+            </div>
+          </div>
+
+          <!-- Official Table -->
+          <div class="data-table-responsive" style="border:1px solid var(--border-color); border-radius:10px; overflow:hidden; margin-bottom:18px;">
+            <table class="stms-table" style="font-size:0.84rem;">
+              <thead style="background:#f1f5f9;">
+                <tr>
+                  <th>កូដ</th>
+                  <th>មុខវិជ្ជាគរុកោសល្យ</th>
+                  <th>ក្រេឌីត</th>
+                  <th>កិច្ចការ (10%)</th>
+                  <th>វត្តមាន (10%)</th>
+                  <th>ប្រចាំខែ (30%)</th>
+                  <th>ប្រឡងឆមាស (50%)</th>
+                  <th>សរុប (100)</th>
+                  <th>និទ្ទេស</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${subjects.map(s => {
+                  const sc = (t.scores && t.scores[s.code]) || { homework: 9, attendance: 10, monthly: 27, semester: 44, total: 90, grade: 'A' };
+                  return `
+                    <tr>
+                      <td><code>${s.code}</code></td>
+                      <td><strong>${s.nameKh}</strong></td>
+                      <td>${s.credits}</td>
+                      <td>${sc.homework || 10}</td>
+                      <td>${sc.attendance || 10}</td>
+                      <td>${sc.monthly || 28}</td>
+                      <td>${sc.semester || sc.final || 44}</td>
+                      <td><strong style="color:#2563eb; font-size:0.95rem;">${sc.total || 90}</strong></td>
+                      <td><span class="badge ${sc.grade==='A'?'badge-present':'badge-published'}">${sc.grade || 'A'}</span></td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="font-size:0.8rem; color:#64748b;">
+              * និទ្ទេស A: 85-100 • B+: 80-84 • B: 70-79 • C+: 65-69 • C: 50-64 • F: &lt;50
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-primary" onclick="showToast('កំពុងបើកទម្រង់បោះពុម្ពព្រឹត្តិបត្រពិន្ទុផ្លូវការ...', 'info'); setTimeout(()=>window.print(), 300);">
+                <i class="fas fa-print"></i> បោះពុម្ពព្រឹត្តិបត្រពិន្ទុផ្លូវការ
+              </button>
+              <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+// --------------------------------------------------------------------------
+// 7. HUB MODAL: កិច្ចព្រមព្រៀង & កម្មសិក្សា (PRACTICUM & CODE OF CONDUCT)
+// --------------------------------------------------------------------------
+function openTraineeGuidelinesModal(activeSection = 'rules') {
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="traineeGuidelinesModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:760px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">កិច្ចព្រមព្រៀង & បទបញ្ជាផ្ទៃក្នុងគរុសនិស្សិត</h3>
+              <p style="color:#ccfbf1; font-size:0.82rem; margin:2px 0 0 0;">ក្រមសីលធម៌វិជ្ជាជីវៈគ្រូបង្រៀន និងសៀវភៅណែនាំកម្មសិក្សាគរុកោសល្យ KTPTTC</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto; font-size:0.88rem; line-height:1.7; color:#334155;">
+          
+          <!-- Guideline Tabs -->
+          <div class="stms-modal-tabs">
+            <button class="modal-tab-btn ${activeSection==='rules'?'active':''}" onclick="openTraineeGuidelinesModal('rules')">បទបញ្ជាផ្ទៃក្នុង</button>
+            <button class="modal-tab-btn ${activeSection==='practicum'?'active':''}" onclick="openTraineeGuidelinesModal('practicum')">កម្មសិក្សាគរុកោសល្យ</button>
+            <button class="modal-tab-btn ${activeSection==='lessonplan'?'active':''}" onclick="openTraineeGuidelinesModal('lessonplan')">ទម្រង់កិច្ចតែងការ (MoEYS)</button>
+            <button class="modal-tab-btn ${activeSection==='pledge'?'active':''}" onclick="openTraineeGuidelinesModal('pledge')">កិច្ចសន្យាគរុសិស្ស</button>
+          </div>
+
+          ${activeSection === 'rules' ? `
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+                <h4 style="color:#0f766e; font-size:0.95rem; margin:0 0 6px 0;"><i class="fas fa-user-check"></i> ១. វិន័យ និងវត្តមានសិក្សា</h4>
+                <p style="margin:0;">គរុសនិស្សិតត្រូវមានវត្តមានយ៉ាងតិច <strong>៨០%</strong> នៃម៉ោងសិក្សាសរុបនៃមុខវិជ្ជានីមួយៗ។ ករណីអវត្តមានលើសពី <strong>២០%</strong> នឹងពុំត្រូវបានអនុញ្ញាតឱ្យចូលរួមការប្រឡងបញ្ចប់ឆមាសឡើយ។</p>
+              </div>
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+                <h4 style="color:#0f766e; font-size:0.95rem; margin:0 0 6px 0;"><i class="fas fa-user-tie"></i> ២. ឯកសណ្ឋាន និងសេចក្តីថ្លៃថ្នូរ</h4>
+                <p style="margin:0;">ត្រូវស្លៀកពាក់ឯកសណ្ឋានគរុសិស្ស (អាវស ខោ/សំពត់ខៀវចាស់) ឱ្យបានត្រឹមត្រូវ និងពាក់កាតសម្គាល់ខ្លួនជានិច្ចពេលនៅក្នុងបរិវេណសាលាគរុកោសល្យ។</p>
+              </div>
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+                <h4 style="color:#0f766e; font-size:0.95rem; margin:0 0 6px 0;"><i class="fas fa-heart"></i> ៣. ក្រមសីលធម៌វិជ្ជាជីវៈគ្រូបង្រៀន</h4>
+                <p style="margin:0;">គោរពគរុគ្រូឧទ្ទេស សហការល្អជាមួយមិត្តរួមថ្នាក់ និងមានអាកប្បកិរិយាសក្តិសមជាអ្នកអប់រំគំរូទាំងក្នុង និងក្រៅសាលារៀន។</p>
+              </div>
+            </div>
+          ` : activeSection === 'practicum' ? `
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px;">
+                <h4 style="color:#15803d; font-size:0.95rem; margin:0 0 6px 0;"><i class="fas fa-school"></i> ដំណាក់កាលទាំង ៣ នៃកម្មសិក្សាគរុកោសល្យ (Practicum)</h4>
+                <p style="margin:0 0 8px 0;">• <strong>ដំណាក់កាលទី ១ (សប្តាហ៍ទី ១-២)៖</strong> សង្កេតការបង្រៀនរបស់គ្រូមគ្គុទ្ទេសក៍នៅសាលាបឋមសិក្សាអនុវត្តន៍</p>
+                <p style="margin:0 0 8px 0;">• <strong>ដំណាក់កាលទី ២ (សប្តាហ៍ទី ៣-៥)៖</strong> ជួយបង្រៀន និងរៀបចំសម្ភារឧបទេសរួមគ្នាជាមួយគ្រូមគ្គុទ្ទេសក៍</p>
+                <p style="margin:0;">• <strong>ដំណាក់កាលទី ៣ (សប្តាហ៍ទី ៦-១០)៖</strong> បង្រៀនផ្ទាល់ក្នុងថ្នាក់ពេញម៉ោង និងទទួលការវាយតម្លៃពីគណៈកម្មការ</p>
+              </div>
+              <button class="btn btn-primary" onclick="showToast('បានទាញយកសៀវភៅណែនាំកម្មសិក្សា (Practicum Guidebook PDF)!', 'success')">
+                <i class="fas fa-download"></i> ទាញយកសៀវភៅណែនាំកម្មសិក្សាពេញលេញ (PDF)
+              </button>
+            </div>
+          ` : activeSection === 'lessonplan' ? `
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:16px;">
+              <h4 style="color:#1d4ed8; font-size:0.95rem; margin:0 0 10px 0;"><i class="fas fa-list-ol"></i> រចនាសម្ព័ន្ធកិច្ចតែងការបង្រៀនស្តង់ដារ ៥ ជំហាន (MoEYS)</h4>
+              <div style="line-height:1.8;">
+                <div><strong>• ជំហានទី ១ (រដ្ឋបាលថ្នាក់)៖</strong> ពិនិត្យអនាម័យ សណ្តាប់ធ្នាប់ វត្តមាន និងវិន័យ (៣ នាទី)</div>
+                <div><strong>• ជំហានទី ២ (រំលឹកមេរៀនចាស់)៖</strong> សួរសំណួរ ឬលំហាត់សង្ខេបមេរៀនកន្លងមក (៥ នាទី)</div>
+                <div><strong>• ជំហានទី ៣ (មេរៀនថ្មី)៖</strong> បង្ហាញវត្ថុបំណង ដឹកនាំសកម្មភាពរៀន និងពន្យល់ខ្លឹមសារ (២៥ នាទី)</div>
+                <div><strong>• ជំហានទី ៤ (ពង្រឹងចំណេះដឹង)៖</strong> ឱ្យសិស្សធ្វើលំហាត់ជាក់ស្តែង ឬឆ្លើយសំណួរគន្លឹះ (១០ នាទី)</div>
+                <div><strong>• ជំហានទី ៥ (បណ្តាំផ្ញើ)៖</strong> ដាក់កិច្ចការផ្ទះ និងណែនាំការថែរក្សាសៀវភៅ (២ នាទី)</div>
+              </div>
+              <div style="margin-top:14px;">
+                <button class="btn btn-primary" onclick="showToast('បានទាញយកទម្រង់កិច្ចតែងការ (Word/PDF)!', 'success')">
+                  <i class="fas fa-file-word"></i> ទាញយកទម្រង់កិច្ចតែងការគំរូ (Word)
+                </button>
+              </div>
+            </div>
+          ` : `
+            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:16px; text-align:center;">
+              <i class="fas fa-hand-holding-heart fa-2x" style="color:#dc2626; margin-bottom:8px;"></i>
+              <h4 style="color:#991b1b; font-size:1rem; margin-bottom:8px;">លិខិតសន្យាគរុសនិស្សិត KTPTTC</h4>
+              <p style="font-size:0.86rem; color:#7f1d1d; max-width:550px; margin:0 auto 16px auto; line-height:1.6;">
+                "ខ្ញុំបាទ/នាងខ្ញុំ សូមសន្យាថានឹងខិតខំរៀនសូត្រ ប្រកាន់ខ្ជាប់នូវបទបញ្ជាផ្ទៃក្នុង គោរពពេលវេលា មិនអវត្តមានដោយគ្មានច្បាប់ និងលះបង់កម្លាំងកាយចិត្តដើម្បីក្លាយជាគ្រូបង្រៀនគំរូរបស់ជាតិ។"
+              </p>
+              <button class="btn btn-success" onclick="showToast('លោកអ្នកបានបញ្ជាក់ការយល់ព្រមកិច្ចសន្យាគរុសិស្សរួចរាល់!', 'success'); closeStmsModal();">
+                <i class="fas fa-check-circle"></i> ខ្ញុំយល់ព្រម និងប្តេជ្ញាចិត្តគោរពតាម
+              </button>
+            </div>
+          `}
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+// --------------------------------------------------------------------------
+// 8. HUB MODAL: ផែនការ & វត្តមានផ្ទាល់ខ្លួន (PERSONAL ATTENDANCE DASHBOARD)
+// --------------------------------------------------------------------------
+function openTraineeAttendanceModal() {
+  const t = getActiveTraineeProfile();
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="traineeAttendanceModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:800px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-calendar-check"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">កំណត់ត្រាវត្តមានផ្ទាល់ខ្លួន & ផែនការ</h3>
+              <p style="color:#dbeafe; font-size:0.82rem; margin:2px 0 0 0;">${t.nameKh} (${t.id}) • គោលដៅវត្តមានសរុប ≥ ៨០%</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <!-- Attendance Progress Meter -->
+          <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:18px; margin-bottom:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:0.9rem; font-weight:700; color:#1e293b;">អត្រាវត្តមានសរុបបច្ចុប្បន្ន</span>
+              <strong style="font-size:1.4rem; color:#10b981;">${t.attendanceSummary?.rate || 98}%</strong>
+            </div>
+            <div style="width:100%; height:12px; background:#e2e8f0; border-radius:6px; overflow:hidden; margin-bottom:14px;">
+              <div style="height:100%; width:${t.attendanceSummary?.rate || 98}%; background:linear-gradient(90deg, #10b981, #059669); border-radius:6px;"></div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center;">
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px;">
+                <div style="font-weight:800; color:#15803d; font-size:1.2rem;">${t.attendanceSummary?.present || 46}</div>
+                <div style="color:#166534; font-size:0.75rem;">វត្តមាន</div>
+              </div>
+              <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px;">
+                <div style="font-weight:800; color:#b45309; font-size:1.2rem;">${t.attendanceSummary?.permission || 2}</div>
+                <div style="color:#92400e; font-size:0.75rem;">មានច្បាប់</div>
+              </div>
+              <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:8px;">
+                <div style="font-weight:800; color:#c2410c; font-size:1.2rem;">${t.attendanceSummary?.late || 1}</div>
+                <div style="color:#9a3412; font-size:0.75rem;">មកយឺត</div>
+              </div>
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:8px;">
+                <div style="font-weight:800; color:#b91c1c; font-size:1.2rem;">${t.attendanceSummary?.absent || 0}</div>
+                <div style="color:#991b1b; font-size:0.75rem;">ឥតច្បាប់</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <strong style="color:#1e3a8a; font-size:0.9rem;"><i class="fas fa-history"></i> កំណត់ត្រាវត្តមានតាមកាលបរិច្ឆេទ</strong>
+            <button class="btn btn-outline" style="font-size:0.78rem;" onclick="closeStmsModal(); openTraineeForumModal('requests');">
+              <i class="fas fa-file-signature"></i> ដាក់ពាក្យសុំច្បាប់ឈប់សម្រាក
+            </button>
+          </div>
+
+          <!-- Attendance Logs Table -->
+          <div class="data-table-responsive" style="border:1px solid var(--border-color); border-radius:10px; overflow:hidden;">
+            <table class="stms-table" style="font-size:0.84rem;">
+              <thead style="background:#f1f5f9;">
+                <tr>
+                  <th>កាលបរិច្ឆេទ</th>
+                  <th>មុខវិជ្ជាគរុកោសល្យ</th>
+                  <th>គ្រូឧទ្ទេស</th>
+                  <th>ស្ថានភាពវត្តមាន</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>17/11/2026</td>
+                  <td><strong>គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</strong></td>
+                  <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
+                  <td><span class="badge badge-present">វត្តមាន</span></td>
+                </tr>
+                <tr>
+                  <td>16/11/2026</td>
+                  <td><strong>វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង</strong></td>
+                  <td>លោកស្រី ជា រចនា</td>
+                  <td><span class="badge badge-present">វត្តមាន</span></td>
+                </tr>
+                <tr>
+                  <td>14/11/2026</td>
+                  <td><strong>វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម</strong></td>
+                  <td>លោកគ្រូ យឹម វណ្ណា</td>
+                  <td><span class="badge badge-present">វត្តមាន</span></td>
+                </tr>
+                <tr>
+                  <td>12/11/2026</td>
+                  <td><strong>បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)</strong></td>
+                  <td>លោកគ្រូ ស៊ុយ សូលីដា</td>
+                  <td><span class="badge badge-present">វត្តមាន</span></td>
+                </tr>
+                <tr>
+                  <td>09/11/2026</td>
+                  <td><strong>ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ</strong></td>
+                  <td>លោកស្រី ម៉ៅ សុភា</td>
+                  <td><span class="badge badge-permission">មានច្បាប់</span></td>
+                </tr>
+                <tr>
+                  <td>06/11/2026</td>
+                  <td><strong>ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន</strong></td>
+                  <td>សាស្ត្រាចារ្យ ហេង សំណាង</td>
+                  <td><span class="badge badge-present">វត្តមាន</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').innerHTML = modalHtml;
+}
+
+// --------------------------------------------------------------------------
+// 9. SUBJECT DETAILS MODAL (LEARNING CENTER FOR EACH OF THE 8 SUBJECTS)
+// --------------------------------------------------------------------------
 function openSubjectDetailModal(code) {
   const t = getActiveTraineeProfile();
-  const subj = (stmsData.subjects || []).find(s => s.code === code) || {
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === code) || (stmsData.subjects || []).find(s => s.code === code) || {
     code: code,
     nameKh: 'មុខវិជ្ជាគរុកោសល្យ',
     credits: 3,
@@ -2279,27 +3354,27 @@ function openSubjectDetailModal(code) {
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="subjectDetailModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:620px;">
-        <div class="stms-modal-header" style="background:linear-gradient(135deg, #09204a 0%, #1e4a9e 100%); color:#ffffff;">
+      <div class="stms-modal-dialog" style="max-width:680px;">
+        <div class="stms-modal-header" style="background:${theme.bg}; border-bottom:1px solid ${theme.border}; color:#1e293b;">
           <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+            <div style="width:44px; height:44px; border-radius:12px; background:#ffffff; color:${theme.color}; display:flex; align-items:center; justify-content:center; font-size:1.4rem; box-shadow:0 2px 6px rgba(0,0,0,0.06); border:1px solid ${theme.border};">
               <i class="${theme.icon}"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.1rem; margin:0;">${subj.nameKh}</h3>
-              <p style="color:#bfdbfe; font-size:0.8rem; margin:2px 0 0 0;">កូដ៖ ${subj.code} • ${subj.credits} ក្រេឌីត • គ្រូឧទ្ទេស៖ ${subj.trainer || 'KTPTTC'}</p>
+              <h3 style="color:#1e293b; font-size:1.12rem; margin:0; line-height:1.4;">${subj.nameKh}</h3>
+              <p style="color:#64748b; font-size:0.8rem; margin:2px 0 0 0;">កូដ៖ <strong>${subj.code}</strong> • <strong>${subj.credits} ក្រេឌីត</strong> • គ្រូឧទ្ទេស៖ <strong>${subj.trainer}</strong></p>
             </div>
           </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#1e293b;">&times;</button>
         </div>
-        <div class="stms-modal-body" style="padding:22px; max-height:70vh; overflow-y:auto;">
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
           <!-- Syllabus Outline -->
-          <div style="margin-bottom:20px;">
+          <div style="margin-bottom:18px;">
             <h4 style="font-size:0.92rem; color:#1e3a8a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-              <i class="fas fa-list-ol"></i> មាតិកាសង្ខេបនៃមុខវិជ្ជា (Course Syllabus)
+              <i class="fas fa-list-ol" style="color:${theme.color};"></i> មាតិកាសង្ខេបនៃមុខវិជ្ជា (Course Syllabus)
             </h4>
-            <div style="background:#f8fafc; border-radius:10px; padding:14px; border:1px solid var(--border-color); font-size:0.86rem; line-height:1.7; color:#334155;">
+            <div style="background:#f8fafc; border-radius:10px; padding:14px; border:1px solid var(--border-color); font-size:0.86rem; line-height:1.8; color:#334155;">
               <div>• <strong>ជំពូកទី ១៖</strong> ទ្រឹស្ដីនៃការបង្រៀន និងរៀនតាមបែបស្ថាបនានិយម (Constructivism)</div>
               <div>• <strong>ជំពូកទី ២៖</strong> ការរៀបចំកិច្ចតែងការបង្រៀន (Lesson Plan) តាមស្តង់ដារក្រសួងអប់រំ</div>
               <div>• <strong>ជំពូកទី ៣៖</strong> វិធីសាស្ត្របង្រៀនសកម្ម និងការគ្រប់គ្រងថ្នាក់រៀនបែបវិជ្ជមាន</div>
@@ -2307,10 +3382,10 @@ function openSubjectDetailModal(code) {
             </div>
           </div>
 
-          <!-- Evaluation Formula -->
-          <div style="margin-bottom:20px;">
+          <!-- Evaluation Breakdown -->
+          <div style="margin-bottom:18px;">
             <h4 style="font-size:0.92rem; color:#1e3a8a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-              <i class="fas fa-calculator"></i> ការបែងចែកភាគរយពិន្ទុ (MoEYS Standard)
+              <i class="fas fa-calculator" style="color:${theme.color};"></i> ការបែងចែកភាគរយពិន្ទុ (MoEYS Standard)
             </h4>
             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; text-align:center; font-size:0.8rem;">
               <div style="background:#eff6ff; padding:8px 4px; border-radius:6px; border:1px solid #bfdbfe;">
@@ -2332,12 +3407,12 @@ function openSubjectDetailModal(code) {
             </div>
           </div>
 
-          <!-- Student's published grade if any -->
-          ${sc && sc.status === 'published' ? `
+          <!-- Current Student Score for this subject -->
+          ${sc ? `
             <div style="background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border:1px solid #86efac; border-radius:10px; padding:14px; margin-bottom:16px;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                  <div style="font-weight:700; color:#166534; font-size:0.95rem;">លទ្ធផលប្រឡងរបស់អ្នក៖ ${sc.total} / 100</div>
+                  <div style="font-weight:700; color:#166534; font-size:0.95rem;">លទ្ធផលសិក្សារបស់អ្នក៖ ${sc.total} / 100</div>
                   <div style="font-size:0.78rem; color:#15803d; margin-top:3px;">
                     កិច្ចការ៖ ${sc.homework || 10} • វត្តមាន៖ ${sc.attendance || 10} • ប្រចាំខែ៖ ${sc.monthly || 28} • ឆមាស៖ ${sc.semester || sc.final || 44}
                   </div>
@@ -2351,8 +3426,12 @@ function openSubjectDetailModal(code) {
             </div>
           `}
 
-          <div style="display:flex; gap:10px; justify-content:flex-end;">
-            <button class="btn btn-primary" onclick="showToast('បានទាញយកកម្រងមេរៀន (Syllabus PDF) ដោយជោគជ័យ!', 'success')">
+          <!-- Quick Actions: Syllabus & Video Lessons -->
+          <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeStmsModal(); openTraineeLessonsModal();">
+              <i class="fas fa-play-circle" style="color:#ea580c;"></i> មើលវីដេអូបង្រៀន
+            </button>
+            <button class="btn btn-primary" onclick="showToast('បានទាញយកកម្រងមេរៀន (Syllabus PDF) នៃមុខវិជ្ជា ${subj.nameKh} ដោយជោគជ័យ!', 'success')">
               <i class="fas fa-download"></i> ទាញយក Syllabus (PDF)
             </button>
             <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>

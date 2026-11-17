@@ -62,7 +62,8 @@ const KTPTTC_INITIAL_DATA = {
     { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", credits: 3, trainer: "លោកស្រី ជា រចនា" },
     { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: "លោកគ្រូ ស៊ុយ សូលីដា" },
     { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", credits: 2, trainer: "សាស្ត្រាចារ្យ ហេង សំណាង" },
-    { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "លោកគ្រូ យឹម វណ្ណា" }
+    { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "លោកគ្រូ យឹម វណ្ណា" },
+    { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, trainer: "លោកគ្រូ ស៊ុយ សូលីដា" }
   ],
 
   users: [

@@ -2299,13 +2299,14 @@ body.role-admin #navCenterRole {
   pointer-events: none;
 }
 
+.ribbon-nav-btn,
 .ribbon-arrow-btn {
   width: 32px;
   height: 32px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2315,9 +2316,10 @@ body.role-admin #navCenterRole {
   z-index: 1;
 }
 
+.ribbon-nav-btn:hover,
 .ribbon-arrow-btn:hover {
-  background: rgba(255, 255, 255, 0.32);
-  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(1.08);
 }
 
 .ribbon-title {
@@ -2444,4 +2446,167 @@ body.role-admin #navCenterRole {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* Modal Tabs */
+.stms-modal-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.modal-tab-btn {
+  padding: 8px 16px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -4px;
+  white-space: nowrap;
+}
+
+.modal-tab-btn:hover {
+  color: #1e3a8a;
+  background: #f1f5f9;
+}
+
+.modal-tab-btn.active {
+  color: #1e3a8a;
+  border-bottom-color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+/* Video Player Simulation */
+.stms-video-player-wrap {
+  width: 100%;
+  background: #000000;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  margin-bottom: 16px;
+}
+
+.video-screen-mock {
+  width: 100%;
+  height: 270px;
+  background: linear-gradient(135deg, #09204a 0%, #1e1b4b 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  position: relative;
+  text-align: center;
+  padding: 20px;
+}
+
+.video-play-big-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(234, 88, 12, 0.9);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(234, 88, 12, 0.5);
+  margin-bottom: 12px;
+}
+
+.video-play-big-btn:hover {
+  transform: scale(1.1);
+  background: #ea580c;
+}
+
+.video-player-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  padding: 8px 16px;
+  color: #ffffff;
+  font-size: 0.8rem;
+}
+
+.video-prog-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.video-prog-fill {
+  height: 100%;
+  background: #ea580c;
+  width: 35%;
+  border-radius: 3px;
+}
+
+/* Book Reader Simulation */
+.stms-book-reader {
+  background: #fdfbf7;
+  border: 1px solid #e7e0d3;
+  border-radius: 12px;
+  padding: 22px;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: #27272a;
+  max-height: 380px;
+  overflow-y: auto;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.book-reader-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f4efe6;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 0.82rem;
+  color: #52525b;
+}
+
+/* Discussion Forum */
+.forum-thread-item {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.forum-thread-item:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.forum-reply-box {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  border-left: 3px solid #3b82f6;
+  font-size: 0.84rem;
 }
