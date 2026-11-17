@@ -9,6 +9,8 @@ let currentPhotoData = '';
 
 document.addEventListener('DOMContentLoaded', () => {
   initCambodiaGeo();
+  populateDynamicClasses();
+  populateDynamicSubjects();
   setupClassSelector();
 
   // Check URL query parameters for role & edit ID
@@ -356,27 +358,365 @@ function initTeacherIdSuggestion() {
   }
 }
 
-// Setup Class Selector dropdown (2-way sync with regClass & regGroup)
-function setupClassSelector() {
+// --------------------------------------------------------------------------
+// DYNAMIC CLASS & SUBJECT LOADERS WITH QUICK CREATION MODALS
+// --------------------------------------------------------------------------
+
+// Populate Dynamic Classes from Storage
+function populateDynamicClasses(selectedClass = null) {
   const sel = document.getElementById('classSelector');
   const classInput = document.getElementById('regClass');
   const groupInput = document.getElementById('regGroup');
+
+  let classList = [];
+  try {
+    const raw = localStorage.getItem('ktpttc_stms_data_v2');
+    if (raw) {
+      const data = JSON.parse(raw);
+      const set = new Set();
+      (data.cohorts || []).forEach(c => {
+        (c.classes || []).forEach(cls => { if (cls) set.add(cls.trim()); });
+      });
+      (data.customClasses || []).forEach(c => {
+        const name = typeof c === 'string' ? c : c?.name;
+        if (name) set.add(name.trim());
+      });
+      (data.trainees || []).forEach(t => {
+        if (t.className) set.add(t.className.trim());
+      });
+      classList = Array.from(set);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (classList.length === 0) {
+    classList = ['១២+២ ក្រុម ក', '១២+២ ក្រុម ខ', '១២+៤ ក្រុម ក', '១២+៤ ក្រុម ខ', 'បរិញ្ញាបត្រ+១ ក្រុម ក', 'បរិញ្ញាបត្រ+១ ក្រុម ខ'];
+  }
+
+  if (sel) {
+    const currentVal = selectedClass || sel.value || classList[0];
+    sel.innerHTML = classList.map(cls => `<option value="${cls}" ${cls === currentVal ? 'selected' : ''}>ថ្នាក់ដើម: ${cls}</option>`).join('');
+  }
+
+  // Also ensure regClass has matching options
+  if (classInput) {
+    const gradeLevels = ['១២+២', '១២+៤', 'បរិញ្ញាបត្រ+១', '១២+២ (មត្តេយ្យ)', 'វិក្រឹតការ'];
+    const currentGVal = classInput.value;
+    classInput.innerHTML = gradeLevels.map(gl => `<option value="${gl}" ${gl === currentGVal ? 'selected' : ''}>${gl}</option>`).join('');
+  }
+
+  // Also ensure regGroup has standard groups
+  if (groupInput) {
+    const groups = ['ក្រុម ក', 'ក្រុម ខ', 'ក្រុម គ', 'ក្រុម ឃ', 'ក្រុម ង', 'ក្រុម ១', 'ក្រុម ២', 'ក្រុម ៣'];
+    const currentGrVal = groupInput.value;
+    groupInput.innerHTML = groups.map(gr => `<option value="${gr}" ${gr === currentGrVal ? 'selected' : ''}>${gr}</option>`).join('');
+  }
+
+  if (selectedClass) {
+    syncClassInputFromSelected(selectedClass);
+  }
+}
+window.populateDynamicClasses = populateDynamicClasses;
+
+function syncClassInputFromSelected(val) {
+  const classInput = document.getElementById('regClass');
+  const groupInput = document.getElementById('regGroup');
+  if (classInput) {
+    if (val.includes('១២+៤')) classInput.value = '១២+៤';
+    else if (val.includes('បរិញ្ញា')) classInput.value = 'បរិញ្ញាបត្រ+១';
+    else if (val.includes('មត្តេយ្យ')) classInput.value = '១២+២ (មត្តេយ្យ)';
+    else if (val.includes('វិក្រឹត')) classInput.value = 'វិក្រឹតការ';
+    else classInput.value = '១២+២';
+  }
+  if (groupInput) {
+    if (val.includes('ក្រុម ខ')) groupInput.value = 'ក្រុម ខ';
+    else if (val.includes('ក្រុម គ')) groupInput.value = 'ក្រុម គ';
+    else if (val.includes('ក្រុម ឃ')) groupInput.value = 'ក្រុម ឃ';
+    else if (val.includes('ក្រុម ង')) groupInput.value = 'ក្រុម ង';
+    else if (val.includes('ក្រុម ១')) groupInput.value = 'ក្រុម ១';
+    else if (val.includes('ក្រុម ២')) groupInput.value = 'ក្រុម ២';
+    else if (val.includes('ក្រុម ៣')) groupInput.value = 'ក្រុម ៣';
+    else groupInput.value = 'ក្រុម ក';
+  }
+}
+
+// Populate Dynamic Subjects from Storage
+function populateDynamicSubjects(selectedCode = null) {
+  const trnSubjSel = document.getElementById('teacherSubjectSelector');
+  const regSubjSel = document.getElementById('regTeacherSubject');
+
+  let subjects = [];
+  try {
+    const raw = localStorage.getItem('ktpttc_stms_data_v2');
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.subjects) && data.subjects.length > 0) {
+        subjects = data.subjects;
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (subjects.length === 0 && window.KTPTTC_INITIAL_DATA && Array.isArray(window.KTPTTC_INITIAL_DATA.subjects)) {
+    subjects = window.KTPTTC_INITIAL_DATA.subjects;
+  }
+
+  if (subjects.length === 0) {
+    subjects = [
+      { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន" },
+      { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ" },
+      { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម" },
+      { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង" },
+      { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)" },
+      { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)" },
+      { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)" },
+      { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍" }
+    ];
+  }
+
+  if (trnSubjSel) {
+    const currentVal = trnSubjSel.value || 'all';
+    trnSubjSel.innerHTML = `
+      <option value="all">មុខវិជ្ជាទាំងអស់</option>
+      ${subjects.map(s => `<option value="${s.code}" ${s.code === currentVal ? 'selected' : ''}>${s.code} • ${s.nameKh}</option>`).join('')}
+    `;
+  }
+
+  if (regSubjSel) {
+    const currentRegVal = selectedCode || regSubjSel.value || subjects[0]?.code;
+    regSubjSel.innerHTML = subjects.map(s => `<option value="${s.code}" ${s.code === currentRegVal ? 'selected' : ''}>${s.code} • ${s.nameKh}</option>`).join('');
+  }
+}
+window.populateDynamicSubjects = populateDynamicSubjects;
+
+// Setup Class Selector dropdown (2-way sync with regClass & regGroup)
+function setupClassSelector() {
+  const sel = document.getElementById('classSelector');
   if (sel) {
     sel.addEventListener('change', (e) => {
-      const val = e.target.value;
-      if (classInput) {
-        if (val.includes('១២+៤')) classInput.value = '១២+៤';
-        else if (val.includes('បរិញ្ញា')) classInput.value = 'បរិញ្ញាបត្រ+១';
-        else classInput.value = '១២+២';
-      }
-      if (groupInput) {
-        if (val.includes('ក្រុម ខ')) groupInput.value = 'ក្រុម ខ';
-        else if (val.includes('ក្រុម គ')) groupInput.value = 'ក្រុម គ';
-        else groupInput.value = 'ក្រុម ក';
-      }
+      syncClassInputFromSelected(e.target.value);
     });
   }
 }
+
+// Close Quick Modal
+function closeQuickModal() {
+  const container = document.getElementById('quickModalContainer');
+  if (container) container.innerHTML = '';
+}
+window.closeQuickModal = closeQuickModal;
+
+// Quick Add Class Modal
+function openQuickAddClassModal() {
+  const container = document.getElementById('quickModalContainer');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(3px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px;" onclick="if(event.target===this) closeQuickModal()">
+      <div style="background:#fff; border-radius:12px; width:100%; max-width:480px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); overflow:hidden;">
+        <div style="background:#1e3a8a; color:#fff; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;">
+          <strong style="font-size:1rem; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-chalkboard"></i> បន្ថែមថ្នាក់រៀនថ្មី (Add Class)
+          </strong>
+          <button type="button" onclick="closeQuickModal()" style="background:none; border:none; color:#fff; font-size:1.4rem; cursor:pointer; line-height:1;">&times;</button>
+        </div>
+        <form onsubmit="saveQuickClass(event)" style="padding:18px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                ឈ្មោះថ្នាក់ពេញ (Full Class Name) <span style="color:#ef4444;">*</span>
+              </label>
+              <input type="text" id="quickClassName" class="form-control" placeholder="ឧ. ១២+២ ក្រុម គ" required>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">កម្រិតសិក្សា</label>
+                <select id="quickClassGrade" class="form-control">
+                  <option value="១២+២">១២+២ (បឋម)</option>
+                  <option value="១២+៤">១២+៤ (បឋម)</option>
+                  <option value="បរិញ្ញាបត្រ+១">បរិញ្ញាបត្រ+១</option>
+                  <option value="១២+២ (មត្តេយ្យ)">១២+២ (មត្តេយ្យ)</option>
+                  <option value="វិក្រឹតការ">វិក្រឹតការ</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">ក្រុម</label>
+                <select id="quickClassGroup" class="form-control">
+                  <option value="ក្រុម ក">ក្រុម ក</option>
+                  <option value="ក្រុម ខ">ក្រុម ខ</option>
+                  <option value="ក្រុម គ">ក្រុម គ</option>
+                  <option value="ក្រុម ឃ">ក្រុម ឃ</option>
+                  <option value="ក្រុម ង">ក្រុម ង</option>
+                  <option value="ក្រុម ១">ក្រុម ១</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">បន្ទប់រៀន</label>
+              <input type="text" id="quickClassRoom" class="form-control" value="បន្ទប់ ១០១" placeholder="បន្ទប់រៀន">
+            </div>
+          </div>
+          <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid #e2e8f0; padding-top:12px;">
+            <button type="button" class="btn-cancel" onclick="closeQuickModal()" style="height:34px; padding:0 12px; font-size:0.82rem; border-radius:6px; background:#f1f5f9; border:1px solid #cbd5e1; cursor:pointer;">បោះបង់</button>
+            <button type="submit" class="btn-action btn-submit" style="height:34px; padding:0 14px; font-size:0.82rem; border-radius:6px; background:#2563eb; color:#fff; border:none; cursor:pointer;">
+              <i class="fas fa-save"></i> រក្សាទុកថ្នាក់
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+window.openQuickAddClassModal = openQuickAddClassModal;
+
+function saveQuickClass(event) {
+  event.preventDefault();
+  const name = document.getElementById('quickClassName').value.trim();
+  const gradeLevel = document.getElementById('quickClassGrade').value;
+  const group = document.getElementById('quickClassGroup').value;
+  const room = document.getElementById('quickClassRoom').value.trim() || 'បន្ទប់ ១០១';
+
+  if (!name) {
+    showToast('សូមបញ្ចូលឈ្មោះថ្នាក់!', 'error');
+    return;
+  }
+
+  try {
+    let stmsObj = null;
+    const rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+    if (rawStms) stmsObj = JSON.parse(rawStms);
+    else stmsObj = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
+
+    if (!Array.isArray(stmsObj.customClasses)) stmsObj.customClasses = [];
+    if (!Array.isArray(stmsObj.cohorts)) stmsObj.cohorts = [];
+
+    // Push class
+    stmsObj.customClasses.push({ name, gradeLevel, group, room, capacity: 35 });
+
+    // Link to first matching cohort or first cohort
+    if (stmsObj.cohorts.length > 0) {
+      const matchCohort = stmsObj.cohorts.find(c => c.nameKh && c.nameKh.includes(gradeLevel.replace(/\(.*\)/, '').trim())) || stmsObj.cohorts[0];
+      if (matchCohort) {
+        if (!Array.isArray(matchCohort.classes)) matchCohort.classes = [];
+        if (!matchCohort.classes.includes(name)) matchCohort.classes.push(name);
+      }
+    }
+
+    localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+    populateDynamicClasses(name);
+    closeQuickModal();
+    showToast(`✅ បានបន្ថែមថ្នាក់ «${name}» ដោយជោគជ័យ!`, 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('បរាជ័យក្នុងការរក្សាទុកថ្នាក់!', 'error');
+  }
+}
+window.saveQuickClass = saveQuickClass;
+
+// Quick Add Subject Modal
+function openQuickAddSubjectModal() {
+  const container = document.getElementById('quickModalContainer');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(3px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px;" onclick="if(event.target===this) closeQuickModal()">
+      <div style="background:#fff; border-radius:12px; width:100%; max-width:500px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); overflow:hidden;">
+        <div style="background:#7c3aed; color:#fff; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;">
+          <strong style="font-size:1rem; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-book"></i> បន្ថែមមុខវិជ្ជាថ្មី (Add Subject)
+          </strong>
+          <button type="button" onclick="closeQuickModal()" style="background:none; border:none; color:#fff; font-size:1.4rem; cursor:pointer; line-height:1;">&times;</button>
+        </div>
+        <form onsubmit="saveQuickSubject(event)" style="padding:18px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  កូដមុខវិជ្ជា <span style="color:#ef4444;">*</span>
+                </label>
+                <input type="text" id="quickSubjCode" class="form-control" placeholder="ឧ. MTH-104" style="text-transform:uppercase; font-weight:700;" required>
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  ឈ្មោះជាខ្មែរ <span style="color:#ef4444;">*</span>
+                </label>
+                <input type="text" id="quickSubjNameKh" class="form-control" placeholder="ឧ. វិធីសាស្ត្របង្រៀនគណិតវិទ្យា" required>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">ឈ្មោះជាឡាតាំង (English Name)</label>
+              <input type="text" id="quickSubjNameEn" class="form-control" placeholder="ឧ. Mathematics Methodology">
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">ក្រេឌីត</label>
+                <input type="number" id="quickSubjCredits" class="form-control" value="3" min="1" max="10">
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">ឆមាស</label>
+                <select id="quickSubjSemester" class="form-control">
+                  <option value="ឆមាសទី ១">ឆមាសទី ១</option>
+                  <option value="ឆមាសទី ២">ឆមាសទី ២</option>
+                  <option value="ទាំងពីរឆមាស">ទាំងពីរឆមាស</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid #e2e8f0; padding-top:12px;">
+            <button type="button" class="btn-cancel" onclick="closeQuickModal()" style="height:34px; padding:0 12px; font-size:0.82rem; border-radius:6px; background:#f1f5f9; border:1px solid #cbd5e1; cursor:pointer;">បោះបង់</button>
+            <button type="submit" class="btn-action btn-submit" style="height:34px; padding:0 14px; font-size:0.82rem; border-radius:6px; background:#7c3aed; color:#fff; border:none; cursor:pointer;">
+              <i class="fas fa-save"></i> រក្សាទុកមុខវិជ្ជា
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+window.openQuickAddSubjectModal = openQuickAddSubjectModal;
+
+function saveQuickSubject(event) {
+  event.preventDefault();
+  const code = document.getElementById('quickSubjCode').value.trim().toUpperCase();
+  const nameKh = document.getElementById('quickSubjNameKh').value.trim();
+  const nameEn = document.getElementById('quickSubjNameEn').value.trim();
+  const credits = parseInt(document.getElementById('quickSubjCredits').value, 10) || 3;
+  const semester = document.getElementById('quickSubjSemester').value;
+
+  if (!code || !nameKh) {
+    showToast('សូមបញ្ចូលកូដ និងឈ្មោះមុខវិជ្ជា!', 'error');
+    return;
+  }
+
+  try {
+    let stmsObj = null;
+    const rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+    if (rawStms) stmsObj = JSON.parse(rawStms);
+    else stmsObj = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
+
+    if (!Array.isArray(stmsObj.subjects)) stmsObj.subjects = [];
+
+    const existingIdx = stmsObj.subjects.findIndex(s => s.code === code);
+    const subjObj = { code, nameKh, nameEn, credits, semester, category: 'គរុកោសល្យ' };
+
+    if (existingIdx !== -1) {
+      stmsObj.subjects[existingIdx] = subjObj;
+    } else {
+      stmsObj.subjects.push(subjObj);
+    }
+
+    localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+    populateDynamicSubjects(code);
+    closeQuickModal();
+    showToast(`✅ បានបន្ថែមមុខវិជ្ជា «${nameKh} (${code})» ដោយជោគជ័យ!`, 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('បរាជ័យក្នុងការរក្សាទុកមុខវិជ្ជា!', 'error');
+  }
+}
+window.saveQuickSubject = saveQuickSubject;
 
 // --------------------------------------------------------------------------
 // EDIT MODE HANDLER

@@ -623,8 +623,13 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regClass">ថ្នាក់ទី<span class="required">*</span></label>
-                  <select id="regClass" class="form-control">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label class="form-label" for="regClass" style="margin-bottom:0;">ថ្នាក់ទី<span class="required">*</span></label>
+                    <button type="button" onclick="openQuickAddClassModal()" style="background:none; border:none; color:#2563eb; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:4px;">
+                      <i class="fas fa-plus-circle"></i> + បន្ថែមថ្នាក់ថ្មី
+                    </button>
+                  </div>
+                  <select id="regClass" class="form-control" style="margin-top:4px;">
                     <option value="១២+២" selected>១២+២</option>
                     <option value="១២+៤">១២+៤</option>
                     <option value="បរិញ្ញាបត្រ+១">បរិញ្ញាបត្រ+១</option>
@@ -711,8 +716,13 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regTeacherSubject">មុខវិជ្ជាទទួលបន្ទុក<span class="required">*</span></label>
-                  <select id="regTeacherSubject" class="form-control">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label class="form-label" for="regTeacherSubject" style="margin-bottom:0;">មុខវិជ្ជាទទួលបន្ទុក<span class="required">*</span></label>
+                    <button type="button" onclick="openQuickAddSubjectModal()" style="background:none; border:none; color:#2563eb; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:4px;">
+                      <i class="fas fa-plus-circle"></i> + បន្ថែមមុខវិជ្ជាថ្មី
+                    </button>
+                  </div>
+                  <select id="regTeacherSubject" class="form-control" style="margin-top:4px;">
                     <option value="PED-101" selected>PED-101 • គរុកោសល្យទូទៅ</option>
                     <option value="PSY-102">PSY-102 • ចិត្តវិទ្យា</option>
                     <option value="MTH-103">MTH-103 • វិធីសាស្ត្រគណិតវិទ្យា</option>
@@ -1092,8 +1102,9 @@
     </div>
   </main>
 
-  <!-- Toast Notification Container -->
+  <!-- Toast & Modal Containers -->
   <div id="toast-container"></div>
+  <div id="quickModalContainer"></div>
 
   <!-- Scripts -->
   <script src="xlsx.full.min.js"></script>

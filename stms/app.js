@@ -66,9 +66,23 @@ function loadData() {
       if (!stmsData.syllabi || typeof stmsData.syllabi !== 'object') {
         stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
       }
+
+      // Ensure subjects, cohorts, and customClasses exist in storage
+      if (!Array.isArray(stmsData.subjects) || stmsData.subjects.length === 0) {
+        stmsData.subjects = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA?.subjects || []));
+      }
+      if (!Array.isArray(stmsData.cohorts) || stmsData.cohorts.length === 0) {
+        stmsData.cohorts = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA?.cohorts || []));
+      }
+      if (!Array.isArray(stmsData.customClasses)) {
+        stmsData.customClasses = [];
+      }
     } else {
       stmsData = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
       if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+      if (!Array.isArray(stmsData.subjects)) stmsData.subjects = [];
+      if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
+      if (!Array.isArray(stmsData.customClasses)) stmsData.customClasses = [];
       if (!stmsData.syllabi) stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
       saveData();
     }
@@ -76,11 +90,15 @@ function loadData() {
     console.error('Failed to load storage, using seed data:', e);
     stmsData = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
     if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+    if (!Array.isArray(stmsData.subjects)) stmsData.subjects = [];
+    if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
+    if (!Array.isArray(stmsData.customClasses)) stmsData.customClasses = [];
     if (!stmsData.syllabi) stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
   }
 
   // Ensure default teacher & student synced collections exist
   ensureSyncedCollections();
+  syncAllSubjects();
 }
 
 // Persist to LocalStorage
@@ -1038,10 +1056,8 @@ function exportOrPrintRoster() {
 function renderTraineesView(container) {
   const allTrainees = Array.isArray(stmsData.trainees) ? stmsData.trainees : [];
   
-  // Extract distinct classes for dropdown
-  const distinctClasses = Array.from(new Set([
-    ...allTrainees.map(t => t.className).filter(Boolean)
-  ]));
+  // Extract all system classes (cohorts, custom classes, trainees)
+  const distinctClasses = getAllSystemClasses();
 
   // Filter by Class
   let filtered = allTrainees;
@@ -1096,6 +1112,9 @@ function renderTraineesView(container) {
         <div class="roster-header-right">
           <button class="roster-btn-print" onclick="exportOrPrintRoster()">
             <i class="fas fa-print"></i> ទម្រង់បោះពុម្ព និង ទាញយក
+          </button>
+          <button class="btn btn-outline" onclick="openAdminCohortModal()" style="font-size:0.85rem; height:36px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; border-color:#3b82f6; color:#1d4ed8; font-weight:700;">
+            <i class="fas fa-school"></i> គ្រប់គ្រងថ្នាក់ / បន្ថែមថ្នាក់
           </button>
           <button class="btn btn-outline" onclick="openBulkImportModal('student')" style="font-size:0.85rem; height:36px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; border-color:#10b981; color:#059669; font-weight:700;">
             <i class="fas fa-file-excel"></i> នាំចូល Excel / CSV
@@ -1347,6 +1366,9 @@ function renderTrainersView(container) {
         <div class="roster-header-right">
           <button class="roster-btn-print" onclick="exportOrPrintTrainerRoster()">
             <i class="fas fa-print"></i> ទម្រង់បោះពុម្ព និង ទាញយក
+          </button>
+          <button class="btn btn-outline" onclick="openAdminSubjectsCatalogModal()" style="font-size:0.85rem; height:36px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; border-color:#8b5cf6; color:#7c3aed; font-weight:700;">
+            <i class="fas fa-book"></i> គ្រប់គ្រងមុខវិជ្ជា
           </button>
           <button class="btn btn-outline" onclick="openBulkImportModal('teacher')" style="font-size:0.85rem; height:36px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; border-color:#10b981; color:#059669; font-weight:700;">
             <i class="fas fa-file-excel"></i> នាំចូល Excel / CSV
@@ -2374,7 +2396,7 @@ const TRAINEE_STREAMS = [
 ];
 let currentStreamIndex = 0;
 
-const KTPTTC_ALL_SUBJECTS = [
+let KTPTTC_ALL_SUBJECTS = [
   { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", credits: 3, trainer: "សាស្ត្រាចារ្យ ហេង សំណាង" },
   { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", credits: 2, trainer: "លោកស្រី ម៉ៅ សុភា" },
   { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", credits: 3, trainer: "លោកគ្រូ យឹម វណ្ណា" },
@@ -2384,6 +2406,45 @@ const KTPTTC_ALL_SUBJECTS = [
   { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "លោកគ្រូ យឹម វណ្ណា" },
   { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, trainer: "លោកគ្រូ ស៊ុយ សូលីដា" }
 ];
+
+function syncAllSubjects() {
+  if (Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0) {
+    KTPTTC_ALL_SUBJECTS = stmsData.subjects;
+  } else if (stmsData) {
+    stmsData.subjects = [...KTPTTC_ALL_SUBJECTS];
+  }
+}
+window.syncAllSubjects = syncAllSubjects;
+
+function getAllSystemClasses() {
+  const classSet = new Set();
+  
+  // 1. From Cohorts
+  (stmsData.cohorts || []).forEach(c => {
+    (c.classes || []).forEach(cls => {
+      if (cls && typeof cls === 'string' && cls.trim()) classSet.add(cls.trim());
+    });
+  });
+
+  // 2. From Custom Classes
+  (stmsData.customClasses || []).forEach(c => {
+    if (typeof c === 'string' && c.trim()) classSet.add(c.trim());
+    else if (c && c.name && typeof c.name === 'string' && c.name.trim()) classSet.add(c.name.trim());
+  });
+
+  // 3. From Trainees
+  (stmsData.trainees || []).forEach(t => {
+    if (t.className && typeof t.className === 'string' && t.className.trim()) classSet.add(t.className.trim());
+  });
+
+  // Default standard classes if empty
+  if (classSet.size === 0) {
+    ['ថ្នាក់បឋម ១២+២ ក្រុម ក', 'ថ្នាក់បឋម ១២+២ ក្រុម ខ', 'ថ្នាក់បឋម ១២+៤ ក្រុម ក', 'ថ្នាក់បឋម ១២+៤ ក្រុម ខ', 'បរិញ្ញាបត្រ+១ ក្រុម ក', 'បរិញ្ញាបត្រ+១ ក្រុម ខ'].forEach(c => classSet.add(c));
+  }
+
+  return Array.from(classSet);
+}
+window.getAllSystemClasses = getAllSystemClasses;
 
 function toKhmerNum(num) {
   const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
@@ -2425,7 +2486,23 @@ function getSubjectTheme(code) {
     'PRAC-107': { bg: '#f0fdf4', border: '#bbf7d0', color: '#16a34a', icon: 'fas fa-school', label: 'កម្មសិក្សា' },
     'COM-108': { bg: '#f0f9ff', border: '#bae6fd', color: '#0284c7', icon: 'fas fa-book-bookmark', label: 'សារគមនាគមន៍' }
   };
-  return themes[code] || { bg: '#f8fafc', border: '#e2e8f0', color: '#2563eb', icon: 'fas fa-book', label: 'មុខវិជ្ជា' };
+  if (themes[code]) return themes[code];
+
+  // Dynamic aesthetic pastel palettes for newly added custom subjects
+  const palettes = [
+    { bg: '#faf5ff', border: '#e9d5ff', color: '#7e22ce', icon: 'fas fa-graduation-cap', label: 'មុខវិជ្ជា' },
+    { bg: '#fff7ed', border: '#ffedd5', color: '#ea580c', icon: 'fas fa-book-open', label: 'មុខវិជ្ជា' },
+    { bg: '#f0fdfa', border: '#ccfbf1', color: '#0d9488', icon: 'fas fa-flask', label: 'មុខវិជ្ជា' },
+    { bg: '#fdf4ff', border: '#f5d0fe', color: '#c026d3', icon: 'fas fa-atom', label: 'មុខវិជ្ជា' },
+    { bg: '#fef2f2', border: '#fee2e2', color: '#dc2626', icon: 'fas fa-lightbulb', label: 'មុខវិជ្ជា' },
+    { bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8', icon: 'fas fa-shapes', label: 'មុខវិជ្ជា' }
+  ];
+  let hash = 0;
+  for (let i = 0; i < (code || '').length; i++) {
+    hash = code.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const idx = Math.abs(hash) % palettes.length;
+  return palettes[idx];
 }
 
 function getActiveTraineeProfile() {
@@ -9724,17 +9801,27 @@ function renderAdminPortalView(container) {
       <!-- 3. Blue Ribbon Strip & Course Row -->
       <div class="trainee-subjects-section" id="adminSubjectsSection">
         
-        <div class="trainee-ribbon-bar">
-          <button class="ribbon-arrow-btn" onclick="prevTraineeSemester()" title="ឆមាសមុន">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <div class="ribbon-title">
-            <i class="fas fa-bookmark" style="opacity:0.9;"></i>
-            <span>${activeStream.label} (ផ្ទាំងគ្រប់គ្រងមុខវិជ្ជា និងសាស្ត្រាចារ្យទទួលបន្ទុក)</span>
+        <div class="trainee-ribbon-bar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="ribbon-arrow-btn" onclick="prevTraineeSemester()" title="ឆមាសមុន">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="ribbon-title">
+              <i class="fas fa-bookmark" style="opacity:0.9;"></i>
+              <span>${activeStream.label} (ផ្ទាំងគ្រប់គ្រងមុខវិជ្ជា និងសាស្ត្រាចារ្យទទួលបន្ទុក)</span>
+            </div>
+            <button class="ribbon-arrow-btn" onclick="nextTraineeSemester()" title="ឆមាសបន្ទាប់">
+              <i class="fas fa-chevron-right"></i>
+            </button>
           </div>
-          <button class="ribbon-arrow-btn" onclick="nextTraineeSemester()" title="ឆមាសបន្ទាប់">
-            <i class="fas fa-chevron-right"></i>
-          </button>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-primary" onclick="openAddSubjectModal()" style="font-size:0.75rem; height:28px; padding:0 12px; background:#fff; color:#1e40af; border:1px solid #bfdbfe; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:5px;">
+              <i class="fas fa-plus"></i> បន្ថែមមុខវិជ្ជា
+            </button>
+            <button class="btn btn-outline" onclick="openAdminSubjectsCatalogModal()" style="font-size:0.75rem; height:28px; padding:0 12px; background:rgba(255,255,255,0.22); color:#fff; border:1px solid rgba(255,255,255,0.45); font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:5px;">
+              <i class="fas fa-tasks"></i> គ្រប់គ្រងមុខវិជ្ជា
+            </button>
+          </div>
         </div>
 
         <div class="trainee-subjects-body">
@@ -10265,56 +10352,135 @@ function deleteAdminStudent(id) {
 }
 
 // --------------------------------------------------------------------------
-// 5. ADMIN MODAL 3: ជំនាន់ & ថ្នាក់រៀន (COHORTS & CLASSROOMS)
+// 5. ADMIN MODAL 3: ជំនាន់ & ថ្នាក់រៀន (COHORTS & CLASSROOMS MANAGEMENT)
 // --------------------------------------------------------------------------
 function openAdminCohortModal() {
   const cohorts = stmsData.cohorts || [];
+  const allClasses = getAllSystemClasses();
+  const trainees = stmsData.trainees || [];
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="adminCohortModal" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:750px; width:95%;">
-        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
-          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+      <div class="stms-modal-window" style="max-width:920px; width:95%; max-height:90vh;">
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #1e3a8a, #2563eb); color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.15rem; display:flex; align-items:center; gap:10px;">
             <i class="fas fa-school" style="color:#fdba74;"></i>
-            <span>គ្រប់គ្រងជំនាន់សិក្សា &amp; បន្ទប់រៀន (Cohorts &amp; Classrooms)</span>
+            <span>គ្រប់គ្រងជំនាន់សិក្សា &amp; ថ្នាក់រៀន (Cohorts &amp; Classes Management)</span>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
         </div>
-        <div class="modal-body-scroll" style="padding:20px;">
+        <div class="modal-body-scroll" style="padding:22px; max-height:76vh; overflow-y:auto;">
           
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <strong style="color:#1e3a8a;">បញ្ជីជំនាន់សិក្សា និងកម្រិតបណ្តុះបណ្តាល KTPTTC</strong>
-            <button class="btn btn-primary" onclick="showToast('បានបើកទម្រង់បង្កើតជំនាន់ថ្មី', 'info')" style="font-size:0.82rem;">
-              <i class="fas fa-plus"></i> បង្កើតជំនាន់ថ្មី
-            </button>
+          <!-- Top Action Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px; background:#f8fafc; padding:12px 16px; border-radius:10px; border:1px solid #e2e8f0;">
+            <div>
+              <strong style="color:#1e3a8a; font-size:1rem;"><i class="fas fa-layer-group"></i> ថ្នាក់រៀន និងជំនាន់បណ្តុះបណ្តាល KTPTTC</strong>
+              <div style="font-size:0.78rem; color:#64748b; margin-top:2px;">
+                សរុប <strong>${allClasses.length} ថ្នាក់</strong> ក្នុង <strong>${cohorts.length} ជំនាន់សិក្សា</strong>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary" onclick="openAddClassModal()" style="font-size:0.82rem; height:34px; padding:0 14px; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-plus-circle"></i> + បន្ថែមថ្នាក់ថ្មី
+              </button>
+              <button class="btn btn-outline" onclick="openAddCohortModal()" style="font-size:0.82rem; height:34px; padding:0 14px; border-color:#3b82f6; color:#1d4ed8; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-university"></i> + បន្ថែមជំនាន់ថ្មី
+              </button>
+            </div>
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            ${cohorts.map((c, idx) => `
-              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:14px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                  <div>
-                    <strong style="font-size:0.95rem; color:#1e3a8a;">${c.nameKh}</strong>
-                    <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
-                      កូដ៖ <code>${c.id}</code> • ប្រភេទ៖ ${c.type} • ឆ្នាំសិក្សា៖ ២០២៦-២០២៧
+          <!-- Section 1: All Classes List -->
+          <div style="margin-bottom:24px;">
+            <div style="font-size:0.92rem; font-weight:800; color:#0f172a; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-chalkboard text-primary"></i> បញ្ជីថ្នាក់រៀនសកម្មទាំងអស់ (${allClasses.length} ថ្នាក់)
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
+              ${allClasses.map(clsName => {
+                const stuCount = trainees.filter(t => t.className === clsName).length;
+                const customObj = (stmsData.customClasses || []).find(c => (c.name || c) === clsName) || {};
+                const parentCohort = cohorts.find(c => (c.classes || []).includes(clsName));
+                const cohortLabel = parentCohort ? parentCohort.nameKh : (customObj.cohortName || 'ទូទៅ');
+                const roomLabel = customObj.room || (parentCohort && parentCohort.rooms && parentCohort.rooms[0]) || 'បន្ទប់ ១០១';
+                const teacherLabel = customObj.homeroomTeacher || 'មិនទាន់ចាត់តាំង';
+
+                return `
+                  <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.04); transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#e2e8f0'">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                      <div style="font-size:0.95rem; font-weight:800; color:#1e40af;">
+                        <i class="fas fa-door-open" style="color:#3b82f6; font-size:0.85rem;"></i> ${clsName}
+                      </div>
+                      <span class="badge ${stuCount > 0 ? 'badge-published' : 'badge-draft'}" style="font-size:0.72rem; padding:2px 8px;">
+                        ${stuCount} សិស្ស
+                      </span>
+                    </div>
+
+                    <div style="font-size:0.75rem; color:#64748b; line-height:1.4;">
+                      <div><i class="fas fa-layer-group" style="width:14px;"></i> ជំនាន់៖ <strong>${cohortLabel}</strong></div>
+                      <div><i class="fas fa-map-marker-alt" style="width:14px;"></i> ${roomLabel} • បន្ទុក៖ ${teacherLabel}</div>
+                    </div>
+
+                    <div style="margin-top:auto; padding-top:8px; border-top:1px dashed #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
+                      <button class="btn btn-outline" onclick="closeStmsModal(); currentRosterClassFilter='${clsName}'; navigateView('trainees');" style="height:26px; font-size:0.72rem; padding:0 8px; border-color:#93c5fd; color:#1d4ed8;">
+                        <i class="fas fa-users"></i> មើលសិស្ស
+                      </button>
+                      <div style="display:flex; gap:6px;">
+                        <button class="btn btn-outline" onclick="openAddClassModal('${clsName}')" style="height:26px; font-size:0.72rem; padding:0 8px;" title="កែប្រែថ្នាក់">
+                          <i class="fas fa-edit"></i> កែប្រែ
+                        </button>
+                        <button class="btn btn-outline" onclick="confirmDeleteClass('${clsName}')" style="height:26px; font-size:0.72rem; padding:0 8px; border-color:#fca5a5; color:#ef4444;" title="លុបថ្នាក់">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <span class="badge badge-published" style="font-size:0.75rem;">សកម្ម</span>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Section 2: Cohorts / Academic Streams -->
+          <div>
+            <div style="font-size:0.92rem; font-weight:800; color:#0f172a; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-university text-primary"></i> ជំនាន់សិក្សា និងកម្រិតបណ្តុះបណ្តាល (${cohorts.length} ជំនាន់)
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              ${cohorts.map(c => `
+                <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:14px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+                    <div>
+                      <strong style="font-size:0.95rem; color:#1e3a8a;">${c.nameKh}</strong>
+                      <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                        កូដ៖ <code>${c.id}</code> • ប្រភេទ៖ ${c.type} • ឆ្នាំសិក្សា៖ ${c.academicYear || '២០២៦-២០២៧'}
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                      <button class="btn btn-outline" onclick="openAddCohortModal('${c.id}')" style="height:26px; font-size:0.72rem; padding:0 8px;">
+                        <i class="fas fa-edit"></i> កែប្រែជំនាន់
+                      </button>
+                      <button class="btn btn-outline" onclick="confirmDeleteCohort('${c.id}')" style="height:26px; font-size:0.72rem; padding:0 8px; border-color:#fca5a5; color:#ef4444;">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                    <span style="font-size:0.75rem; color:#64748b; font-weight:600;">ថ្នាក់ចំណុះ៖</span>
+                    ${(c.classes || []).map(cls => `
+                      <span style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; font-size:0.75rem; padding:3px 10px; border-radius:6px; font-weight:600;">
+                        <i class="fas fa-chalkboard"></i> ${cls}
+                      </span>
+                    `).join('')}
+                    ${(c.rooms || []).map(rm => `
+                      <span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-size:0.75rem; padding:3px 10px; border-radius:6px;">
+                        <i class="fas fa-door-open"></i> ${rm}
+                      </span>
+                    `).join('')}
+                  </div>
                 </div>
-                <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-                  ${(c.classes || []).map(cls => `
-                    <span style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; font-size:0.75rem; padding:3px 10px; border-radius:6px; font-weight:600;">
-                      <i class="fas fa-chalkboard"></i> ${cls}
-                    </span>
-                  `).join('')}
-                  ${(c.rooms || []).map(rm => `
-                    <span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-size:0.75rem; padding:3px 10px; border-radius:6px;">
-                      <i class="fas fa-door-open"></i> ${rm}
-                    </span>
-                  `).join('')}
-                </div>
-              </div>
-            `).join('')}
+              `).join('')}
+            </div>
           </div>
 
         </div>
@@ -10327,6 +10493,421 @@ function openAdminCohortModal() {
 
   showModal(modalHtml);
 }
+window.openAdminCohortModal = openAdminCohortModal;
+window.openManageClassesModal = openAdminCohortModal;
+
+// --------------------------------------------------------------------------
+// ADD / EDIT CLASS MODAL
+// --------------------------------------------------------------------------
+function openAddClassModal(classToEdit = null) {
+  const isEdit = Boolean(classToEdit);
+  const cohorts = stmsData.cohorts || [];
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+  
+  let existing = null;
+  if (isEdit) {
+    existing = (stmsData.customClasses || []).find(c => (c.name || c) === classToEdit);
+    if (!existing) {
+      existing = {
+        name: classToEdit,
+        gradeLevel: classToEdit.includes('១២+៤') ? '១២+៤ (បឋមសិក្សា)' : classToEdit.includes('បរិញ្ញា') ? 'បរិញ្ញាបត្រ+១' : '១២+២ (បឋមសិក្សា)',
+        group: classToEdit.includes('ក្រុម ខ') ? 'ក្រុម ខ' : classToEdit.includes('ក្រុម គ') ? 'ក្រុម គ' : classToEdit.includes('ក្រុម ឃ') ? 'ក្រុម ឃ' : 'ក្រុម ក',
+        room: 'បន្ទប់ ១០១',
+        capacity: 35
+      };
+    }
+  }
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="addClassModalBackdrop" onclick="if(event.target===this) openAdminCohortModal()">
+      <div class="stms-modal-window" style="max-width:580px; width:95%;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-chalkboard-teacher" style="color:#fdba74;"></i>
+            <span>${isEdit ? 'កែប្រែព័ត៌មានថ្នាក់រៀន' : 'បន្ថែមថ្នាក់រៀនថ្មី (Add Class)'}</span>
+          </div>
+          <button class="modal-close-icon" onclick="openAdminCohortModal()" style="color:#fff;">&times;</button>
+        </div>
+
+        <form onsubmit="saveClassModal(event, ${isEdit}, '${isEdit ? (existing.name || classToEdit) : ''}')" style="padding:20px;">
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            
+            <div>
+              <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                ឈ្មោះថ្នាក់ពេញ (Full Class Name) <span style="color:#ef4444;">*</span>
+              </label>
+              <input type="text" id="clsFullName" class="form-control" value="${existing ? (existing.name || classToEdit) : ''}" placeholder="ឧ. ១២+២ ក្រុម គ ឬ ថ្នាក់បឋម ១២+៤ ក្រុម ក" required>
+              <div style="font-size:0.72rem; color:#64748b; margin-top:3px;">
+                ឈ្មោះដែលនឹងត្រូវបង្ហាញនៅក្នុងបញ្ជីសិស្ស តារាងពិន្ទុ និងទម្រង់ចុះឈ្មោះ
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  កម្រិតបណ្តុះបណ្តាល
+                </label>
+                <select id="clsGradeLevel" class="form-control">
+                  <option value="១២+២ (បឋមសិក្សា)" ${existing && existing.gradeLevel && existing.gradeLevel.includes('១២+២ (បឋម') ? 'selected' : ''}>១២+២ (បឋមសិក្សា)</option>
+                  <option value="១២+៤ (បឋមសិក្សា)" ${existing && existing.gradeLevel && existing.gradeLevel.includes('១២+៤') ? 'selected' : ''}>១២+៤ (បឋមសិក្សា)</option>
+                  <option value="បរិញ្ញាបត្រ+១" ${existing && existing.gradeLevel && existing.gradeLevel.includes('បរិញ្ញា') ? 'selected' : ''}>បរិញ្ញាបត្រ+១</option>
+                  <option value="១២+២ (មត្តេយ្យសិក្សា)" ${existing && existing.gradeLevel && existing.gradeLevel.includes('មត្តេយ្យ') ? 'selected' : ''}>១២+២ (មត្តេយ្យសិក្សា)</option>
+                  <option value="វិក្រឹតការ" ${existing && existing.gradeLevel && existing.gradeLevel.includes('វិក្រឹត') ? 'selected' : ''}>វិក្រឹតការ (In-service)</option>
+                  <option value="ផ្សេងៗ" ${existing && existing.gradeLevel === 'ផ្សេងៗ' ? 'selected' : ''}>ផ្សេងៗ</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  ក្រុម (Group)
+                </label>
+                <select id="clsGroup" class="form-control">
+                  <option value="ក្រុម ក" ${existing && existing.group === 'ក្រុម ក' ? 'selected' : ''}>ក្រុម ក</option>
+                  <option value="ក្រុម ខ" ${existing && existing.group === 'ក្រុម ខ' ? 'selected' : ''}>ក្រុម ខ</option>
+                  <option value="ក្រុម គ" ${existing && existing.group === 'ក្រុម គ' ? 'selected' : ''}>ក្រុម គ</option>
+                  <option value="ក្រុម ឃ" ${existing && existing.group === 'ក្រុម ឃ' ? 'selected' : ''}>ក្រុម ឃ</option>
+                  <option value="ក្រុម ង" ${existing && existing.group === 'ក្រុម ង' ? 'selected' : ''}>ក្រុម ង</option>
+                  <option value="ក្រុម ១" ${existing && existing.group === 'ក្រុម ១' ? 'selected' : ''}>ក្រុម ១</option>
+                  <option value="ក្រុម ២" ${existing && existing.group === 'ក្រុម ២' ? 'selected' : ''}>ក្រុម ២</option>
+                  <option value="ក្រុម ៣" ${existing && existing.group === 'ក្រុម ៣' ? 'selected' : ''}>ក្រុម ៣</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  ចំណុះជំនាន់សិក្សា (Cohort)
+                </label>
+                <select id="clsCohort" class="form-control">
+                  ${cohorts.map(c => `
+                    <option value="${c.id}" ${existing && (existing.cohortId === c.id || existing.cohortName === c.nameKh) ? 'selected' : ''}>
+                      ${c.nameKh}
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  បន្ទប់រៀន (Classroom)
+                </label>
+                <input type="text" id="clsRoom" class="form-control" value="${existing ? (existing.room || 'បន្ទប់ ១០១') : 'បន្ទប់ ១០១'}" placeholder="ឧ. បន្ទប់ ១០១">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:12px;">
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  គ្រូទទួលបន្ទុកថ្នាក់ (Homeroom Teacher)
+                </label>
+                <select id="clsTeacher" class="form-control">
+                  <option value="">-- មិនទាន់កំណត់ --</option>
+                  ${trainers.map(tr => `
+                    <option value="${tr.nameKh}" ${existing && existing.homeroomTeacher === tr.nameKh ? 'selected' : ''}>
+                      ${tr.nameKh} (${tr.qualification || 'គ្រូឧទ្ទេស'})
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  ចំណុះអតិបរមា
+                </label>
+                <input type="number" id="clsCapacity" class="form-control" value="${existing ? (existing.capacity || 35) : 35}" min="1" max="100">
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
+            <button type="button" class="btn btn-outline" onclick="openAdminCohortModal()">បោះបង់</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> រក្សាទុកថ្នាក់
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+window.openAddClassModal = openAddClassModal;
+
+// Save Class
+function saveClassModal(event, isEdit, origName) {
+  event.preventDefault();
+  const name = document.getElementById('clsFullName').value.trim();
+  const gradeLevel = document.getElementById('clsGradeLevel').value;
+  const group = document.getElementById('clsGroup').value;
+  const cohortId = document.getElementById('clsCohort').value;
+  const room = document.getElementById('clsRoom').value.trim();
+  const homeroomTeacher = document.getElementById('clsTeacher').value;
+  const capacity = parseInt(document.getElementById('clsCapacity').value, 10) || 35;
+
+  if (!name) {
+    showToast('សូមបញ្ចូលឈ្មោះថ្នាក់!', 'warning');
+    return;
+  }
+
+  if (!Array.isArray(stmsData.customClasses)) {
+    stmsData.customClasses = [];
+  }
+  if (!Array.isArray(stmsData.cohorts)) {
+    stmsData.cohorts = [];
+  }
+
+  const cohorts = stmsData.cohorts;
+  const parentCohort = cohorts.find(c => c.id === cohortId);
+  const cohortName = parentCohort ? parentCohort.nameKh : '';
+
+  const classObj = {
+    name,
+    gradeLevel,
+    group,
+    cohortId,
+    cohortName,
+    room,
+    homeroomTeacher,
+    capacity
+  };
+
+  if (isEdit) {
+    // Update existing class in customClasses
+    const idx = stmsData.customClasses.findIndex(c => (c.name || c) === origName);
+    if (idx !== -1) {
+      stmsData.customClasses[idx] = classObj;
+    } else {
+      stmsData.customClasses.push(classObj);
+    }
+
+    // Update in cohorts
+    cohorts.forEach(c => {
+      if (Array.isArray(c.classes)) {
+        const cIdx = c.classes.indexOf(origName);
+        if (cIdx !== -1) {
+          c.classes[cIdx] = name;
+        }
+      }
+    });
+
+    // Update students enrolled in origName
+    if (origName !== name && Array.isArray(stmsData.trainees)) {
+      stmsData.trainees.forEach(t => {
+        if (t.className === origName) {
+          t.className = name;
+        }
+      });
+    }
+  } else {
+    // Check duplicate
+    const exists = getAllSystemClasses().some(cls => cls.toLowerCase() === name.toLowerCase());
+    if (exists) {
+      showToast(`ថ្នាក់ «${name}» មានរួចហើយក្នុងប្រព័ន្ធ!`, 'warning');
+      return;
+    }
+
+    stmsData.customClasses.push(classObj);
+  }
+
+  // Ensure class is present in parent cohort's classes list
+  if (parentCohort) {
+    if (!Array.isArray(parentCohort.classes)) parentCohort.classes = [];
+    if (!parentCohort.classes.includes(name)) {
+      parentCohort.classes.push(name);
+    }
+  }
+
+  saveData();
+  showToast(`✅ បាន${isEdit ? 'កែប្រែ' : 'បន្ថែម'}ថ្នាក់ «${name}» ដោយជោគជ័យ!`, 'success');
+  openAdminCohortModal();
+
+  if (currentView === 'trainees') {
+    renderTraineesView(document.getElementById('stmsContentViewport'));
+  }
+}
+window.saveClassModal = saveClassModal;
+
+// Delete Class
+function confirmDeleteClass(className) {
+  const trainees = stmsData.trainees || [];
+  const stuCount = trainees.filter(t => t.className === className).length;
+
+  let msg = `តើលោកអ្នកពិតជាចង់លុបថ្នាក់ «${className}» មែនទេ?`;
+  if (stuCount > 0) {
+    msg = `⚠️ ថ្នាក់ «${className}» មានគរុសិស្សចំនួន ${stuCount} នាក់កំពុងសិក្សា!\n\nប្រសិនបើលោកអ្នកលុបថ្នាក់នេះ គរុសិស្សទាំងនោះនឹងនៅតែរក្សាទុកក្នុងប្រព័ន្ធ។\nតើលោកអ្នកពិតជាចង់បន្តការលុបថ្នាក់នេះមែនទេ?`;
+  }
+
+  if (!confirm(msg)) return;
+
+  // Remove from customClasses
+  if (Array.isArray(stmsData.customClasses)) {
+    stmsData.customClasses = stmsData.customClasses.filter(c => (c.name || c) !== className);
+  }
+
+  // Remove from cohorts
+  if (Array.isArray(stmsData.cohorts)) {
+    stmsData.cohorts.forEach(c => {
+      if (Array.isArray(c.classes)) {
+        c.classes = c.classes.filter(cls => cls !== className);
+      }
+    });
+  }
+
+  saveData();
+  showToast(`🗑️ បានលុបថ្នាក់ «${className}» ដោយជោគជ័យ!`, 'info');
+  openAdminCohortModal();
+
+  if (currentView === 'trainees') {
+    renderTraineesView(document.getElementById('stmsContentViewport'));
+  }
+}
+window.confirmDeleteClass = confirmDeleteClass;
+
+// --------------------------------------------------------------------------
+// ADD / EDIT COHORT MODAL
+// --------------------------------------------------------------------------
+function openAddCohortModal(cohortIdToEdit = null) {
+  const isEdit = Boolean(cohortIdToEdit);
+  const cohorts = stmsData.cohorts || [];
+  const existing = isEdit ? cohorts.find(c => c.id === cohortIdToEdit) : null;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="addCohortModalBackdrop" onclick="if(event.target===this) openAdminCohortModal()">
+      <div class="stms-modal-window" style="max-width:560px; width:95%;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-university" style="color:#fdba74;"></i>
+            <span>${isEdit ? 'កែប្រែព័ត៌មានជំនាន់សិក្សា' : 'បន្ថែមជំនាន់សិក្សាថ្មី (Add Cohort)'}</span>
+          </div>
+          <button class="modal-close-icon" onclick="openAdminCohortModal()" style="color:#fff;">&times;</button>
+        </div>
+
+        <form onsubmit="saveCohortModal(event, ${isEdit}, '${isEdit ? existing.id : ''}')" style="padding:20px;">
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            
+            <div>
+              <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                ឈ្មោះជំនាន់សិក្សាពេញ (Cohort Name) <span style="color:#ef4444;">*</span>
+              </label>
+              <input type="text" id="cohortNameKh" class="form-control" value="${existing ? existing.nameKh : ''}" placeholder="ឧ. ថ្នាក់បឋមសិក្សា ១២+៤ ជំនាន់ទី ៣៥" required>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  កូដសម្គាល់ជំនាន់ (ID) <span style="color:#ef4444;">*</span>
+                </label>
+                <input type="text" id="cohortIdInput" class="form-control" value="${existing ? existing.id : 'C-' + Date.now().toString(36).toUpperCase()}" ${isEdit ? 'readonly' : ''} required>
+              </div>
+
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  កម្រិតបណ្តុះបណ្តាល
+                </label>
+                <select id="cohortType" class="form-control">
+                  <option value="12+2 (បឋមសិក្សា)" ${existing && existing.type && existing.type.includes('12+2 (បឋម') ? 'selected' : ''}>12+2 (បឋមសិក្សា)</option>
+                  <option value="12+4 (បឋមសិក្សា)" ${existing && existing.type && existing.type.includes('12+4') ? 'selected' : ''}>12+4 (បឋមសិក្សា)</option>
+                  <option value="បរិញ្ញាបត្រ+១" ${existing && existing.type && existing.type.includes('បរិញ្ញា') ? 'selected' : ''}>បរិញ្ញាបត្រ+១</option>
+                  <option value="12+2 (មត្តេយ្យ)" ${existing && existing.type && existing.type.includes('មត្តេយ្យ') ? 'selected' : ''}>12+2 (មត្តេយ្យ)</option>
+                  <option value="វិក្រឹតការ" ${existing && existing.type && existing.type.includes('វិក្រឹត') ? 'selected' : ''}>វិក្រឹតការ</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  ឆ្នាំសិក្សា (Academic Year)
+                </label>
+                <input type="text" id="cohortYear" class="form-control" value="${existing ? (existing.academicYear || 'AY-2026-2027') : 'AY-2026-2027'}">
+              </div>
+
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  បន្ទប់រៀនប្រចាំការ
+                </label>
+                <input type="text" id="cohortRooms" class="form-control" value="${existing && existing.rooms ? existing.rooms.join(', ') : 'បន្ទប់ ១០១, បន្ទប់ ១០២'}" placeholder="ឧ. បន្ទប់ ១០១, បន្ទប់ ១០២">
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
+            <button type="button" class="btn btn-outline" onclick="openAdminCohortModal()">បោះបង់</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> រក្សាទុកជំនាន់
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+window.openAddCohortModal = openAddCohortModal;
+
+// Save Cohort
+function saveCohortModal(event, isEdit, origId) {
+  event.preventDefault();
+  const nameKh = document.getElementById('cohortNameKh').value.trim();
+  const id = document.getElementById('cohortIdInput').value.trim();
+  const type = document.getElementById('cohortType').value;
+  const academicYear = document.getElementById('cohortYear').value.trim();
+  const roomsStr = document.getElementById('cohortRooms').value.trim();
+  const rooms = roomsStr.split(',').map(r => r.trim()).filter(Boolean);
+
+  if (!nameKh || !id) {
+    showToast('សូមបំពេញឈ្មោះ និងកូដសម្គាល់ជំនាន់!', 'warning');
+    return;
+  }
+
+  if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
+
+  if (isEdit) {
+    const existing = stmsData.cohorts.find(c => c.id === origId);
+    if (existing) {
+      existing.nameKh = nameKh;
+      existing.type = type;
+      existing.academicYear = academicYear;
+      existing.rooms = rooms;
+    }
+  } else {
+    stmsData.cohorts.push({
+      id,
+      nameKh,
+      type,
+      academicYear,
+      rooms,
+      classes: []
+    });
+  }
+
+  saveData();
+  showToast(`✅ បាន${isEdit ? 'កែប្រែ' : 'បន្ថែម'}ជំនាន់ «${nameKh}» ដោយជោគជ័យ!`, 'success');
+  openAdminCohortModal();
+}
+window.saveCohortModal = saveCohortModal;
+
+// Delete Cohort
+function confirmDeleteCohort(cohortId) {
+  const cohorts = stmsData.cohorts || [];
+  const c = cohorts.find(x => x.id === cohortId);
+  if (!c) return;
+
+  if (!confirm(`តើលោកអ្នកពិតជាចង់លុបជំនាន់សិក្សា «${c.nameKh}» មែនទេ?`)) return;
+
+  stmsData.cohorts = stmsData.cohorts.filter(x => x.id !== cohortId);
+  saveData();
+  showToast(`🗑️ បានលុបជំនាន់ «${c.nameKh}» ដោយជោគជ័យ!`, 'info');
+  openAdminCohortModal();
+}
+window.confirmDeleteCohort = confirmDeleteCohort;
 
 // --------------------------------------------------------------------------
 // 6. ADMIN MODAL 4: កាលវិភាគមេ (MASTER TIMETABLE)
@@ -11046,6 +11627,341 @@ function saveAdminSubjectTeacher(subjCode) {
     renderAdminPortalView(document.getElementById('stmsContentViewport'));
   }
 }
+
+// --------------------------------------------------------------------------
+// 12. ADMIN SUBJECTS CATALOG & CURRICULUM MANAGEMENT
+// --------------------------------------------------------------------------
+function openAdminSubjectsCatalogModal() {
+  const subjects = KTPTTC_ALL_SUBJECTS || [];
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+  const totalCredits = subjects.reduce((sum, s) => sum + (Number(s.credits) || 0), 0);
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminSubjectsCatalogModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:960px; width:95%; max-height:92vh;">
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #7c3aed, #6d28d9); color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.15rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-book-reader" style="color:#fbcfe8;"></i>
+            <span>គ្រប់គ្រងមុខវិជ្ជាសិក្សា &amp; កម្មវិធីបណ្តុះបណ្តាល (Curriculum &amp; Subjects)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:22px; max-height:78vh; overflow-y:auto;">
+          
+          <!-- Top Action Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; background:#f8fafc; padding:12px 16px; border-radius:10px; border:1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:240px;">
+              <input type="text" id="adminSubjectSearchInput" class="form-control" style="max-width:320px; font-size:0.85rem;" placeholder="🔍 ស្វែងរកតាមកូដ ឈ្មោះ ឬគ្រូ..." oninput="filterAdminSubjectsCatalog(this.value)">
+              <div style="font-size:0.8rem; color:#64748b; font-weight:600;">
+                សរុប <strong>${subjects.length} មុខវិជ្ជា</strong> (${totalCredits} ក្រេឌីត)
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="openAddSubjectModal()" style="font-size:0.85rem; height:36px; padding:0 16px; display:inline-flex; align-items:center; gap:6px; background:#7c3aed; border-color:#6d28d9;">
+              <i class="fas fa-plus-circle"></i> + បន្ថែមមុខវិជ្ជាថ្មី
+            </button>
+          </div>
+
+          <!-- Subject Cards Grid -->
+          <div id="adminSubjectsGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap:14px;">
+            ${subjects.map(s => {
+              const th = getSubjectTheme(s.code);
+              const assignedTrn = trainers.find(t => t.subject === s.code);
+              const trnName = assignedTrn ? assignedTrn.nameKh : (s.trainer || 'មិនទាន់កំណត់');
+              const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === s.code).length;
+              const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === s.code).length;
+
+              return `
+                <div class="admin-subj-card-box" data-search="${(s.code + ' ' + s.nameKh + ' ' + (s.nameEn||'') + ' ' + trnName).toLowerCase()}" style="background:#fff; border:1px solid ${th.border}; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 1px 4px rgba(0,0,0,0.04); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 1px 4px rgba(0,0,0,0.04)';">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <span style="font-size:0.75rem; font-weight:800; color:${th.color}; background:${th.bg}; padding:3px 9px; border-radius:6px; border:1px solid ${th.border};">
+                      ${s.code}
+                    </span>
+                    <span style="font-size:0.75rem; font-weight:700; color:#64748b; background:#f1f5f9; padding:2px 8px; border-radius:4px;">
+                      ${s.credits || 3} ក្រេឌីត
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 style="margin:0 0 2px 0; font-size:0.95rem; color:#0f172a; line-height:1.4;">${s.nameKh}</h4>
+                    ${s.nameEn ? `<div style="font-size:0.75rem; color:#64748b; font-style:italic;">${s.nameEn}</div>` : ''}
+                  </div>
+
+                  <div style="font-size:0.78rem; color:#475569; display:flex; flex-direction:column; gap:3px;">
+                    <div><i class="fas fa-chalkboard-teacher" style="color:${th.color}; width:16px;"></i> គ្រូទទួលបន្ទុក៖ <strong>${trnName}</strong></div>
+                    <div style="font-size:0.72rem; color:#64748b;"><i class="fas fa-layer-group" style="width:16px;"></i> ${s.semester || 'ឆមាសទី ១'} • ${s.category || 'គរុកោសល្យ'}</div>
+                  </div>
+
+                  <div style="margin-top:auto; padding-top:10px; border-top:1px dashed #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                    <button class="btn btn-outline" onclick="closeStmsModal(); openSubjectDetailModal('${s.code}');" style="height:26px; font-size:0.72rem; padding:0 8px; border-color:#c4b5fd; color:#6d28d9;">
+                      <i class="fas fa-list-ul"></i> មាតិកា (${lsnCount})
+                    </button>
+                    <div style="display:flex; gap:6px;">
+                      <button class="btn btn-outline" onclick="openAddSubjectModal('${s.code}')" style="height:26px; font-size:0.72rem; padding:0 8px;" title="កែប្រែ">
+                        <i class="fas fa-edit"></i> កែប្រែ
+                      </button>
+                      <button class="btn btn-outline" onclick="confirmDeleteSubject('${s.code}')" style="height:26px; font-size:0.72rem; padding:0 8px; border-color:#fca5a5; color:#ef4444;" title="លុបមុខវិជ្ជា">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+window.openAdminSubjectsCatalogModal = openAdminSubjectsCatalogModal;
+window.openManageSubjectsModal = openAdminSubjectsCatalogModal;
+
+function filterAdminSubjectsCatalog(query) {
+  const q = (query || '').toLowerCase().trim();
+  const items = document.querySelectorAll('#adminSubjectsGrid .admin-subj-card-box');
+  items.forEach(el => {
+    const text = el.getAttribute('data-search') || '';
+    el.style.display = text.includes(q) ? 'flex' : 'none';
+  });
+}
+window.filterAdminSubjectsCatalog = filterAdminSubjectsCatalog;
+
+// --------------------------------------------------------------------------
+// ADD / EDIT SUBJECT MODAL
+// --------------------------------------------------------------------------
+function openAddSubjectModal(subjectCodeToEdit = null) {
+  const isEdit = Boolean(subjectCodeToEdit);
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+  const existing = isEdit ? KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCodeToEdit) : null;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="addSubjectModalBackdrop" onclick="if(event.target===this) openAdminSubjectsCatalogModal()">
+      <div class="stms-modal-window" style="max-width:620px; width:95%;">
+        <div class="modal-header-bar" style="background:#7c3aed; color:#fff; border-radius:12px 12px 0 0; padding:16px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-book" style="color:#fbcfe8;"></i>
+            <span>${isEdit ? 'កែប្រែព័ត៌មានមុខវិជ្ជា' : 'បន្ថែមមុខវិជ្ជាថ្មី (Add Subject)'}</span>
+          </div>
+          <button class="modal-close-icon" onclick="openAdminSubjectsCatalogModal()" style="color:#fff;">&times;</button>
+        </div>
+
+        <form onsubmit="saveSubjectModal(event, ${isEdit}, '${isEdit ? (existing ? existing.code : subjectCodeToEdit) : ''}')" style="padding:20px;">
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            
+            <div style="display:grid; grid-template-columns: 1fr 2fr; gap:12px;">
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  កូដមុខវិជ្ជា (Code) <span style="color:#ef4444;">*</span>
+                </label>
+                <input type="text" id="subjCodeInput" class="form-control" value="${existing ? existing.code : ''}" placeholder="ឧ. MTH-104" style="text-transform:uppercase; font-weight:700;" ${isEdit ? 'readonly' : ''} required>
+              </div>
+
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  ឈ្មោះមុខវិជ្ជាជាខ្មែរ (Khmer Name) <span style="color:#ef4444;">*</span>
+                </label>
+                <input type="text" id="subjNameKhInput" class="form-control" value="${existing ? existing.nameKh : ''}" placeholder="ឧ. វិធីសាស្ត្របង្រៀនគណិតវិទ្យាកម្រិតខ្ពស់" required>
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                ឈ្មោះមុខវិជ្ជាជាអក្សរឡាតាំង (English Name)
+              </label>
+              <input type="text" id="subjNameEnInput" class="form-control" value="${existing && existing.nameEn ? existing.nameEn : ''}" placeholder="ឧ. Advanced Mathematics Teaching Methodology">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:12px;">
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  ចំនួនក្រេឌីត (Credits) <span style="color:#ef4444;">*</span>
+                </label>
+                <input type="number" id="subjCreditsInput" class="form-control" value="${existing ? (existing.credits || 3) : 3}" min="1" max="10" required>
+              </div>
+
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  ឆមាសសិក្សា (Semester)
+                </label>
+                <select id="subjSemesterSelect" class="form-control">
+                  <option value="ឆមាសទី ១" ${existing && existing.semester === 'ឆមាសទី ១' ? 'selected' : ''}>ឆមាសទី ១</option>
+                  <option value="ឆមាសទី ២" ${existing && existing.semester === 'ឆមាសទី ២' ? 'selected' : ''}>ឆមាសទី ២</option>
+                  <option value="ទាំងពីរឆមាស" ${existing && existing.semester === 'ទាំងពីរឆមាស' ? 'selected' : ''}>ទាំងពីរឆមាស</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  គ្រូឧទ្ទេសទទួលបន្ទុក (Trainer)
+                </label>
+                <select id="subjTrainerSelect" class="form-control">
+                  <option value="">-- មិនទាន់កំណត់ --</option>
+                  ${trainers.map(tr => `
+                    <option value="${tr.id}" ${existing && (existing.trainer === tr.nameKh || tr.subject === existing.code) ? 'selected' : ''}>
+                      ${tr.nameKh} (${tr.phone || '012 345 678'})
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                  ប្រភេទមុខវិជ្ជា (Category)
+                </label>
+                <select id="subjCategorySelect" class="form-control">
+                  <option value="គរុកោសល្យទូទៅ" ${existing && existing.category === 'គរុកោសល្យទូទៅ' ? 'selected' : ''}>គរុកោសល្យទូទៅ</option>
+                  <option value="វិធីសាស្ត្របង្រៀនឯកទេស" ${existing && existing.category === 'វិធីសាស្ត្របង្រៀនឯកទេស' ? 'selected' : ''}>វិធីសាស្ត្របង្រៀនឯកទេស</option>
+                  <option value="វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា" ${existing && existing.category === 'វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា' ? 'selected' : ''}>វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា</option>
+                  <option value="ភាសា & ទំនាក់ទំនង" ${existing && existing.category === 'ភាសា & ទំនាក់ទំនង' ? 'selected' : ''}>ភាសា & ទំនាក់ទំនង</option>
+                  <option value="ស្រាវជ្រាវ & កម្មសិក្សា" ${existing && existing.category === 'ស្រាវជ្រាវ & កម្មសិក្សា' ? 'selected' : ''}>ស្រាវជ្រាវ & កម្មសិក្សា</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
+                ការពិពណ៌នាសង្ខេប / មាតិកាគោលនៃមុខវិជ្ជា
+              </label>
+              <textarea id="subjDescInput" class="form-control" rows="2" placeholder="បញ្ចូលគោលបំណង ឬជំពូកមាតិកាសង្ខេប...">${existing && existing.desc ? existing.desc : ''}</textarea>
+            </div>
+
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
+            <button type="button" class="btn btn-outline" onclick="openAdminSubjectsCatalogModal()">បោះបង់</button>
+            <button type="submit" class="btn btn-primary" style="background:#7c3aed; border-color:#6d28d9;">
+              <i class="fas fa-save"></i> រក្សាទុកមុខវិជ្ជា
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+window.openAddSubjectModal = openAddSubjectModal;
+
+// Save Subject
+function saveSubjectModal(event, isEdit, origCode) {
+  event.preventDefault();
+  const code = document.getElementById('subjCodeInput').value.trim().toUpperCase();
+  const nameKh = document.getElementById('subjNameKhInput').value.trim();
+  const nameEn = document.getElementById('subjNameEnInput').value.trim();
+  const credits = parseInt(document.getElementById('subjCreditsInput').value, 10) || 3;
+  const semester = document.getElementById('subjSemesterSelect').value;
+  const trainerId = document.getElementById('subjTrainerSelect').value;
+  const category = document.getElementById('subjCategorySelect').value;
+  const desc = document.getElementById('subjDescInput').value.trim();
+
+  if (!code || !nameKh) {
+    showToast('សូមបំពេញកូដ និងឈ្មោះមុខវិជ្ជា!', 'warning');
+    return;
+  }
+
+  if (!Array.isArray(stmsData.subjects)) {
+    stmsData.subjects = [...KTPTTC_ALL_SUBJECTS];
+  }
+
+  // Find assigned teacher
+  const trainer = (stmsData.users || []).find(u => u.id === trainerId);
+  const trainerName = trainer ? trainer.nameKh : '';
+
+  const subjObj = {
+    code,
+    nameKh,
+    nameEn,
+    credits,
+    semester,
+    category,
+    trainer: trainerName,
+    desc
+  };
+
+  if (isEdit) {
+    const idx = stmsData.subjects.findIndex(s => s.code === origCode);
+    if (idx !== -1) {
+      stmsData.subjects[idx] = subjObj;
+    } else {
+      stmsData.subjects.push(subjObj);
+    }
+  } else {
+    // Check duplicate code
+    const exists = stmsData.subjects.some(s => s.code === code);
+    if (exists) {
+      showToast(`កូដមុខវិជ្ជា «${code}» មានរួចហើយក្នុងប្រព័ន្ធ!`, 'warning');
+      return;
+    }
+    stmsData.subjects.push(subjObj);
+  }
+
+  // If a trainer was assigned, link teacher's subject
+  if (trainer) {
+    trainer.subject = code;
+    trainer.subjectName = nameKh;
+  }
+
+  saveData();
+  syncAllSubjects();
+  showToast(`✅ បាន${isEdit ? 'កែប្រែ' : 'បន្ថែម'}មុខវិជ្ជា «${nameKh} (${code})» ដោយជោគជ័យ!`, 'success');
+  openAdminSubjectsCatalogModal();
+
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'trainers') {
+    renderTrainersView(document.getElementById('stmsContentViewport'));
+  }
+}
+window.saveSubjectModal = saveSubjectModal;
+
+// Delete Subject
+function confirmDeleteSubject(subjectCode) {
+  const subj = (stmsData.subjects || []).find(s => s.code === subjectCode) || KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode);
+  const name = subj ? subj.nameKh : subjectCode;
+
+  const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === subjectCode).length;
+  const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === subjectCode).length;
+
+  let msg = `តើលោកអ្នកពិតជាចង់លុបមុខវិជ្ជា «${name} (${subjectCode})» មែនទេ?`;
+  if (hwCount > 0 || lsnCount > 0) {
+    msg = `⚠️ មុខវិជ្ជា «${name}» មាន ${lsnCount} មេរៀន និង ${hwCount} កិច្ចការដែលបានដាក់!\n\nតើលោកអ្នកពិតជាចង់បន្តការលុបមុខវិជ្ជានេះមែនទេ?`;
+  }
+
+  if (!confirm(msg)) return;
+
+  if (Array.isArray(stmsData.subjects)) {
+    stmsData.subjects = stmsData.subjects.filter(s => s.code !== subjectCode);
+  }
+
+  // Unlink any teacher assigned to this subject
+  (stmsData.users || []).forEach(u => {
+    if (u.role === 'trainer' && u.subject === subjectCode) {
+      u.subject = '';
+      u.subjectName = '';
+    }
+  });
+
+  saveData();
+  syncAllSubjects();
+  showToast(`🗑️ បានលុបមុខវិជ្ជា «${subjectCode}» ដោយជោគជ័យ!`, 'info');
+  openAdminSubjectsCatalogModal();
+
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'trainers') {
+    renderTrainersView(document.getElementById('stmsContentViewport'));
+  }
+}
+window.confirmDeleteSubject = confirmDeleteSubject;
 
 // ==========================================================================
 // USER PROFILE SETTINGS & ACCOUNT MANAGEMENT CONTROLLERS
