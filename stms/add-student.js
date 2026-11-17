@@ -174,17 +174,22 @@ function switchRegistrationRole(role, isInitial = false) {
       submitText.innerText = 'រក្សាទុកគ្រូឧទ្ទេស';
     }
 
-    // Validation switching
-    if (regStuId) regStuId.required = false;
-    if (regNameKh) regNameKh.required = false;
-    if (regUsername) regUsername.required = false;
-    if (regPassword) regPassword.required = false;
-
-    if (regTeacherId) regTeacherId.required = true;
-    if (regTeacherNameKh) regTeacherNameKh.required = true;
-    if (regTeacherPhone) regTeacherPhone.required = true;
-    if (regTeacherUsername) regTeacherUsername.required = true;
-    if (regTeacherPassword) regTeacherPassword.required = true;
+    // Disable all inputs in student containers & enable teacher containers
+    [stuFields, stuStatus, stuParents].forEach(sec => {
+      if (sec) {
+        sec.querySelectorAll('input, select, textarea').forEach(el => {
+          el.disabled = true;
+          el.required = false;
+        });
+      }
+    });
+    [trnFields, trnEmp, trnEmerg].forEach(sec => {
+      if (sec) {
+        sec.querySelectorAll('input, select, textarea').forEach(el => {
+          el.disabled = false;
+        });
+      }
+    });
 
     if (!isInitial || (regTeacherId && !regTeacherId.value)) {
       initTeacherIdSuggestion();
@@ -210,17 +215,22 @@ function switchRegistrationRole(role, isInitial = false) {
       submitText.innerText = 'រក្សាទុកសិស្ស';
     }
 
-    // Validation switching
-    if (regTeacherId) regTeacherId.required = false;
-    if (regTeacherNameKh) regTeacherNameKh.required = false;
-    if (regTeacherPhone) regTeacherPhone.required = false;
-    if (regTeacherUsername) regTeacherUsername.required = false;
-    if (regTeacherPassword) regTeacherPassword.required = false;
-
-    if (regStuId) regStuId.required = true;
-    if (regNameKh) regNameKh.required = true;
-    if (regUsername) regUsername.required = true;
-    if (regPassword) regPassword.required = true;
+    // Disable all inputs in teacher containers & enable student containers
+    [trnFields, trnEmp, trnEmerg].forEach(sec => {
+      if (sec) {
+        sec.querySelectorAll('input, select, textarea').forEach(el => {
+          el.disabled = true;
+          el.required = false;
+        });
+      }
+    });
+    [stuFields, stuStatus, stuParents].forEach(sec => {
+      if (sec) {
+        sec.querySelectorAll('input, select, textarea').forEach(el => {
+          el.disabled = false;
+        });
+      }
+    });
 
     if (!isInitial || (regStuId && !regStuId.value)) {
       initStudentIdSuggestion();
@@ -381,7 +391,15 @@ function checkEditMode() {
     submitText.innerText = 'រក្សាទុកការកែប្រែ (Update)';
   }
   if (submitIcon) submitIcon.className = 'fas fa-sync-alt';
-  if (submitBtn) submitBtn.style.background = '#2563eb';
+  if (submitBtn) {
+    submitBtn.style.background = '#2563eb';
+    submitBtn.type = 'button';
+    submitBtn.onclick = function(e) {
+      if (e) e.preventDefault();
+      handleUnifiedSave();
+      return false;
+    };
+  }
 
   // 1. Try finding Teacher first if role is teacher
   if (currentRegistrationRole === 'teacher' || editId.startsWith('USR-TRN')) {
@@ -888,10 +906,16 @@ window.copyBirthplaceToAddress = copyBirthplaceToAddress;
 // --------------------------------------------------------------------------
 
 function handleUnifiedSave() {
-  if (currentRegistrationRole === 'teacher') {
-    handleSaveTeacher();
-  } else {
-    handleSaveStudent();
+  console.log('[UnifiedSave] Initiated for role:', currentRegistrationRole);
+  try {
+    if (currentRegistrationRole === 'teacher') {
+      handleSaveTeacher();
+    } else {
+      handleSaveStudent();
+    }
+  } catch (err) {
+    console.error('[UnifiedSave] Execution error:', err);
+    showToast('មានបញ្ហាក្នុងការរក្សាទុក៖ ' + (err.message || err), 'error');
   }
 }
 window.handleUnifiedSave = handleUnifiedSave;
@@ -904,23 +928,27 @@ function handleSaveStudent() {
   const className = `${classGrade} ${group}`.trim();
   const nameKh = document.getElementById('regNameKh')?.value?.trim();
   const nameEn = document.getElementById('regNameEn')?.value?.trim() || '';
-  const gender = document.getElementById('regGender')?.value;
-  const dob = document.getElementById('regDob')?.value;
+  const gender = document.getElementById('regGender')?.value || 'ប្រុស';
+  const dob = document.getElementById('regDob')?.value || '';
   const age = document.getElementById('regAge')?.value || '';
   const parentPhone = document.getElementById('regParentPhone')?.value?.trim() || '';
   const username = (document.getElementById('regUsername')?.value || id).trim().toLowerCase();
   const password = (document.getElementById('regPassword')?.value || 'ktpttc123').trim();
 
-  if (!id || !nameKh || !gender || !dob) {
-    showToast('សូមបំពេញរាល់ព័ត៌មានដែលមានសញ្ញា (*) ឱ្យបានគ្រប់ជ្រុងជ្រោយ!', 'error');
+  if (!id || !nameKh) {
+    showToast('សូមបំពេញអត្តលេខ និងឈ្មោះសិស្ស (ខ្មែរ) ឱ្យបានគ្រប់ជ្រុងជ្រោយ!', 'error');
     return;
   }
 
   const students = getSavedStudents();
   const urlParams = new URLSearchParams(window.location.search);
-  const isEditMode = !!urlParams.get('id');
+  const editId = urlParams.get('id') || '';
+  const isEditMode = !!editId;
 
-  const existingIdx = students.findIndex(s => s.id === id);
+  const existingIdx = students.findIndex(s => 
+    (s.id && s.id.toLowerCase() === id.toLowerCase()) || 
+    (editId && s.id && s.id.toLowerCase() === editId.toLowerCase())
+  );
   if (existingIdx !== -1 && !isEditMode) {
     if (!confirm(`អត្តលេខ ${id} មានក្នុងប្រព័ន្ធរួចហើយ។ តើលោកគ្រូ-អ្នកគ្រូចង់ធ្វើបច្ចុប្បន្នភាព (Update) សិស្សនេះមែនទេ?`)) {
       return;
@@ -1005,7 +1033,10 @@ function handleSaveStudent() {
     if (!Array.isArray(stmsObj.trainees)) stmsObj.trainees = [];
     if (!Array.isArray(stmsObj.users)) stmsObj.users = [];
 
-    const existingTraineeIdx = stmsObj.trainees.findIndex(t => t.id === id);
+    const existingTraineeIdx = stmsObj.trainees.findIndex(t => 
+      (t.id && t.id.toLowerCase() === id.toLowerCase()) || 
+      (editId && t.id && t.id.toLowerCase() === editId.toLowerCase())
+    );
     const traineeRecord = {
       id,
       roll: stmsObj.trainees.length + 1,
@@ -1045,6 +1076,7 @@ function handleSaveStudent() {
     // Provision / Update Login User
     const existingUserIdx = stmsObj.users.findIndex(u => 
       (u.studentId && u.studentId.toLowerCase() === id.toLowerCase()) || 
+      (editId && u.studentId && u.studentId.toLowerCase() === editId.toLowerCase()) || 
       (u.username && u.username.toLowerCase() === username.toLowerCase())
     );
 
@@ -1072,6 +1104,23 @@ function handleSaveStudent() {
     }
 
     localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+
+    // Sync active session if this student is currently logged in
+    try {
+      const rawCur = sessionStorage.getItem('ktpttc_current_user') || localStorage.getItem('ktpttc_current_user');
+      if (rawCur) {
+        const curUser = JSON.parse(rawCur);
+        if (curUser && (
+          (curUser.studentId && curUser.studentId.toLowerCase() === id.toLowerCase()) ||
+          (editId && curUser.studentId && curUser.studentId.toLowerCase() === editId.toLowerCase()) ||
+          (curUser.username && curUser.username.toLowerCase() === username.toLowerCase())
+        )) {
+          const updatedCur = { ...curUser, ...userPayload };
+          localStorage.setItem('ktpttc_current_user', JSON.stringify(updatedCur));
+          sessionStorage.setItem('ktpttc_current_user', JSON.stringify(updatedCur));
+        }
+      }
+    } catch (e) {}
   } catch (e) {
     console.error('Sync to STMS storage error:', e);
   }
@@ -1106,8 +1155,8 @@ function handleSaveTeacher() {
   const roleTitle = document.getElementById('regTeacherRoleTitle')?.value?.trim() || 'គ្រូឧទ្ទេសពេញម៉ោង';
   const experience = document.getElementById('regTeacherExperience')?.value?.trim() || '';
 
-  if (!id || !nameKh || !gender) {
-    showToast('សូមបំពេញរាល់ព័ត៌មានដែលមានសញ្ញា (*) ឱ្យបានគ្រប់ជ្រុងជ្រោយ!', 'error');
+  if (!id || !nameKh) {
+    showToast('សូមបំពេញអត្តលេខ និងឈ្មោះគ្រូឧទ្ទេស (ខ្មែរ) ឱ្យបានគ្រប់ជ្រុងជ្រោយ!', 'error');
     return;
   }
 
@@ -1171,7 +1220,17 @@ function handleSaveTeacher() {
     createdAt: new Date().toISOString()
   };
 
-  const existingIdx = stmsObj.users.findIndex(u => u.id === id || (u.username && u.username.toLowerCase() === username.toLowerCase() && u.role === 'trainer'));
+  const urlParams = new URLSearchParams(window.location.search);
+  const editId = urlParams.get('id') || '';
+  const isEdit = !!editId;
+
+  const existingIdx = stmsObj.users.findIndex(u => 
+    (u.id && u.id.toLowerCase() === id.toLowerCase()) || 
+    (editId && u.id && u.id.toLowerCase() === editId.toLowerCase()) || 
+    (editId && u.username && u.username.toLowerCase() === editId.toLowerCase()) || 
+    (u.username && u.username.toLowerCase() === username.toLowerCase() && u.role === 'trainer')
+  );
+
   if (existingIdx !== -1) {
     stmsObj.users[existingIdx] = { ...stmsObj.users[existingIdx], ...teacherRecord };
   } else {
@@ -1180,8 +1239,22 @@ function handleSaveTeacher() {
 
   localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const isEdit = !!urlParams.get('id');
+  // Sync active session if this teacher is currently logged in
+  try {
+    const rawCur = sessionStorage.getItem('ktpttc_current_user') || localStorage.getItem('ktpttc_current_user');
+    if (rawCur) {
+      const curUser = JSON.parse(rawCur);
+      if (curUser && (
+        (curUser.id && curUser.id.toLowerCase() === id.toLowerCase()) ||
+        (editId && curUser.id && curUser.id.toLowerCase() === editId.toLowerCase()) ||
+        (curUser.username && curUser.username.toLowerCase() === username.toLowerCase())
+      )) {
+        const updatedCur = { ...curUser, ...teacherRecord };
+        localStorage.setItem('ktpttc_current_user', JSON.stringify(updatedCur));
+        sessionStorage.setItem('ktpttc_current_user', JSON.stringify(updatedCur));
+      }
+    }
+  } catch (e) {}
 
   if (isEdit) {
     showToast(`🎉 បានកែប្រែព័ត៌មានគ្រូឧទ្ទេស «${nameKh}» ដោយជោគជ័យ!`, 'success');

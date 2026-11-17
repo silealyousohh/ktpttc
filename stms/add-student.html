@@ -581,7 +581,7 @@
     <div class="form-card">
       <h2 class="form-header-title" id="formHeaderTitle">គ្រប់គ្រងបញ្ជីសិស្ស</h2>
 
-      <form id="studentRegistrationForm" onsubmit="event.preventDefault(); handleUnifiedSave();">
+      <form id="studentRegistrationForm" novalidate onsubmit="event.preventDefault(); handleUnifiedSave(); return false;">
         
         <!-- Top: Photo + Basic Info -->
         <div class="student-basic-grid">
@@ -619,12 +619,12 @@
               <div class="fields-grid-4">
                 <div class="form-group">
                   <label class="form-label" for="regStuId">អត្តលេខសិស្ស<span class="required">*</span></label>
-                  <input type="text" id="regStuId" class="form-control" placeholder="អត្តលេខ" required>
+                  <input type="text" id="regStuId" class="form-control" placeholder="អត្តលេខ">
                 </div>
 
                 <div class="form-group">
                   <label class="form-label" for="regClass">ថ្នាក់ទី<span class="required">*</span></label>
-                  <select id="regClass" class="form-control" required>
+                  <select id="regClass" class="form-control">
                     <option value="១២+២" selected>១២+២</option>
                     <option value="១២+៤">១២+៤</option>
                     <option value="បរិញ្ញាបត្រ+១">បរិញ្ញាបត្រ+១</option>
@@ -633,7 +633,7 @@
 
                 <div class="form-group">
                   <label class="form-label" for="regGroup">ក្រុម<span class="required">*</span></label>
-                  <select id="regGroup" class="form-control" required>
+                  <select id="regGroup" class="form-control">
                     <option value="ក្រុម ក" selected>ក្រុម ក</option>
                     <option value="ក្រុម ខ">ក្រុម ខ</option>
                     <option value="ក្រុម គ">ក្រុម គ</option>
@@ -646,7 +646,7 @@
 
                 <div class="form-group">
                   <label class="form-label" for="regNameKh">ឈ្មោះសិស្ស (ខ្មែរ)<span class="required">*</span></label>
-                  <input type="text" id="regNameKh" class="form-control" placeholder="គោត្តនាម និងនាម" required>
+                  <input type="text" id="regNameKh" class="form-control" placeholder="គោត្តនាម និងនាម">
                 </div>
               </div>
 
@@ -659,7 +659,7 @@
 
                 <div class="form-group">
                   <label class="form-label" for="regGender">ភេទ<span class="required">*</span></label>
-                  <select id="regGender" class="form-control" required>
+                  <select id="regGender" class="form-control">
                     <option value="" disabled selected>ជ្រើសរើស</option>
                     <option value="ប្រុស">ប្រុស (Male)</option>
                     <option value="ស្រី">ស្រី (Female)</option>
@@ -668,7 +668,7 @@
 
                 <div class="form-group">
                   <label class="form-label" for="regDob">ថ្ងៃខែឆ្នាំកំណើត<span class="required">*</span></label>
-                  <input type="date" id="regDob" class="form-control" onchange="calculateAgeFromDob(this.value, 'regAge')" required>
+                  <input type="date" id="regDob" class="form-control" onchange="calculateAgeFromDob(this.value, 'regAge')">
                 </div>
               </div>
 
@@ -686,13 +686,13 @@
 
                 <div class="form-group">
                   <label class="form-label" for="regUsername">ឈ្មោះគណនី (Username)<span class="required">*</span></label>
-                  <input type="text" id="regUsername" class="form-control" placeholder="Username ចូលប្រព័ន្ធ" required>
+                  <input type="text" id="regUsername" class="form-control" placeholder="Username ចូលប្រព័ន្ធ">
                 </div>
 
                 <div class="form-group">
                   <label class="form-label" for="regPassword">ពាក្យសម្ងាត់ (Password)<span class="required">*</span></label>
                   <div style="position: relative; display: flex; align-items: center;">
-                    <input type="password" id="regPassword" class="form-control" value="ktpttc123" placeholder="Password" required style="padding-right: 36px;">
+                    <input type="password" id="regPassword" class="form-control" value="ktpttc123" placeholder="Password" style="padding-right: 36px;">
                     <button type="button" onclick="toggleRegPassword('regPassword', 'regEyeIcon')" style="position: absolute; right: 10px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;" title="បង្ហាញ/លាក់">
                       <i class="fas fa-eye" id="regEyeIcon"></i>
                     </button>
@@ -1074,7 +1074,7 @@
 
         <!-- Bottom Action Buttons (Exact Match to Image 2) -->
         <div class="form-bottom-actions">
-          <button type="submit" class="btn-action btn-save" id="btnSubmitForm">
+          <button type="button" class="btn-action btn-save" id="btnSubmitForm" onclick="handleUnifiedSave()">
             <i class="fas fa-save" id="btnSubmitIcon"></i> <span id="btnSubmitText">រក្សាទុក</span>
           </button>
           <a href="index.html" class="btn-action" style="background: #64748b; text-decoration: none;">
@@ -1096,9 +1096,9 @@
   <div id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="cambodia-geo.js?v=4.4"></script>
-  <script src="data.js?v=4.4"></script>
-  <script src="add-student.js?v=4.4"></script>
+  <script src="cambodia-geo.js?v=4.5"></script>
+  <script src="data.js?v=4.5"></script>
+  <script src="add-student.js?v=4.5"></script>
 </body>
 
 </html>
