@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- STMS Custom Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=3.0">
+  <link rel="stylesheet" href="styles.css?v=3.1">
 </head>
 
 <body>
@@ -102,6 +102,62 @@
   <!-- Auxiliary Modal Helper Functions -->
   <script>
     function openAlertsModal() {
+      // 1. Trainee / Student View: Personal notification without "ទៅកាន់ផ្ទាំងគ្រប់គ្រង" button
+      if (window.currentRole === 'trainee') {
+        const currentTrainee = window.currentTraineeUser || (window.stmsData?.trainees || [])[0] || {};
+        const myRequests = (window.stmsData?.profileRequests || []).filter(r => r.traineeId === currentTrainee.id || r.traineeNameKh === currentTrainee.nameKh);
+        const myAbsent = currentTrainee.attendanceSummary?.absent || 0;
+
+        const modalHtml = `
+          <div class="stms-modal-backdrop" id="alertsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+            <div class="stms-modal-window" style="max-width:550px;">
+              <div class="modal-header-bar" style="background:#eff6ff; border-bottom:1px solid #dbeafe;">
+                <div class="modal-header-title" style="color:#1e40af;">
+                  <i class="fas fa-bell"></i> ការជូនដំណឹងផ្ទាល់ខ្លួន (My Notifications)
+                </div>
+                <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
+              </div>
+              <div class="modal-body-scroll" style="padding:20px;">
+                <div style="background:${myAbsent > 3 ? '#fff1f2' : '#f0fdf4'}; border:1px solid ${myAbsent > 3 ? '#fecaca' : '#bbf7d0'}; border-radius:10px; padding:14px; margin-bottom:16px;">
+                  <div style="font-weight:700; color:${myAbsent > 3 ? '#991b1b' : '#166534'}; margin-bottom:4px;">
+                    <i class="fas ${myAbsent > 3 ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ស្ថានភាពវត្តមានសិក្សា
+                  </div>
+                  <div style="font-size:0.85rem; color:#475569;">
+                    គរុសនិស្សិត៖ <strong>${currentTrainee.nameKh || 'យូសុះ ស៊ីលាល'}</strong> (${currentTrainee.id || '-'})<br>
+                    ចំនួនអវត្តមានសរុប៖ <strong>${myAbsent} លើក</strong> ${myAbsent > 3 ? '<span class="badge badge-danger" style="margin-left:6px;">លើសកម្រិតវិន័យ</span>' : '<span class="badge badge-success" style="margin-left:6px;">ល្អប្រសើរ</span>'}
+                  </div>
+                </div>
+
+                <h4 style="color:#1e3a8a; font-size:0.95rem; margin-bottom:10px;">
+                  <i class="fas fa-paper-plane" style="color:#3b82f6;"></i> សំណើស្នើសុំកែប្រែព័ត៌មានរបស់អ្នក (${myRequests.length} ករណី)
+                </h4>
+                ${myRequests.length === 0 ? '<p style="color:#64748b; font-size:0.85rem;">លោកអ្នកមិនទាន់មានសំណើស្នើសុំកែប្រែព័ត៌មានណាមួយនៅឡើយទេ។</p>' : `
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    ${myRequests.map(r => `
+                      <div style="padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                          <strong>កែប្រែ៖ ${r.fieldName}</strong>
+                          <span class="badge ${r.status==='approved'?'badge-success':r.status==='rejected'?'badge-danger':'badge-warning'}">
+                            ${r.status==='approved'?'បានអនុម័ត':r.status==='rejected'?'បដិសេធ':'រង់ចាំត្រួតពិនិត្យ'}
+                          </span>
+                        </div>
+                        <div style="font-size:0.8rem; color:#64748b;">តម្លៃថ្មី៖ ${r.newValue} | មូលហេតុ៖ ${r.reason}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                `}
+              </div>
+              <div class="modal-footer-bar">
+                <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        return;
+      }
+
+      // 2. Administrator & Trainer View
       const struggling = (window.stmsData?.trainees || []).filter(t => (t.attendanceSummary?.absent || 0) > 3);
       const pendingRequests = (window.stmsData?.profileRequests || []).filter(r => r.status === 'pending');
 
@@ -150,9 +206,11 @@
             </div>
             <div class="modal-footer-bar">
               <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+              ${window.currentRole !== 'trainee' ? `
               <button class="btn btn-primary" onclick="closeStmsModal(); if(currentRole==='admin'){navigateView('requests');}else{navigateView('attendance');}">
                 <i class="fas fa-arrow-right"></i> ទៅកាន់ផ្ទាំងគ្រប់គ្រង
               </button>
+              ` : ''}
             </div>
           </div>
         </div>
@@ -279,8 +337,8 @@
   </div>
 
   <!-- Application Core Scripts -->
-  <script src="data.js?v=3.0"></script>
-  <script src="app.js?v=3.0"></script>
+  <script src="data.js?v=3.1"></script>
+  <script src="app.js?v=3.1"></script>
 </body>
 
 </html>
