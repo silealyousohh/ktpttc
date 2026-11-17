@@ -1973,3 +1973,475 @@ body.role-admin #navCenterRole {
     border: 1px solid #000 !important;
   }
 }
+
+/* ==========================================================================
+   TRAINEE STUDENT PORTAL CUSTOM UI (MODELED AFTER USER MOCKUP)
+   ========================================================================== */
+
+.trainee-portal-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* 1. Trainee Hero Banner Card */
+.trainee-hero-banner {
+  position: relative;
+  background: linear-gradient(135deg, #09204a 0%, #133a75 50%, #0a2558 100%);
+  border-radius: 18px;
+  padding: 24px 28px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 10px 25px -5px rgba(9, 32, 74, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.trainee-hero-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'80'%20height%3D'80'%20viewBox%3D'0%200%2080%2080'%3E%3Cdefs%3E%3Cg%20id%3D'k'%3E%3Ccircle%20cx%3D'0'%20cy%3D'0'%20r%3D'3.5'%20fill%3D'currentColor'%20opacity%3D'0.75'%2F%3E%3Ccircle%20cx%3D'0'%20cy%3D'0'%20r%3D'12'%20fill%3D'none'%20stroke%3D'currentColor'%20stroke-width%3D'0.8'%20stroke-dasharray%3D'2%2C2'%20opacity%3D'0.5'%2F%3E%3Ccircle%20cx%3D'0'%20cy%3D'0'%20r%3D'18'%20fill%3D'none'%20stroke%3D'currentColor'%20stroke-width%3D'0.6'%20opacity%3D'0.35'%2F%3E%3Cpath%20d%3D'M0%2C-14%20C2%2C-8%202%2C-8%200%2C-4%20C-2%2C-8%20-2%2C-8%200%2C-14%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M0%2C14%20C2%2C8%202%2C8%200%2C4%20C-2%2C8%20-2%2C8%200%2C14%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M-14%2C0%20C-8%2C2%20-8%2C2%20-4%2C0%20C-8%2C-2%20-8%2C-2%20-14%2C0%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M14%2C0%20C8%2C2%208%2C2%204%2C0%20C8%2C-2%208%2C-2%2014%2C0%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M-10%2C-10%20C-6%2C-4%20-4%2C-6%200%2C0%20C-4%2C-6%20-6%2C-4%20-10%2C-10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3Cpath%20d%3D'M10%2C10%20C6%2C4%204%2C6%200%2C0%20C4%2C6%206%2C4%2010%2C10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3Cpath%20d%3D'M-10%2C10%20C-6%2C4%20-4%2C6%200%2C0%20C-4%2C6%20-6%2C4%20-10%2C10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3Cpath%20d%3D'M10%2C-10%20C6%2C-4%204%2C-6%200%2C0%20C4%2C-6%206%2C-4%2010%2C-10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3C%2Fg%3E%3C%2Fdefs%3E%3Crect%20width%3D'80'%20height%3D'80'%20fill%3D'none'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'40'%20y%3D'40'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'0'%20y%3D'0'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'80'%20y%3D'0'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'0'%20y%3D'80'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'80'%20y%3D'80'%2F%3E%3Cpath%20d%3D'M0%2C40%20L40%2C0%20L80%2C40%20L40%2C80%20Z'%20fill%3D'none'%20stroke%3D'currentColor'%20stroke-width%3D'0.6'%20opacity%3D'0.3'%2F%3E%3C%2Fsvg%3E");
+  color: #60a5fa;
+  opacity: 0.16;
+  background-size: 72px 72px;
+  pointer-events: none;
+}
+
+.trainee-hero-left {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.trainee-hero-avatar-wrap {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.trainee-hero-avatar-letter {
+  font-family: var(--font-moul);
+  font-size: 2rem;
+  color: #ffffff;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.trainee-hero-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trainee-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trainee-hero-greeting {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #93c5fd;
+  letter-spacing: 0.3px;
+}
+
+.trainee-hero-name {
+  font-family: var(--font-moul);
+  font-size: 1.45rem;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.trainee-hero-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.trainee-badge-pill {
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.trainee-badge-pill.role {
+  background: rgba(56, 189, 248, 0.2);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.trainee-badge-pill.class {
+  background: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.trainee-hero-date {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.trainee-hero-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-hero-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  border: none;
+}
+
+.btn-hero-action.primary {
+  background: #ffffff;
+  color: #1e3a8a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-hero-action.primary:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btn-hero-action.secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.btn-hero-action.secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* 2. Trainee 8 Pastel Hub Menu Grid */
+.trainee-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.trainee-hub-card {
+  position: relative;
+  border-radius: 16px;
+  padding: 22px 16px;
+  min-height: 116px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trainee-hub-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+.hub-card-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'80'%20height%3D'80'%20viewBox%3D'0%200%2080%2080'%3E%3Cdefs%3E%3Cg%20id%3D'k'%3E%3Ccircle%20cx%3D'0'%20cy%3D'0'%20r%3D'3.5'%20fill%3D'currentColor'%20opacity%3D'0.75'%2F%3E%3Ccircle%20cx%3D'0'%20cy%3D'0'%20r%3D'12'%20fill%3D'none'%20stroke%3D'currentColor'%20stroke-width%3D'0.8'%20stroke-dasharray%3D'2%2C2'%20opacity%3D'0.5'%2F%3E%3Ccircle%20cx%3D'0'%20cy%3D'0'%20r%3D'18'%20fill%3D'none'%20stroke%3D'currentColor'%20stroke-width%3D'0.6'%20opacity%3D'0.35'%2F%3E%3Cpath%20d%3D'M0%2C-14%20C2%2C-8%202%2C-8%200%2C-4%20C-2%2C-8%20-2%2C-8%200%2C-14%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M0%2C14%20C2%2C8%202%2C8%200%2C4%20C-2%2C8%20-2%2C8%200%2C14%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M-14%2C0%20C-8%2C2%20-8%2C2%20-4%2C0%20C-8%2C-2%20-8%2C-2%20-14%2C0%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M14%2C0%20C8%2C2%208%2C2%204%2C0%20C8%2C-2%208%2C-2%2014%2C0%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M-10%2C-10%20C-6%2C-4%20-4%2C-6%200%2C0%20C-4%2C-6%20-6%2C-4%20-10%2C-10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3Cpath%20d%3D'M10%2C10%20C6%2C4%204%2C6%200%2C0%20C4%2C6%206%2C4%2010%2C10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3Cpath%20d%3D'M-10%2C10%20C-6%2C4%20-4%2C6%200%2C0%20C-4%2C6%20-6%2C4%20-10%2C10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3Cpath%20d%3D'M10%2C-10%20C6%2C-4%204%2C-6%200%2C0%20C4%2C-6%206%2C-4%2010%2C-10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3C%2Fg%3E%3C%2Fdefs%3E%3Crect%20width%3D'80'%20height%3D'80'%20fill%3D'none'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'40'%20y%3D'40'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'0'%20y%3D'0'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'80'%20y%3D'0'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'0'%20y%3D'80'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'80'%20y%3D'80'%2F%3E%3Cpath%20d%3D'M0%2C40%20L40%2C0%20L80%2C40%20L40%2C80%20Z'%20fill%3D'none'%20stroke%3D'currentColor'%20stroke-width%3D'0.6'%20opacity%3D'0.3'%2F%3E%3C%2Fsvg%3E");
+  opacity: 0.08;
+  background-size: 65px 65px;
+  pointer-events: none;
+}
+
+.hub-card-icon {
+  font-size: 1.65rem;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.hub-card-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #1e293b;
+  position: relative;
+  z-index: 1;
+}
+
+.hub-card-sub {
+  font-size: 0.74rem;
+  color: #64748b;
+  margin-top: 4px;
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
+
+/* Individual Pastel Palettes */
+.card-pink {
+  background: linear-gradient(135deg, #fff1f2 0%, #fce7f3 100%);
+  color: #db2777;
+}
+.card-pink .hub-card-pattern { color: #f43f5e; }
+
+.card-blue {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  color: #0284c7;
+}
+.card-blue .hub-card-pattern { color: #0284c7; }
+
+.card-orange {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  color: #ea580c;
+}
+.card-orange .hub-card-pattern { color: #ea580c; }
+
+.card-green {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  color: #16a34a;
+}
+.card-green .hub-card-pattern { color: #16a34a; }
+
+.card-amber {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #d97706;
+}
+.card-amber .hub-card-pattern { color: #d97706; }
+
+.card-purple {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  color: #7c3aed;
+}
+.card-purple .hub-card-pattern { color: #7c3aed; }
+
+.card-teal {
+  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+  color: #0d9488;
+}
+.card-teal .hub-card-pattern { color: #0d9488; }
+
+.card-sky {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #2563eb;
+}
+.card-sky .hub-card-pattern { color: #2563eb; }
+
+/* 3. Trainee Subjects Ribbon & Row */
+.trainee-subjects-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.trainee-ribbon-bar {
+  position: relative;
+  background: linear-gradient(90deg, #0e2a5c 0%, #1e4a9e 50%, #0e2a5c 100%);
+  color: #ffffff;
+  border-radius: 14px 14px 0 0;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(14, 42, 92, 0.2);
+}
+
+.trainee-ribbon-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'80'%20height%3D'80'%20viewBox%3D'0%200%2080%2080'%3E%3Cdefs%3E%3Cg%20id%3D'k'%3E%3Ccircle%20cx%3D'0'%20cy%3D'0'%20r%3D'3.5'%20fill%3D'currentColor'%20opacity%3D'0.75'%2F%3E%3Ccircle%20cx%3D'0'%20cy%3D'0'%20r%3D'12'%20fill%3D'none'%20stroke%3D'currentColor'%20stroke-width%3D'0.8'%20stroke-dasharray%3D'2%2C2'%20opacity%3D'0.5'%2F%3E%3Ccircle%20cx%3D'0'%20cy%3D'0'%20r%3D'18'%20fill%3D'none'%20stroke%3D'currentColor'%20stroke-width%3D'0.6'%20opacity%3D'0.35'%2F%3E%3Cpath%20d%3D'M0%2C-14%20C2%2C-8%202%2C-8%200%2C-4%20C-2%2C-8%20-2%2C-8%200%2C-14%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M0%2C14%20C2%2C8%202%2C8%200%2C4%20C-2%2C8%20-2%2C8%200%2C14%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M-14%2C0%20C-8%2C2%20-8%2C2%20-4%2C0%20C-8%2C-2%20-8%2C-2%20-14%2C0%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M14%2C0%20C8%2C2%208%2C2%204%2C0%20C8%2C-2%208%2C-2%2014%2C0%20Z'%20fill%3D'currentColor'%20opacity%3D'0.5'%2F%3E%3Cpath%20d%3D'M-10%2C-10%20C-6%2C-4%20-4%2C-6%200%2C0%20C-4%2C-6%20-6%2C-4%20-10%2C-10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3Cpath%20d%3D'M10%2C10%20C6%2C4%204%2C6%200%2C0%20C4%2C6%206%2C4%2010%2C10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3Cpath%20d%3D'M-10%2C10%20C-6%2C4%20-4%2C6%200%2C0%20C-4%2C6%20-6%2C4%20-10%2C10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3Cpath%20d%3D'M10%2C-10%20C6%2C-4%204%2C-6%200%2C0%20C4%2C-6%206%2C-4%2010%2C-10%20Z'%20fill%3D'currentColor'%20opacity%3D'0.35'%20transform%3D'rotate(45)'%2F%3E%3C%2Fg%3E%3C%2Fdefs%3E%3Crect%20width%3D'80'%20height%3D'80'%20fill%3D'none'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'40'%20y%3D'40'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'0'%20y%3D'0'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'80'%20y%3D'0'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'0'%20y%3D'80'%2F%3E%3Cuse%20href%3D'%23k'%20x%3D'80'%20y%3D'80'%2F%3E%3Cpath%20d%3D'M0%2C40%20L40%2C0%20L80%2C40%20L40%2C80%20Z'%20fill%3D'none'%20stroke%3D'currentColor'%20stroke-width%3D'0.6'%20opacity%3D'0.3'%2F%3E%3C%2Fsvg%3E");
+  color: #60a5fa;
+  opacity: 0.18;
+  background-size: 70px 70px;
+  pointer-events: none;
+}
+
+.ribbon-arrow-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.ribbon-arrow-btn:hover {
+  background: rgba(255, 255, 255, 0.32);
+  transform: scale(1.05);
+}
+
+.ribbon-title {
+  font-family: var(--font-moul);
+  font-size: 1.02rem;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trainee-subjects-body {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  margin-bottom: 24px;
+}
+
+.trainee-subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.trainee-subject-card {
+  background: var(--subj-bg, #f8fafc);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 14px;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 110px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.trainee-subject-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--subj-color, #2563eb);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+}
+
+.subj-card-icon {
+  font-size: 1.75rem;
+  color: var(--subj-color, #2563eb);
+  margin-bottom: 2px;
+}
+
+.subj-card-name {
+  font-weight: 700;
+  font-size: 0.96rem;
+  color: #1e293b;
+  line-height: 1.35;
+}
+
+.subj-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: auto;
+}
+
+.subj-badge-grade {
+  background: #10b981;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.74rem;
+}
+
+.subj-card-trainer {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  padding-top: 6px;
+}
+
+/* 4. Trainee Stats Grid */
+.trainee-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  .trainee-hub-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .trainee-subjects-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .trainee-stats-row {
+    grid-template-columns: 1fr;
+  }
+  .trainee-hero-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .trainee-subjects-grid {
+    grid-template-columns: 1fr;
+  }
+  .trainee-hero-left {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
