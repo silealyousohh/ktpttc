@@ -3570,9 +3570,9 @@ body:has(.admin-portal-container) .stms-content-viewport {
 
 .timetable-matrix-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
-  min-width: 880px;
+  min-width: 1080px;
 }
 
 .timetable-day-column {

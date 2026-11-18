@@ -3006,7 +3006,7 @@ function saveGradeWeights() {
 let currentAdminTimetableClassFilter = 'all';
 let currentAdminTimetableDayFilter = 'all';
 
-const TIMETABLE_DAYS = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+const TIMETABLE_DAYS = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍', 'អាទិត្យ'];
 
 const STANDARD_PERIODS = [
   { id: 'p1', time: '07:30 - 09:00', label: '០៧:៣០ - ០៩:០០ (ព្រឹក ម៉ោង ១)', shift: 'ព្រឹក' },
@@ -3232,6 +3232,10 @@ function generateStandardTimetableTemplate(className) {
     'សៅរ៍': [
       { period: '07:30 - 09:00', code: 'PED-101', name: 'ស្វ័យសិក្សា និងការស្រាវជ្រាវបណ្ណាល័យ', room: 'បណ្ណាល័យ KTPTTC' },
       { period: '09:15 - 10:45', code: 'RES-106', name: 'ការរៀបចំកិច្ចតែងការបង្រៀនគំរូ', room: 'បន្ទប់ ១០១' }
+    ],
+    'អាទិត្យ': [
+      { period: '07:30 - 09:00', code: 'COM-108', name: 'ការអនុវត្ត ICT & បច្ចេកវិទ្យាឌីជីថល', room: 'បន្ទប់កុំព្យូទ័រ' },
+      { period: '09:15 - 10:45', code: 'PRAC-107', name: 'សិក្ខាសាលាគរុកោសល្យ និងការចែករំលែកបទពិសោធ', room: 'សាលប្រជុំ KTPTTC' }
     ]
   };
 
@@ -3694,7 +3698,7 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
             ${(() => {
               const daysToRender = currentAdminTimetableDayFilter === 'all' ? TIMETABLE_DAYS : [currentAdminTimetableDayFilter];
               const todayIndex = new Date().getDay(); // 0 is Sunday, 1 is Monday...
-              const dayIndexMap = { 'ចន្ទ': 1, 'អង្គារ': 2, 'ពុធ': 3, 'ព្រហស្បតិ៍': 4, 'សុក្រ': 5, 'សៅរ៍': 6 };
+              const dayIndexMap = { 'ចន្ទ': 1, 'អង្គារ': 2, 'ពុធ': 3, 'ព្រហស្បតិ៍': 4, 'សុក្រ': 5, 'សៅរ៍': 6, 'អាទិត្យ': 0 };
 
               return daysToRender.map(day => {
                 const isToday = dayIndexMap[day] === todayIndex;
