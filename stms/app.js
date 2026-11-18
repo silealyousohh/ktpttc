@@ -3000,127 +3000,834 @@ function saveGradeWeights() {
 }
 
 // ==========================================================================
-// 5. TIMETABLE VIEW (ម៉ូឌុលកាលវិភាគ)
+// 5. TIMETABLE & SCHEDULING MANAGEMENT (ម៉ូឌុលរៀបចំកាលវិភាគបង្រៀន)
 // ==========================================================================
-function renderTimetableView(container) {
-  const tt = stmsData.timetables[0];
 
-  let html = `
-    <div class="view-header">
-      <div class="view-title-group">
-        <h2><i class="fas fa-calendar-alt"></i> ម៉ូឌុលកាលវិភាគ និងការសិក្សា (Module 2)</h2>
-        <p>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC) • ${tt.className} • ${tt.room}</p>
-      </div>
-      <div class="view-actions-group">
-        <button class="btn btn-outline" onclick="openSubjectModal()"><i class="fas fa-edit"></i> Adding/Editing Subjects</button>
-        <button class="btn btn-outline" onclick="openAssignLecturerModal()"><i class="fas fa-chalkboard-teacher"></i> Assigning Lecturers</button>
-        ${currentRole === 'admin' ? `
-          <button class="btn btn-primary" onclick="openAddSlotModal()"><i class="fas fa-plus"></i> បន្ថែមម៉ោងបង្រៀន</button>
-        ` : ''}
-        <button class="btn btn-outline" onclick="window.print()"><i class="fas fa-print"></i> បោះពុម្ពកាលវិភាគ</button>
-      </div>
-    </div>
+let currentAdminTimetableClassFilter = 'all';
+let currentAdminTimetableDayFilter = 'all';
 
-    <!-- Timetable Grid -->
-    <div class="table-card">
-      <div class="data-table-responsive">
-        <table class="stms-table" style="text-align:center;">
-          <thead>
-            <tr>
-              <th style="width:140px;">ថ្ងៃនៃសប្ដាហ៍</th>
-              <th>ម៉ោងសិក្សា</th>
-              <th>មុខវិជ្ជាបង្រៀន</th>
-              <th>គ្រូឧទ្ទេសទទួលបន្ទុក</th>
-              <th>បន្ទប់សិក្សា</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${tt.days.map(d => `
-              ${d.slots.map((s, idx) => `
-                <tr>
-                  ${idx === 0 ? `<td rowspan="${d.slots.length}" style="font-weight:700; background:#f8fafc; color:#1e3a8a; border-right:1px solid #e2e8f0;">${d.day}</td>` : ''}
-                  <td><strong>${s.period}</strong></td>
-                  <td style="font-weight:600; color:#1e40af;">${s.subject}</td>
-                  <td>${s.trainer}</td>
-                  <td><span class="badge badge-published">${s.room}</span></td>
-                </tr>
-              `).join('')}
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
+const TIMETABLE_DAYS = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
 
-  container.innerHTML = html;
+const STANDARD_PERIODS = [
+  { id: 'p1', time: '07:30 - 09:00', label: '០៧:៣០ - ០៩:០០ (ព្រឹក ម៉ោង ១)', shift: 'ព្រឹក' },
+  { id: 'p2', time: '09:15 - 10:45', label: '០៩:១៥ - ១០:៤៥ (ព្រឹក ម៉ោង ២)', shift: 'ព្រឹក' },
+  { id: 'p3', time: '13:30 - 15:00', label: '១៣:៣០ - ១៥:០០ (រសៀល ម៉ោង ៣)', shift: 'រសៀល' },
+  { id: 'p4', time: '15:15 - 16:45', label: '១៥:១៥ - ១៦:៤៥ (រសៀល ម៉ោង ៤)', shift: 'រសៀល' }
+];
+
+function handleAdminTimetableClassChange(val) {
+  currentAdminTimetableClassFilter = val;
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'timetable') {
+    renderTimetableView(document.getElementById('mainContentArea'));
+  }
 }
 
-function openAddSlotModal() {
+function handleAdminTimetableDayChange(day) {
+  currentAdminTimetableDayFilter = day;
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'timetable') {
+    renderTimetableView(document.getElementById('mainContentArea'));
+  }
+}
+
+function ensureClassTimetable(className) {
+  if (!Array.isArray(stmsData.timetables)) {
+    stmsData.timetables = [];
+  }
+  const cleanClass = (className && typeof className === 'string' && className.trim() && className !== 'all') ? className.trim() : 'ថ្នាក់បឋម ១២+២ (ក្រុម ក)';
+  let tt = stmsData.timetables.find(t => t && t.className === cleanClass);
+  
+  if (!tt) {
+    tt = {
+      id: `TT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      className: cleanClass,
+      cohortId: '',
+      room: 'បន្ទប់ ១០១',
+      days: TIMETABLE_DAYS.map(d => ({ day: d, slots: [] }))
+    };
+    stmsData.timetables.push(tt);
+  } else {
+    if (!Array.isArray(tt.days)) tt.days = [];
+    TIMETABLE_DAYS.forEach(dName => {
+      if (!tt.days.some(d => d && (d.day === dName || (d.day && d.day.replace(/\s*\(.*?\)\s*/g, '').trim() === dName)))) {
+        tt.days.push({ day: dName, slots: [] });
+      }
+    });
+  }
+  return tt;
+}
+
+function getAllTimetableSlots(classFilter = 'all', dayFilter = 'all') {
+  if (!Array.isArray(stmsData.timetables)) return [];
+  const list = [];
+  stmsData.timetables.forEach(tb => {
+    if (classFilter !== 'all' && tb.className !== classFilter) return;
+    (tb.days || []).forEach(d => {
+      if (!d) return;
+      const dNameClean = (d.day || '').replace(/\s*\(.*?\)\s*/g, '').trim();
+      if (dayFilter !== 'all' && dNameClean !== dayFilter && d.day !== dayFilter) return;
+      (d.slots || []).forEach(sl => {
+        if (!sl) return;
+        list.push({
+          id: sl.id || `slot-${Math.random().toString(36).substr(2, 9)}`,
+          timetableId: tb.id,
+          className: tb.className || 'ថ្នាក់រៀន',
+          day: dNameClean,
+          dayFull: d.day,
+          period: sl.period || '07:30 - 09:00',
+          subject: sl.subject || 'មុខវិជ្ជា',
+          subjectCode: sl.subjectCode || '',
+          trainer: sl.trainer || 'គ្រូឧទ្ទេស',
+          trainerId: sl.trainerId || '',
+          room: sl.room || tb.room || 'បន្ទប់ ១០១',
+          notes: sl.notes || ''
+        });
+      });
+    });
+  });
+  return list;
+}
+
+function findTimetableSlotById(slotId) {
+  if (!Array.isArray(stmsData.timetables)) return null;
+  for (const tb of stmsData.timetables) {
+    for (const d of (tb.days || [])) {
+      const found = (d.slots || []).find(s => s && (s.id === slotId || s._id === slotId));
+      if (found) {
+        return {
+          slot: found,
+          timetable: tb,
+          day: d,
+          className: tb.className,
+          dayName: (d.day || '').replace(/\s*\(.*?\)\s*/g, '').trim()
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function checkTimetableConflict(day, period, trainerName, roomName, excludeSlotId = null) {
+  if (!Array.isArray(stmsData.timetables)) return { hasConflict: false, messages: [] };
+  const dClean = (day || '').replace(/\s*\(.*?\)\s*/g, '').trim();
+  const pClean = (period || '').trim();
+  const trClean = (trainerName || '').trim();
+  const rmClean = (roomName || '').trim();
+  
+  const conflictInfo = {
+    hasConflict: false,
+    trainerConflict: false,
+    roomConflict: false,
+    messages: []
+  };
+
+  if (!dClean || !pClean) return conflictInfo;
+
+  stmsData.timetables.forEach(tb => {
+    (tb.days || []).forEach(d => {
+      const thisDay = (d.day || '').replace(/\s*\(.*?\)\s*/g, '').trim();
+      if (thisDay !== dClean) return;
+      (d.slots || []).forEach(sl => {
+        if (!sl) return;
+        if (excludeSlotId && (sl.id === excludeSlotId || sl._id === excludeSlotId)) return;
+        
+        const slPeriod = (sl.period || '').trim();
+        if (slPeriod === pClean || slPeriod.slice(0, 5) === pClean.slice(0, 5)) {
+          if (trClean && sl.trainer && sl.trainer.trim() === trClean) {
+            conflictInfo.hasConflict = true;
+            conflictInfo.trainerConflict = true;
+            conflictInfo.messages.push(`គ្រូឧទ្ទេស «${trClean}» ជាប់ម៉ោងបង្រៀននៅ ${tb.className} ក្នុងម៉ោង ${pClean} (ថ្ងៃ${thisDay}) រួចហើយ!`);
+          }
+          const thisRoom = (sl.room || tb.room || '').trim();
+          if (rmClean && thisRoom && thisRoom === rmClean) {
+            conflictInfo.hasConflict = true;
+            conflictInfo.roomConflict = true;
+            conflictInfo.messages.push(`បន្ទប់ «${rmClean}» ជាប់ប្រើប្រាស់ដោយ ${tb.className} ក្នុងម៉ោង ${pClean} (ថ្ងៃ${thisDay}) រួចហើយ!`);
+          }
+        }
+      });
+    });
+  });
+
+  return conflictInfo;
+}
+
+function deleteTimetableSlot(slotId) {
+  if (!confirm('តើលោកអ្នកពិតជាចង់លុបម៉ោងបង្រៀននេះចេញពីកាលវិភាគមែនទេ?')) return;
+  let deleted = false;
+  (stmsData.timetables || []).forEach(tb => {
+    (tb.days || []).forEach(d => {
+      const idx = (d.slots || []).findIndex(s => s && (s.id === slotId || s._id === slotId));
+      if (idx !== -1) {
+        d.slots.splice(idx, 1);
+        deleted = true;
+      }
+    });
+  });
+
+  if (deleted) {
+    saveData();
+    showToast('🗑️ បានលុបម៉ោងបង្រៀនចេញពីកាលវិភាគដោយជោគជ័យ!', 'info');
+    if (currentView === 'admin-portal') {
+      renderAdminPortalView(document.getElementById('stmsContentViewport'));
+    } else if (currentView === 'timetable') {
+      renderTimetableView(document.getElementById('mainContentArea'));
+    }
+    const adminModal = document.getElementById('adminTimetableModal');
+    if (adminModal) {
+      openAdminTimetableModal(currentAdminTimetableClassFilter);
+    }
+  }
+}
+
+function generateStandardTimetableTemplate(className) {
+  const classes = getAllSystemClasses();
+  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const targetClass = (!className || className === 'all') ? availableClasses[0] : className;
+  
+  const tt = ensureClassTimetable(targetClass);
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+  
+  function getTrainerForSubject(code) {
+    const found = trainers.find(t => t.subject === code);
+    if (found && found.nameKh) return found.nameKh;
+    const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === code);
+    return subj && subj.trainer ? subj.trainer : (trainers[0]?.nameKh || 'យូសុះ ស៊ីលាល');
+  }
+
+  const templateSchedule = {
+    'ចន្ទ': [
+      { period: '07:30 - 09:00', code: 'PED-101', name: 'គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន', room: 'បន្ទប់ ១០១' },
+      { period: '09:15 - 10:45', code: 'MTH-103', name: 'វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម', room: 'បន្ទប់ ១០១' },
+      { period: '13:30 - 15:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ', room: 'បន្ទប់ ១០១' },
+      { period: '15:15 - 16:45', code: 'ICT-105', name: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', room: 'បន្ទប់កុំព្យូទ័រ' }
+    ],
+    'អង្គារ': [
+      { period: '07:30 - 09:00', code: 'KHM-104', name: 'វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង', room: 'បន្ទប់ ១០១' },
+      { period: '09:15 - 10:45', code: 'PED-101', name: 'គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន', room: 'បន្ទប់ ១០១' },
+      { period: '13:30 - 15:00', code: 'RES-106', name: 'ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)', room: 'បន្ទប់ ១០១' },
+      { period: '15:15 - 16:45', code: 'PRAC-107', name: 'ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)', room: 'សាលាអនុវត្តន៍' }
+    ],
+    'ពុធ': [
+      { period: '07:30 - 09:00', code: 'MTH-103', name: 'វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម', room: 'បន្ទប់ ១០១' },
+      { period: '09:15 - 10:45', code: 'KHM-104', name: 'វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង', room: 'បន្ទប់ ១០១' },
+      { period: '13:30 - 15:00', code: 'COM-108', name: 'បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍', room: 'បន្ទប់កុំព្យូទ័រ' },
+      { period: '15:15 - 16:45', code: 'PED-101', name: 'គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន', room: 'បន្ទប់ ១០១' }
+    ],
+    'ព្រហស្បតិ៍': [
+      { period: '07:30 - 09:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ', room: 'បន្ទប់ ១០១' },
+      { period: '09:15 - 10:45', code: 'MTH-103', name: 'វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម', room: 'បន្ទប់ ១០១' },
+      { period: '13:30 - 15:00', code: 'ICT-105', name: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', room: 'បន្ទប់កុំព្យូទ័រ' },
+      { period: '15:15 - 16:45', code: 'KHM-104', name: 'វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង', room: 'បន្ទប់ ១០១' }
+    ],
+    'សុក្រ': [
+      { period: '07:30 - 09:00', code: 'PRAC-107', name: 'ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)', room: 'សាលាអនុវត្តន៍' },
+      { period: '09:15 - 10:45', code: 'PRAC-107', name: 'ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)', room: 'សាលាអនុវត្តន៍' },
+      { period: '13:30 - 15:00', code: 'RES-106', name: 'ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)', room: 'បន្ទប់ ១០១' },
+      { period: '15:15 - 16:45', code: 'COM-108', name: 'ពិភាក្សាគរុកោសល្យ & បច្ចេកវិទ្យា', room: 'សាលប្រជុំ' }
+    ],
+    'សៅរ៍': [
+      { period: '07:30 - 09:00', code: 'PED-101', name: 'ស្វ័យសិក្សា និងការស្រាវជ្រាវបណ្ណាល័យ', room: 'បណ្ណាល័យ KTPTTC' },
+      { period: '09:15 - 10:45', code: 'RES-106', name: 'ការរៀបចំកិច្ចតែងការបង្រៀនគំរូ', room: 'បន្ទប់ ១០១' }
+    ]
+  };
+
+  tt.days.forEach(d => {
+    const dClean = (d.day || '').replace(/\s*\(.*?\)\s*/g, '').trim();
+    if (templateSchedule[dClean]) {
+      d.slots = templateSchedule[dClean].map((s, idx) => ({
+        id: `slot-${Date.now()}-${dClean}-${idx}`,
+        period: s.period,
+        subject: s.name,
+        subjectCode: s.code,
+        trainer: getTrainerForSubject(s.code),
+        room: s.room,
+        notes: 'កាលវិភាគស្ដង់ដារ MoEYS KTPTTC'
+      }));
+    }
+  });
+
+  saveData();
+  showToast(`✅ បានបង្កើតកាលវិភាគគំរូ ៨ មុខវិជ្ជាសម្រាប់ «${targetClass}» ដោយជោគជ័យ!`, 'success');
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'timetable') {
+    renderTimetableView(document.getElementById('mainContentArea'));
+  }
+}
+
+function confirmGenerateStandardTimetable(className) {
+  const targetClass = className || currentAdminTimetableClassFilter || 'all';
+  const label = targetClass === 'all' ? 'ថ្នាក់ដំបូង' : targetClass;
+  if (confirm(`តើលោកអ្នកពិតជាចង់បង្កើតកាលវិភាគគំរូស្វ័យប្រវត្តិតាមកម្មវិធីសិក្សា ៨ មុខវិជ្ជា MoEYS ជូន «${label}» មែនទេ? (ទិន្នន័យចាស់ក្នុងថ្នាក់នេះនឹងត្រូវជំនួសដោយកាលវិភាគស្ដង់ដារ)`)) {
+    generateStandardTimetableTemplate(targetClass);
+  }
+}
+
+function openAdminAddTimetableSlotModal(defaultClass = '', defaultDay = '', defaultPeriod = '') {
+  closeStmsModal();
+  const classes = getAllSystemClasses();
+  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const targetClass = (defaultClass && defaultClass !== 'all') ? defaultClass : (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0]);
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+  const subjects = KTPTTC_ALL_SUBJECTS;
+
   const modalHtml = `
-    <div class="stms-modal-backdrop" id="slotModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:480px;">
-        <div class="modal-header-bar">
-          <div class="modal-header-title"><i class="fas fa-calendar-plus"></i> បន្ថែមម៉ោងបង្រៀនថ្មី</div>
+    <div class="stms-modal-backdrop" id="addTimetableSlotModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:550px;">
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color:#ffffff;">
+          <div class="modal-header-title">
+            <i class="fas fa-calendar-plus"></i> ចាត់តាំងម៉ោងបង្រៀនថ្មី (Add Timetable Slot)
+          </div>
           <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
         </div>
-        <div class="modal-body-scroll">
-          <form onsubmit="event.preventDefault(); submitAddSlot();">
-            <div style="margin-bottom:12px;">
-              <label class="form-label">ថ្ងៃ</label>
-              <select id="slotDay" class="form-input">
-                <option value="ចន្ទ (Monday)">ចន្ទ (Monday)</option>
-                <option value="អង្គារ (Tuesday)">អង្គារ (Tuesday)</option>
-                <option value="ពុធ (Wednesday)">ពុធ (Wednesday)</option>
-                <option value="ព្រហស្បតិ៍ (Thursday)">ព្រហស្បតិ៍ (Thursday)</option>
-                <option value="សុក្រ (Friday)">សុក្រ (Friday)</option>
+        <div class="modal-body-scroll" style="padding:20px;">
+          <form id="addTimetableSlotForm" onsubmit="event.preventDefault(); submitSaveTimetableSlot();">
+            <input type="hidden" id="ttSlotId" value="">
+
+            <div style="margin-bottom:14px;">
+              <label class="form-label">ថ្នាក់រៀន (Class / Cohort)*</label>
+              <select id="ttSlotClass" class="form-input" required onchange="updateTimetableModalConflictNotice()">
+                ${availableClasses.map(c => `<option value="${escapeHtml(c)}" ${c === targetClass ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
               </select>
             </div>
-            <div style="margin-bottom:12px;">
-              <label class="form-label">ម៉ោងសិក្សា</label>
-              <input type="text" id="slotPeriod" class="form-input" value="13:30 - 15:00" required>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+              <div>
+                <label class="form-label">ថ្ងៃនៃសប្ដាហ៍*</label>
+                <select id="ttSlotDay" class="form-input" required onchange="updateTimetableModalConflictNotice()">
+                  ${TIMETABLE_DAYS.map(d => `<option value="${d}" ${d === defaultDay ? 'selected' : ''}>${d}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="form-label">ម៉ោងសិក្សា (Period)*</label>
+                <select id="ttSlotPeriod" class="form-input" required onchange="updateTimetableModalConflictNotice()">
+                  ${STANDARD_PERIODS.map(p => `<option value="${p.time}" ${p.time === defaultPeriod ? 'selected' : ''}>${p.label}</option>`).join('')}
+                  <option value="custom">ម៉ោងផ្សេងៗ (Custom)...</option>
+                </select>
+                <input type="text" id="ttSlotPeriodCustom" class="form-input" placeholder="ឧ. ០៨:០០ - ០៩:៣០" style="display:none; margin-top:6px;">
+              </div>
             </div>
-            <div style="margin-bottom:12px;">
-              <label class="form-label">មុខវិជ្ជា</label>
-              <select id="slotSubject" class="form-input">
-                ${stmsData.subjects.map(s => `<option value="${s.nameKh}">${s.nameKh}</option>`).join('')}
+
+            <div style="margin-bottom:14px;">
+              <label class="form-label">មុខវិជ្ជា MoEYS (Subject)*</label>
+              <select id="ttSlotSubject" class="form-input" required onchange="handleTimetableSubjectSelect(this.value)">
+                ${subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh} (${s.credits} ក្រេឌីត)</option>`).join('')}
               </select>
             </div>
-            <div style="margin-bottom:12px;">
-              <label class="form-label">គ្រូឧទ្ទេស</label>
-              <input type="text" id="slotTrainer" class="form-input" placeholder="ឈ្មោះគ្រូទទួលបន្ទុក" required>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+              <div>
+                <label class="form-label">គ្រូឧទ្ទេសទទួលបន្ទុក (Instructor)*</label>
+                <select id="ttSlotTrainer" class="form-input" required onchange="updateTimetableModalConflictNotice()">
+                  ${trainers.map(t => `<option value="${escapeHtml(t.nameKh)}">${escapeHtml(t.nameKh)} (${escapeHtml(t.subject || 'គ្រូឧទ្ទេស')})</option>`).join('')}
+                  ${trainers.length === 0 ? `<option value="យូសុះ ស៊ីលាល">យូសុះ ស៊ីលាល</option>` : ''}
+                </select>
+              </div>
+              <div>
+                <label class="form-label">បន្ទប់សិក្សា (Room)*</label>
+                <input type="text" id="ttSlotRoom" class="form-input" value="បន្ទប់ ១០១" required oninput="updateTimetableModalConflictNotice()">
+              </div>
             </div>
-            <div style="margin-bottom:16px;">
-              <label class="form-label">បន្ទប់រៀន</label>
-              <input type="text" id="slotRoom" class="form-input" value="បន្ទប់ ១០១" required>
+
+            <div style="margin-bottom:14px;">
+              <label class="form-label">កំណត់សម្គាល់បន្ថែម (Notes)</label>
+              <input type="text" id="ttSlotNotes" class="form-input" placeholder="ឧ. ទ្រឹស្តី / ការចុះអនុវត្តន៍ / ក្នុងបន្ទប់កុំព្យូទ័រ">
             </div>
-            <div class="modal-footer-bar" style="padding:0; background:none; border:none;">
+
+            <!-- Conflict Detection Warning Banner -->
+            <div id="timetableConflictNotice" style="display:none; margin-bottom:16px;"></div>
+
+            <div class="modal-footer-bar" style="padding:10px 0 0 0; background:none; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
               <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
-              <button type="submit" class="btn btn-primary">រក្សាទុក</button>
+              <button type="submit" class="btn btn-primary" style="background:#0284c7; border-color:#0284c7;">
+                <i class="fas fa-save"></i> រក្សាទុកម៉ោងបង្រៀន
+              </button>
             </div>
           </form>
         </div>
       </div>
     </div>
   `;
+
   document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const subjEl = document.getElementById('ttSlotSubject');
+  if (subjEl) handleTimetableSubjectSelect(subjEl.value);
 }
 
-function submitAddSlot() {
-  const dayName = document.getElementById('slotDay').value;
-  const period = document.getElementById('slotPeriod').value;
-  const subject = document.getElementById('slotSubject').value;
-  const trainer = document.getElementById('slotTrainer').value;
-  const room = document.getElementById('slotRoom').value;
+function handleTimetableSubjectSelect(subjCode) {
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjCode);
+  const trainerSelect = document.getElementById('ttSlotTrainer');
+  if (subj && trainerSelect) {
+    const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+    const matchedTrn = trainers.find(t => t.subject === subjCode);
+    if (matchedTrn) {
+      trainerSelect.value = matchedTrn.nameKh;
+    } else if (subj.trainer) {
+      trainerSelect.value = subj.trainer;
+    }
+  }
+  updateTimetableModalConflictNotice();
+}
 
-  const tt = stmsData.timetables[0];
-  const targetDay = tt.days.find(d => d.day === dayName);
-  if (targetDay) {
-    targetDay.slots.push({ period, subject, trainer, room });
-    saveData();
-    closeStmsModal();
-    showToast('បានបន្ថែមម៉ោងបង្រៀនក្នុងកាលវិភាគដោយជោគជ័យ!', 'success');
+function updateTimetableModalConflictNotice() {
+  const day = document.getElementById('ttSlotDay')?.value;
+  let period = document.getElementById('ttSlotPeriod')?.value;
+  if (period === 'custom') {
+    const customInput = document.getElementById('ttSlotPeriodCustom');
+    if (customInput) {
+      customInput.style.display = 'block';
+      period = customInput.value;
+    }
+  } else {
+    const customInput = document.getElementById('ttSlotPeriodCustom');
+    if (customInput) customInput.style.display = 'none';
+  }
+  const trainer = document.getElementById('ttSlotTrainer')?.value;
+  const room = document.getElementById('ttSlotRoom')?.value;
+  const slotId = document.getElementById('ttSlotId')?.value;
+  const noticeBox = document.getElementById('timetableConflictNotice');
+  if (!noticeBox) return;
+
+  const conflict = checkTimetableConflict(day, period, trainer, room, slotId);
+  if (conflict.hasConflict) {
+    noticeBox.style.display = 'flex';
+    noticeBox.className = 'timetable-conflict-warning';
+    noticeBox.innerHTML = `
+      <i class="fas fa-exclamation-triangle" style="font-size:1.1rem; color:#dc2626;"></i>
+      <div>
+        <strong>ការព្រមានអំពីទំនាស់កាលវិភាគ៖</strong>
+        <div style="font-size:0.75rem; margin-top:2px;">${conflict.messages.join('<br>')}</div>
+      </div>
+    `;
+  } else {
+    noticeBox.style.display = 'none';
+  }
+}
+
+function openAdminEditTimetableSlotModal(slotId) {
+  closeStmsModal();
+  const found = findTimetableSlotById(slotId);
+  if (!found) {
+    showToast('រកមិនឃើញទិន្នន័យម៉ោងបង្រៀននេះទេ!', 'error');
+    return;
+  }
+
+  const { slot, className, dayName } = found;
+  openAdminAddTimetableSlotModal(className, dayName, slot.period);
+
+  setTimeout(() => {
+    const idInput = document.getElementById('ttSlotId');
+    if (idInput) idInput.value = slot.id;
+    const classSelect = document.getElementById('ttSlotClass');
+    if (classSelect) classSelect.value = className;
+    const daySelect = document.getElementById('ttSlotDay');
+    if (daySelect) daySelect.value = dayName;
+    const periodSelect = document.getElementById('ttSlotPeriod');
+    if (periodSelect) {
+      if (['07:30 - 09:00', '09:15 - 10:45', '13:30 - 15:00', '15:15 - 16:45'].includes(slot.period)) {
+        periodSelect.value = slot.period;
+      } else {
+        periodSelect.value = 'custom';
+        const customInput = document.getElementById('ttSlotPeriodCustom');
+        if (customInput) {
+          customInput.style.display = 'block';
+          customInput.value = slot.period;
+        }
+      }
+    }
+    const subjSelect = document.getElementById('ttSlotSubject');
+    if (subjSelect && slot.subjectCode) subjSelect.value = slot.subjectCode;
+    const trainerSelect = document.getElementById('ttSlotTrainer');
+    if (trainerSelect && slot.trainer) trainerSelect.value = slot.trainer;
+    const roomInput = document.getElementById('ttSlotRoom');
+    if (roomInput && slot.room) roomInput.value = slot.room;
+    const notesInput = document.getElementById('ttSlotNotes');
+    if (notesInput && slot.notes) notesInput.value = slot.notes;
+
+    const titleEl = document.querySelector('#addTimetableSlotModalBackdrop .modal-header-title');
+    if (titleEl) {
+      titleEl.innerHTML = '<i class="fas fa-edit"></i> កែប្រែម៉ោងបង្រៀន (Edit Timetable Slot)';
+    }
+    updateTimetableModalConflictNotice();
+  }, 50);
+}
+
+function submitSaveTimetableSlot() {
+  const id = document.getElementById('ttSlotId')?.value || '';
+  const className = document.getElementById('ttSlotClass')?.value;
+  const day = document.getElementById('ttSlotDay')?.value;
+  let period = document.getElementById('ttSlotPeriod')?.value;
+  if (period === 'custom') {
+    period = document.getElementById('ttSlotPeriodCustom')?.value || '07:30 - 09:00';
+  }
+  const subjCode = document.getElementById('ttSlotSubject')?.value;
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjCode);
+  const subject = subj ? subj.nameKh : subjCode;
+  const trainer = document.getElementById('ttSlotTrainer')?.value || 'គ្រូឧទ្ទេស';
+  const room = document.getElementById('ttSlotRoom')?.value || 'បន្ទប់ ១០១';
+  const notes = document.getElementById('ttSlotNotes')?.value || '';
+
+  const tt = ensureClassTimetable(className);
+  const dClean = day.replace(/\s*\(.*?\)\s*/g, '').trim();
+  let targetDay = tt.days.find(d => d && d.day.replace(/\s*\(.*?\)\s*/g, '').trim() === dClean);
+  if (!targetDay) {
+    targetDay = { day: dClean, slots: [] };
+    tt.days.push(targetDay);
+  }
+  if (!Array.isArray(targetDay.slots)) targetDay.slots = [];
+
+  if (id) {
+    (stmsData.timetables || []).forEach(tItem => {
+      (tItem.days || []).forEach(dItem => {
+        const sIdx = (dItem.slots || []).findIndex(s => s && s.id === id);
+        if (sIdx !== -1) dItem.slots.splice(sIdx, 1);
+      });
+    });
+  }
+
+  const newSlot = {
+    id: id || `slot-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    period: period.trim(),
+    subject: subject.trim(),
+    subjectCode: subjCode || '',
+    trainer: trainer.trim(),
+    room: room.trim() || 'បន្ទប់ ១០១',
+    notes: notes.trim()
+  };
+
+  targetDay.slots.push(newSlot);
+  targetDay.slots.sort((a, b) => (a.period || '').localeCompare(b.period || ''));
+
+  saveData();
+  closeStmsModal();
+  showToast('✅ បានរក្សាទុកម៉ោងបង្រៀនក្នុងកាលវិភាគដោយជោគជ័យ!', 'success');
+
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'timetable') {
     renderTimetableView(document.getElementById('mainContentArea'));
   }
+}
+
+function printAdminClassTimetable(className) {
+  const classes = getAllSystemClasses();
+  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const targetClass = (!className || className === 'all') ? (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0]) : className;
+  const slots = getAllTimetableSlots(targetClass, 'all');
+  
+  const existingSheet = document.getElementById('adminTimetablePrintSheet');
+  if (existingSheet) existingSheet.remove();
+
+  const sheet = document.createElement('div');
+  sheet.id = 'adminTimetablePrintSheet';
+  sheet.className = 'printable-timetable-sheet';
+  sheet.innerHTML = `
+    <div style="text-align:center; margin-bottom:18px;">
+      <div style="font-size:0.9rem; font-weight:700; color:#1e3a8a;">ព្រះរាជាណាចក្រកម្ពុជា</div>
+      <div style="font-size:0.85rem; font-weight:700; color:#1e3a8a;">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+      <div style="font-size:1.1rem; margin-top:4px; color:#c026d3;">&#10040; &#10040; &#10040;</div>
+      <div style="font-size:0.9rem; font-weight:800; color:#1e3a8a; margin-top:6px;">ក្រសួងអប់រំ យុវជន និងកីឡា</div>
+      <div style="font-size:0.95rem; font-weight:800; color:#1e3a8a;">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</div>
+      <h2 style="font-size:1.2rem; font-weight:800; color:#1e3a8a; margin:12px 0 4px 0;">កាលវិភាគបង្រៀន និងរៀនប្រចាំសប្តាហ៍</h2>
+      <div style="font-size:0.88rem; color:#334155; font-weight:700;">
+        ថ្នាក់សិក្សា៖ <u>${escapeHtml(targetClass)}</u> • ឆមាសទី ១ • ឆ្នាំសិក្សា ២០២៦-២០២៧
+      </div>
+    </div>
+
+    <table style="width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:20px; border:1px solid #334155;">
+      <thead>
+        <tr style="background:#f1f5f9; border-bottom:2px solid #334155;">
+          <th style="border:1px solid #334155; padding:8px; text-align:center; width:90px;">ថ្ងៃ</th>
+          <th style="border:1px solid #334155; padding:8px; text-align:center; width:120px;">ម៉ោងសិក្សា</th>
+          <th style="border:1px solid #334155; padding:8px;">មុខវិជ្ជាគរុកោសល្យ</th>
+          <th style="border:1px solid #334155; padding:8px;">គ្រូឧទ្ទេសទទួលបន្ទុក</th>
+          <th style="border:1px solid #334155; padding:8px; text-align:center; width:100px;">បន្ទប់រៀន</th>
+          <th style="border:1px solid #334155; padding:8px; width:130px;">ផ្សេងៗ</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${TIMETABLE_DAYS.map(day => {
+          const daySlots = slots.filter(s => s.day === day || s.dayFull.includes(day));
+          if (daySlots.length === 0) {
+            return `
+              <tr>
+                <td style="border:1px solid #334155; padding:8px; font-weight:700; text-align:center; background:#f8fafc;">${day}</td>
+                <td colspan="5" style="border:1px solid #334155; padding:8px; text-align:center; color:#64748b; font-style:italic;">ស្វ័យសិក្សា / គ្មានម៉ោងបង្រៀន</td>
+              </tr>
+            `;
+          }
+          return daySlots.map((sl, idx) => `
+            <tr>
+              ${idx === 0 ? `<td rowspan="${daySlots.length}" style="border:1px solid #334155; padding:8px; font-weight:800; text-align:center; background:#f8fafc; vertical-align:middle;">${day}</td>` : ''}
+              <td style="border:1px solid #334155; padding:8px; text-align:center; font-weight:700;">${sl.period}</td>
+              <td style="border:1px solid #334155; padding:8px; font-weight:700; color:#1e3a8a;">${escapeHtml(sl.subject)} ${sl.subjectCode ? `<span style="font-size:0.75rem; color:#64748b;">(${sl.subjectCode})</span>` : ''}</td>
+              <td style="border:1px solid #334155; padding:8px;">${escapeHtml(sl.trainer)}</td>
+              <td style="border:1px solid #334155; padding:8px; text-align:center;">${escapeHtml(sl.room)}</td>
+              <td style="border:1px solid #334155; padding:8px; font-size:0.75rem;">${escapeHtml(sl.notes || '')}</td>
+            </tr>
+          `).join('');
+        }).join('')}
+      </tbody>
+    </table>
+
+    <div style="display:flex; justify-content:space-between; margin-top:25px; font-size:0.85rem; padding:0 20px;">
+      <div style="text-align:center;">
+        <div style="font-weight:700;">បានឃើញ និងអនុម័ត</div>
+        <div style="font-weight:800; margin-top:4px;">នាយកសាលា KTPTTC</div>
+        <div style="margin-top:55px; font-weight:700;">(ហត្ថលេខា និងត្រា)</div>
+      </div>
+      <div style="text-align:center;">
+        <div>ថ្ងៃទី....... ខែ....... ឆ្នាំ២០២៦</div>
+        <div style="font-weight:800; margin-top:4px;">ប្រធានផ្នែកសិក្សាធិការ</div>
+        <div style="margin-top:55px; font-weight:700;">(ហត្ថលេខា)</div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(sheet);
+  showToast('កំពុងបើកផ្ទាំងបោះពុម្ពកាលវិភាគ...', 'info');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { sheet.remove(); }, 2000);
+  }, 350);
+}
+
+function renderAdminTimetableSectionHtml(isStandaloneView = false) {
+  const classes = getAllSystemClasses();
+  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const activeClass = currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0];
+  const allSlots = getAllTimetableSlots(currentAdminTimetableClassFilter, currentAdminTimetableDayFilter);
+  const totalSlotsCount = getAllTimetableSlots(currentAdminTimetableClassFilter, 'all').length;
+
+  const dayTabs = [
+    { id: 'all', label: 'ទាំងអស់' },
+    ...TIMETABLE_DAYS.map(d => ({ id: d, label: d }))
+  ];
+
+  return `
+    <div class="admin-timetable-section" id="adminTimetableSection">
+      <div class="table-card" style="border-radius:14px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,0.06); border:1px solid #e2e8f0; margin-bottom:24px;">
+        
+        <!-- Header Bar -->
+        <div style="background:linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:42px; height:42px; border-radius:10px; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; font-size:1.35rem; color:#fde047;">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div>
+              <h2 style="font-size:1.15rem; font-weight:800; margin:0; color:#ffffff; display:flex; align-items:center; gap:8px;">
+                រៀបចំកាលវិភាគបង្រៀនប្រចាំស្ថាប័ន
+                <span style="font-size:0.75rem; background:#38bdf8; color:#0f172a; font-weight:700; padding:2px 8px; border-radius:12px;">Timetable Matrix</span>
+              </h2>
+              <p style="margin:3px 0 0 0; font-size:0.8rem; color:#e0f2fe;">
+                គ្រប់គ្រង និងចាត់តាំងម៉ោងបង្រៀនប្រចាំសប្តាហ៍ តាមថ្នាក់រៀន មុខវិជ្ជា និងសាស្ត្រាចារ្យទទួលបន្ទុក
+              </p>
+            </div>
+          </div>
+
+          <!-- Top Actions -->
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <!-- Class Selector -->
+            <div style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.25);">
+              <span style="font-size:0.75rem; font-weight:700; color:#e0f2fe; white-space:nowrap;"><i class="fas fa-school"></i> ថ្នាក់រៀន៖</span>
+              <select onchange="handleAdminTimetableClassChange(this.value)" style="background:#ffffff; color:#0f172a; border:none; border-radius:6px; font-size:0.8rem; font-weight:700; height:30px; padding:0 8px; cursor:pointer;">
+                <option value="all" ${currentAdminTimetableClassFilter === 'all' ? 'selected' : ''}>ថ្នាក់ទាំងអស់ (Master View)</option>
+                ${availableClasses.map(c => `
+                  <option value="${escapeHtml(c)}" ${currentAdminTimetableClassFilter === c ? 'selected' : ''}>${escapeHtml(c)}</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <button type="button" class="btn" onclick="openAdminAddTimetableSlotModal('${escapeHtml(activeClass)}')" style="background:#10b981; color:#ffffff; border:1px solid #34d399; font-size:0.78rem; font-weight:700; height:32px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+              <i class="fas fa-plus-circle"></i> បន្ថែមម៉ោងបង្រៀន
+            </button>
+
+            <button type="button" class="btn" onclick="openAdminTimetableModal('${escapeHtml(activeClass)}')" style="background:rgba(255,255,255,0.2); color:#ffffff; border:1px solid rgba(255,255,255,0.4); font-size:0.78rem; font-weight:700; height:32px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+              <i class="fas fa-expand"></i> ផ្ទាំងពេញលេញ
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span style="font-size:0.8rem; font-weight:700; color:#475569; margin-right:4px;">
+              <i class="fas fa-filter"></i> តម្រៀបតាមថ្ងៃ៖
+            </span>
+            ${dayTabs.map(tab => `
+              <button type="button" class="timetable-pill-tab ${currentAdminTimetableDayFilter === tab.id ? 'active' : ''}" onclick="handleAdminTimetableDayChange('${tab.id}')">
+                ${tab.label}
+              </button>
+            `).join('')}
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" onclick="confirmGenerateStandardTimetable('${escapeHtml(activeClass)}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="បង្កើតកាលវិភាគគំរូ ៨ មុខវិជ្ជា MoEYS ដោយស្វ័យប្រវត្តិ">
+              <i class="fas fa-magic"></i> បង្កើតគំរូ ៨ មុខវិជ្ជាស្វ័យប្រវត្តិ
+            </button>
+            <button type="button" onclick="printAdminClassTimetable('${escapeHtml(activeClass)}')" style="background:#f8fafc; color:#334155; border:1px solid #cbd5e1; font-size:0.75rem; font-weight:600; padding:4px 10px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+              <i class="fas fa-print"></i> បោះពុម្ព
+            </button>
+          </div>
+        </div>
+
+        <!-- Timetable Body / Matrix Grid -->
+        <div style="padding:16px; overflow-x:auto;">
+          ${totalSlotsCount === 0 ? `
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div style="font-size:0.84rem; color:#166534; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-info-circle" style="font-size:1.15rem; color:#15803d;"></i>
+                <span>ថ្នាក់ <strong>«${escapeHtml(activeClass)}»</strong> មិនទាន់មានកាលវិភាគបង្រៀននៅឡើយទេ។ លោកអ្នកអាចចុចលើ <strong>«+ ដាក់ម៉ោង»</strong> ក្នុងក្រឡានីមួយៗ ឬបង្កើតគំរូ ៨ មុខវិជ្ជា MoEYS ដោយស្វ័យប្រវត្តិ។</span>
+              </div>
+              <button type="button" class="btn btn-primary" onclick="generateStandardTimetableTemplate('${escapeHtml(activeClass)}')" style="font-size:0.8rem; height:32px; background:#059669; border-color:#059669;">
+                <i class="fas fa-magic"></i> បង្កើតកាលវិភាគគំរូ ៨ មុខវិជ្ជា
+              </button>
+            </div>
+          ` : ''}
+
+          <div class="timetable-matrix-grid">
+            ${(() => {
+              const daysToRender = currentAdminTimetableDayFilter === 'all' ? TIMETABLE_DAYS : [currentAdminTimetableDayFilter];
+              const todayIndex = new Date().getDay(); // 0 is Sunday, 1 is Monday...
+              const dayIndexMap = { 'ចន្ទ': 1, 'អង្គារ': 2, 'ពុធ': 3, 'ព្រហស្បតិ៍': 4, 'សុក្រ': 5, 'សៅរ៍': 6 };
+
+              return daysToRender.map(day => {
+                const isToday = dayIndexMap[day] === todayIndex;
+                const daySlots = allSlots.filter(s => s.day === day || s.dayFull.includes(day));
+                
+                // Track rendered slots to also show non-standard slots if any
+                const renderedSlotIds = new Set();
+
+                return `
+                  <div class="timetable-day-column">
+                    <div class="timetable-day-header ${isToday ? 'today' : ''}">
+                      <span>${day}</span>
+                      <span style="font-size:0.7rem; font-weight:600; opacity:0.9;">
+                        ${isToday ? 'ថ្ងៃនេះ' : ''} (${daySlots.length} ម៉ោង)
+                      </span>
+                    </div>
+                    <div class="timetable-day-body">
+                      
+                      <!-- Standard Periods -->
+                      ${STANDARD_PERIODS.map(p => {
+                        const matchedSlot = daySlots.find(s => s.period.slice(0, 5) === p.time.slice(0, 5) || s.period === p.time);
+                        if (matchedSlot) {
+                          renderedSlotIds.add(matchedSlot.id);
+                          const theme = getSubjectTheme(matchedSlot.subjectCode);
+                          return `
+                            <div class="timetable-slot-card" style="border-left-color:${theme.color};">
+                              <div class="timetable-slot-period">
+                                <span><i class="far fa-clock"></i> ${matchedSlot.period}</span>
+                                <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(matchedSlot.room)}</span>
+                              </div>
+                              <div class="timetable-slot-subject" title="${escapeHtml(matchedSlot.subject)}">
+                                <span style="background:${theme.bg}; color:${theme.color}; border:1px solid ${theme.border}; font-size:0.68rem; font-weight:700; padding:1px 5px; border-radius:4px; margin-right:3px;">
+                                  ${matchedSlot.subjectCode || 'MOEYS'}
+                                </span>
+                                ${escapeHtml(matchedSlot.subject)}
+                              </div>
+                              <div class="timetable-slot-teacher">
+                                <i class="fas fa-chalkboard-teacher" style="color:${theme.color}; font-size:0.72rem;"></i>
+                                <span>${escapeHtml(matchedSlot.trainer)}</span>
+                              </div>
+                              ${currentAdminTimetableClassFilter === 'all' ? `
+                                <div style="font-size:0.68rem; color:#64748b; margin-bottom:2px;">
+                                  <i class="fas fa-users" style="font-size:0.65rem;"></i> ${escapeHtml(matchedSlot.className)}
+                                </div>
+                              ` : ''}
+                              <div class="timetable-slot-footer">
+                                <span style="color:#64748b; font-size:0.68rem;">${p.shift}</span>
+                                <div style="display:flex; gap:3px;">
+                                  <button type="button" onclick="openAdminEditTimetableSlotModal('${matchedSlot.id}')" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;" title="កែប្រែ">
+                                    <i class="fas fa-edit"></i>
+                                  </button>
+                                  <button type="button" onclick="deleteTimetableSlot('${matchedSlot.id}')" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;" title="លុប">
+                                    <i class="fas fa-trash"></i>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          `;
+                        } else {
+                          return `
+                            <div class="timetable-slot-empty" onclick="openAdminAddTimetableSlotModal('${escapeHtml(activeClass)}', '${day}', '${p.time}')" title="ចុចដើម្បីដាក់ម៉ោងបង្រៀន">
+                              <span style="font-weight:700; color:#64748b; font-size:0.68rem; margin-bottom:2px;">${p.time}</span>
+                              <span><i class="fas fa-plus-circle" style="color:#3b82f6;"></i> ដាក់ម៉ោង (${p.shift})</span>
+                            </div>
+                          `;
+                        }
+                      }).join('')}
+
+                      <!-- Any Non-standard custom slots for this day -->
+                      ${daySlots.filter(s => !renderedSlotIds.has(s.id)).map(cs => {
+                        const theme = getSubjectTheme(cs.subjectCode);
+                        return `
+                          <div class="timetable-slot-card" style="border-left-color:${theme.color};">
+                            <div class="timetable-slot-period">
+                              <span><i class="far fa-clock"></i> ${cs.period}</span>
+                              <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(cs.room)}</span>
+                            </div>
+                            <div class="timetable-slot-subject">
+                              <span style="background:${theme.bg}; color:${theme.color}; border:1px solid ${theme.border}; font-size:0.68rem; font-weight:700; padding:1px 5px; border-radius:4px; margin-right:3px;">
+                                ${cs.subjectCode || 'MOEYS'}
+                              </span>
+                              ${escapeHtml(cs.subject)}
+                            </div>
+                            <div class="timetable-slot-teacher">
+                              <i class="fas fa-chalkboard-teacher" style="color:${theme.color}; font-size:0.72rem;"></i>
+                              <span>${escapeHtml(cs.trainer)}</span>
+                            </div>
+                            <div class="timetable-slot-footer">
+                              <span style="color:#64748b; font-size:0.68rem;">ម៉ោងបន្ថែម</span>
+                              <div style="display:flex; gap:3px;">
+                                <button type="button" onclick="openAdminEditTimetableSlotModal('${cs.id}')" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;"><i class="fas fa-edit"></i></button>
+                                <button type="button" onclick="deleteTimetableSlot('${cs.id}')" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;"><i class="fas fa-trash"></i></button>
+                              </div>
+                            </div>
+                          </div>
+                        `;
+                      }).join('')}
+
+                    </div>
+                  </div>
+                `;
+              }).join('');
+            })()}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function renderTimetableView(container) {
+  const classes = getAllSystemClasses();
+  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const targetClass = currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0];
+
+  let html = `
+    ${currentRole === 'admin' ? `
+      <div style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <a onclick="navigateView('admin-portal')" style="display:inline-flex; align-items:center; gap:8px; color:#1e40af; font-weight:700; text-decoration:none; cursor:pointer; background:#eff6ff; padding:7px 16px; border-radius:8px; border:1px solid #bfdbfe; font-size:0.85rem; transition:all 0.2s;">
+          <i class="fas fa-arrow-left"></i> ត្រឡប់ទៅ Admin Portal
+        </a>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline" style="height:34px; font-size:0.82rem;" onclick="navigateView('trainees')"><i class="fas fa-user-graduate"></i> បញ្ជីរាយនាមសិស្ស</button>
+          <button class="btn btn-outline" style="height:34px; font-size:0.82rem;" onclick="navigateView('trainers')"><i class="fas fa-chalkboard-teacher"></i> បញ្ជីគ្រូឧទ្ទេស</button>
+        </div>
+      </div>
+    ` : ''}
+
+    ${renderAdminTimetableSectionHtml(true)}
+  `;
+
+  container.innerHTML = html;
 }
 
 // ==========================================================================
@@ -3658,6 +4365,12 @@ function filterSubjectCatalog(query) {
 // --------------------------------------------------------------------------
 function openTraineeTimetableModal() {
   const activeStream = TRAINEE_STREAMS[currentStreamIndex];
+  const profile = getActiveTraineeProfile();
+  const targetClass = profile.className || activeStream.cohort || 'all';
+  let mySlots = getAllTimetableSlots(targetClass, 'all');
+  if (mySlots.length === 0 && targetClass !== 'all') {
+    mySlots = getAllTimetableSlots('all', 'all');
+  }
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="traineeTimetableModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -3669,7 +4382,7 @@ function openTraineeTimetableModal() {
             </div>
             <div>
               <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">កាលវិភាគសិក្សាប្រចាំសប្តាហ៍</h3>
-              <p style="color:#e0f2fe; font-size:0.82rem; margin:2px 0 0 0;">${activeStream.label} • បន្ទប់ ១០១ & បន្ទប់កុំព្យូទ័រ KTPTTC</p>
+              <p style="color:#e0f2fe; font-size:0.82rem; margin:2px 0 0 0;">${escapeHtml(profile.nameKh)} • ${escapeHtml(targetClass !== 'all' ? targetClass : activeStream.label)} • បន្ទប់ ១០១ & បន្ទប់កុំព្យូទ័រ KTPTTC</p>
             </div>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
@@ -3689,41 +4402,30 @@ function openTraineeTimetableModal() {
             <table class="stms-table" style="font-size:0.85rem;">
               <thead style="background:#f1f5f9;">
                 <tr>
-                  <th style="width:100px;">ថ្ងៃ</th>
-                  <th style="width:140px;">ម៉ោង</th>
+                  <th style="width:100px; text-align:center;">ថ្ងៃ</th>
+                  <th style="width:140px; text-align:center;">ម៉ោង</th>
                   <th>មុខវិជ្ជាគរុកោសល្យ</th>
                   <th>គ្រូឧទ្ទេសទទួលបន្ទុក</th>
-                  <th>បន្ទប់រៀន</th>
+                  <th style="width:110px; text-align:center;">បន្ទប់រៀន</th>
                 </tr>
               </thead>
               <tbody>
-                ${(() => {
-                  const timetableEntries = (stmsData.timetables || []);
-                  let rows = '';
-                  timetableEntries.forEach(tb => {
-                    (tb.days || []).forEach(d => {
-                      (d.slots || []).forEach((sl, idx) => {
-                        rows += `
-                          <tr>
-                            ${idx === 0 ? `<td rowspan="${d.slots.length}" style="font-weight:700; background:#f8fafc; vertical-align:middle; text-align:center;">${d.day || ''}</td>` : ''}
-                            <td>${sl.period || ''}</td>
-                            <td><strong>${sl.subject || ''}</strong></td>
-                            <td>${sl.trainer || 'គ្រូឧទ្ទេស'}</td>
-                            <td><span class="badge badge-published">${sl.room || tb.room || 'បន្ទប់រៀន'}</span></td>
-                          </tr>
-                        `;
-                      });
-                    });
-                  });
-                  return rows || `
-                    <tr>
-                      <td colspan="5" style="text-align:center; padding:36px; color:#94a3b8;">
-                        <i class="fas fa-calendar-times" style="font-size:2rem; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
-                        មិនទាន់មានកាលវិភាគបង្រៀននៅឡើយទេ
-                      </td>
-                    </tr>
-                  `;
-                })()}
+                ${mySlots.length > 0 ? mySlots.map(sl => `
+                  <tr>
+                    <td style="text-align:center; font-weight:700; background:#f8fafc;">${sl.day}</td>
+                    <td style="text-align:center; font-weight:700;">${sl.period}</td>
+                    <td><strong style="color:#1e3a8a;">${escapeHtml(sl.subject)}</strong></td>
+                    <td>${escapeHtml(sl.trainer)}</td>
+                    <td style="text-align:center;"><span class="badge badge-published">${escapeHtml(sl.room)}</span></td>
+                  </tr>
+                `).join('') : `
+                  <tr>
+                    <td colspan="5" style="text-align:center; padding:36px; color:#94a3b8;">
+                      <i class="fas fa-calendar-times" style="font-size:2rem; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
+                      មិនទាន់មានកាលវិភាគបង្រៀននៅឡើយទេ
+                    </td>
+                  </tr>
+                `}
               </tbody>
             </table>
           </div>
@@ -11339,17 +12041,19 @@ function openTeacherTimetableModal() {
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
   const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+  const allSlots = getAllTimetableSlots('all', 'all');
+  const mySlots = allSlots.filter(s => s.trainer && (s.trainer === tr.nameKh || s.trainer.includes(tr.nameKh) || tr.nameKh.includes(s.trainer)));
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherTimetableModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:800px;">
+      <div class="stms-modal-dialog" style="max-width:850px;">
         <div class="stms-modal-header" style="background:linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); color:#ffffff;">
           <div style="display:flex; align-items:center; gap:12px;">
             <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
               <i class="fas fa-calendar-alt"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">កាលវិភាគបង្រៀនប្រចាំសប្តាហ៍</h3>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">កាលវិភាគបង្រៀនប្រចាំសប្តាហ៍ (Teaching Schedule)</h3>
               <p style="color:#dbeafe; font-size:0.82rem; margin:2px 0 0 0;">${tr.nameKh} • ឆមាសទី ១ ឆ្នាំសិក្សា ២០២៦-២០២៧</p>
             </div>
           </div>
@@ -11357,58 +12061,48 @@ function openTeacherTimetableModal() {
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
-          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:0.83rem; color:#1e40af;">
-            <i class="fas fa-chalkboard-teacher"></i> មុខវិជ្ជាបង្រៀន៖ <strong>${mySubjects.map(s => s.nameKh).join(', ')}</strong>
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:0.83rem; color:#1e40af; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <i class="fas fa-chalkboard-teacher"></i> មុខវិជ្ជាទទួលបន្ទុក៖ <strong>${mySubjects.map(s => s.nameKh).join(', ')}</strong> (${mySlots.length} ម៉ោងក្នុងសប្ដាហ៍)
+            </div>
+            <button class="btn btn-primary" onclick="showToast('កំពុងបើកទម្រង់បោះពុម្ពកាលវិភាគបង្រៀន...', 'info'); setTimeout(()=>window.print(), 300);" style="height:30px; font-size:0.75rem;">
+              <i class="fas fa-print"></i> បោះពុម្ពកាលវិភាគ
+            </button>
           </div>
 
           <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
             <table class="stms-table" style="font-size:0.85rem;">
               <thead style="background:#f8fafc;">
                 <tr>
-                  <th>ថ្ងៃសិក្សា</th>
-                  <th>ម៉ោងបង្រៀន</th>
+                  <th style="width:90px; text-align:center;">ថ្ងៃសិក្សា</th>
+                  <th style="width:130px; text-align:center;">ម៉ោងបង្រៀន</th>
                   <th>មុខវិជ្ជាគរុកោសល្យ</th>
                   <th>ថ្នាក់រៀន</th>
-                  <th>បន្ទប់រៀន</th>
+                  <th style="width:110px; text-align:center;">បន្ទប់រៀន</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td><strong>ថ្ងៃចន្ទ</strong></td>
-                  <td>០៩:១៥ - ១០:៤៥</td>
-                  <td><strong style="color:#1e3a8a;">${mySubjects[0]?.nameKh || 'គរុកោសល្យទូទៅ'}</strong></td>
-                  <td>ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
-                  <td>បន្ទប់ ២០២</td>
-                </tr>
-                <tr>
-                  <td><strong>ថ្ងៃពុធ</strong></td>
-                  <td>០៧:៣០ - ០៩:០០</td>
-                  <td><strong style="color:#1e3a8a;">${mySubjects[0]?.nameKh || 'គរុកោសល្យទូទៅ'}</strong></td>
-                  <td>ថ្នាក់បឋម ១២+២ ក្រុម ខ</td>
-                  <td>បន្ទប់ ២០២</td>
-                </tr>
-                <tr>
-                  <td><strong>ថ្ងៃព្រហស្បតិ៍</strong></td>
-                  <td>១៣:៣០ - ១៥:០០</td>
-                  <td><strong style="color:#1e3a8a;">ការចុះកម្មសិក្សា / អនុវត្តន៍</strong></td>
-                  <td>សាលាបឋមអនុវត្តន៍</td>
-                  <td>ទីវាលអនុវត្តន៍</td>
-                </tr>
-                <tr>
-                  <td><strong>ថ្ងៃសុក្រ</strong></td>
-                  <td>០៧:៣០ - ០៩:០០</td>
-                  <td><strong style="color:#1e3a8a;">${mySubjects[0]?.nameKh || 'គរុកោសល្យទូទៅ'}</strong></td>
-                  <td>ថ្នាក់បឋម ១២+២ ក្រុម ក/ខ</td>
-                  <td>សាលប្រជុំធំ</td>
-                </tr>
+                ${mySlots.length > 0 ? mySlots.map(sl => `
+                  <tr>
+                    <td style="text-align:center; font-weight:700; background:#f8fafc;">${sl.day}</td>
+                    <td style="text-align:center; font-weight:700;">${sl.period}</td>
+                    <td><strong style="color:#1e3a8a;">${escapeHtml(sl.subject)}</strong></td>
+                    <td><span class="badge" style="background:#eff6ff; color:#1d4ed8; font-weight:700;">${escapeHtml(sl.className)}</span></td>
+                    <td style="text-align:center;"><span class="badge badge-published">${escapeHtml(sl.room)}</span></td>
+                  </tr>
+                `).join('') : `
+                  <tr>
+                    <td colspan="5" style="text-align:center; padding:35px; color:#94a3b8;">
+                      <i class="fas fa-calendar-times" style="font-size:2rem; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
+                      មិនទាន់មានម៉ោងបង្រៀនដែល Admin បានចាត់តាំងជូនលោកគ្រូ/អ្នកគ្រូនៅឡើយទេ
+                    </td>
+                  </tr>
+                `}
               </tbody>
             </table>
           </div>
 
-          <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
-            <button class="btn btn-primary" onclick="showToast('កំពុងបើកទម្រង់បោះពុម្ពកាលវិភាគបង្រៀន...', 'info'); setTimeout(()=>window.print(), 300);">
-              <i class="fas fa-print"></i> បោះពុម្ពកាលវិភាគ (Print)
-            </button>
+          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
             <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
           </div>
 
@@ -11736,6 +12430,9 @@ function renderAdminPortalView(container) {
           </div>
         </div>
         <div class="trainee-hero-actions">
+          <button class="btn-hero-action" style="background:#0284c7; color:#ffffff; border:1px solid #38bdf8; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openAdminTimetableModal()">
+            <i class="fas fa-calendar-alt"></i> រៀបចំកាលវិភាគ
+          </button>
           <button class="btn-hero-action primary" onclick="openAdminAddStudentModal()">
             <i class="fas fa-user-plus"></i> ចុះឈ្មោះសិស្សថ្មី
           </button>
@@ -11778,12 +12475,12 @@ function renderAdminPortalView(container) {
           <div class="hub-card-sub">${(stmsData.cohorts||[]).length} កម្រិត &amp; បន្ទប់រៀន</div>
         </div>
 
-        <!-- 4. កាលវិភាគមេ (Green) -->
+        <!-- 4. រៀបចំកាលវិភាគ (Green) -->
         <div class="trainee-hub-card card-green" onclick="openAdminTimetableModal()">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-calendar-alt"></i></div>
-          <div class="hub-card-title">កាលវិភាគមេ</div>
-          <div class="hub-card-sub">កាលវិភាគបង្រៀនទូទៅ</div>
+          <div class="hub-card-title">រៀបចំកាលវិភាគ</div>
+          <div class="hub-card-sub">ចាត់តាំងម៉ោង ថ្នាក់ មុខវិជ្ជា &amp; គ្រូ</div>
         </div>
 
         <!-- 5. អធិការកិច្ចវត្តមាន (Amber) -->
@@ -11854,7 +12551,10 @@ function renderAdminPortalView(container) {
 
       </div>
 
-      <!-- 4. Real Stats & Admin Overview -->
+      <!-- 4. Admin Timetable Management Section (រៀបចំកាលវិភាគបង្រៀន) -->
+      ${renderAdminTimetableSectionHtml(false)}
+
+      <!-- 5. Real Stats & Admin Overview -->
       <div class="trainee-stats-row">
         
         <!-- School-wide Attendance Audit -->
@@ -13095,75 +13795,130 @@ window.confirmDeleteCohort = confirmDeleteCohort;
 // --------------------------------------------------------------------------
 // 6. ADMIN MODAL 4: កាលវិភាគមេ (MASTER TIMETABLE)
 // --------------------------------------------------------------------------
-function openAdminTimetableModal() {
+function openAdminTimetableModal(selectedClass = null) {
+  closeStmsModal();
+  const classes = getAllSystemClasses();
+  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const targetClass = (selectedClass && selectedClass !== 'all') ? selectedClass : (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0]);
+  const slots = getAllTimetableSlots(targetClass, 'all');
+
   const modalHtml = `
     <div class="stms-modal-backdrop" id="adminTimetableModal" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:960px; width:95%; max-height:90vh;">
-        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
-          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
-            <i class="fas fa-calendar-alt" style="color:#86efac;"></i>
-            <span>កាលវិភាគបង្រៀនមេ (Master Institutional Timetable)</span>
+      <div class="stms-modal-window" style="max-width:1050px; width:95%; max-height:92vh;">
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color:#ffffff; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#ffffff; font-size:1.15rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-calendar-alt" style="color:#fde047;"></i>
+            <span>គ្រប់គ្រង និងរៀបចំកាលវិភាគបង្រៀនមេ (Master Institutional Timetable)</span>
           </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
         </div>
         <div class="modal-body-scroll" style="padding:20px;">
           
-          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-size:0.85rem; color:#166534;">
-              <i class="fas fa-check-circle"></i> ប្រព័ន្ធបានផ្ទៀងផ្ទាត់ដោយស្វ័យប្រវត្ត៖ <strong>គ្មានទំនាស់ម៉ោង ឬបន្ទប់រៀន (No Schedule Conflicts)</strong>
+          <!-- Class Tabs Selector & Top Actions -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px; background:#f8fafc; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:0.8rem; font-weight:700; color:#1e3a8a;"><i class="fas fa-school"></i> ជ្រើសរើសថ្នាក់៖</span>
+              ${availableClasses.map(c => `
+                <button type="button" class="btn ${c === targetClass ? 'btn-primary' : 'btn-outline'}" style="font-size:0.78rem; height:32px; padding:0 12px;" onclick="openAdminTimetableModal('${escapeHtml(c)}')">
+                  ${escapeHtml(c)}
+                </button>
+              `).join('')}
             </div>
-            <button class="btn btn-primary" onclick="showToast('កំពុងបើកទម្រង់បោះពុម្ពកាលវិភាគមេ...', 'info'); setTimeout(()=>window.print(), 300);" style="font-size:0.8rem; height:32px;">
-              <i class="fas fa-print"></i> បោះពុម្ពកាលវិភាគ
-            </button>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary" onclick="openAdminAddTimetableSlotModal('${escapeHtml(targetClass)}')" style="font-size:0.8rem; height:32px; background:#10b981; border-color:#34d399;">
+                <i class="fas fa-plus-circle"></i> បន្ថែមម៉ោងថ្មី
+              </button>
+              <button type="button" class="btn btn-outline" onclick="confirmGenerateStandardTimetable('${escapeHtml(targetClass)}')" style="font-size:0.8rem; height:32px; color:#1d4ed8; border-color:#bfdbfe;">
+                <i class="fas fa-magic"></i> បង្កើតគំរូ ៨ មុខវិជ្ជា
+              </button>
+              <button type="button" class="btn btn-primary" onclick="printAdminClassTimetable('${escapeHtml(targetClass)}')" style="font-size:0.8rem; height:32px;">
+                <i class="fas fa-print"></i> បោះពុម្ព
+              </button>
+            </div>
           </div>
 
-          <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+          <!-- Master Timetable Table -->
+          <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
             <table class="stms-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-              <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+              <thead style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
                 <tr>
-                  <th style="padding:10px;">ថ្ងៃ</th>
-                  <th style="padding:10px;">ម៉ោងសិក្សា</th>
+                  <th style="padding:10px; text-align:center; width:80px;">ថ្ងៃ</th>
+                  <th style="padding:10px; text-align:center; width:130px;">ម៉ោងសិក្សា</th>
                   <th style="padding:10px;">មុខវិជ្ជា MoEYS</th>
                   <th style="padding:10px;">សាស្ត្រាចារ្យទទួលបន្ទុក</th>
-                  <th style="padding:10px;">ថ្នាក់រៀន</th>
-                  <th style="padding:10px;">បន្ទប់</th>
+                  <th style="padding:10px; text-align:center; width:110px;">បន្ទប់រៀន</th>
+                  <th style="padding:10px; width:130px;">កំណត់សម្គាល់</th>
+                  <th style="padding:10px; text-align:center; width:90px;">សកម្មភាព</th>
                 </tr>
               </thead>
               <tbody>
                 ${(() => {
-                  const timetables = stmsData.timetables || [];
-                  let rows = '';
-                  timetables.forEach(tb => {
-                    (tb.days || []).forEach(d => {
-                      (d.slots || []).forEach(sl => {
-                        rows += `
-                          <tr style="border-bottom:1px solid #f1f5f9;">
-                            <td style="padding:10px;"><strong>${d.day}</strong></td>
-                            <td style="padding:10px;">${sl.period}</td>
-                            <td style="padding:10px;"><strong style="color:#1e3a8a;">${sl.subject}</strong></td>
-                            <td style="padding:10px;">${sl.trainer || 'គ្រូឧទ្ទេស'}</td>
-                            <td style="padding:10px;">${tb.className || 'ថ្នាក់រៀន'}</td>
-                            <td style="padding:10px;">${sl.room || tb.room || 'បន្ទប់រៀន'}</td>
-                          </tr>
-                        `;
-                      });
-                    });
-                  });
-                  return rows || `
-                    <tr>
-                      <td colspan="6" style="text-align:center; padding:32px; color:#94a3b8;">
-                        <i class="fas fa-calendar-times" style="font-size:2rem; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
-                        មិនទាន់មានកាលវិភាគបង្រៀនមេនៅឡើយទេ
-                      </td>
-                    </tr>
-                  `;
+                  if (slots.length === 0) {
+                    return `
+                      <tr>
+                        <td colspan="7" style="text-align:center; padding:45px 20px; color:#94a3b8;">
+                          <i class="fas fa-calendar-times" style="font-size:2.4rem; color:#cbd5e1; margin-bottom:10px; display:block;"></i>
+                          <div style="font-size:1rem; font-weight:700; color:#1e3a8a; margin-bottom:6px;">មិនទាន់មានកាលវិភាគបង្រៀនសម្រាប់ «${escapeHtml(targetClass)}» នៅឡើយទេ</div>
+                          <p style="font-size:0.82rem; color:#64748b; margin-bottom:14px;">ចុចប៊ូតុងខាងក្រោមដើម្បីបង្កើតកាលវិភាគគំរូ ឬបន្ថែមម៉ោងបង្រៀនដោយផ្ទាល់</p>
+                          <button class="btn btn-primary" onclick="generateStandardTimetableTemplate('${escapeHtml(targetClass)}')" style="font-size:0.8rem;"><i class="fas fa-magic"></i> បង្កើតកាលវិភាគគំរូ ៨ មុខវិជ្ជាស្វ័យប្រវត្តិ</button>
+                          <button class="btn btn-outline" onclick="openAdminAddTimetableSlotModal('${escapeHtml(targetClass)}')" style="font-size:0.8rem; margin-left:8px;"><i class="fas fa-plus"></i> បន្ថែមម៉ោងបង្រៀនដំបូង</button>
+                        </td>
+                      </tr>
+                    `;
+                  }
+                  return TIMETABLE_DAYS.map(day => {
+                    const daySlots = slots.filter(s => s.day === day || s.dayFull.includes(day));
+                    if (daySlots.length === 0) {
+                      return `
+                        <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                          <td style="padding:10px; text-align:center; font-weight:700; background:#f8fafc;">${day}</td>
+                          <td colspan="5" style="padding:10px; text-align:center; color:#94a3b8; font-size:0.8rem;">គ្មានម៉ោងសិក្សា / ស្វ័យសិក្សា</td>
+                          <td style="padding:10px; text-align:center;">
+                            <button class="btn btn-outline" style="height:26px; font-size:0.72rem; padding:0 8px;" onclick="openAdminAddTimetableSlotModal('${escapeHtml(targetClass)}', '${day}')" title="បន្ថែមម៉ោង"><i class="fas fa-plus"></i></button>
+                          </td>
+                        </tr>
+                      `;
+                    }
+                    return daySlots.map((sl, idx) => {
+                      const theme = getSubjectTheme(sl.subjectCode);
+                      return `
+                        <tr style="border-bottom:1px solid #f1f5f9;">
+                          ${idx === 0 ? `<td rowspan="${daySlots.length}" style="padding:10px; text-align:center; font-weight:800; background:#f8fafc; color:#1e3a8a; vertical-align:middle; border-right:1px solid #e2e8f0;">${day}</td>` : ''}
+                          <td style="padding:10px; text-align:center; font-weight:700; font-size:0.82rem;">${sl.period}</td>
+                          <td style="padding:10px;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                              <span style="background:${theme.bg}; color:${theme.color}; border:1px solid ${theme.border}; font-size:0.72rem; font-weight:700; padding:2px 6px; border-radius:4px;">${sl.subjectCode || 'MOEYS'}</span>
+                              <strong style="color:#1e3a8a; font-size:0.85rem;">${escapeHtml(sl.subject)}</strong>
+                            </div>
+                          </td>
+                          <td style="padding:10px; font-weight:600; color:#334155;">
+                            <i class="fas fa-chalkboard-teacher" style="color:#2563eb; margin-right:4px;"></i>${escapeHtml(sl.trainer)}
+                          </td>
+                          <td style="padding:10px; text-align:center;">
+                            <span class="badge badge-published" style="font-size:0.74rem;">${escapeHtml(sl.room)}</span>
+                          </td>
+                          <td style="padding:10px; font-size:0.76rem; color:#64748b;">${escapeHtml(sl.notes || '-')}</td>
+                          <td style="padding:10px; text-align:center;">
+                            <div style="display:flex; gap:4px; justify-content:center;">
+                              <button class="roster-action-btn btn-edit-roster" onclick="openAdminEditTimetableSlotModal('${sl.id}')" title="កែប្រែ"><i class="fas fa-edit"></i></button>
+                              <button class="roster-action-btn btn-delete-roster" onclick="deleteTimetableSlot('${sl.id}')" title="លុប"><i class="fas fa-trash"></i></button>
+                            </div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('');
+                  }).join('');
                 })()}
               </tbody>
             </table>
           </div>
 
         </div>
-        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:0.8rem; color:#64748b;">
+            <i class="fas fa-info-circle" style="color:#2563eb;"></i> ទិន្នន័យកាលវិភាគនឹងផ្សារភ្ជាប់ទៅកាន់ Trainee Portal និង Teacher Dashboard ដោយស្វ័យប្រវត្តិ
+          </div>
           <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
         </div>
       </div>
@@ -15807,4 +16562,22 @@ function resetRoleProfile(role) {
   }
 }
 window.resetRoleProfile = resetRoleProfile;
+
+// Global Timetable & Scheduler Bindings
+window.handleAdminTimetableClassChange = handleAdminTimetableClassChange;
+window.handleAdminTimetableDayChange = handleAdminTimetableDayChange;
+window.openAdminAddTimetableSlotModal = openAdminAddTimetableSlotModal;
+window.openAdminEditTimetableSlotModal = openAdminEditTimetableSlotModal;
+window.openAdminTimetableModal = openAdminTimetableModal;
+window.submitSaveTimetableSlot = submitSaveTimetableSlot;
+window.deleteTimetableSlot = deleteTimetableSlot;
+window.generateStandardTimetableTemplate = generateStandardTimetableTemplate;
+window.confirmGenerateStandardTimetable = confirmGenerateStandardTimetable;
+window.printAdminClassTimetable = printAdminClassTimetable;
+window.updateTimetableModalConflictNotice = updateTimetableModalConflictNotice;
+window.handleTimetableSubjectSelect = handleTimetableSubjectSelect;
+window.ensureClassTimetable = ensureClassTimetable;
+window.getAllTimetableSlots = getAllTimetableSlots;
+window.checkTimetableConflict = checkTimetableConflict;
+
 

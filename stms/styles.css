@@ -2252,8 +2252,21 @@ body:has(.admin-portal-container) .stms-content-viewport {
   .roster-card, .roster-card *,
   .trainee-id-card, .trainee-id-card *,
   #printableCard, #printableCard *,
-  .batch-id-cards-grid, .batch-id-cards-grid * {
+  .batch-id-cards-grid, .batch-id-cards-grid *,
+  .printable-timetable-sheet, .printable-timetable-sheet * {
     visibility: visible;
+  }
+  .printable-timetable-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 15px;
+    border: none;
+    box-shadow: none;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   .trainee-id-card, #printableCard {
     position: absolute;
@@ -3547,6 +3560,170 @@ body:has(.admin-portal-container) .stms-content-viewport {
   color: #64748b;
   font-weight: 700;
 }
+
+/* --------------------------------------------------------------------------
+   Admin Timetable Scheduling Matrix Styles
+-------------------------------------------------------------------------- */
+.admin-timetable-section {
+  margin-bottom: 26px;
+}
+
+.timetable-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  min-width: 880px;
+}
+
+.timetable-day-column {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.timetable-day-header {
+  background: #1e3a8a;
+  color: #ffffff;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.timetable-day-header.today {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+}
+
+.timetable-day-body {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.timetable-slot-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.timetable-slot-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #94a3b8;
+}
+
+.timetable-slot-period {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.timetable-slot-subject {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 4px;
+  line-height: 1.35;
+}
+
+.timetable-slot-teacher {
+  font-size: 0.74rem;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.timetable-slot-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.68rem;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 5px;
+  margin-top: 5px;
+}
+
+.timetable-slot-empty {
+  border: 1px dashed #cbd5e1;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  user-select: none;
+}
+
+.timetable-slot-empty:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.timetable-conflict-warning {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.timetable-pill-tab {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.timetable-pill-tab:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.timetable-pill-tab.active {
+  background: #1e3a8a;
+  color: #ffffff;
+  border-color: #1e3a8a;
+}
+
 
 
 
