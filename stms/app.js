@@ -5186,11 +5186,135 @@ function renderCohortsView(container) {
 // ==========================================================================
 // 8. USER ACCOUNTS & CREDENTIALS MANAGEMENT (RBAC & Passwords set by Admin)
 // ==========================================================================
+let currentRbacRoleFilter = 'all'; // 'all' | 'admin' | 'trainer' | 'trainee'
+let currentRbacSearchQuery = '';
+let currentRbacClassFilter = 'all';
+let currentRbacStatusFilter = 'all';
+let currentRbacPage = 1;
+let currentRbacPageSize = 50;
+
+function setRbacRoleFilter(role) {
+  currentRbacRoleFilter = role;
+  currentRbacPage = 1;
+  const container = document.getElementById('mainContentArea');
+  if (container) renderRBACView(container);
+}
+
+function handleRbacSearchInput(val) {
+  currentRbacSearchQuery = (val || '').trim();
+  currentRbacPage = 1;
+  renderRbacTableOnly();
+}
+
+function handleRbacClassFilterChange(val) {
+  currentRbacClassFilter = val;
+  currentRbacPage = 1;
+  renderRbacTableOnly();
+}
+
+function handleRbacStatusFilterChange(val) {
+  currentRbacStatusFilter = val;
+  currentRbacPage = 1;
+  renderRbacTableOnly();
+}
+
+function resetRbacFilters() {
+  currentRbacSearchQuery = '';
+  currentRbacClassFilter = 'all';
+  currentRbacStatusFilter = 'all';
+  currentRbacPage = 1;
+  const sInput = document.getElementById('rbacSearchInput');
+  if (sInput) sInput.value = '';
+  const cSelect = document.getElementById('rbacClassFilterSelect');
+  if (cSelect) cSelect.value = 'all';
+  const stSelect = document.getElementById('rbacStatusFilterSelect');
+  if (stSelect) stSelect.value = 'all';
+  renderRbacTableOnly();
+}
+
+function setRbacPage(page) {
+  currentRbacPage = page;
+  renderRbacTableOnly();
+}
+
+function setRbacPageSize(size) {
+  currentRbacPageSize = size === 'all' ? 'all' : parseInt(size, 10);
+  currentRbacPage = 1;
+  renderRbacTableOnly();
+}
+
+function getRbacAvailableClasses() {
+  const set = new Set();
+  (stmsData.users || []).forEach(u => {
+    if (u.role === 'trainee' && u.className) set.add(u.className.trim());
+  });
+  (stmsData.trainees || []).forEach(t => {
+    if (t.className) set.add(t.className.trim());
+    if (t.cohort) set.add(t.cohort.trim());
+  });
+  (stmsData.customClasses || []).forEach(c => {
+    if (c.name) set.add(c.name.trim());
+  });
+  return Array.from(set).filter(Boolean).sort();
+}
+
+function getFilteredRbacUsers() {
+  let list = stmsData.users || [];
+
+  // Consistent sorting: Admin first, then Trainers, then Trainees, alphabetically by nameKh
+  const roleOrder = { 'admin': 1, 'trainer': 2, 'trainee': 3 };
+  list = [...list].sort((a, b) => {
+    const diff = (roleOrder[a.role] || 99) - (roleOrder[b.role] || 99);
+    if (diff !== 0) return diff;
+    return (a.nameKh || '').localeCompare(b.nameKh || '', 'km');
+  });
+
+  // 1. Role Filter
+  if (currentRbacRoleFilter !== 'all') {
+    list = list.filter(u => u.role === currentRbacRoleFilter);
+  }
+
+  // 2. Class Filter (applies to trainees)
+  if (currentRbacClassFilter !== 'all') {
+    list = list.filter(u => {
+      if (u.role !== 'trainee') return false;
+      const uClass = u.className || '';
+      return uClass.toLowerCase() === currentRbacClassFilter.toLowerCase();
+    });
+  }
+
+  // 3. Status Filter
+  if (currentRbacStatusFilter !== 'all') {
+    list = list.filter(u => {
+      const isDis = u.status === 'disabled';
+      return currentRbacStatusFilter === 'disabled' ? isDis : !isDis;
+    });
+  }
+
+  // 4. Search Query
+  if (currentRbacSearchQuery) {
+    const q = currentRbacSearchQuery.toLowerCase();
+    list = list.filter(u => {
+      return (u.nameKh && u.nameKh.toLowerCase().includes(q)) ||
+             (u.nameEn && u.nameEn.toLowerCase().includes(q)) ||
+             (u.username && u.username.toLowerCase().includes(q)) ||
+             (u.id && u.id.toLowerCase().includes(q)) ||
+             (u.phone && u.phone.includes(q)) ||
+             (u.email && u.email.toLowerCase().includes(q)) ||
+             (u.className && u.className.toLowerCase().includes(q)) ||
+             (u.subject && u.subject.toLowerCase().includes(q));
+    });
+  }
+
+  return list;
+}
+
 function renderRBACView(container) {
   const users = stmsData.users || [];
   const adminCount = users.filter(u => u.role === 'admin').length;
   const trainerCount = users.filter(u => u.role === 'trainer').length;
   const traineeCount = users.filter(u => u.role === 'trainee').length;
+  const availableClasses = getRbacAvailableClasses();
 
   container.innerHTML = `
     <div class="view-header">
@@ -5218,117 +5342,337 @@ function renderRBACView(container) {
       </div>
     </div>
 
-    <!-- Summary Metrics -->
+    <!-- Interactive Summary Metrics Cards (Click to filter by role) -->
     <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:20px;">
-      <div style="background:#fff; border:1px solid var(--border-color); border-radius:8px; padding:12px 16px;">
-        <div style="font-size:0.75rem; color:#64748b;">គណនីសរុប (Total Users)</div>
-        <div style="font-size:1.4rem; font-weight:800; color:#1e3a8a;">${users.length} គណនី</div>
+      <div class="rbac-metric-card ${currentRbacRoleFilter === 'all' ? 'active active-all' : ''}" onclick="setRbacRoleFilter('all')" title="ចុចដើម្បីមើលគណនីទាំងអស់">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="font-size:0.75rem; color:#64748b; font-weight:600;">គណនីសរុប (Total Users)</div>
+          ${currentRbacRoleFilter === 'all' ? '<span class="badge" style="background:#dbeafe; color:#1d4ed8; font-size:0.65rem; padding:1px 6px;">កំពុងមើល</span>' : ''}
+        </div>
+        <div style="font-size:1.45rem; font-weight:800; color:#1e3a8a; margin-top:4px;">${users.length} គណនី</div>
+        <div style="font-size:0.72rem; color:#64748b; margin-top:2px;"><i class="fas fa-layer-group"></i> រួមបញ្ចូលគ្រប់តួនាទី</div>
       </div>
-      <div style="background:#fff; border:1px solid var(--border-color); border-radius:8px; padding:12px 16px;">
-        <div style="font-size:0.75rem; color:#64748b;">អ្នកគ្រប់គ្រង (Admins)</div>
-        <div style="font-size:1.4rem; font-weight:800; color:#2563eb;">${adminCount} នាក់</div>
+
+      <div class="rbac-metric-card ${currentRbacRoleFilter === 'admin' ? 'active active-admin' : ''}" onclick="setRbacRoleFilter('admin')" title="ចុចដើម្បីចម្រាញ់យកតែ Admin">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="font-size:0.75rem; color:#64748b; font-weight:600;">អ្នកគ្រប់គ្រង (Admins)</div>
+          ${currentRbacRoleFilter === 'admin' ? '<span class="badge" style="background:#dbeafe; color:#1d4ed8; font-size:0.65rem; padding:1px 6px;">កំពុងមើល</span>' : ''}
+        </div>
+        <div style="font-size:1.45rem; font-weight:800; color:#2563eb; margin-top:4px;">${adminCount} នាក់</div>
+        <div style="font-size:0.72rem; color:#2563eb; margin-top:2px;"><i class="fas fa-user-shield"></i> System Controller</div>
       </div>
-      <div style="background:#fff; border:1px solid var(--border-color); border-radius:8px; padding:12px 16px;">
-        <div style="font-size:0.75rem; color:#64748b;">គ្រូឧទ្ទេស (Trainers)</div>
-        <div style="font-size:1.4rem; font-weight:800; color:#10b981;">${trainerCount} នាក់</div>
+
+      <div class="rbac-metric-card ${currentRbacRoleFilter === 'trainer' ? 'active active-trainer' : ''}" onclick="setRbacRoleFilter('trainer')" title="ចុចដើម្បីចម្រាញ់យកតែគ្រូបង្រៀន">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="font-size:0.75rem; color:#64748b; font-weight:600;">គ្រូឧទ្ទេស (Trainers)</div>
+          ${currentRbacRoleFilter === 'trainer' ? '<span class="badge" style="background:#dcfce7; color:#15803d; font-size:0.65rem; padding:1px 6px;">កំពុងមើល</span>' : ''}
+        </div>
+        <div style="font-size:1.45rem; font-weight:800; color:#10b981; margin-top:4px;">${trainerCount} នាក់</div>
+        <div style="font-size:0.72rem; color:#10b981; margin-top:2px;"><i class="fas fa-chalkboard-teacher"></i> Faculty &amp; Teaching</div>
       </div>
-      <div style="background:#fff; border:1px solid var(--border-color); border-radius:8px; padding:12px 16px;">
-        <div style="font-size:0.75rem; color:#64748b;">គរុសនិស្សិត (Trainees)</div>
-        <div style="font-size:1.4rem; font-weight:800; color:#d97706;">${traineeCount} នាក់</div>
+
+      <div class="rbac-metric-card ${currentRbacRoleFilter === 'trainee' ? 'active active-trainee' : ''}" onclick="setRbacRoleFilter('trainee')" title="ចុចដើម្បីចម្រាញ់យកតែគរុនិស្សិត">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="font-size:0.75rem; color:#64748b; font-weight:600;">គរុសនិស្សិត (Trainees)</div>
+          ${currentRbacRoleFilter === 'trainee' ? '<span class="badge" style="background:#fef3c7; color:#b45309; font-size:0.65rem; padding:1px 6px;">កំពុងមើល</span>' : ''}
+        </div>
+        <div style="font-size:1.45rem; font-weight:800; color:#d97706; margin-top:4px;">${traineeCount} នាក់</div>
+        <div style="font-size:0.72rem; color:#d97706; margin-top:2px;"><i class="fas fa-user-graduate"></i> Students &amp; Learners</div>
       </div>
+    </div>
+
+    <!-- Role Filter Navigation Tabs -->
+    <div class="rbac-role-tabs-wrap">
+      <button class="rbac-tab-btn ${currentRbacRoleFilter === 'all' ? 'active' : ''}" onclick="setRbacRoleFilter('all')">
+        <i class="fas fa-users"></i> គណនីទាំងអស់ <span class="tab-count">${users.length}</span>
+      </button>
+      <button class="rbac-tab-btn ${currentRbacRoleFilter === 'admin' ? 'active' : ''}" onclick="setRbacRoleFilter('admin')">
+        <i class="fas fa-user-shield" style="color:${currentRbacRoleFilter === 'admin' ? '#ffffff' : '#2563eb'};"></i> អ្នកគ្រប់គ្រងប្រព័ន្ធ (Admin) <span class="tab-count">${adminCount}</span>
+      </button>
+      <button class="rbac-tab-btn ${currentRbacRoleFilter === 'trainer' ? 'active' : ''}" onclick="setRbacRoleFilter('trainer')">
+        <i class="fas fa-chalkboard-teacher" style="color:${currentRbacRoleFilter === 'trainer' ? '#ffffff' : '#10b981'};"></i> គ្រូបង្រៀន / គ្រូឧទ្ទេស (Teachers) <span class="tab-count">${trainerCount}</span>
+      </button>
+      <button class="rbac-tab-btn ${currentRbacRoleFilter === 'trainee' ? 'active' : ''}" onclick="setRbacRoleFilter('trainee')">
+        <i class="fas fa-user-graduate" style="color:${currentRbacRoleFilter === 'trainee' ? '#ffffff' : '#f59e0b'};"></i> គរុសនិស្សិត (Trainees) <span class="tab-count">${traineeCount}</span>
+      </button>
     </div>
 
     <!-- Users Table Card -->
     <div class="table-card">
-      <div class="table-toolbar">
-        <strong style="color:#1e3a8a; font-size:0.95rem;">
-          <i class="fas fa-list"></i> បញ្ជីគណនីអ្នកប្រើប្រាស់ និងពាក្យសម្ងាត់ (${users.length})
-        </strong>
-        <span style="font-size:0.8rem; color:#64748b;">Admin អាចកែសម្រួល Username និងកំណត់ពាក្យសម្ងាត់ឡើងវិញបានគ្រប់ពេល</span>
+      
+      <!-- Toolbar with Live Search and Role Filters -->
+      <div style="padding:14px 18px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:#f8fafc;">
+        
+        <!-- Search Box -->
+        <div style="flex:1; min-width:260px; max-width:380px; position:relative;">
+          <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;"></i>
+          <input type="text" id="rbacSearchInput" class="form-input" style="padding-left:36px; height:36px; font-size:0.85rem;" placeholder="ស្វែងរកតាម ឈ្មោះ, Username, លេខទូរស័ព្ទ..." value="${escapeHtml(currentRbacSearchQuery)}" oninput="handleRbacSearchInput(this.value)" />
+          ${currentRbacSearchQuery ? `
+            <button type="button" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer;" onclick="handleRbacSearchInput(''); document.getElementById('rbacSearchInput').value='';">
+              <i class="fas fa-times"></i>
+            </button>
+          ` : ''}
+        </div>
+
+        <!-- Filter Dropdowns -->
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          
+          <!-- Class Filter (For trainees or all) -->
+          ${(currentRbacRoleFilter === 'trainee' || currentRbacRoleFilter === 'all') && availableClasses.length > 0 ? `
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.78rem; color:#64748b; font-weight:600;"><i class="fas fa-users-class"></i> ថ្នាក់៖</span>
+              <select id="rbacClassFilterSelect" class="form-input" style="height:36px; font-size:0.82rem; padding:4px 10px; min-width:180px;" onchange="handleRbacClassFilterChange(this.value)">
+                <option value="all">គ្រប់ថ្នាក់/ក្រុមទាំងអស់</option>
+                ${availableClasses.map(c => `
+                  <option value="${escapeHtml(c)}" ${currentRbacClassFilter === c ? 'selected' : ''}>${escapeHtml(c)}</option>
+                `).join('')}
+              </select>
+            </div>
+          ` : ''}
+
+          <!-- Status Filter -->
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:0.78rem; color:#64748b; font-weight:600;"><i class="fas fa-toggle-on"></i> ស្ថានភាព៖</span>
+            <select id="rbacStatusFilterSelect" class="form-input" style="height:36px; font-size:0.82rem; padding:4px 10px; min-width:140px;" onchange="handleRbacStatusFilterChange(this.value)">
+              <option value="all" ${currentRbacStatusFilter === 'all' ? 'selected' : ''}>ទាំងអស់</option>
+              <option value="active" ${currentRbacStatusFilter === 'active' ? 'selected' : ''}>សកម្ម (Active)</option>
+              <option value="disabled" ${currentRbacStatusFilter === 'disabled' ? 'selected' : ''}>ផ្អាក (Disabled)</option>
+            </select>
+          </div>
+
+          <!-- Reset Filter Button -->
+          ${(currentRbacSearchQuery || currentRbacClassFilter !== 'all' || currentRbacStatusFilter !== 'all') ? `
+            <button class="btn btn-outline" style="height:36px; padding:0 12px; font-size:0.8rem; color:#ef4444; border-color:#fca5a5;" onclick="resetRbacFilters()" title="កំណត់តម្រងឡើងវិញ">
+              <i class="fas fa-undo"></i> សម្អាតតម្រង
+            </button>
+          ` : ''}
+        </div>
       </div>
 
-      <div class="data-table-responsive">
-        <table class="stms-table">
-          <thead>
-            <tr>
-              <th>ល.រ</th>
-              <th>អត្តលេខគណនី</th>
-              <th>ឈ្មោះអ្នកប្រើប្រាស់</th>
-              <th>ឈ្មោះគណនី (Username)</th>
-              <th>ពាក្យសម្ងាត់ (Password)</th>
-              <th>តួនាទី (Role)</th>
-              <th>ទំនាក់ទំនង</th>
-              <th>ស្ថានភាព</th>
-              <th>សកម្មភាព</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${users.map((u, idx) => {
-              const roleBadge = u.role === 'admin' 
-                ? 'badge-published' 
-                : u.role === 'trainer' 
-                ? 'badge-permission' 
-                : 'badge-late';
-              
-              const isSelf = currentUser && currentUser.username === u.username;
-              const isMainAdmin = u.id === 'USR-ADM-001';
+      <!-- Table Container (Dynamically updated on search/filter/paginate) -->
+      <div id="rbacTableContainer"></div>
 
-              return `
-                <tr id="userRow-${u.id}">
-                  <td>${idx + 1}</td>
-                  <td><code>${u.id}</code></td>
-                  <td>
-                    <strong>${u.avatar || '👤'} ${u.nameKh}</strong>
-                    ${u.nameEn ? `<div style="font-size:0.72rem; color:#64748b;">${u.nameEn}</div>` : ''}
-                    ${isSelf ? `<span style="font-size:0.65rem; background:#eff6ff; color:#2563eb; padding:1px 5px; border-radius:3px;">(គណនីបច្ចុប្បន្ន)</span>` : ''}
-                  </td>
-                  <td>
-                    <code style="font-weight:700; color:#1e3a8a; font-size:0.9rem;">${u.username}</code>
-                  </td>
-                  <td>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span id="pwdText-${u.id}" style="font-family:monospace; font-size:0.85rem; letter-spacing:1px; background:#f1f5f9; padding:2px 8px; border-radius:4px;">••••••••</span>
-                      <button type="button" class="btn btn-outline" style="height:24px; padding:0 6px; font-size:0.7rem;" onclick="togglePasswordVisibility('${u.id}', '${u.password}')" title="បង្ហាញ/លាក់">
-                        <i class="fas fa-eye" id="pwdEye-${u.id}"></i>
-                      </button>
+    </div>
+  `;
+
+  renderRbacTableOnly();
+}
+
+function renderRbacTableOnly() {
+  const container = document.getElementById('rbacTableContainer');
+  if (!container) return;
+
+  const users = stmsData.users || [];
+  const filtered = getFilteredRbacUsers();
+
+  // Pagination calculation
+  const total = filtered.length;
+  const pageSize = currentRbacPageSize === 'all' ? total : currentRbacPageSize;
+  const totalPages = (pageSize >= total || pageSize === 0) ? 1 : Math.ceil(total / pageSize);
+  if (currentRbacPage > totalPages) currentRbacPage = totalPages || 1;
+  const startIdx = (currentRbacPage - 1) * pageSize;
+  const endIdx = currentRbacPageSize === 'all' ? total : Math.min(startIdx + pageSize, total);
+  const pagedList = filtered.slice(startIdx, endIdx);
+
+  // Role descriptive banner
+  let roleBannerHtml = '';
+  if (currentRbacRoleFilter === 'admin') {
+    roleBannerHtml = `
+      <div style="background:#eff6ff; border-bottom:1px solid #bfdbfe; padding:10px 18px; font-size:0.82rem; color:#1e40af; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong style="color:#1d4ed8;"><i class="fas fa-user-shield"></i> គណនីអ្នកគ្រប់គ្រងប្រព័ន្ធ (Administrators &amp; System Controllers - ${total} នាក់)</strong>
+          <span style="color:#475569; margin-left:6px;">មានសិទ្ធិពេញលេញលើការគ្រប់គ្រងទិន្នន័យ គ្រូ សិស្ស កាលវិភាគ និងអនុម័តពិន្ទុ</span>
+        </div>
+        <span class="badge" style="background:#dbeafe; color:#1d4ed8; font-weight:700;">Full Controller Access</span>
+      </div>
+    `;
+  } else if (currentRbacRoleFilter === 'trainer') {
+    roleBannerHtml = `
+      <div style="background:#f0fdf4; border-bottom:1px solid #bbf7d0; padding:10px 18px; font-size:0.82rem; color:#166534; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong style="color:#15803d;"><i class="fas fa-chalkboard-teacher"></i> គណនីគ្រូបង្រៀន / គ្រូឧទ្ទេស (Faculty &amp; Teaching Staff - ${total} នាក់)</strong>
+          <span style="color:#475569; margin-left:6px;">គ្រប់គ្រងការបង្រៀន ស្រង់វត្តមាន បញ្ចូលពិន្ទុ ដាក់កិច្ចការ និង Upload មេរៀន</span>
+        </div>
+        <span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;">Faculty Access</span>
+      </div>
+    `;
+  } else if (currentRbacRoleFilter === 'trainee') {
+    roleBannerHtml = `
+      <div style="background:#fffbeb; border-bottom:1px solid #fde68a; padding:10px 18px; font-size:0.82rem; color:#92400e; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong style="color:#b45309;"><i class="fas fa-user-graduate"></i> គណនីគរុសនិស្សិត (Teacher Trainees / Students - ${total} នាក់)</strong>
+          <span style="color:#475569; margin-left:6px;">ចូលសិក្សា ទស្សនាមេរៀន បញ្ជូនកិច្ចការ និងតាមដានវត្តមាន/ពិន្ទុផ្ទាល់ខ្លួន</span>
+        </div>
+        <span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700;">Student Access</span>
+      </div>
+    `;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      ${roleBannerHtml}
+      <div style="text-align:center; padding:48px 20px; color:#94a3b8;">
+        <i class="fas fa-user-slash" style="font-size:2.8rem; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <div style="font-weight:700; color:#475569; font-size:1rem;">រកមិនឃើញគណនីដែលត្រូវនឹងលក្ខខណ្ឌស្វែងរកឡើយ</div>
+        <div style="font-size:0.82rem; margin-top:4px;">សូមសាកល្បងផ្លាស់ប្តូរពាក្យគន្លឹះស្វែងរក ឬសម្អាតតម្រង</div>
+        <button class="btn btn-outline" style="margin-top:14px; font-size:0.8rem;" onclick="resetRbacFilters()">
+          <i class="fas fa-undo"></i> សម្អាតតម្រងស្វែងរក
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    ${roleBannerHtml}
+    <div class="data-table-responsive">
+      <table class="stms-table">
+        <thead>
+          <tr>
+            <th style="width:50px; text-align:center;">ល.រ</th>
+            <th style="width:110px;">អត្តលេខ</th>
+            <th>ឈ្មោះអ្នកប្រើប្រាស់</th>
+            <th>ឈ្មោះគណនី (Username)</th>
+            <th>ពាក្យសម្ងាត់ (Password)</th>
+            ${currentRbacRoleFilter === 'trainer' ? `<th>មុខវិជ្ជាទទួលបន្ទុក</th>` : ''}
+            ${currentRbacRoleFilter === 'trainee' ? `<th>ថ្នាក់ / ក្រុម</th>` : ''}
+            ${currentRbacRoleFilter === 'admin' ? `<th>កម្រិតសិទ្ធិ</th>` : ''}
+            ${currentRbacRoleFilter === 'all' ? `<th>តួនាទី (Role)</th>` : ''}
+            <th>ទំនាក់ទំនង</th>
+            <th style="width:80px; text-align:center;">ស្ថានភាព</th>
+            <th style="width:120px; text-align:center;">សកម្មភាព</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pagedList.map((u, idx) => {
+            const actualIndex = startIdx + idx + 1;
+            const isSelf = currentUser && currentUser.username === u.username;
+            const isMainAdmin = u.id === 'USR-ADM-001';
+
+            const roleBadge = u.role === 'admin' 
+              ? `<span class="badge" style="background:#dbeafe; color:#1d4ed8; font-weight:700;"><i class="fas fa-user-shield"></i> អ្នកគ្រប់គ្រង (Admin)</span>`
+              : u.role === 'trainer' 
+              ? `<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;"><i class="fas fa-chalkboard-teacher"></i> គ្រូឧទ្ទេស (Teacher)</span>`
+              : `<span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700;"><i class="fas fa-user-graduate"></i> គរុសនិស្សិត</span>`;
+
+            return `
+              <tr id="userRow-${u.id}">
+                <td style="text-align:center; font-weight:700; color:#64748b;">${actualIndex}</td>
+                <td><code>${escapeHtml(u.id)}</code></td>
+                <td>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.2rem;">${u.avatar || (u.role === 'admin' ? '👨‍💼' : u.role === 'trainer' ? '👨‍🏫' : '👨‍🎓')}</span>
+                    <div>
+                      <strong style="color:#0f172a; font-size:0.88rem;">${escapeHtml(u.nameKh)}</strong>
+                      ${u.nameEn ? `<div style="font-size:0.72rem; color:#64748b;">${escapeHtml(u.nameEn)}</div>` : ''}
+                      ${isSelf ? `<span style="font-size:0.65rem; background:#eff6ff; color:#2563eb; padding:1px 5px; border-radius:3px; font-weight:600;">(គណនីបច្ចុប្បន្ន)</span>` : ''}
                     </div>
-                  </td>
+                  </div>
+                </td>
+                <td>
+                  <code style="font-weight:700; color:#1e3a8a; font-size:0.9rem; background:#f1f5f9; padding:2px 8px; border-radius:4px;">${escapeHtml(u.username)}</code>
+                </td>
+                <td>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span id="pwdText-${u.id}" style="font-family:monospace; font-size:0.85rem; letter-spacing:1px; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 8px; border-radius:4px;">••••••••</span>
+                    <button type="button" class="btn btn-outline" style="height:24px; padding:0 6px; font-size:0.7rem; color:#64748b;" onclick="togglePasswordVisibility('${u.id}', '${escapeHtml(u.password)}')" title="បង្ហាញ/លាក់">
+                      <i class="fas fa-eye" id="pwdEye-${u.id}"></i>
+                    </button>
+                  </div>
+                </td>
+
+                ${currentRbacRoleFilter === 'trainer' ? `
                   <td>
-                    <span class="badge ${roleBadge}">
-                      ${u.roleLabel || (u.role === 'admin' ? 'Administrator' : u.role === 'trainer' ? 'Trainer / Teacher' : 'Trainee Teacher')}
+                    <span class="badge" style="background:#eff6ff; color:#1e40af; font-size:0.75rem; font-weight:700;">
+                      ${escapeHtml(u.subject || 'មិនទាន់កំណត់')}
                     </span>
-                    ${u.subject ? `<div style="font-size:0.7rem; color:#64748b; margin-top:2px;">មុខវិជ្ជា៖ ${u.subject}</div>` : ''}
-                    ${u.className ? `<div style="font-size:0.7rem; color:#64748b; margin-top:2px;">ថ្នាក់៖ ${u.className}</div>` : ''}
                   </td>
-                  <td style="font-size:0.78rem;">
-                    <div>${u.email || '-'}</div>
-                    <div style="color:#64748b;">${u.phone || '-'}</div>
-                  </td>
+                ` : ''}
+
+                ${currentRbacRoleFilter === 'trainee' ? `
                   <td>
-                    <span class="badge ${u.status === 'disabled' ? 'badge-danger' : 'badge-present'}">
-                      ${u.status === 'disabled' ? 'ផ្អាក' : 'សកម្ម'}
+                    <span class="badge" style="background:#fff7ed; color:#c2410c; font-size:0.75rem; font-weight:700;">
+                      ${escapeHtml(u.className || u.cohortName || 'ថ្នាក់ទូទៅ')}
                     </span>
                   </td>
+                ` : ''}
+
+                ${currentRbacRoleFilter === 'admin' ? `
                   <td>
-                    <div style="display:flex; gap:5px;">
-                      <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem;" onclick="openEditUserModal('${u.id}')" title="កែប្រែ & ប្តូរពាក្យសម្ងាត់">
-                        <i class="fas fa-key"></i> កែប្រែ
+                    <span class="badge" style="background:#dbeafe; color:#1d4ed8; font-size:0.75rem; font-weight:700;">
+                      ${escapeHtml(u.roleLabel || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ')}
+                    </span>
+                  </td>
+                ` : ''}
+
+                ${currentRbacRoleFilter === 'all' ? `
+                  <td>
+                    ${roleBadge}
+                    ${u.subject ? `<div style="font-size:0.7rem; color:#64748b; margin-top:2px;">មុខវិជ្ជា៖ ${escapeHtml(u.subject)}</div>` : ''}
+                    ${u.className ? `<div style="font-size:0.7rem; color:#64748b; margin-top:2px;">ថ្នាក់៖ ${escapeHtml(u.className)}</div>` : ''}
+                  </td>
+                ` : ''}
+
+                <td style="font-size:0.78rem;">
+                  <div>${escapeHtml(u.email || '-')}</div>
+                  <div style="color:#64748b;">${escapeHtml(u.phone || '-')}</div>
+                </td>
+                <td style="text-align:center;">
+                  <span class="badge ${u.status === 'disabled' ? 'badge-danger' : 'badge-present'}" style="font-size:0.72rem;">
+                    ${u.status === 'disabled' ? 'ផ្អាក' : 'សកម្ម'}
+                  </span>
+                </td>
+                <td style="text-align:center;">
+                  <div style="display:inline-flex; gap:5px;">
+                    <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem;" onclick="openEditUserModal('${u.id}')" title="កែប្រែ Username &amp; ប្តូរពាក្យសម្ងាត់">
+                      <i class="fas fa-key"></i> កែប្រែ
+                    </button>
+                    ${!isMainAdmin ? `
+                      <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:${u.status === 'disabled' ? '#10b981' : '#f59e0b'}; border-color:${u.status === 'disabled' ? '#86efac' : '#fde68a'};" onclick="toggleUserStatus('${u.id}')" title="${u.status === 'disabled' ? 'បើកដំណើរការឡើងវិញ' : 'ផ្អាកគណនី'}">
+                        <i class="fas ${u.status === 'disabled' ? 'fa-user-check' : 'fa-user-slash'}"></i>
                       </button>
-                      ${!isMainAdmin ? `
-                        <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:${u.status === 'disabled' ? '#10b981' : '#f59e0b'};" onclick="toggleUserStatus('${u.id}')" title="${u.status === 'disabled' ? 'បើកដំណើរការឡើងវិញ' : 'ផ្អាកគណនី'}">
-                          <i class="fas ${u.status === 'disabled' ? 'fa-user-check' : 'fa-user-slash'}"></i>
-                        </button>
-                        <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:#ef4444;" onclick="deleteUserAccount('${u.id}')" title="លុបគណនី">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      ` : ''}
-                    </div>
-                  </td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
+                      <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:#ef4444; border-color:#fca5a5;" onclick="deleteUserAccount('${u.id}')" title="លុបគណនី">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    ` : ''}
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination & Page Controls Bar -->
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-top:1px solid #e2e8f0; flex-wrap:wrap; gap:12px; font-size:0.82rem; color:#64748b; background:#f8fafc;">
+      <div>
+        បង្ហាញពី <strong>${startIdx + 1}</strong> ដល់ <strong>${endIdx}</strong> នៃចំនួនសរុប <strong>${total}</strong> គណនី
+        ${currentRbacRoleFilter !== 'all' ? ` (តួនាទី៖ <strong>${currentRbacRoleFilter}</strong>)` : ''}
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span>បង្ហាញក្នុងមួយទំព័រ៖</span>
+          <select class="form-input" style="width:auto; height:30px; padding:2px 8px; font-size:0.8rem;" onchange="setRbacPageSize(this.value)">
+            <option value="25" ${currentRbacPageSize === 25 ? 'selected' : ''}>២៥</option>
+            <option value="50" ${currentRbacPageSize === 50 ? 'selected' : ''}>៥០</option>
+            <option value="100" ${currentRbacPageSize === 100 ? 'selected' : ''}>១០០</option>
+            <option value="all" ${currentRbacPageSize === 'all' ? 'selected' : ''}>ទាំងអស់ (${total})</option>
+          </select>
+        </div>
+        ${totalPages > 1 ? `
+          <div style="display:flex; gap:4px; align-items:center;">
+            <button class="btn btn-outline" style="height:30px; padding:0 10px; font-size:0.78rem;" ${currentRbacPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : `onclick="setRbacPage(${currentRbacPage - 1})"`}>
+              ‹ មុន
+            </button>
+            <span style="display:inline-flex; align-items:center; padding:0 8px; font-weight:700; color:#1e293b;">
+              ទំព័រ ${currentRbacPage} / ${totalPages}
+            </span>
+            <button class="btn btn-outline" style="height:30px; padding:0 10px; font-size:0.78rem;" ${currentRbacPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : `onclick="setRbacPage(${currentRbacPage + 1})"`}>
+              បន្ទាប់ ›
+            </button>
+          </div>
+        ` : ''}
       </div>
     </div>
   `;
@@ -5356,7 +5700,11 @@ function togglePasswordVisibility(userId, plainPassword) {
 }
 
 // Modal: Register New User (Admin sets Username & Password)
-function openRegisterUserModal() {
+function openRegisterUserModal(defaultRole = null) {
+  if (!defaultRole) {
+    defaultRole = (currentRbacRoleFilter && currentRbacRoleFilter !== 'all') ? currentRbacRoleFilter : 'trainer';
+  }
+
   const modalHtml = `
     <div class="stms-modal-backdrop" id="regUserModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
       <div class="stms-modal-window" style="max-width:680px;">
@@ -5388,9 +5736,9 @@ function openRegisterUserModal() {
               <div>
                 <label class="form-label">កម្រិតតួនាទីក្នុងប្រព័ន្ធ (Role)*</label>
                 <select id="regRole" class="form-input" required onchange="handleRegRoleChange(this.value)">
-                  <option value="trainer">Trainer / Teacher (គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន)</option>
-                  <option value="trainee">Trainee Teacher (គរុសនិស្សិត)</option>
-                  <option value="admin">Administrator (អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ)</option>
+                  <option value="trainer" ${defaultRole === 'trainer' ? 'selected' : ''}>Trainer / Teacher (គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន)</option>
+                  <option value="trainee" ${defaultRole === 'trainee' ? 'selected' : ''}>Trainee Teacher (គរុសនិស្សិត)</option>
+                  <option value="admin" ${defaultRole === 'admin' ? 'selected' : ''}>Administrator (អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ)</option>
                 </select>
               </div>
               <div>
@@ -5418,7 +5766,7 @@ function openRegisterUserModal() {
               <div id="regExtraFieldWrap">
                 <label class="form-label" id="regExtraLabel">មុខវិជ្ជាទទួលបន្ទុក</label>
                 <select id="regExtraValue" class="form-input">
-                  ${stmsData.subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh}</option>`).join('')}
+                  ${(stmsData.subjects || []).map(s => `<option value="${s.code}">${s.code} - ${s.nameKh}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -5436,6 +5784,7 @@ function openRegisterUserModal() {
   `;
 
   document.body.insertAdjacentHTML('beforeend', modalHtml);
+  handleRegRoleChange(defaultRole);
 }
 
 function handleRegRoleChange(role) {
@@ -5447,16 +5796,17 @@ function handleRegRoleChange(role) {
   if (role === 'trainer') {
     wrap.style.display = 'block';
     label.textContent = 'មុខវិជ្ជាទទួលបន្ទុក (Subject)';
-    select.innerHTML = stmsData.subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh}</option>`).join('');
+    select.innerHTML = (stmsData.subjects || []).map(s => `<option value="${s.code}">${s.code} - ${s.nameKh}</option>`).join('');
   } else if (role === 'trainee') {
     wrap.style.display = 'block';
     label.textContent = 'ថ្នាក់បណ្តុះបណ្តាល (Class)';
-    select.innerHTML = `
-      <option value="ថ្នាក់បឋម ១២+២ ក្រុម ក">ថ្នាក់បឋម ១២+២ ក្រុម ក</option>
-      <option value="ថ្នាក់បឋម ១២+២ ក្រុម ខ">ថ្នាក់បឋម ១២+២ ក្រុម ខ</option>
-      <option value="ថ្នាក់មត្តេយ្យ ១២+២">ថ្នាក់មត្តេយ្យ ១២+២</option>
-      <option value="ថ្នាក់វិក្រឹតការ វគ្គ១">ថ្នាក់វិក្រឹតការ វគ្គ១</option>
-    `;
+    const classes = getRbacAvailableClasses();
+    select.innerHTML = classes.length > 0 
+      ? classes.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')
+      : `
+        <option value="ថ្នាក់បឋម ១២+៤ ជំនាន់ទី ១">ថ្នាក់បឋម ១២+៤ ជំនាន់ទី ១</option>
+        <option value="ថ្នាក់បឋម ១២+២ ជំនាន់ទី ៣៤">ថ្នាក់បឋម ១២+២ ជំនាន់ទី ៣៤</option>
+      `;
   } else {
     wrap.style.display = 'none';
   }
@@ -5668,20 +6018,34 @@ function deleteUserAccount(userId) {
   }
 }
 
-// Export All User Credentials to CSV / Excel
+// Export Filtered or All User Credentials to CSV / Excel
 function exportUserCredentialsExcel() {
-  const users = stmsData.users || [];
-  const headers = ['អត្តលេខគណនី', 'ឈ្មោះពេញ', 'ឈ្មោះឡាតាំង', 'Username', 'Password', 'តួនាទី (Role)', 'អ៊ីមែល', 'លេខទូរស័ព្ទ', 'ស្ថានភាព'];
-  const rows = users.map(u => [u.id, `"${u.nameKh}"`, `"${u.nameEn || ''}"`, u.username, `"${u.password}"`, u.role, u.email || '', u.phone || '', u.status]);
+  const users = getFilteredRbacUsers();
+  const roleTitleKh = currentRbacRoleFilter === 'admin' ? 'Admin' : currentRbacRoleFilter === 'trainer' ? 'គ្រូឧទ្ទេស' : currentRbacRoleFilter === 'trainee' ? 'គរុសនិស្សិត' : 'ទាំងអស់';
+  const roleNameEn = currentRbacRoleFilter === 'admin' ? 'Admins' : currentRbacRoleFilter === 'trainer' ? 'Trainers' : currentRbacRoleFilter === 'trainee' ? 'Trainees' : 'All_Users';
+
+  const headers = ['អត្តលេខគណនី', 'ឈ្មោះពេញ (ខ្មែរ)', 'ឈ្មោះឡាតាំង', 'Username', 'Password', 'តួនាទី (Role)', 'មុខវិជ្ជា/ថ្នាក់', 'អ៊ីមែល', 'លេខទូរស័ព្ទ', 'ស្ថានភាព'];
+  const rows = users.map(u => [
+    `"${u.id || ''}"`,
+    `"${u.nameKh || ''}"`,
+    `"${u.nameEn || ''}"`,
+    `"${u.username || ''}"`,
+    `"${u.password || ''}"`,
+    `"${u.roleLabel || u.role || ''}"`,
+    `"${u.subject || u.className || ''}"`,
+    `"${u.email || ''}"`,
+    `"${u.phone || ''}"`,
+    `"${u.status === 'disabled' ? 'ផ្អាក' : 'សកម្ម'}"`
+  ]);
   const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `KTPTTC_User_Credentials_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `KTPTTC_User_Credentials_${roleNameEn}_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('បានទាញយកបញ្ជីគណនី និងពាក្យសម្ងាត់រួចរាល់!', 'success');
+  showToast(`🎉 បានទាញយកបញ្ជីគណនី ${roleTitleKh} (${users.length} គណនី) រួចរាល់!`, 'success');
 }
 
 function renderBackupView(container) {
