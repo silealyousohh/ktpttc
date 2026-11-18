@@ -115,6 +115,10 @@ async function fetchServerStmsData() {
       // Merge assignments
       if (Array.isArray(srv.assignments)) {
         if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
+      if (!Array.isArray(stmsData.onlineClasses)) stmsData.onlineClasses = [];
+      if (!Array.isArray(stmsData.teacherAttendance)) stmsData.teacherAttendance = [];
+      if (!Array.isArray(stmsData.teacherReports)) stmsData.teacherReports = [];
+      if (!stmsData.gradebookApprovals) stmsData.gradebookApprovals = {};
         srv.assignments.forEach(srvA => {
           if (!stmsData.assignments.some(a => a.id === srvA.id)) {
             stmsData.assignments.unshift(srvA);
@@ -155,6 +159,10 @@ function loadData() {
       if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
       if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
       if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
+      if (!Array.isArray(stmsData.onlineClasses)) stmsData.onlineClasses = [];
+      if (!Array.isArray(stmsData.teacherAttendance)) stmsData.teacherAttendance = [];
+      if (!Array.isArray(stmsData.teacherReports)) stmsData.teacherReports = [];
+      if (!stmsData.gradebookApprovals) stmsData.gradebookApprovals = {};
 
       // Auto-sanitize trainees: clean any binary corrupted entries (e.g. invalid xlsx raw text import)
       const countBefore = stmsData.trainees.length;
@@ -251,6 +259,10 @@ function loadData() {
       if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
       if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
       if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
+      if (!Array.isArray(stmsData.onlineClasses)) stmsData.onlineClasses = [];
+      if (!Array.isArray(stmsData.teacherAttendance)) stmsData.teacherAttendance = [];
+      if (!Array.isArray(stmsData.teacherReports)) stmsData.teacherReports = [];
+      if (!stmsData.gradebookApprovals) stmsData.gradebookApprovals = {};
       if (!stmsData.syllabi) stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
       saveData();
     }
@@ -1522,6 +1534,7 @@ function renderTraineesView(container) {
                   <td style="text-align: center;">${parentPhone}</td>
                   <td>
                     <div class="roster-action-group">
+                      <button class="roster-action-btn" style="color:#0d9488; border-color:#99f6e4;" onclick="openAdminTransferStudentModal('${t.id}')" title="ចាត់ថ្នាក់រៀន ផ្ទេរថ្នាក់ &amp; គ្រប់គ្រងស្ថានភាព"><i class="fas fa-exchange-alt"></i></button>
                       <button class="roster-action-btn btn-edit-roster" onclick="openEditStudent('${t.id}')" title="កែប្រែព័ត៌មាន"><i class="fas fa-edit"></i></button>
                       <button class="roster-action-btn btn-delete-roster" onclick="deleteTraineeRecord('${t.id}')" title="លុបទិន្នន័យ"><i class="fas fa-trash"></i></button>
                     </div>
@@ -2983,6 +2996,9 @@ function renderTraineePortalView(container) {
         <div class="trainee-hero-actions">
           <button class="btn-hero-action primary" onclick="viewTraineeCard('${t.id}')">
             <i class="fas fa-id-card"></i> កាតសិស្ស
+          </button>
+          <button class="btn-hero-action" style="background:#0284c7; color:#ffffff; border:1px solid #38bdf8; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTraineeOnlineClassModal()">
+            <i class="fas fa-video"></i> ថ្នាក់រៀនអនឡាញ (Zoom/Meet)
           </button>
           <button class="btn-hero-action secondary" onclick="openProfileSettingsModal()">
             <i class="fas fa-user-edit"></i> កែប្រែព័ត៌មាន
@@ -7915,13 +7931,16 @@ function renderTrainerPortalView(container) {
         </div>
         <div class="trainee-hero-actions">
           <button class="btn-hero-action primary" onclick="openTeacherHomeworkModal('${myCodes[0]}', 'create', '${currentTeacherPortalClassFilter}')">
-            <i class="fas fa-plus-circle"></i> ដាក់កិច្ចការថ្មី
+            <i class="fas fa-plus-circle"></i> ដាក់កិច្ចការ/ប្រឡងខ្លី
           </button>
           <button class="btn-hero-action secondary" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-calendar-check"></i> ស្រង់វត្តមាន
           </button>
           <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherGradingModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-calculator"></i> បញ្ចូលពិន្ទុ
+          </button>
+          <button class="btn-hero-action" style="background:#0d9488; color:#ffffff; border:1px solid #14b8a6; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherReportIncidentModal()">
+            <i class="fas fa-paper-plane"></i> រាយការណ៍ជូន Admin
           </button>
         </div>
       </div>
@@ -8905,12 +8924,26 @@ function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
 
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
-                  <label class="form-label" style="font-weight:700;">កាលបរិច្ឆេទផុតកំណត់</label>
-                  <input type="date" id="hwDateInput" class="form-input" value="2026-11-30" />
+                  <label class="form-label" style="font-weight:700;"><i class="fas fa-layer-group" style="color:#d97706;"></i> ប្រភេទកិច្ចការសិក្សា</label>
+                  <select id="hwTypeSelect" class="form-input" style="font-weight:700; color:#b45309;">
+                    <option value="assignment">📝 កិច្ចការផ្ទះ (Homework / Assignment)</option>
+                    <option value="quiz">⏱️ កម្រងសំណួរ / ការប្រឡងខ្លីៗ (Quiz / Short Exam)</option>
+                  </select>
                 </div>
                 <div>
-                  <label class="form-label" style="font-weight:700;">ពិន្ទុអតិបរមា</label>
+                  <label class="form-label" style="font-weight:700;">កាលបរិច្ឆេទផុតកំណត់ (Deadline) *</label>
+                  <input type="date" id="hwDateInput" class="form-input" value="2026-11-30" />
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                  <label class="form-label" style="font-weight:700;">ពិន្ទុអតិបរមា (Max Points)</label>
                   <input type="number" id="hwPointsInput" class="form-input" value="10" min="1" max="100" />
+                </div>
+                <div>
+                  <label class="form-label" style="font-weight:700;">រយៈពេលធ្វើ (សម្រាប់ Quiz / ការប្រឡងខ្លី)</label>
+                  <input type="text" id="hwDurationInput" class="form-input" placeholder="ឧ. ៣០ នាទី (ប្រសិនបើជា Quiz)" value="៣០ នាទី" />
                 </div>
               </div>
 
@@ -9056,6 +9089,8 @@ function saveTeacherHomework() {
   }
 
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
+  const typeEl = document.getElementById('hwTypeSelect');
+  const hwType = typeEl ? typeEl.value : 'assignment';
 
   const fileInfo = window.pendingHwFileData || {
     name: 'KTPTTC_Assignment_Guide.docx',
@@ -9066,6 +9101,7 @@ function saveTeacherHomework() {
 
   const newHw = {
     id: 'HW-' + Date.now(),
+    type: hwType,
     subjectCode: subjectCode,
     subjectName: subj.nameKh,
     targetClass: targetClass,
@@ -10482,8 +10518,11 @@ function renderAdminPortalView(container) {
           <button class="btn-hero-action secondary" onclick="openAdminTeacherModal()">
             <i class="fas fa-chalkboard-teacher"></i> គ្រប់គ្រងគ្រូ
           </button>
-          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openAdminBackupModal()">
-            <i class="fas fa-database"></i> បម្រុងទុក
+          <button class="btn-hero-action" style="background:#059669; color:#ffffff; border:1px solid #34d399; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openAdminTeacherMonitoringModal()">
+            <i class="fas fa-user-check"></i> តាមដានគ្រូបង្រៀន
+          </button>
+          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openSystemRolesModal()" title="តារាងកំណត់សិទ្ធិ និងតួនាទី (RBAC)">
+            <i class="fas fa-user-shield"></i> សិទ្ធិ RBAC
           </button>
         </div>
       </div>
@@ -10491,12 +10530,12 @@ function renderAdminPortalView(container) {
       <!-- 2. Admin 8 Pastel Hub Menu Grid (Identical Layout to Student & Teacher Portal) -->
       <div class="trainee-hub-grid">
         
-        <!-- 1. គ្រប់គ្រងគ្រូឧទ្ទេស (Pink) -->
-        <div class="trainee-hub-card card-pink" onclick="openAdminTeacherModal()">
+        <!-- 1. តាមដាន & គ្រប់គ្រងគ្រូឧទ្ទេស (Pink) -->
+        <div class="trainee-hub-card card-pink" onclick="openAdminTeacherMonitoringModal()">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-          <div class="hub-card-title">គ្រូឧទ្ទេស</div>
-          <div class="hub-card-sub">${trainers.length} នាក់ • ចាត់ចែងមុខវិជ្ជា</div>
+          <div class="hub-card-title">តាមដានគ្រូឧទ្ទេស</div>
+          <div class="hub-card-sub">${trainers.length} នាក់ • វត្តមាន &amp; បំពេញការងារ</div>
         </div>
 
         <!-- 2. គ្រប់គ្រងគរុសនិស្សិត (Blue) -->
@@ -10504,7 +10543,7 @@ function renderAdminPortalView(container) {
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-user-graduate"></i></div>
           <div class="hub-card-title">គរុសនិស្សិត</div>
-          <div class="hub-card-sub">${trainees.length} នាក់ • គ្រប់គ្រងសិស្ស</div>
+          <div class="hub-card-sub">${trainees.length} នាក់ • គ្រប់គ្រងសិស្ស &amp; ផ្ទេរថ្នាក់</div>
         </div>
 
         <!-- 3. ជំនាន់ & ថ្នាក់រៀន (Orange) -->
@@ -10539,12 +10578,12 @@ function renderAdminPortalView(container) {
           <div class="hub-card-sub">អនុម័ត &amp; បោះពុម្ពលទ្ធផល</div>
         </div>
 
-        <!-- 7. សំណើពីគរុសិស្ស (Teal) -->
+        <!-- 7. សំណើ & របាយការណ៍ (Teal) -->
         <div class="trainee-hub-card card-teal" onclick="openAdminRequestsModal()">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-envelope-open-text"></i></div>
-          <div class="hub-card-title">សំណើពីគរុសិស្ស</div>
-          <div class="hub-card-sub">${pendingRequests.length} សំណើរង់ចាំអនុម័ត</div>
+          <div class="hub-card-title">សំណើ &amp; របាយការណ៍</div>
+          <div class="hub-card-sub">${pendingRequests.length} សំណើសិស្ស • ${(stmsData.teacherReports||[]).length} របាយការណ៍គ្រូ</div>
         </div>
 
         <!-- 8. បម្រុងទុក & ស្តារ (Sky) -->
@@ -10908,6 +10947,9 @@ function renderAdminStudentTableRows(list) {
                 <div style="display:flex; justify-content:center; gap:6px;">
                   <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:#2563eb; border-color:#93c5fd;" onclick="viewTraineeCard('${t.id}')" title="ប័ណ្ណសម្គាល់ខ្លួន">
                     <i class="fas fa-id-card"></i> កាត
+                  </button>
+                  <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:#0d9488; border-color:#99f6e4;" onclick="openAdminTransferStudentModal('${t.id}')" title="ចាត់ថ្នាក់រៀន ផ្ទេរថ្នាក់ &amp; គ្រប់គ្រងស្ថានភាព">
+                    <i class="fas fa-exchange-alt"></i> ផ្ទេរថ្នាក់
                   </button>
                   <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem;" onclick="openAdminEditStudentModal('${t.id}')" title="កែប្រែ">
                     <i class="fas fa-edit"></i>
@@ -12020,14 +12062,31 @@ function openAdminGradingModal() {
         </div>
         <div class="modal-body-scroll" style="padding:20px;">
           
-          <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; padding:14px 18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-            <div style="font-size:0.85rem; color:#5b21b6; line-height:1.6;">
-              <strong>តួនាទី Admin សិក្សាធិការ៖</strong> ត្រួតពិនិត្យពិន្ទុដែលគ្រូឧទ្ទេសបានបញ្ចូល ធ្វើការគណនាចំណាត់ថ្នាក់ និងចុចអនុម័តដើម្បីផ្សព្វផ្សាយជាផ្លូវការទៅកាន់គណនីគរុសិស្ស។
+          ${stmsData.gradebookApprovals?.isApproved ? `
+            <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:14px 18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="font-size:0.85rem; color:#065f46; line-height:1.6;">
+                <strong style="display:flex; align-items:center; gap:6px; font-size:0.92rem;"><i class="fas fa-check-circle" style="color:#10b981;"></i> ស្ថានភាព៖ បានផ្ទៀងផ្ទាត់ និងអនុម័តជាផ្លូវការ (Approved &amp; Published)</strong>
+                <div>អនុម័តដោយ៖ <strong>${stmsData.gradebookApprovals.approvedBy || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ'}</strong> • កាលបរិច្ឆេទ៖ <strong>${stmsData.gradebookApprovals.approvedAt || ''}</strong></div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <span class="badge" style="background:#10b981; color:#fff; font-size:0.8rem; padding:6px 12px; border-radius:6px;">
+                  <i class="fas fa-stamp"></i> អនុម័តផ្លូវការ
+                </span>
+                <button class="btn btn-outline" onclick="publishAdminMasterGrades()" style="font-size:0.8rem; height:32px; padding:0 12px;">
+                  <i class="fas fa-sync-alt"></i> អនុម័តសារជាថ្មី
+                </button>
+              </div>
             </div>
-            <button class="btn btn-primary" onclick="publishAdminMasterGrades()" style="background:#7c3aed; border-color:#6d28d9; font-size:0.85rem; padding:8px 16px;">
-              <i class="fas fa-bullhorn"></i> អនុម័ត &amp; ផ្សព្វផ្សាយលទ្ធផល
-            </button>
-          </div>
+          ` : `
+            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:14px 18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="font-size:0.85rem; color:#92400e; line-height:1.6;">
+                <strong>តួនាទី Admin សិក្សាធិការ (Student Monitoring)៖</strong> ផ្ទៀងផ្ទាត់ពិន្ទុដែលគ្រូឧទ្ទេសបានបញ្ចូល ពិនិត្យការគណនាមធ្យមភាគ និងចុចអនុម័តដើម្បីផ្សព្វផ្សាយជាផ្លូវការទៅកាន់គណនីគរុសិស្ស។
+              </div>
+              <button class="btn btn-primary" onclick="publishAdminMasterGrades()" style="background:#10b981; border-color:#059669; font-size:0.85rem; padding:8px 16px;">
+                <i class="fas fa-check-double"></i> ផ្ទៀងផ្ទាត់ &amp; អនុម័តតារាងពិន្ទុ
+              </button>
+            </div>
+          `}
 
           <!-- Gradebook Table -->
           <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:8px; overflow-x:auto;">
@@ -12099,8 +12158,18 @@ function openAdminGradingModal() {
   showModal(modalHtml);
 }
 
-// Publish Master Grades
+// Publish Master Grades (Admin Verification & Official Approval)
 function publishAdminMasterGrades() {
+  const admin = getActiveAdminProfile();
+  const dateStr = new Date().toLocaleDateString('km-KH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  stmsData.gradebookApprovals = {
+    isApproved: true,
+    approvedBy: admin.nameKh || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ',
+    approvedAt: dateStr,
+    status: 'approved',
+    note: 'បានផ្ទៀងផ្ទាត់ និងអនុម័តជាផ្លូវការដោយការិយាល័យសិក្សាធិការ'
+  };
+
   (stmsData.trainees || []).forEach(t => {
     if (t.scores) {
       Object.keys(t.scores).forEach(k => {
@@ -12109,69 +12178,132 @@ function publishAdminMasterGrades() {
     }
   });
   saveData();
-  showToast('🎉 បានអនុម័ត និងផ្សព្វផ្សាយលទ្ធផលប្រឡងជាផ្លូវការទូទាំងវិទ្យាស្ថាន! គរុសនិស្សិតទាំងអស់អាចពិនិត្យពិន្ទុក្នុងគណនីបានភ្លាមៗ។', 'success');
-  closeStmsModal();
+  showToast('🎉 បានផ្ទៀងផ្ទាត់ និងអនុម័តតារាងពិន្ទុជាផ្លូវការទូទាំងវិទ្យាស្ថាន! គរុសនិស្សិតទាំងអស់អាចពិនិត្យពិន្ទុក្នុងគណនីបានភ្លាមៗ។', 'success');
+  openAdminGradingModal();
   if (currentView === 'admin-portal') {
     renderAdminPortalView(document.getElementById('stmsContentViewport'));
   }
 }
 
 // --------------------------------------------------------------------------
-// 9. ADMIN MODAL 7: សំណើពីគរុសិស្ស (STUDENT PROFILE REQUESTS APPROVAL)
+// 9. ADMIN MODAL 7: សំណើ & របាយការណ៍ពីសិស្ស និងគ្រូ (REQUESTS & TEACHER REPORTS)
 // --------------------------------------------------------------------------
-function openAdminRequestsModal() {
+function openAdminRequestsModal(activeTab = 'students') {
   const requests = stmsData.studentRequests || [];
+  const teacherReports = stmsData.teacherReports || [];
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="adminRequestsModal" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:780px; width:95%; max-height:90vh;">
+      <div class="stms-modal-window" style="max-width:820px; width:95%; max-height:90vh;">
         <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
           <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
-            <i class="fas fa-envelope-open-text" style="color:#5eead4;"></i>
-            <span>សំណើសុំកែប្រែព័ត៌មានពីគរុសិស្ស (Student Change Requests)</span>
+            <i class="fas fa-inbox" style="color:#5eead4;"></i>
+            <span>ប្រអប់ទទួលសំណើ &amp; របាយការណ៍ថ្នាក់រៀន (Inbox &amp; Reports)</span>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
         </div>
         <div class="modal-body-scroll" style="padding:20px;">
           
-          <div style="margin-bottom:14px; font-size:0.85rem; color:#64748b;">
-            សំណើដែលគរុសិស្សបានផ្ញើមកកាន់ការិយាល័យសិក្សាធិការ ដើម្បីសុំកែប្រែព័ត៌មានផ្ទាល់ខ្លួន៖
+          <!-- Tabs Navigation -->
+          <div class="stms-modal-tabs" style="margin-bottom:16px;">
+            <button class="modal-tab-btn ${activeTab==='students'?'active':''}" onclick="openAdminRequestsModal('students')">
+              <i class="fas fa-user-graduate"></i> សំណើសុំកែប្រែព័ត៌មានពីគរុសិស្ស (${requests.length})
+            </button>
+            <button class="modal-tab-btn ${activeTab==='teachers'?'active':''}" onclick="openAdminRequestsModal('teachers')">
+              <i class="fas fa-chalkboard-teacher"></i> របាយការណ៍ស្ថានភាពថ្នាក់ពីគ្រូបង្រៀន (${teacherReports.length})
+            </button>
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            ${requests.map(req => `
-              <div style="border:1px solid ${req.status === 'pending' ? '#fde68a' : '#e2e8f0'}; background:${req.status === 'pending' ? '#fffdf5' : '#fff'}; border-radius:8px; padding:14px 16px;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                  <div>
-                    <strong style="color:#1e3a8a; font-size:0.95rem;">${req.traineeName}</strong>
-                    <span style="font-size:0.75rem; color:#64748b; margin-left:6px;">(អត្តលេខ៖ <code>${req.traineeId}</code>)</span>
-                  </div>
-                  <span class="badge ${req.status === 'pending' ? 'badge-late' : req.status === 'approved' ? 'badge-present' : 'badge-absent'}" style="font-size:0.75rem; padding:4px 8px;">
-                    ${req.status === 'pending' ? 'រង់ចាំអនុម័ត' : req.status === 'approved' ? 'បានអនុម័ត' : 'បានបដិសេធ'}
-                  </span>
-                </div>
+          ${activeTab === 'students' ? `
+            <div style="margin-bottom:14px; font-size:0.85rem; color:#64748b;">
+              សំណើដែលគរុសិស្សបានផ្ញើមកកាន់ការិយាល័យសិក្សាធិការ ដើម្បីសុំកែប្រែព័ត៌មានផ្ទាល់ខ្លួន៖
+            </div>
 
-                <div style="margin:8px 0; font-size:0.82rem; line-height:1.6; color:#334155;">
-                  <div><strong>ផ្នែកដែលសុំកែប្រែ៖</strong> ${req.field}</div>
-                  <div style="color:#b91c1c;"><strong>ព័ត៌មានចាស់៖</strong> ${req.oldValue}</div>
-                  <div style="color:#15803d;"><strong>ព័ត៌មានថ្មីដែលស្នើសុំ៖</strong> ${req.newValue}</div>
-                  <div style="color:#64748b;"><strong>មូលហេតុ៖</strong> ${req.reason}</div>
-                  <div style="font-size:0.72rem; color:#94a3b8; margin-top:4px;"><i class="fas fa-clock"></i> កាលបរិច្ឆេទ៖ ${req.date}</div>
-                </div>
-
-                ${req.status === 'pending' ? `
-                  <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px dashed #e2e8f0; padding-top:8px; margin-top:8px;">
-                    <button class="btn btn-outline" style="height:28px; padding:0 12px; font-size:0.75rem; color:#ef4444; border-color:#fca5a5;" onclick="resolveAdminStudentRequest('${req.id}', 'rejected')">
-                      <i class="fas fa-times"></i> បដិសេធ
-                    </button>
-                    <button class="btn btn-primary" style="height:28px; padding:0 14px; font-size:0.75rem; background:#10b981; border-color:#059669;" onclick="resolveAdminStudentRequest('${req.id}', 'approved')">
-                      <i class="fas fa-check"></i> អនុម័ត និងកែប្រែ
-                    </button>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${(requests.length > 0) ? requests.map(req => `
+                <div style="border:1px solid ${req.status === 'pending' ? '#fde68a' : '#e2e8f0'}; background:${req.status === 'pending' ? '#fffdf5' : '#fff'}; border-radius:8px; padding:14px 16px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                      <strong style="color:#1e3a8a; font-size:0.95rem;">${req.traineeName}</strong>
+                      <span style="font-size:0.75rem; color:#64748b; margin-left:6px;">(អត្តលេខ៖ <code>${req.traineeId}</code>)</span>
+                    </div>
+                    <span class="badge ${req.status === 'pending' ? 'badge-late' : req.status === 'approved' ? 'badge-present' : 'badge-absent'}" style="font-size:0.75rem; padding:4px 8px;">
+                      ${req.status === 'pending' ? 'រង់ចាំអនុម័ត' : req.status === 'approved' ? 'បានអនុម័ត' : 'បានបដិសេធ'}
+                    </span>
                   </div>
-                ` : ''}
-              </div>
-            `).join('')}
-          </div>
+
+                  <div style="margin:8px 0; font-size:0.82rem; line-height:1.6; color:#334155;">
+                    <div><strong>ផ្នែកដែលសុំកែប្រែ៖</strong> ${req.field}</div>
+                    <div style="color:#b91c1c;"><strong>ព័ត៌មានចាស់៖</strong> ${req.oldValue}</div>
+                    <div style="color:#15803d;"><strong>ព័ត៌មានថ្មីដែលស្នើសុំ៖</strong> ${req.newValue}</div>
+                    <div style="color:#64748b;"><strong>មូលហេតុ៖</strong> ${req.reason}</div>
+                    <div style="font-size:0.72rem; color:#94a3b8; margin-top:4px;"><i class="fas fa-clock"></i> កាលបរិច្ឆេទ៖ ${req.date}</div>
+                  </div>
+
+                  ${req.status === 'pending' ? `
+                    <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px dashed #e2e8f0; padding-top:8px; margin-top:8px;">
+                      <button class="btn btn-outline" style="height:28px; padding:0 12px; font-size:0.75rem; color:#ef4444; border-color:#fca5a5;" onclick="resolveAdminStudentRequest('${req.id}', 'rejected')">
+                        <i class="fas fa-times"></i> បដិសេធ
+                      </button>
+                      <button class="btn btn-primary" style="height:28px; padding:0 14px; font-size:0.75rem; background:#10b981; border-color:#059669;" onclick="resolveAdminStudentRequest('${req.id}', 'approved')">
+                        <i class="fas fa-check"></i> អនុម័ត និងកែប្រែ
+                      </button>
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('') : `
+                <div style="text-align:center; padding:32px; color:#94a3b8; font-size:0.88rem;">
+                  <i class="fas fa-envelope-open fa-2x" style="margin-bottom:8px; opacity:0.5;"></i>
+                  <p>មិនមានសំណើសុំកែប្រែព័ត៌មានពីគរុសិស្សនៅឡើយទេ។</p>
+                </div>
+              `}
+            </div>
+          ` : `
+            <div style="margin-bottom:14px; font-size:0.85rem; color:#64748b;">
+              របាយការណ៍ និងសេចក្តីជូនដំណឹងស្តីពីស្ថានភាពថ្នាក់រៀនដែលគ្រូឧទ្ទេសបានរាយការណ៍ជូន Admin៖
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${(teacherReports.length > 0) ? teacherReports.map(rpt => `
+                <div style="border:1px solid ${rpt.status === 'resolved' ? '#bbf7d0' : '#fed7aa'}; background:${rpt.status === 'resolved' ? '#f0fdf4' : '#fffaf5'}; border-radius:10px; padding:16px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                    <div>
+                      <span class="badge" style="background:#ffedd5; color:#c2410c; font-size:0.75rem; margin-right:6px;">
+                        ${rpt.type || 'របាយការណ៍ទូទៅ'}
+                      </span>
+                      <span class="badge badge-outline" style="font-size:0.72rem;">
+                        <i class="fas fa-chalkboard"></i> ${rpt.targetClass || 'គ្រប់ថ្នាក់'}
+                      </span>
+                      <h4 style="margin:6px 0 2px 0; color:#1e293b; font-size:0.98rem;">${rpt.title}</h4>
+                    </div>
+                    <span class="badge ${rpt.status === 'resolved' ? 'badge-present' : 'badge-late'}" style="font-size:0.75rem;">
+                      ${rpt.status === 'resolved' ? '✅ ដោះស្រាយរួច' : '⏳ កំពុងពិនិត្យ'}
+                    </span>
+                  </div>
+
+                  <p style="margin:8px 0; font-size:0.85rem; color:#334155; line-height:1.6; background:#fff; padding:10px 14px; border-radius:8px; border:1px solid #f1f5f9;">
+                    ${rpt.details}
+                  </p>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; font-size:0.78rem; color:#64748b; margin-top:8px;">
+                    <div>
+                      គ្រូឧទ្ទេស៖ <strong>${rpt.trainerName || 'គ្រូបង្រៀន'}</strong> (${rpt.subjectName || rpt.subjectCode || ''}) • កាលបរិច្ឆេទ៖ ${rpt.date || ''}
+                    </div>
+                    ${rpt.status !== 'resolved' ? `
+                      <button class="btn btn-primary" style="height:28px; font-size:0.75rem; padding:0 12px; background:#0d9488; border-color:#0f766e;" onclick="resolveAdminTeacherReport('${rpt.id}')">
+                        <i class="fas fa-check-circle"></i> បានទទួលជ្រាប &amp; ដោះស្រាយរួច
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              `).join('') : `
+                <div style="text-align:center; padding:32px; color:#94a3b8; font-size:0.88rem;">
+                  <i class="fas fa-chalkboard fa-2x" style="margin-bottom:8px; opacity:0.5;"></i>
+                  <p>មិនទាន់មានរបាយការណ៍ស្ថានភាពថ្នាក់ពីគ្រូបង្រៀននៅឡើយទេ។</p>
+                </div>
+              `}
+            </div>
+          `}
 
         </div>
         <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
@@ -12208,11 +12340,22 @@ function resolveAdminStudentRequest(reqId, action) {
   }
 
   saveData();
-  openAdminRequestsModal();
+  openAdminRequestsModal('students');
   if (currentView === 'admin-portal') {
     renderAdminPortalView(document.getElementById('stmsContentViewport'));
   }
 }
+
+// Resolve Teacher Report
+function resolveAdminTeacherReport(rptId) {
+  const rpt = (stmsData.teacherReports || []).find(r => r.id === rptId);
+  if (!rpt) return;
+  rpt.status = 'resolved';
+  saveData();
+  showToast(`✅ បានកត់ត្រាថាបានទទួលជ្រាប និងដោះស្រាយរបាយការណ៍របស់គ្រូ «${rpt.trainerName}» រួចរាល់!`, 'success');
+  openAdminRequestsModal('teachers');
+}
+window.resolveAdminTeacherReport = resolveAdminTeacherReport;
 
 // --------------------------------------------------------------------------
 // 10. ADMIN MODAL 8: បម្រុងទុក & ស្តារទិន្នន័យ (BACKUP & RESTORE JSON / EXCEL)
@@ -12859,6 +13002,1007 @@ function confirmDeleteSubject(subjectCode) {
   }
 }
 window.confirmDeleteSubject = confirmDeleteSubject;
+
+// ==========================================================================
+// 13. ROLE-BASED ACCESS CONTROL (RBAC) & PERMISSION CONTROLLERS
+// ==========================================================================
+
+// 1. System Roles & Permissions Matrix Modal (ការកំណត់សិទ្ធិ និងតួនាទីអ្នកប្រើប្រាស់)
+function openSystemRolesModal() {
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="systemRolesModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:920px; width:95%; max-height:92vh;">
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.15rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-user-shield" style="color:#93c5fd;"></i>
+            <span>តារាងកំណត់សិទ្ធិ និងតួនាទីក្នុងប្រព័ន្ធ (Role-Based Access Control - RBAC)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:22px; max-height:78vh; overflow-y:auto;">
+          
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px 18px; margin-bottom:20px; font-size:0.86rem; color:#1e40af; line-height:1.6;">
+            <strong><i class="fas fa-info-circle"></i> គោលការណ៍បែងចែកសិទ្ធិអំណាច ៣ កម្រិត (MoEYS KTPTTC Standards)៖</strong>
+            ប្រព័ន្ធត្រូវបានរៀបចំឡើងដោយបែងចែកតួនាទីដាច់ដោយឡែកពីគ្នា ដើម្បីធានាសុវត្ថិភាពទិន្នន័យ ភាពត្រឹមត្រូវនៃលទ្ធផលសិក្សា និងប្រសិទ្ធភាពការងារ។
+          </div>
+
+          <!-- Roles Comparison Cards -->
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-bottom:22px;">
+            
+            <!-- 1. Admin -->
+            <div style="border:2px solid #3b82f6; background:#f8fafc; border-radius:12px; padding:16px; display:flex; flex-direction:column;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <div style="width:40px; height:40px; border-radius:10px; background:#eff6ff; color:#1d4ed8; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
+                  👨‍💼
+                </div>
+                <div>
+                  <h4 style="margin:0; color:#1e3a8a; font-size:1.05rem;">១. Admin (អដ្ដមីន)</h4>
+                  <span class="badge" style="background:#dbeafe; color:#1e40af; font-size:0.72rem;">System & Data Controller</span>
+                </div>
+              </div>
+              <ul style="margin:0; padding-left:18px; font-size:0.82rem; color:#334155; line-height:1.7;">
+                <li><strong>គ្រប់គ្រងទិន្នន័យសិស្ស៖</strong> ចុះឈ្មោះ កែប្រែ លុប ផ្ទេរថ្នាក់ និងគ្រប់គ្រងស្ថានភាពសិក្សា។</li>
+                <li><strong>គ្រប់គ្រងទិន្នន័យគ្រូ៖</strong> បង្កើតគណនី ចាត់តាំងមុខវិជ្ជា និងកាលវិភាគបង្រៀន។</li>
+                <li><strong>តាមដានគ្រូបង្រៀន៖</strong> ពិនិត្យវត្តមាន ការបំពេញម៉ោង ការបង្ហោះមេរៀន/កិច្ចការ និងរបាយការណ៍បង្រៀន។</li>
+                <li><strong>តាមដានសិស្ស៖</strong> ពិនិត្យរបាយការណ៍អវត្តមាន និងផ្ទៀងផ្ទាត់/អនុម័តតារាងពិន្ទុ។</li>
+                <li><strong>គ្រប់គ្រងប្រព័ន្ធ៖</strong> កំណត់សិទ្ធិ (RBAC) មុខវិជ្ជា ឆ្នាំសិក្សា ឆមាស និងបម្រុងទុកទិន្នន័យ។</li>
+              </ul>
+            </div>
+
+            <!-- 2. Teacher -->
+            <div style="border:2px solid #10b981; background:#f8fafc; border-radius:12px; padding:16px; display:flex; flex-direction:column;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <div style="width:40px; height:40px; border-radius:10px; background:#f0fdf4; color:#059669; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
+                  👨‍🏫
+                </div>
+                <div>
+                  <h4 style="margin:0; color:#065f46; font-size:1.05rem;">២. Teacher (គ្រូបង្រៀន)</h4>
+                  <span class="badge" style="background:#d1fae5; color:#065f46; font-size:0.72rem;">Classroom & Academics</span>
+                </div>
+              </div>
+              <ul style="margin:0; padding-left:18px; font-size:0.82rem; color:#334155; line-height:1.7;">
+                <li><strong>ការបង្រៀន & មេរៀន៖</strong> បង្ហោះឯកសារ (PDF, Video, Slides) ចូលក្នុងថ្នាល E-Learning។</li>
+                <li><strong>កិច្ចការ & ប្រឡងខ្លី៖</strong> បង្កើត Assignments/Quizzes និងកំណត់ពេល Deadline។</li>
+                <li><strong>គ្រប់គ្រងវត្តមាន៖</strong> កត់ត្រាវត្តមានសិស្សប្រចាំថ្ងៃ ឬប្រចាំម៉ោងបង្រៀនតាមថ្នាក់ដែលទទួលបន្ទុក។</li>
+                <li><strong>ដាក់ពិន្ទុ & វាយតម្លៃ៖</strong> ផ្តល់ពិន្ទុ និងមតិយោបល់ (Feedback) លើកិច្ចការ និងបញ្ចូលពិន្ទុប្រចាំខែ/ឆមាស។</li>
+                <li><strong>ទំនាក់ទំនង៖</strong> ប្រាស្រ័យទាក់ទងជាមួយសិស្ស និងរាយការណ៍ស្ថានភាពថ្នាក់រៀនជូន Admin។</li>
+              </ul>
+            </div>
+
+            <!-- 3. Student -->
+            <div style="border:2px solid #8b5cf6; background:#f8fafc; border-radius:12px; padding:16px; display:flex; flex-direction:column;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <div style="width:40px; height:40px; border-radius:10px; background:#f5f3ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
+                  👨‍🎓
+                </div>
+                <div>
+                  <h4 style="margin:0; color:#5b21b6; font-size:1.05rem;">៣. Student (គរុសនិស្សិត)</h4>
+                  <span class="badge" style="background:#ede9fe; color:#5b21b6; font-size:0.72rem;">Learner & Progress Tracking</span>
+                </div>
+              </div>
+              <ul style="margin:0; padding-left:18px; font-size:0.82rem; color:#334155; line-height:1.7;">
+                <li><strong>ការសិក្សា & ចូលរៀន៖</strong> ទាញយក/មើលមេរៀន វីដេអូ និងចូលរួមថ្នាក់រៀនអនឡាញ (Zoom/Meet)។</li>
+                <li><strong>បំពេញ & បញ្ជូនកិច្ចការ៖</strong> មើលកិច្ចការដែលគ្រូដាក់ និង Upload ចម្លើយ/ឯកសារត្រឡប់ទៅគ្រូវិញ។</li>
+                <li><strong>តាមដានលទ្ធផល៖</strong> ពិនិត្យមើលពិន្ទុប្រចាំខែ ឆមាស និទ្ទេស និងប្រវត្តិវត្តមានផ្ទាល់ខ្លួន។</li>
+                <li><strong>កាលវិភាគ & ព័ត៌មាន៖</strong> មើលកាលវិភាគសិក្សាប្រចាំសប្តាហ៍ និងសេចក្តីប្រកាសរបស់សាលា។</li>
+                <li><strong>សំណើសុំកែប្រែ៖</strong> ផ្ញើសំណើសុំកែប្រែព័ត៌មានផ្ទាល់ខ្លួនទៅកាន់សិក្សាធិការ។</li>
+              </ul>
+            </div>
+
+          </div>
+
+          <!-- Feature Matrix Table -->
+          <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:10px; overflow-x:auto;">
+            <table class="stms-table" style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+              <thead style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+                <tr>
+                  <th style="padding:10px 14px; text-align:left;">មុខងារ និងប្រតិបត្តិការក្នុងប្រព័ន្ធ</th>
+                  <th style="padding:10px; text-align:center; width:120px;">Admin</th>
+                  <th style="padding:10px; text-align:center; width:120px;">Teacher</th>
+                  <th style="padding:10px; text-align:center; width:120px;">Student</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:9px 14px;"><strong>ចុះឈ្មោះ កែប្រែ លុប និងផ្ទេរថ្នាក់សិស្ស</strong></td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ពេញលេញ</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> មើលតែក្នុងថ្នាក់</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> មើលតែផ្ទាល់ខ្លួន</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9; background:#f8fafc;">
+                  <td style="padding:9px 14px;"><strong>គ្រប់គ្រងគណនីគ្រូ និងចាត់តាំងកាលវិភាគបង្រៀន</strong></td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ពេញលេញ</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> គ្មានសិទ្ធិ</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> គ្មានសិទ្ធិ</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:9px 14px;"><strong>តាមដាន និងវាយតម្លៃលើការបំពេញការងាររបស់គ្រូ</strong></td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ពេញលេញ</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> គ្មានសិទ្ធិ</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> គ្មានសិទ្ធិ</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9; background:#f8fafc;">
+                  <td style="padding:9px 14px;"><strong>បង្ហោះឯកសារមេរៀន (PDF, Video, Slides)</strong></td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ត្រួតពិនិត្យរួម</td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> មុខវិជ្ជាខ្លួន</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> ទាញយក/មើល</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:9px 14px;"><strong>បង្កើតកិច្ចការ (Assignments) &amp; ការប្រឡងខ្លីៗ (Quizzes)</strong></td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ត្រួតពិនិត្យរួម</td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> មុខវិជ្ជាខ្លួន</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> ធ្វើ &amp; ប្រគល់</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9; background:#f8fafc;">
+                  <td style="padding:9px 14px;"><strong>ស្រង់វត្តមានសិស្សប្រចាំថ្ងៃ ឬប្រចាំម៉ោង</strong></td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> អធិការកិច្ច</td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ថ្នាក់ខ្លួនបង្រៀន</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> គ្មានសិទ្ធិ</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:9px 14px;"><strong>បញ្ចូលពិន្ទុ &amp; ផ្តល់មតិយោបល់ (Feedback)</strong></td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> មិនបញ្ចូលផ្ទាល់</td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> មុខវិជ្ជាខ្លួន</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> គ្មានសិទ្ធិ</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9; background:#f8fafc;">
+                  <td style="padding:9px 14px;"><strong>ផ្ទៀងផ្ទាត់ និងអនុម័តតារាងពិន្ទុផ្លូវការ</strong></td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> អនុម័តផ្លូវការ</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> រង់ចាំអនុម័ត</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> មើលពិន្ទុផ្ទាល់ខ្លួន</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:9px 14px;"><strong>ចូលរួមថ្នាក់រៀនអនឡាញ (Zoom / Google Meet)</strong></td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> កំណត់ Link</td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ម្ចាស់បន្ទប់/បង្រៀន</td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ចូលរៀន</td>
+                </tr>
+                <tr style="background:#f8fafc;">
+                  <td style="padding:9px 14px;"><strong>រាយការណ៍ស្ថានភាពថ្នាក់រៀនជូន Admin</strong></td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ទទួល &amp; ដោះស្រាយ</td>
+                  <td style="text-align:center; color:#16a34a;"><i class="fas fa-check-circle fa-lg"></i> ផ្ញើរាយការណ៍</td>
+                  <td style="text-align:center; color:#dc2626;"><i class="fas fa-times-circle fa-lg"></i> គ្មានសិទ្ធិ</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:14px 22px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openSystemRolesModal = openSystemRolesModal;
+
+// 2. ADMIN MODAL: ចាត់ថ្នាក់រៀន ផ្ទេរថ្នាក់ & គ្រប់គ្រងស្ថានភាពសិក្សា (Student Class Transfer & Status)
+function openAdminTransferStudentModal(studentId) {
+  const t = (stmsData.trainees || []).find(x => x.id === studentId);
+  if (!t) {
+    showToast('ពុំអាចស្វែងរកគរុសនិស្សិតនេះឃើញឡើយ!', 'error');
+    return;
+  }
+
+  const allClasses = getAllSystemClasses();
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminTransferStudentModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:540px;">
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color:#fff; border-radius:12px 12px 0 0; padding:16px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-exchange-alt"></i>
+            <span>ចាត់ថ្នាក់រៀន ផ្ទេរថ្នាក់ &amp; គ្រប់គ្រងស្ថានភាពសិក្សា</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <form onsubmit="saveAdminTransferStudent('${t.id}', event)" style="padding:22px;">
+          <!-- Student Summary Info -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; gap:12px;">
+            <div style="width:48px; height:48px; border-radius:50%; background:#eff6ff; display:flex; align-items:center; justify-content:center; font-size:1.6rem; border:2px solid #bfdbfe;">
+              ${t.avatar || (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}
+            </div>
+            <div>
+              <div style="font-size:1rem; font-weight:700; color:#1e293b;">${t.nameKh} <span style="font-size:0.8rem; font-weight:normal; color:#64748b;">(${t.nameEn || ''})</span></div>
+              <div style="font-size:0.78rem; color:#64748b; margin-top:2px;">
+                អត្តលេខ៖ <code style="color:#2563eb; font-weight:700;">${t.id}</code> • ថ្នាក់បច្ចុប្បន្ន៖ <strong style="color:#1e40af;">${t.className || 'មិនទាន់កំណត់'}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+              <label class="form-label" style="font-weight:700; font-size:0.85rem; color:#1e3a8a;">
+                <i class="fas fa-chalkboard"></i> ផ្ទេរទៅកាន់ថ្នាក់រៀនថ្មី (New Class) *
+              </label>
+              <select id="transferNewClass" class="form-input" required style="font-weight:600;">
+                ${allClasses.map(cls => `
+                  <option value="${cls}" ${cls === t.className ? 'selected' : ''}>
+                    ${cls} ${cls === t.className ? '(ថ្នាក់បច្ចុប្បន្ន)' : ''}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label" style="font-weight:700; font-size:0.85rem; color:#1e3a8a;">
+                <i class="fas fa-user-tag"></i> ស្ថានភាពសិក្សាផ្លូវការ (Academic Status) *
+              </label>
+              <select id="transferNewStatus" class="form-input" required style="font-weight:600;">
+                <option value="កំពុងសិក្សា" ${(t.status === 'កំពុងសិក្សា' || !t.status) ? 'selected' : ''}>🟢 កំពុងសិក្សា (Active Studying)</option>
+                <option value="ព្យួរការសិក្សា" ${t.status === 'ព្យួរការសិក្សា' ? 'selected' : ''}>🟡 ព្យួរការសិក្សា (Suspended / On Leave)</option>
+                <option value="ចប់ការសិក្សា" ${t.status === 'ចប់ការសិក្សា' ? 'selected' : ''}>🔵 ចប់ការសិក្សា (Graduated)</option>
+                <option value="បោះបង់ការសិក្សា" ${t.status === 'បោះបង់ការសិក្សា' ? 'selected' : ''}>🔴 បោះបង់ការសិក្សា (Dropped Out)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label" style="font-weight:700; font-size:0.85rem; color:#1e3a8a;">
+                <i class="fas fa-calendar-alt"></i> ឆ្នាំសិក្សា (Academic Year)
+              </label>
+              <input type="text" id="transferAcademicYear" class="form-input" value="${t.academicYear || 'AY-2026-2027'}" placeholder="AY-2026-2027">
+            </div>
+
+            <div>
+              <label class="form-label" style="font-weight:700; font-size:0.85rem; color:#1e3a8a;">
+                <i class="fas fa-comment-alt"></i> មូលហេតុនៃការផ្ទេរថ្នាក់ / កែប្រែស្ថានភាព
+              </label>
+              <textarea id="transferReason" class="form-input" rows="2" placeholder="បញ្ជាក់មូលហេតុ ឧ. ស្នើសុំផ្ទេរក្រុម ឬព្យួរការសិក្សាដោយសារបញ្ហាសុខភាព..."></textarea>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
+            <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+            <button type="submit" class="btn btn-primary" style="background:#2563eb;">
+              <i class="fas fa-check-circle"></i> រក្សាទុកការផ្លាស់ប្តូរ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openAdminTransferStudentModal = openAdminTransferStudentModal;
+
+// Save Admin Transfer Student
+function saveAdminTransferStudent(studentId, e) {
+  e.preventDefault();
+  const t = (stmsData.trainees || []).find(x => x.id === studentId);
+  if (!t) return;
+
+  const oldClass = t.className;
+  const oldStatus = t.status || 'កំពុងសិក្សា';
+  const newClass = document.getElementById('transferNewClass').value.trim();
+  const newStatus = document.getElementById('transferNewStatus').value;
+  const newYear = document.getElementById('transferAcademicYear').value.trim();
+  const reason = document.getElementById('transferReason').value.trim();
+
+  t.className = newClass;
+  t.status = newStatus;
+  t.academicYear = newYear;
+
+  // Sync user record
+  const u = (stmsData.users || []).find(x => x.studentId === studentId);
+  if (u) {
+    u.className = newClass;
+    u.status = (newStatus === 'កំពុងសិក្សា' ? 'active' : 'suspended');
+  }
+
+  // Record transfer history log
+  if (!Array.isArray(t.transferHistory)) t.transferHistory = [];
+  t.transferHistory.push({
+    fromClass: oldClass,
+    toClass: newClass,
+    fromStatus: oldStatus,
+    toStatus: newStatus,
+    date: new Date().toISOString().split('T')[0],
+    reason: reason || 'កែប្រែដោយ Admin'
+  });
+
+  saveData();
+  closeStmsModal();
+  showToast(`🎉 បានផ្ទេរថ្នាក់ និងធ្វើបច្ចុប្បន្នភាពស្ថានភាពសិស្ស «${t.nameKh}» ដោយជោគជ័យ!`, 'success');
+
+  if (currentView === 'trainees') {
+    renderTraineesView(document.getElementById('mainContentArea'));
+  } else if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  }
+}
+window.saveAdminTransferStudent = saveAdminTransferStudent;
+
+// 3. ADMIN MODAL: ការតាមដាន និងវាយតម្លៃលើគ្រូបង្រៀន (TEACHER MONITORING & EVALUATION HUB)
+function openAdminTeacherMonitoringModal(activeTab = 'attendance') {
+  const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+  const subjects = KTPTTC_ALL_SUBJECTS;
+  const assignments = stmsData.assignments || [];
+  const lessons = stmsData.lessons || [];
+  const videoLessons = stmsData.videoLessons || [];
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminTeacherMonitoringModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:960px; width:95%; max-height:92vh;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color:#ffffff; padding:16px 22px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:42px; height:42px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+              <i class="fas fa-user-check"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ការតាមដាន និងវាយតម្លៃលើគ្រូបង្រៀន (Teacher Monitoring &amp; Evaluation)</h3>
+              <p style="color:#bfdbfe; font-size:0.82rem; margin:2px 0 0 0;">ផ្ទាំងអធិការកិច្ចរបស់ Admin៖ វត្តមានគ្រូ • ការបង្ហោះមេរៀន/កិច្ចការ • របាយការណ៍បង្រៀនប្រចាំខែ/ឆមាស</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:20px; max-height:78vh; overflow-y:auto;">
+          
+          <!-- Tabs Navigation -->
+          <div class="stms-modal-tabs" style="margin-bottom:18px;">
+            <button class="modal-tab-btn ${activeTab==='attendance'?'active':''}" onclick="openAdminTeacherMonitoringModal('attendance')">
+              <i class="fas fa-clipboard-check"></i> ១. តាមដានវត្តមាន &amp; បំពេញម៉ោងបង្រៀន
+            </button>
+            <button class="modal-tab-btn ${activeTab==='lessons'?'active':''}" onclick="openAdminTeacherMonitoringModal('lessons')">
+              <i class="fas fa-file-upload"></i> ២. តាមដានការបង្ហោះមេរៀន &amp; ដាក់កិច្ចការ
+            </button>
+            <button class="modal-tab-btn ${activeTab==='reports'?'active':''}" onclick="openAdminTeacherMonitoringModal('reports')">
+              <i class="fas fa-chart-line"></i> ៣. របាយការណ៍ &amp; វាយតម្លៃប្រសិទ្ធភាព
+            </button>
+          </div>
+
+          ${activeTab === 'attendance' ? renderAdminTeacherAttendanceMonitoringHtml(trainers) :
+            activeTab === 'lessons' ? renderAdminTeacherLessonsMonitoringHtml(trainers) :
+            renderAdminTeacherReportsMonitoringHtml(trainers)}
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:0.8rem; color:#64748b;">
+            <i class="fas fa-info-circle" style="color:#2563eb;"></i> ទិន្នន័យត្រូវបានធ្វើបច្ចុប្បន្នភាពតាមពេលវេលាជាក់ស្តែង (Real-time Audit)
+          </div>
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openAdminTeacherMonitoringModal = openAdminTeacherMonitoringModal;
+
+// Tab 1: Render Teacher Attendance & Teaching Hours Audit
+function renderAdminTeacherAttendanceMonitoringHtml(trainers) {
+  const sessions = stmsData.attendanceSessions || [];
+  const teacherAttendance = stmsData.teacherAttendance || [];
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  return `
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+        <div style="font-size:0.86rem; color:#475569;">
+          ពិនិត្យបញ្ជីវត្តមាន និងការបំពេញម៉ោងបង្រៀនរបស់គ្រូឧទ្ទេសទូទាំងវិទ្យាស្ថាន (${trainers.length} នាក់)៖
+        </div>
+        <div style="font-size:0.8rem; background:#eff6ff; color:#1e40af; padding:4px 12px; border-radius:20px; font-weight:700;">
+          <i class="fas fa-calendar-day"></i> កាលបរិច្ឆេទថ្ងៃនេះ៖ ${todayStr}
+        </div>
+      </div>
+
+      <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:10px; overflow-x:auto;">
+        <table class="stms-table" style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+          <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+            <tr>
+              <th style="padding:10px;">ល.រ</th>
+              <th style="padding:10px;">ឈ្មោះគ្រូឧទ្ទេស</th>
+              <th style="padding:10px;">ឯកទេស / មុខវិជ្ជា</th>
+              <th style="padding:10px; text-align:center;">ថ្នាក់បង្រៀន</th>
+              <th style="padding:10px; text-align:center;">ម៉ោងកំណត់</th>
+              <th style="padding:10px; text-align:center;">ម៉ោងបំពេញជាក់ស្តែង</th>
+              <th style="padding:10px; text-align:center;">ចំនួនលើកស្រង់វត្តមានសិស្ស</th>
+              <th style="padding:10px; text-align:center;">វត្តមានគ្រូថ្ងៃនេះ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${trainers.map((tr, idx) => {
+              const myCodes = getTrainerAssignedSubjectCodes(tr);
+              const myClasses = getTrainerAssignedClasses(tr);
+              const mySessionsCount = sessions.filter(s => myCodes.includes(s.subjectCode)).length;
+              const plannedHours = myCodes.length * 30; // 30 hours per subject credit
+              const completedHours = Math.min(plannedHours, Math.max(12, mySessionsCount * 2));
+              
+              // Today attendance
+              const record = teacherAttendance.find(a => a.teacherId === tr.id && a.date === todayStr);
+              const curStatus = record ? record.status : 'present';
+
+              return `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:10px; font-weight:700; color:#64748b; text-align:center;">${idx + 1}</td>
+                  <td style="padding:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-size:1.3rem;">${tr.avatar || (tr.gender === 'ស្រី' ? '👩‍🏫' : '👨‍🏫')}</span>
+                      <div>
+                        <strong style="color:#0f172a;">${tr.nameKh}</strong>
+                        <div style="font-size:0.73rem; color:#64748b;">${tr.qualification || 'អនុបណ្ឌិត'} • <code>${tr.id}</code></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="padding:10px;">
+                    <span class="badge" style="background:#eff6ff; color:#1e40af; font-size:0.75rem;">
+                      ${myCodes.join(', ') || tr.subject || 'PED-101'}
+                    </span>
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    <span class="badge badge-outline" style="font-size:0.75rem;">
+                      ${myClasses.length} ថ្នាក់
+                    </span>
+                  </td>
+                  <td style="padding:10px; text-align:center; font-weight:600; color:#475569;">
+                    ${plannedHours} ម៉ោង
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    <strong style="color:${completedHours >= plannedHours * 0.8 ? '#15803d' : '#b45309'}; font-size:0.9rem;">
+                      ${completedHours} ម៉ោង
+                    </strong>
+                    <div style="font-size:0.7rem; color:#64748b;">${Math.round((completedHours / (plannedHours || 30)) * 100)}%</div>
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    <span class="badge" style="background:#f0fdf4; color:#166534; font-size:0.78rem;">
+                      <i class="fas fa-check"></i> ${mySessionsCount} លើក
+                    </span>
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    <select class="form-input" style="height:30px; font-size:0.78rem; padding:0 6px; font-weight:700; color:${curStatus==='present'?'#16a34a':curStatus==='permission'?'#d97706':'#dc2626'};" onchange="recordAdminTeacherAttendance('${tr.id}', this.value)">
+                      <option value="present" ${curStatus==='present'?'selected':''}>🟢 វត្តមាន</option>
+                      <option value="permission" ${curStatus==='permission'?'selected':''}>🟡 ច្បាប់</option>
+                      <option value="late" ${curStatus==='late'?'selected':''}>🟠 យឺត</option>
+                      <option value="absent" ${curStatus==='absent'?'selected':''}>🔴 អវត្តមាន</option>
+                    </select>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// Record Daily Teacher Attendance
+function recordAdminTeacherAttendance(teacherId, status) {
+  if (!Array.isArray(stmsData.teacherAttendance)) stmsData.teacherAttendance = [];
+  const todayStr = new Date().toISOString().split('T')[0];
+  const idx = stmsData.teacherAttendance.findIndex(a => a.teacherId === teacherId && a.date === todayStr);
+
+  if (idx !== -1) {
+    stmsData.teacherAttendance[idx].status = status;
+  } else {
+    stmsData.teacherAttendance.push({
+      teacherId,
+      date: todayStr,
+      status,
+      markedBy: 'admin',
+      markedAt: new Date().toISOString()
+    });
+  }
+
+  saveData();
+  showToast(`✅ បានកត់ត្រាវត្តមានគ្រូឧទ្ទេសសម្រាប់ថ្ងៃនេះរួចរាល់!`, 'success');
+}
+window.recordAdminTeacherAttendance = recordAdminTeacherAttendance;
+
+// Tab 2: Render Lesson & Assignment Upload Monitoring
+function renderAdminTeacherLessonsMonitoringHtml(trainers) {
+  const assignments = stmsData.assignments || [];
+  const lessons = stmsData.lessons || [];
+  const videoLessons = stmsData.videoLessons || [];
+
+  return `
+    <div>
+      <div style="font-size:0.86rem; color:#475569; margin-bottom:14px;">
+        ពិនិត្យមើលថាតើគ្រូបានដាក់កិច្ចការ (Assignments) ឬឯកសារមេរៀនជូនសិស្សតាមកាលកំណត់ដែរឬទេ៖
+      </div>
+
+      <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:10px; overflow-x:auto;">
+        <table class="stms-table" style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+          <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+            <tr>
+              <th style="padding:10px;">ល.រ</th>
+              <th style="padding:10px;">ឈ្មោះគ្រូឧទ្ទេស</th>
+              <th style="padding:10px;">មុខវិជ្ជាទទួលបន្ទុក</th>
+              <th style="padding:10px; text-align:center;">ឯកសារមេរៀន (PDF/Slide)</th>
+              <th style="padding:10px; text-align:center;">វីដេអូ E-Learning</th>
+              <th style="padding:10px; text-align:center;">កិច្ចការ &amp; Quizzes</th>
+              <th style="padding:10px; text-align:center;">កាលបរិច្ឆេទដាក់ចុងក្រោយ</th>
+              <th style="padding:10px; text-align:center;">ស្ថានភាពតាមដាន</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${trainers.map((tr, idx) => {
+              const myCodes = getTrainerAssignedSubjectCodes(tr);
+              const trnLessons = lessons.filter(l => myCodes.includes(l.subjectCode));
+              const trnVideos = videoLessons.filter(v => myCodes.includes(v.subjectCode));
+              const trnAssignments = assignments.filter(a => myCodes.includes(a.subjectCode));
+              
+              const lastHw = trnAssignments[trnAssignments.length - 1];
+              const lastDate = lastHw ? (lastHw.createdAt || lastHw.dueDate || '-') : (trnLessons[0]?.createdAt || '-');
+              const isOnTrack = (trnLessons.length + trnVideos.length + trnAssignments.length) > 0;
+
+              return `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:10px; font-weight:700; color:#64748b; text-align:center;">${idx + 1}</td>
+                  <td style="padding:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-size:1.3rem;">${tr.avatar || '👨‍🏫'}</span>
+                      <div>
+                        <strong style="color:#0f172a;">${tr.nameKh}</strong>
+                        <div style="font-size:0.73rem; color:#64748b;">${tr.phone || '012 345 678'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="padding:10px;">
+                    <span class="badge" style="background:#eff6ff; color:#1e40af; font-size:0.75rem;">
+                      ${myCodes.join(', ') || tr.subject || 'PED-101'}
+                    </span>
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    <span class="badge" style="background:#f0fdf4; color:#15803d; font-size:0.8rem; font-weight:700;">
+                      <i class="fas fa-file-alt"></i> ${trnLessons.length} ឯកសារ
+                    </span>
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    <span class="badge" style="background:#fff7ed; color:#c2410c; font-size:0.8rem; font-weight:700;">
+                      <i class="fas fa-video"></i> ${trnVideos.length} វីដេអូ
+                    </span>
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    <span class="badge" style="background:#fdf4ff; color:#86198f; font-size:0.8rem; font-weight:700;">
+                      <i class="fas fa-tasks"></i> ${trnAssignments.length} កិច្ចការ
+                    </span>
+                  </td>
+                  <td style="padding:10px; text-align:center; font-size:0.76rem; color:#64748b;">
+                    ${lastDate}
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    ${isOnTrack ? `
+                      <span class="badge" style="background:#ecfdf5; color:#047857; font-size:0.74rem;">
+                        <i class="fas fa-check-circle"></i> ទាន់កាលកំណត់
+                      </span>
+                    ` : `
+                      <span class="badge" style="background:#fff1f2; color:#be123c; font-size:0.74rem;">
+                        <i class="fas fa-exclamation-circle"></i> មិនទាន់បង្ហោះ
+                      </span>
+                    `}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// Tab 3: Render Teaching Reports & Performance Evaluation
+function renderAdminTeacherReportsMonitoringHtml(trainers) {
+  const evaluations = stmsData.teacherEvaluations || {};
+
+  return `
+    <div>
+      <div style="font-size:0.86rem; color:#475569; margin-bottom:14px;">
+        របាយការណ៍បង្រៀនប្រចាំខែ/ឆមាស និងការវាយតម្លៃប្រសិទ្ធភាពការងារបង្រៀនរបស់គ្រូឧទ្ទេស៖
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
+        ${trainers.map(tr => {
+          const evalData = evaluations[tr.id] || { grade: 'A', score: 95, feedback: 'បំពេញការងារបានល្អប្រសើរ គោរពពេលវេលា និងបង្រៀនសកម្ម។' };
+
+          return `
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:1.4rem;">${tr.avatar || '👨‍🏫'}</span>
+                  <div>
+                    <strong style="color:#0f172a; font-size:0.95rem;">${tr.nameKh}</strong>
+                    <div style="font-size:0.72rem; color:#64748b;">${tr.subject || 'PED-101'} • ${tr.qualification || 'អនុបណ្ឌិត'}</div>
+                  </div>
+                </div>
+                <span class="badge" style="background:#ecfdf5; color:#059669; font-size:0.8rem; font-weight:800; padding:4px 10px; border-radius:20px;">
+                  និទ្ទេស ${evalData.grade} (${evalData.score}%)
+                </span>
+              </div>
+
+              <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#334155; line-height:1.5; margin-bottom:12px;">
+                <div style="font-weight:700; color:#1e40af; margin-bottom:3px;"><i class="fas fa-comment-dots"></i> មតិវាយតម្លៃគណៈគ្រប់គ្រង៖</div>
+                ${evalData.feedback}
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:8px;">
+                <span style="font-size:0.74rem; color:#64748b;">វាយតម្លៃឆមាសទី ១ (AY-2026-2027)</span>
+                <button class="btn btn-outline" style="height:26px; font-size:0.72rem; padding:0 8px; color:#2563eb; border-color:#bfdbfe;" onclick="openAdminTeacherEvaluationModal('${tr.id}')">
+                  <i class="fas fa-edit"></i> កែប្រែការវាយតម្លៃ
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// Modal for Admin to Edit Teacher Evaluation
+function openAdminTeacherEvaluationModal(teacherId) {
+  const tr = (stmsData.users || []).find(u => u.id === teacherId);
+  if (!tr) return;
+  if (!stmsData.teacherEvaluations) stmsData.teacherEvaluations = {};
+  const evalData = stmsData.teacherEvaluations[teacherId] || { grade: 'A', score: 95, feedback: 'បំពេញការងារបានល្អប្រសើរ គោរពពេលវេលា និងបង្រៀនសកម្ម។' };
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminTeacherEvalModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:500px;">
+        <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:14px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.05rem;">
+            <i class="fas fa-star" style="color:#fde047;"></i> វាយតម្លៃការបង្រៀន៖ ${tr.nameKh}
+          </div>
+          <button class="modal-close-icon" onclick="openAdminTeacherMonitoringModal('reports')" style="color:#fff;">&times;</button>
+        </div>
+        <form onsubmit="saveAdminTeacherEvaluation('${tr.id}', event)" style="padding:20px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label class="form-label" style="font-weight:700;">និទ្ទេសវាយតម្លៃ</label>
+                <select id="evalGrade" class="form-input" style="font-weight:700;">
+                  <option value="A" ${evalData.grade==='A'?'selected':''}>⭐ និទ្ទេស A (ល្អប្រសើរ)</option>
+                  <option value="B+" ${evalData.grade==='B+'?'selected':''}>👍 និទ្ទេស B+ (ល្អណាស់)</option>
+                  <option value="B" ${evalData.grade==='B'?'selected':''}>👌 និទ្ទេស B (ល្អ)</option>
+                  <option value="C" ${evalData.grade==='C'?'selected':''}>⚠️ និទ្ទេស C (មធ្យម)</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-weight:700;">ពិន្ទុវាយតម្លៃ (%)</label>
+                <input type="number" id="evalScore" class="form-input" value="${evalData.score || 90}" min="0" max="100" required>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label" style="font-weight:700;">មតិយោបល់ និងសេចក្តីវាយតម្លៃ</label>
+              <textarea id="evalFeedback" class="form-input" rows="3" required>${evalData.feedback || ''}</textarea>
+            </div>
+          </div>
+
+          <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" class="btn btn-outline" onclick="openAdminTeacherMonitoringModal('reports')">ត្រឡប់ក្រោយ</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> រក្សាទុកការវាយតម្លៃ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openAdminTeacherEvaluationModal = openAdminTeacherEvaluationModal;
+
+// Save Admin Teacher Evaluation
+function saveAdminTeacherEvaluation(teacherId, e) {
+  e.preventDefault();
+  if (!stmsData.teacherEvaluations) stmsData.teacherEvaluations = {};
+  const grade = document.getElementById('evalGrade').value;
+  const score = Number(document.getElementById('evalScore').value) || 90;
+  const feedback = document.getElementById('evalFeedback').value.trim();
+
+  stmsData.teacherEvaluations[teacherId] = {
+    grade,
+    score,
+    feedback,
+    evaluatedAt: new Date().toISOString().split('T')[0]
+  };
+
+  saveData();
+  showToast(`✅ បានកត់ត្រាការវាយតម្លៃគ្រូឧទ្ទេសដោយជោគជ័យ!`, 'success');
+  openAdminTeacherMonitoringModal('reports');
+}
+window.saveAdminTeacherEvaluation = saveAdminTeacherEvaluation;
+
+// 4. TEACHER MODAL: រាយការណ៍ស្ថានភាពថ្នាក់រៀនជូន Admin (TEACHER INCIDENT REPORT TO ADMIN)
+function openTeacherReportIncidentModal() {
+  const tr = getActiveTrainerProfile();
+  const myClasses = getTrainerAssignedClasses(tr);
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="teacherReportModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:560px;">
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #0d9488 0%, #059669 100%); color:#fff; border-radius:12px 12px 0 0; padding:16px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-paper-plane"></i>
+            <span>រាយការណ៍ស្ថានភាពថ្នាក់រៀនជូន Admin (Teacher Incident Report)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <form onsubmit="submitTeacherIncidentReport(event)" style="padding:22px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label class="form-label" style="font-weight:700; color:#0f766e;">ប្រភេទនៃរបាយការណ៍ *</label>
+              <select id="rptType" class="form-input" required>
+                <option value="ស្ថានភាពថ្នាក់រៀនទូទៅ">ស្ថានភាពថ្នាក់រៀនទូទៅ (General Class Progress)</option>
+                <option value="វិន័យ & អវត្តមានសិស្ស">វិន័យ &amp; អវត្តមានសិស្ស (Discipline / Attendance Concern)</option>
+                <option value="លទ្ធផលនៃការធ្វើតេស្ត/កិច្ចការ">លទ្ធផលនៃការធ្វើតេស្ត / កិច្ចការ (Assessment Report)</option>
+                <option value="សំណើសុំសម្ភារ ឬបច្ចេកទេស">សំណើសុំសម្ភារ ឬបច្ចេកទេស (Resource / Tech Request)</option>
+                <option value="ផ្សេងៗ">ផ្សេងៗ (Other Incident)</option>
+              </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label class="form-label" style="font-weight:700; color:#0f766e;">ថ្នាក់ដែលរាយការណ៍</label>
+                <select id="rptClass" class="form-input">
+                  <option value="គ្រប់ថ្នាក់">គ្រប់ថ្នាក់</option>
+                  ${myClasses.map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-weight:700; color:#0f766e;">មុខវិជ្ជា</label>
+                <select id="rptSubject" class="form-input">
+                  ${mySubjects.map(s => `<option value="${s.code}">${s.code} • ${s.nameKh}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label" style="font-weight:700; color:#0f766e;">ចំណងជើងរបាយការណ៍ *</label>
+              <input type="text" id="rptTitle" class="form-input" placeholder="ឧ. សេចក្តីរាយការណ៍ស្តីពីសិស្សអវត្តមាន ៣ ថ្ងៃជាប់គ្នា..." required>
+            </div>
+
+            <div>
+              <label class="form-label" style="font-weight:700; color:#0f766e;">ខ្លឹមសារ និងព័ត៌មានលម្អិត *</label>
+              <textarea id="rptDetails" class="form-input" rows="4" placeholder="សូមរៀបរាប់ព័ត៌មានជាក់ស្តែងជូនគណៈគ្រប់គ្រង ឬសិក្សាធិការ..." required></textarea>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
+            <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+            <button type="submit" class="btn btn-primary" style="background:#0d9488; border-color:#0f766e;">
+              <i class="fas fa-paper-plane"></i> ផ្ញើជូន Admin ឥឡូវនេះ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openTeacherReportIncidentModal = openTeacherReportIncidentModal;
+
+// Submit Teacher Incident Report
+function submitTeacherIncidentReport(e) {
+  e.preventDefault();
+  const tr = getActiveTrainerProfile();
+  if (!Array.isArray(stmsData.teacherReports)) stmsData.teacherReports = [];
+
+  const type = document.getElementById('rptType').value;
+  const targetClass = document.getElementById('rptClass').value;
+  const subjectCode = document.getElementById('rptSubject').value;
+  const title = document.getElementById('rptTitle').value.trim();
+  const details = document.getElementById('rptDetails').value.trim();
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode);
+
+  const newReport = {
+    id: `RPT-TRN-${Date.now().toString(36).toUpperCase()}`,
+    type,
+    targetClass,
+    subjectCode,
+    subjectName: subj ? subj.nameKh : subjectCode,
+    title,
+    details,
+    trainerId: tr.id,
+    trainerName: tr.nameKh,
+    date: new Date().toLocaleDateString('km-KH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    status: 'pending'
+  };
+
+  stmsData.teacherReports.unshift(newReport);
+  saveData();
+  closeStmsModal();
+  showToast('🎉 បានផ្ញើរបាយការណ៍ស្ថានភាពថ្នាក់រៀនជូន Admin រួចរាល់!', 'success');
+}
+window.submitTeacherIncidentReport = submitTeacherIncidentReport;
+
+// 5. STUDENT & TEACHER ONLINE CLASSROOM (ថ្នាក់រៀនអនឡាញ ZOOM / GOOGLE MEET)
+function openTraineeOnlineClassModal() {
+  const activeRole = window.currentRole || (currentUser ? currentUser.role : 'trainee');
+  const isAdminOrTeacher = activeRole === 'admin' || activeRole === 'trainer';
+  const onlineClasses = stmsData.onlineClasses || [];
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="traineeOnlineClassModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:760px; width:95%;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color:#ffffff; padding:16px 20px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+              <i class="fas fa-video"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ថ្នាក់រៀនអនឡាញ (Online Classroom • Zoom / Meet)</h3>
+              <p style="color:#dbeafe; font-size:0.8rem; margin:2px 0 0 0;">ចូលរួមការបង្រៀនផ្ទាល់តាមប្រព័ន្ធ Google Meet ឬ Zoom ជាមួយគ្រូឧទ្ទេស</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <strong style="color:#1e3a8a; font-size:0.92rem;"><i class="fas fa-chalkboard-teacher"></i> បញ្ជីបន្ទប់រៀនអនឡាញសកម្ម (${onlineClasses.length})</strong>
+            ${isAdminOrTeacher ? `
+              <button class="btn btn-primary" onclick="openAddOnlineClassModal()" style="font-size:0.78rem; height:32px; padding:0 12px; background:#0284c7; border-color:#0369a1;">
+                <i class="fas fa-plus"></i> + កំណត់បន្ទប់រៀនថ្មី
+              </button>
+            ` : ''}
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            ${(onlineClasses.length > 0) ? onlineClasses.map(cls => `
+              <div style="border:1px solid #bfdbfe; background:#eff6ff; border-radius:12px; padding:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <span class="badge" style="background:#dbeafe; color:#1e40af; font-size:0.75rem; font-weight:700;">
+                      <i class="fas fa-video"></i> ${cls.platform || 'Google Meet'}
+                    </span>
+                    <span class="badge badge-outline" style="font-size:0.72rem;">${cls.targetClass || 'គ្រប់ថ្នាក់'}</span>
+                  </div>
+                  <h4 style="margin:2px 0 4px 0; font-size:1rem; color:#1e293b;">${cls.subjectName || cls.subjectCode}</h4>
+                  <div style="font-size:0.8rem; color:#64748b;">
+                    គ្រូឧទ្ទេស៖ <strong>${cls.teacherName || 'គ្រូបង្រៀន'}</strong> • ម៉ោងសិក្សា៖ <strong>${cls.time || 'តាមកាលវិភាគ'}</strong>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <a href="${cls.link || '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="background:#0284c7; border-color:#0369a1; text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:0.85rem; height:36px; padding:0 16px; border-radius:8px;">
+                    <i class="fas fa-sign-in-alt"></i> ចូលរៀន (Join Class)
+                  </a>
+                  ${isAdminOrTeacher ? `
+                    <button class="btn btn-outline" style="height:36px; padding:0 10px; font-size:0.8rem; color:#ef4444; border-color:#fca5a5;" onclick="deleteOnlineClass('${cls.id}')" title="លុបបន្ទប់រៀន">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('') : `
+              <div style="text-align:center; padding:36px 16px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">
+                <i class="fas fa-video-slash fa-2x" style="color:#94a3b8; margin-bottom:8px;"></i>
+                <p style="margin:0; font-size:0.88rem;">មិនទាន់មានបន្ទប់រៀនអនឡាញដែលបានកំណត់នៅឡើយទេ។</p>
+                ${isAdminOrTeacher ? `
+                  <button class="btn btn-primary" onclick="openAddOnlineClassModal()" style="margin-top:12px; font-size:0.8rem; background:#0284c7; border-color:#0369a1;">
+                    <i class="fas fa-plus"></i> កំណត់ Link បន្ទប់រៀនអនឡាញឥឡូវនេះ
+                  </button>
+                ` : ''}
+              </div>
+            `}
+          </div>
+
+        </div>
+        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        </div>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openTraineeOnlineClassModal = openTraineeOnlineClassModal;
+
+// Modal to Add/Configure Online Class
+function openAddOnlineClassModal() {
+  const activeRole = window.currentRole || (currentUser ? currentUser.role : 'trainee');
+  const isTeacher = activeRole === 'trainer';
+  const tr = isTeacher ? getActiveTrainerProfile() : null;
+  const myCodes = tr ? getTrainerAssignedSubjectCodes(tr) : [];
+  const subjects = isTeacher ? KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code)) : KTPTTC_ALL_SUBJECTS;
+  const classes = getAllSystemClasses();
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="addOnlineClassModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:520px;">
+        <div class="modal-header-bar" style="background:#0284c7; color:#fff; border-radius:12px 12px 0 0; padding:14px 20px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.05rem;">
+            <i class="fas fa-video"></i> បន្ថែមបន្ទប់រៀនអនឡាញ (Zoom / Google Meet)
+          </div>
+          <button class="modal-close-icon" onclick="openTraineeOnlineClassModal()" style="color:#fff;">&times;</button>
+        </div>
+        <form onsubmit="saveOnlineClass(event)" style="padding:20px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label class="form-label" style="font-weight:700;">មុខវិជ្ជា *</label>
+              <select id="onlineSubjCode" class="form-input" required>
+                ${subjects.map(s => `<option value="${s.code}">${s.code} • ${s.nameKh}</option>`).join('')}
+              </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label class="form-label" style="font-weight:700;">ថ្នាក់រៀនគោលដៅ</label>
+                <select id="onlineTargetClass" class="form-input">
+                  <option value="គ្រប់ថ្នាក់">គ្រប់ថ្នាក់</option>
+                  ${classes.map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-weight:700;">ប្រព័ន្ធ Video Call</label>
+                <select id="onlinePlatform" class="form-input">
+                  <option value="Google Meet">Google Meet</option>
+                  <option value="Zoom Meeting">Zoom Meeting</option>
+                  <option value="Microsoft Teams">Microsoft Teams</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label" style="font-weight:700;">តំណភ្ជាប់បន្ទប់រៀន (Meeting Link / URL) *</label>
+              <input type="url" id="onlineMeetingLink" class="form-input" placeholder="https://meet.google.com/... ឬ https://zoom.us/j/..." required>
+            </div>
+
+            <div>
+              <label class="form-label" style="font-weight:700;">ពេលវេលាសិក្សា (Schedule Time)</label>
+              <input type="text" id="onlineMeetingTime" class="form-input" placeholder="ឧ. រៀងរាល់ថ្ងៃអង្គារ ០៨:០០ - ០៩:៣០ ព្រឹក" value="រៀងរាល់ថ្ងៃអង្គារ ០៨:០០ - ០៩:៣០ ព្រឹក">
+            </div>
+          </div>
+
+          <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" class="btn btn-outline" onclick="openTraineeOnlineClassModal()">ត្រឡប់ក្រោយ</button>
+            <button type="submit" class="btn btn-primary" style="background:#0284c7; border-color:#0369a1;"><i class="fas fa-save"></i> រក្សាទុកបន្ទប់រៀន</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openAddOnlineClassModal = openAddOnlineClassModal;
+
+// Save Online Class
+function saveOnlineClass(e) {
+  e.preventDefault();
+  if (!Array.isArray(stmsData.onlineClasses)) stmsData.onlineClasses = [];
+
+  const subjCode = document.getElementById('onlineSubjCode').value;
+  const targetClass = document.getElementById('onlineTargetClass').value;
+  const platform = document.getElementById('onlinePlatform').value;
+  const link = document.getElementById('onlineMeetingLink').value.trim();
+  const time = document.getElementById('onlineMeetingTime').value.trim();
+
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjCode);
+  const trainer = (stmsData.users || []).find(u => u.role === 'trainer' && u.subject === subjCode);
+  const teacherName = trainer ? trainer.nameKh : (currentUser?.nameKh || 'គ្រូបង្រៀន');
+
+  const newLive = {
+    id: `LIVE-${Date.now().toString(36).toUpperCase()}`,
+    subjectCode: subjCode,
+    subjectName: subj ? subj.nameKh : subjCode,
+    teacherName,
+    platform,
+    link,
+    time,
+    targetClass,
+    status: 'active'
+  };
+
+  stmsData.onlineClasses.push(newLive);
+  saveData();
+  showToast('🎉 បានបង្កើតបន្ទប់រៀនអនឡាញដោយជោគជ័យ!', 'success');
+  openTraineeOnlineClassModal();
+}
+window.saveOnlineClass = saveOnlineClass;
+
+// Delete Online Class
+function deleteOnlineClass(id) {
+  if (!confirm('តើលោកអ្នកពិតជាចង់លុបបន្ទប់រៀនអនឡាញនេះមែនទេ?')) return;
+  stmsData.onlineClasses = (stmsData.onlineClasses || []).filter(c => c.id !== id);
+  saveData();
+  showToast('🗑️ បានលុបបន្ទប់រៀនអនឡាញរួចរាល់!', 'info');
+  openTraineeOnlineClassModal();
+}
+window.deleteOnlineClass = deleteOnlineClass;
+
 
 // ==========================================================================
 // USER PROFILE SETTINGS & ACCOUNT MANAGEMENT CONTROLLERS

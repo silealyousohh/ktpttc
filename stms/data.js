@@ -170,7 +170,19 @@ const KTPTTC_INITIAL_DATA = {
   dailyAttendanceStats: [],
 
   // Grade Distribution - Starts empty
-  gradeDistribution: {}
+  gradeDistribution: {},
+
+  // Online Classroom Meetings (Zoom / Google Meet)
+  onlineClasses: [],
+
+  // Teacher Attendance & Teaching Hours Log
+  teacherAttendance: [],
+
+  // Teacher Incident & Classroom Reports to Admin
+  teacherReports: [],
+
+  // Master Gradebook Approvals
+  gradebookApprovals: {}
 };
 
 // Export for browser & Node
