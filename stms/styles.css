@@ -3310,18 +3310,179 @@ body:has(.admin-portal-container) .stms-content-viewport {
 }
 
 .rbac-metric-card.active-admin {
+  border-color: #e11d48;
+  background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%);
+}
+
+.rbac-metric-card.active-trainer {
   border-color: #2563eb;
   background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
 }
 
-.rbac-metric-card.active-trainer {
-  border-color: #10b981;
-  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+.rbac-metric-card.active-trainee {
+  border-color: #059669;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
 }
 
-.rbac-metric-card.active-trainee {
-  border-color: #f59e0b;
-  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+/* ==========================================================================
+   RBAC 3 BIG ROLE CATEGORY CARDS (EXACT MATCH TO USER DESIGN SPEC)
+   ========================================================================== */
+.rbac-big-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 900px) {
+  .rbac-big-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.rbac-big-card {
+  position: relative;
+  min-height: 145px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.rbac-big-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.rbac-big-card-title {
+  font-family: 'Kantumruy Pro', 'Battambang', sans-serif;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.rbac-big-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-top: 8px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.rbac-big-card-indicator {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.25s ease;
+}
+
+.rbac-big-card.active .rbac-big-card-indicator {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 1. Admin Card (Pink / Rose Pastel) */
+.rbac-big-card.card-admin {
+  background: #fee2e2;
+  border: 2px solid #fecaca;
+}
+.rbac-big-card.card-admin .rbac-big-card-title {
+  color: #0284c7;
+}
+.rbac-big-card.card-admin .rbac-big-card-meta {
+  color: #0369a1;
+}
+.rbac-big-card.card-admin:hover {
+  background: #fecdd3;
+  border-color: #fda4af;
+}
+.rbac-big-card.card-admin.active {
+  background: #ffe4e6;
+  border: 3px solid #e11d48;
+  box-shadow: 0 10px 28px rgba(225, 29, 72, 0.22);
+  transform: translateY(-3px);
+}
+.rbac-big-card.card-admin .rbac-big-card-indicator {
+  background: #e11d48;
+  color: #ffffff;
+}
+
+/* 2. Teacher Card (Light Sky Blue Pastel) */
+.rbac-big-card.card-trainer {
+  background: #dbeafe;
+  border: 2px solid #bfdbfe;
+}
+.rbac-big-card.card-trainer .rbac-big-card-title {
+  color: #0284c7;
+}
+.rbac-big-card.card-trainer .rbac-big-card-meta {
+  color: #0369a1;
+}
+.rbac-big-card.card-trainer:hover {
+  background: #bfdbfe;
+  border-color: #93c5fd;
+}
+.rbac-big-card.card-trainer.active {
+  background: #e0f2fe;
+  border: 3px solid #2563eb;
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.22);
+  transform: translateY(-3px);
+}
+.rbac-big-card.card-trainer .rbac-big-card-indicator {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+/* 3. Trainee Card (Light Mint Green Pastel) */
+.rbac-big-card.card-trainee {
+  background: #d1fae5;
+  border: 2px solid #a7f3d0;
+}
+.rbac-big-card.card-trainee .rbac-big-card-title {
+  color: #059669;
+}
+.rbac-big-card.card-trainee .rbac-big-card-meta {
+  color: #047857;
+}
+.rbac-big-card.card-trainee:hover {
+  background: #a7f3d0;
+  border-color: #6ee7b7;
+}
+.rbac-big-card.card-trainee.active {
+  background: #d1fae5;
+  border: 3px solid #059669;
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.22);
+  transform: translateY(-3px);
+}
+.rbac-big-card.card-trainee .rbac-big-card-indicator {
+  background: #059669;
+  color: #ffffff;
 }
 
 .rbac-role-tabs-wrap {

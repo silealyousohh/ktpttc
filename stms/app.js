@@ -5186,7 +5186,7 @@ function renderCohortsView(container) {
 // ==========================================================================
 // 8. USER ACCOUNTS & CREDENTIALS MANAGEMENT (RBAC & Passwords set by Admin)
 // ==========================================================================
-let currentRbacRoleFilter = 'all'; // 'all' | 'admin' | 'trainer' | 'trainee'
+let currentRbacRoleFilter = 'admin'; // 'admin' | 'trainer' | 'trainee' | 'all'
 let currentRbacSearchQuery = '';
 let currentRbacClassFilter = 'all';
 let currentRbacStatusFilter = 'all';
@@ -5381,20 +5381,28 @@ function renderRBACView(container) {
       </div>
     </div>
 
-    <!-- Role Filter Navigation Tabs -->
-    <div class="rbac-role-tabs-wrap">
-      <button class="rbac-tab-btn ${currentRbacRoleFilter === 'all' ? 'active' : ''}" onclick="setRbacRoleFilter('all')">
-        <i class="fas fa-users"></i> គណនីទាំងអស់ <span class="tab-count">${users.length}</span>
-      </button>
-      <button class="rbac-tab-btn ${currentRbacRoleFilter === 'admin' ? 'active' : ''}" onclick="setRbacRoleFilter('admin')">
-        <i class="fas fa-user-shield" style="color:${currentRbacRoleFilter === 'admin' ? '#ffffff' : '#2563eb'};"></i> អ្នកគ្រប់គ្រងប្រព័ន្ធ (Admin) <span class="tab-count">${adminCount}</span>
-      </button>
-      <button class="rbac-tab-btn ${currentRbacRoleFilter === 'trainer' ? 'active' : ''}" onclick="setRbacRoleFilter('trainer')">
-        <i class="fas fa-chalkboard-teacher" style="color:${currentRbacRoleFilter === 'trainer' ? '#ffffff' : '#10b981'};"></i> គ្រូបង្រៀន / គ្រូឧទ្ទេស (Teachers) <span class="tab-count">${trainerCount}</span>
-      </button>
-      <button class="rbac-tab-btn ${currentRbacRoleFilter === 'trainee' ? 'active' : ''}" onclick="setRbacRoleFilter('trainee')">
-        <i class="fas fa-user-graduate" style="color:${currentRbacRoleFilter === 'trainee' ? '#ffffff' : '#f59e0b'};"></i> គរុសនិស្សិត (Trainees) <span class="tab-count">${traineeCount}</span>
-      </button>
+    <!-- 3 Big Role Category Cards (Exact Match to User's Mockup Design) -->
+    <div class="rbac-big-cards-grid">
+      <!-- 1. Admin Card (Pink Pastel with Cyan/Blue text) -->
+      <div class="rbac-big-card card-admin ${currentRbacRoleFilter === 'admin' ? 'active' : ''}" onclick="setRbacRoleFilter('admin')" title="ចុចដើម្បីមើល និងគ្រប់គ្រង គណនី Admin">
+        <span class="rbac-big-card-indicator"><i class="fas fa-check-circle"></i> កំពុងមើល</span>
+        <div class="rbac-big-card-title">គណនី Admin</div>
+        <div class="rbac-big-card-meta"><i class="fas fa-user-shield"></i> ${adminCount} គណនី</div>
+      </div>
+
+      <!-- 2. Teacher Card (Light Sky Blue Pastel with Blue text) -->
+      <div class="rbac-big-card card-trainer ${currentRbacRoleFilter === 'trainer' ? 'active' : ''}" onclick="setRbacRoleFilter('trainer')" title="ចុចដើម្បីមើល និងគ្រប់គ្រង គណនីគ្រូបង្រៀន">
+        <span class="rbac-big-card-indicator"><i class="fas fa-check-circle"></i> កំពុងមើល</span>
+        <div class="rbac-big-card-title">គណនីគ្រូបង្រៀន</div>
+        <div class="rbac-big-card-meta"><i class="fas fa-chalkboard-teacher"></i> ${trainerCount} គណនី</div>
+      </div>
+
+      <!-- 3. Trainee Card (Light Mint Green Pastel with Teal/Green text) -->
+      <div class="rbac-big-card card-trainee ${currentRbacRoleFilter === 'trainee' ? 'active' : ''}" onclick="setRbacRoleFilter('trainee')" title="ចុចដើម្បីមើល និងគ្រប់គ្រង គណនីគរុសិស្ស">
+        <span class="rbac-big-card-indicator"><i class="fas fa-check-circle"></i> កំពុងមើល</span>
+        <div class="rbac-big-card-title">គណនីគរុសិស្ស</div>
+        <div class="rbac-big-card-meta"><i class="fas fa-user-graduate"></i> ${traineeCount} គណនី</div>
+      </div>
     </div>
 
     <!-- Users Table Card -->
