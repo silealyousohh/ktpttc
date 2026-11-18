@@ -5548,7 +5548,7 @@ function importDatabaseJson(input) {
 // BULK IMPORT & TEMPLATE MANAGEMENT (EXCEL .xlsx, .xls & CSV)
 // --------------------------------------------------------------------------
 
-// Format Excel Date (Supports Date objects, serial numbers, strings, and Khmer digits)
+// Format Excel Date (Supports Date objects, serial numbers, strings, Khmer month names, and Khmer digits)
 function parseExcelDate(val) {
   if (!val) return '';
   if (val instanceof Date) {
@@ -5572,6 +5572,32 @@ function parseExcelDate(val) {
   khmerDigits.forEach((kd, idx) => {
     str = str.split(kd).join(String(idx));
   });
+
+  // Support Khmer month names (e.g. "06 ឧសភា 1997", "01 តុលា 2002")
+  const khmerMonths = {
+    'មករា': '01',
+    'កុម្ភៈ': '02', 'កុម្ភះ': '02', 'កុម្ភ': '02',
+    'មីនា': '03',
+    'មេសា': '04',
+    'ឧសភា': '05',
+    'មិថុនា': '06',
+    'កក្កដា': '07',
+    'សីហា': '08',
+    'កញ្ញា': '09',
+    'តុលា': '10',
+    'វិច្ឆិកា': '11',
+    'ធ្នូ': '12'
+  };
+
+  for (const [km, num] of Object.entries(khmerMonths)) {
+    if (str.includes(km)) {
+      const match = str.match(/(\d{1,2})\s*([^\d\s]+)\s*(\d{4})/);
+      if (match) {
+        return `${match[3]}-${num}-${match[1].padStart(2, '0')}`;
+      }
+    }
+  }
+
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
   const parts = str.split(/[/\-.]/);
   if (parts.length === 3) {
@@ -5584,6 +5610,87 @@ function parseExcelDate(val) {
   return str;
 }
 window.parseExcelDate = parseExcelDate;
+
+// Resolve column mappings for Student bulk import (Compatible with official MoEYS 36-column and custom templates)
+function resolveStudentImportColumns(h0 = [], h1 = []) {
+  const cols = {
+    id: 0,
+    classGrade: 1,
+    group: 2,
+    nameKh: 3,
+    nameEn: 4,
+    gender: 5,
+    dob: 6,
+    age: 7,
+    phone: 8,
+    username: 9,
+    password: 10,
+    pobProvince: 11,
+    pobDistrict: 12,
+    pobCommune: 13,
+    pobVillage: 14,
+    curProvince: 15,
+    curDistrict: 16,
+    curCommune: 17,
+    curVillage: 18,
+    fatherName: 26,
+    fatherJob: 27,
+    motherName: 28,
+    motherJob: 29
+  };
+
+  const norm0 = (h0 || []).map(x => String(x || '').trim().toLowerCase());
+  const norm1 = (h1 || []).map(x => String(x || '').trim().toLowerCase());
+
+  for (let i = 0; i < norm0.length; i++) {
+    const t = norm0[i];
+    if (!t) continue;
+    if (t.includes('អត្តលេខ') || t === 'id' || t === 'roll') cols.id = i;
+    else if (t.includes('ថ្នាក់') || t === 'class') cols.classGrade = i;
+    else if (t.includes('ក្រុម') || t === 'group') cols.group = i;
+    else if (t.includes('ឡាតាំង') || t.includes('latin') || t.includes('en')) cols.nameEn = i;
+    else if (t.includes('ឈ្មោះ') && !t.includes('គណនី') && !t.includes('ឪពុក') && !t.includes('ម្តាយ') && !t.includes('អាណាព្យាបាល') && !t.includes('ឡាតាំង')) {
+      if (cols.nameKh === undefined || cols.nameKh === 3) cols.nameKh = i;
+    }
+    else if (t.includes('ភេទ') || t.includes('gender')) cols.gender = i;
+    else if (t.includes('ថ្ងៃ') || (t.includes('កំណើត') && !t.includes('កន្លែង')) || t.includes('dob') || t.includes('birthdate')) cols.dob = i;
+    else if (t.includes('អាយុ') || t === 'age') cols.age = i;
+    else if (t.includes('ទូរស័ព្ទ') || t.includes('phone') || t.includes('tel')) cols.phone = i;
+    else if (t.includes('គណនី') || t.includes('username')) cols.username = i;
+    else if (t.includes('ពាក្យសម្ងាត់') || t.includes('password') || t.includes('pass')) cols.password = i;
+    else if (t.includes('ទីកន្លែងកំណើត') || t.includes('កន្លែងកំណើត')) {
+      cols.pobProvince = i;
+      cols.pobDistrict = i + 1;
+      cols.pobCommune = i + 2;
+      cols.pobVillage = i + 3;
+    }
+    else if (t.includes('អាស័យដ្ឋាន') || t.includes('អាសយដ្ឋាន')) {
+      cols.curProvince = i;
+      cols.curDistrict = i + 1;
+      cols.curCommune = i + 2;
+      cols.curVillage = i + 3;
+    }
+  }
+
+  for (let i = 0; i < norm1.length; i++) {
+    const t1 = norm1[i];
+    if (t1.includes('ឪពុក') && !t1.includes('ក្រៅពី') && !t1.includes('អាណាព្យាបាល')) {
+      cols.fatherName = i;
+      if (norm1[i + 1] && norm1[i + 1].includes('មុខរបរ')) cols.fatherJob = i + 1;
+    }
+    if (t1.includes('ម្តាយ')) {
+      cols.motherName = i;
+      if (norm1[i + 1] && (norm1[i + 1].includes('មុរបរ') || norm1[i + 1].includes('មុខរបរ'))) cols.motherJob = i + 1;
+    }
+    if (t1.includes('អាណាព្យាបាល') || t1.includes('ក្រៅពីឪពុក')) {
+      cols.guardianName = i;
+      if (norm1[i + 1] && norm1[i + 1].includes('មុខរបរ')) cols.guardianJob = i + 1;
+    }
+  }
+
+  return cols;
+}
+window.resolveStudentImportColumns = resolveStudentImportColumns;
 
 let pendingBulkImportData = {
   role: 'student',
@@ -5703,11 +5810,12 @@ function openBulkImportModal(role = 'student') {
                     <th style="width: 40px; text-align: center;">ល.រ</th>
                     <th>អត្តលេខ</th>
                     <th>គោត្តនាម និងនាម</th>
-                    <th>ឈ្មោះឡាតាំង</th>
                     <th style="text-align: center;">ភេទ</th>
                     <th style="text-align: center;">ថ្ងៃខែឆ្នាំកំណើត</th>
+                    <th style="text-align: center;">អាយុ</th>
                     <th>${isTeacher ? 'មុខវិជ្ជា' : 'ថ្នាក់/ក្រុម'}</th>
-                    <th>ទូរស័ព្ទ</th>
+                    <th>លេខទូរស័ព្ទ</th>
+                    <th>ឈ្មោះគណនី (Login)</th>
                   </tr>
                 </thead>
                 <tbody id="bulkPreviewTableBody">
@@ -5834,15 +5942,38 @@ function processBulkImportFile(file, role) {
         return;
       }
 
-      // Check header
-      const headerRow = rows[0].map(c => String(c).trim().toLowerCase());
-      const hasHeader = headerRow.some(h => 
-        h.includes('អត្តលេខ') || h.includes('ឈ្មោះ') || h.includes('ភេទ') || 
-        h.includes('ថ្នាក់') || h.includes('មុខវិជ្ជា') || h.includes('name') || 
-        h.includes('id') || h.includes('gender')
-      );
+      // Check for multi-row headers (e.g. Row 0 = category headers, Row 1 = sub-headers)
+      let headerRow0 = [];
+      let headerRow1 = [];
+      let dataRows = rows;
 
-      const dataRows = hasHeader ? rows.slice(1) : rows;
+      const firstRowStr = rows[0] ? rows[0].map(c => String(c || '').trim().toLowerCase()).join(' ') : '';
+      const hasHeader0 = firstRowStr.includes('អត្តលេខ') || firstRowStr.includes('ឈ្មោះ') || firstRowStr.includes('ភេទ') || 
+                         firstRowStr.includes('ថ្នាក់') || firstRowStr.includes('មុខវិជ្ជា') || firstRowStr.includes('name') || 
+                         firstRowStr.includes('id') || firstRowStr.includes('gender');
+
+      if (hasHeader0) {
+        headerRow0 = rows[0];
+        // Check if row 1 is a sub-header row (e.g. "ខេត្ត", "ស្រុក", "ឃុំ", "ភូមិ", "សិស្សថ្មី", "ឪពុក")
+        if (rows.length > 1) {
+          const secondRowStr = rows[1].map(c => String(c || '').trim().toLowerCase()).join(' ');
+          const isSubHeader = secondRowStr.includes('ខេត្ត') || secondRowStr.includes('ស្រុក') || 
+                              secondRowStr.includes('ឃុំ') || secondRowStr.includes('ភូមិ') || 
+                              secondRowStr.includes('សិស្សថ្មី') || secondRowStr.includes('ឪពុក') || 
+                              secondRowStr.includes('ម្តាយ') ||
+                              ((rows[1][0] === null || rows[1][0] === undefined || String(rows[1][0]).trim() === '') && 
+                               (rows[1][3] === null || rows[1][3] === undefined || String(rows[1][3]).trim() === ''));
+          if (isSubHeader) {
+            headerRow1 = rows[1];
+            dataRows = rows.slice(2);
+          } else {
+            dataRows = rows.slice(1);
+          }
+        } else {
+          dataRows = rows.slice(1);
+        }
+      }
+
       if (dataRows.length === 0) {
         showToast('ឯកសារពុំមានជួរទិន្នន័យសម្រាប់នាំចូលឡើយ!', 'warning');
         return;
@@ -5899,60 +6030,82 @@ function processBulkImportFile(file, role) {
           });
         });
       } else {
+        const colMap = resolveStudentImportColumns(headerRow0, headerRow1);
         let nextRoll = (stmsData.trainees || []).length + 1;
+
         dataRows.forEach(cols => {
           const cleanCols = cols.map(c => (c !== null && c !== undefined) ? String(c).trim() : '');
-          let id = cleanCols[0] || `KTPTTC-2026-12P2-${String(nextRoll).padStart(3, '0')}`;
-          let classGrade = cleanCols[1] || '១២+២';
-          let group = cleanCols[2] || 'ក្រុម ក';
-          let nameKh = cleanCols[3];
-          let nameEn = cleanCols[4] || '';
-          let genderRaw = cleanCols[5] || '';
-          let dobRaw = cols[6];
-          let parentPhone = cleanCols[7] || '';
-          let pobProvince = cleanCols[8] || 'ខេត្តក្រចេះ';
-          let pobDistrict = cleanCols[9] || '';
-          let pobCommune = cleanCols[10] || '';
-          let pobVillage = cleanCols[11] || '';
-          let curAddress = cleanCols[12] || pobProvince;
-          let fatherName = cleanCols[13] || '';
-          let fatherJob = cleanCols[14] || '';
-          let motherName = cleanCols[15] || '';
-          let motherJob = cleanCols[16] || '';
+          
+          let id = cleanCols[colMap.id] || (cleanCols[0] ? cleanCols[0] : `KTPTTC-2026-${String(nextRoll).padStart(3, '0')}`);
+          let classGrade = cleanCols[colMap.classGrade] || 'បរិញ្ញាបត្រ+១';
+          let group = cleanCols[colMap.group] || '';
+          let nameKh = cleanCols[colMap.nameKh] || cleanCols[3];
+          let nameEn = cleanCols[colMap.nameEn] || '';
+          let genderRaw = cleanCols[colMap.gender] || cleanCols[5] || '';
+          let dobRaw = cols[colMap.dob] || cols[6];
+          let ageRaw = cleanCols[colMap.age] || cleanCols[7] || '';
+          let phone = cleanCols[colMap.phone] || cleanCols[8] || '';
+          let username = cleanCols[colMap.username] || cleanCols[9] || id;
+          let password = cleanCols[colMap.password] || cleanCols[10] || id || 'ktpttc123';
+          
+          let pobProvince = cleanCols[colMap.pobProvince] || 'ខេត្តក្រចេះ';
+          let pobDistrict = cleanCols[colMap.pobDistrict] || '';
+          let pobCommune = cleanCols[colMap.pobCommune] || '';
+          let pobVillage = cleanCols[colMap.pobVillage] || '';
+          
+          let curProvince = cleanCols[colMap.curProvince] || pobProvince;
+          let curDistrict = cleanCols[colMap.curDistrict] || '';
+          let curCommune = cleanCols[colMap.curCommune] || '';
+          let curVillage = cleanCols[colMap.curVillage] || '';
+          
+          let fatherName = cleanCols[colMap.fatherName] || '';
+          let fatherJob = cleanCols[colMap.fatherJob] || '';
+          let motherName = cleanCols[colMap.motherName] || '';
+          let motherJob = cleanCols[colMap.motherJob] || '';
+          let guardianName = cleanCols[colMap.guardianName] || '';
+          let guardianJob = cleanCols[colMap.guardianJob] || '';
 
-          if (group && !group.includes('ក្រុម') && !nameKh) {
-            nameKh = group;
-            group = 'ក្រុម ក';
-          }
-          if (!nameKh && cleanCols[2]) {
-            nameKh = cleanCols[2];
-          }
           if (!nameKh) return;
 
           const gender = (genderRaw.includes('ស្រី') || genderRaw.toLowerCase().includes('female') || genderRaw.toLowerCase() === 'f') ? 'ស្រី' : 'ប្រុស';
-          const dob = parseExcelDate(dobRaw) || '2005-01-01';
-          const className = `${classGrade} ${group}`.trim();
+          const dob = parseExcelDate(dobRaw) || '2000-01-01';
+
+          let age = ageRaw;
+          if (!age && dob && dob.length >= 4) {
+            const birthYr = parseInt(dob.substring(0, 4), 10);
+            if (!isNaN(birthYr)) age = String(new Date().getFullYear() - birthYr);
+          }
+
+          const className = group ? `${classGrade} ${group}`.trim() : classGrade.trim();
 
           parsedRecords.push({
-            id,
+            id: String(id).trim(),
             roll: nextRoll++,
             className,
+            classGrade,
+            group,
+            cohort: className,
+            trainingType: className.includes('១២+៤') ? "12+4" : className.includes('បរិញ្ញា') ? "បរិញ្ញាបត្រ+១" : "12+2 (បឋមសិក្សា)",
+            status: "កំពុងសិក្សា",
             nameKh,
             nameEn,
             gender,
             dob,
-            age: '',
-            parentPhone,
-            username: id.toLowerCase(),
-            password: 'ktpttc123',
+            age,
+            phone,
+            parentPhone: phone,
+            username: String(username).trim(),
+            password: String(password).trim(),
             avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
             behaviorScore: 100,
-            scores: { KH: 0, MATH: 0, PHY: 0, CHEM: 0, BIO: 0, HIST: 0, GEO: 0, ENG: 0, MOR: 0 },
+            scores: {},
             absentYearCount: 0,
             attendance: 'present',
             birthplace: { province: pobProvince, district: pobDistrict, commune: pobCommune, village: pobVillage },
-            address: { province: curAddress, district: '', commune: '', village: '' },
-            parents: { fatherName, fatherJob, motherName, motherJob }
+            address: { province: curProvince, district: curDistrict, commune: curCommune, village: curVillage },
+            currentAddress: { province: curProvince, district: curDistrict, commune: curCommune, village: curVillage },
+            parents: { fatherName, fatherJob, motherName, motherJob, guardianName, guardianJob },
+            attendanceSummary: { present: 0, permission: 0, late: 0, absent: 0, rate: 100.0 }
           });
         });
       }
@@ -5984,17 +6137,18 @@ function processBulkImportFile(file, role) {
             <td style="text-align: center; color: #64748b;">${i + 1}</td>
             <td><code style="color: #2563eb; font-weight: 700;">${r.id}</code></td>
             <td style="font-weight: 700; color: #0f172a;">${r.nameKh}</td>
-            <td style="color: #64748b;">${r.nameEn || '-'}</td>
             <td style="text-align: center;">
               <span class="badge ${r.gender === 'ស្រី' ? 'badge-female' : 'badge-male'}" style="font-size: 0.72rem;">${r.gender}</span>
             </td>
             <td style="text-align: center;">${r.dob}</td>
+            <td style="text-align: center; font-weight: 600;">${r.age || '-'}</td>
             <td><span class="badge" style="background: #f1f5f9; color: #334155; font-size: 0.72rem;">${isTeacher ? r.subject : r.className}</span></td>
-            <td>${isTeacher ? (r.phone || '-') : (r.parentPhone || '-')}</td>
+            <td>${isTeacher ? (r.phone || '-') : (r.parentPhone || r.phone || '-')}</td>
+            <td><code style="color: #059669; font-weight: 700;">${r.username || r.id}</code></td>
           </tr>
         `).join('') + (parsedRecords.length > 10 ? `
           <tr>
-            <td colspan="8" style="text-align: center; color: #64748b; font-size: 0.78rem; padding: 8px; background: #f8fafc;">
+            <td colspan="9" style="text-align: center; color: #64748b; font-size: 0.78rem; padding: 8px; background: #f8fafc;">
               ... និងទិន្នន័យចំនួន ${parsedRecords.length - 10} នាក់ផ្សេងទៀត
             </td>
           </tr>
@@ -6059,7 +6213,7 @@ function executeBulkImport(role) {
     if (!Array.isArray(stmsData.users)) stmsData.users = [];
 
     records.forEach(st => {
-      const idx = stmsData.trainees.findIndex(t => (t.id && t.id.toLowerCase() === st.id.toLowerCase()) || (t.nameKh === st.nameKh && t.className === st.className));
+      const idx = stmsData.trainees.findIndex(t => (t.id && String(t.id).toLowerCase() === String(st.id).toLowerCase()) || (t.nameKh === st.nameKh && t.className === st.className));
       if (idx !== -1) {
         stmsData.trainees[idx] = { ...stmsData.trainees[idx], ...st };
       } else {
@@ -6067,17 +6221,17 @@ function executeBulkImport(role) {
       }
 
       // Sync user login
-      const uIdx = stmsData.users.findIndex(u => (u.studentId && u.studentId.toLowerCase() === st.id.toLowerCase()) || (u.username && u.username.toLowerCase() === st.id.toLowerCase()));
+      const uIdx = stmsData.users.findIndex(u => (u.studentId && String(u.studentId).toLowerCase() === String(st.id).toLowerCase()) || (u.username && String(u.username).toLowerCase() === String(st.username || st.id).toLowerCase()));
       const userObj = {
-        id: `USR-STU-${String(stmsData.users.length + 1).padStart(3, '0')}`,
+        id: (uIdx !== -1 && stmsData.users[uIdx].id) ? stmsData.users[uIdx].id : `USR-STU-${String(stmsData.users.length + 1).padStart(3, '0')}`,
         nameKh: st.nameKh,
         nameEn: st.nameEn || '',
         studentId: st.id,
-        username: st.id.toLowerCase(),
-        password: 'ktpttc123',
+        username: String(st.username || st.id).trim().toLowerCase(),
+        password: String(st.password || st.id || 'ktpttc123').trim(),
         role: 'trainee',
         roleLabel: 'គរុសនិស្សិត',
-        phone: st.parentPhone,
+        phone: st.phone || st.parentPhone || '',
         className: st.className,
         status: 'active',
         avatar: st.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
@@ -6194,88 +6348,77 @@ function downloadBulkImportTemplate(role, format = 'xlsx') {
     showToast('បានទាញយកឯកសារគំរូគ្រូឧទ្ទេស CSV ដោយជោគជ័យ!', 'success');
 
   } else {
-    const headers = [
-      'អត្តលេខ',
-      'ថ្នាក់ទី',
-      'ក្រុម',
-      'ឈ្មោះសិស្ស_ខ្មែរ',
-      'ឈ្មោះជាឡាតាំង',
-      'ភេទ',
-      'ថ្ងៃខែឆ្នាំកំណើត',
-      'លេខទូរស័ព្ទអាណាព្យាបាល',
-      'ខេត្តកំណើត',
-      'ស្រុកកំណើត',
-      'ឃុំកំណើត',
-      'ភូមិកំណើត',
-      'អាសយដ្ឋានបច្ចុប្បន្ន',
-      'ឈ្មោះឪពុក',
-      'មុខរបរឪពុក',
-      'ឈ្មោះម្តាយ',
-      'មុខរបរម្តាយ'
+    // Official MoEYS Teacher Training Center standard 36-column template with multi-level headers
+    const headers0 = [
+      'អត្តលេខ', 'ថ្នាក់', 'ក្រុម', 'ឈ្មោះ សិស្ស', 'ឈ្មោះសិស្សជាឡាតាំង', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'អាយុ', 'លេខទូរស័ព្ទអាណាព្យាបាល', 'ឈ្មោះគណនី', 'ពាក្យសម្ងាត់',
+      'ទីកន្លែងកំណើត', '', '', '',
+      'អាស័យដ្ឋានបច្ចុប្បន្ន', '', '', '',
+      'ស្ថានភាព និងអាហាររូបករណ៍', '', '', '', '', '', '',
+      'ព័ត៌មានអាណាព្យាបាល', '', '', '', '', '',
+      'ព័ត៌មានបន្ថែមផ្សេងៗ', '', '',
+      'រូបថត'
+    ];
+
+    const headers1 = [
+      '', '', '', '', '', '', '', '', '', '', '',
+      'ខេត្ត', 'ស្រុក', 'ឃុំ', 'ភូមិ',
+      'ខេត្ត', 'ស្រុក', 'ឃុំ', 'ភូមិ',
+      'សិស្សថ្មី', 'សិស្សត្រួតថ្នាក់', 'ស្ថានភាពគ្រួសារ(កំព្រា)', 'ពិការភាព', 'ប័ណ្ណក្រីក្រ', 'សិស្សជនជាតិ', 'អាហាររូបករណ៍',
+      'ឈ្មោះឪពុក', 'មុខរបរ', 'ឈ្មោះម្តាយ', 'មុរបរ', 'ឈ្មោះអាណាព្យាបាល (ក្រៅពីឪពុក)', 'មុខរបរ',
+      'ជនជាតិដើមភាគតិច', 'លក្ខណៈពិសេស', 'សេវាផ្សេងៗ',
+      ''
     ];
 
     const sampleRow1 = [
-      'KTPTTC-2026-12P2-001',
-      '១២+២',
-      'ក្រុម ក',
-      'កែវ វិសាល',
-      'Keo Visal',
-      'ប្រុស',
-      '2005-05-12',
-      '012345678',
-      'ខេត្តក្រចេះ',
-      'ក្រុងក្រចេះ',
-      'សង្កាត់ក្រចេះ',
-      'ភូមិ១',
-      'ខេត្តក្រចេះ',
-      'កែវ សុខា',
-      'កសិករ',
-      'ម៉ៅ ស្រី',
-      'មេផ្ទះ'
+      '3852', 'បរិញ្ញាបត្រ+១', 'ក្រុម ក', 'ហុង សាមុត', 'Hong Samut', 'ប្រុស', '06 ឧសភា 1997', '29', '097 79 62 621', '3852', '3852',
+      'ខេត្តក្រចេះ', 'ក្រុងក្រចេះ', 'សង្កាត់ក្រចេះ', 'ភូមិ១',
+      'ខេត្តក្រចេះ', 'ក្រុងក្រចេះ', 'សង្កាត់ក្រចេះ', 'ភូមិ១',
+      'បាទ', 'ទេ', 'ទេ', 'ទេ', 'ទេ', 'ទេ', 'ទេ',
+      'ហុង គង់', 'កសិករ', 'ជា ស្រី', 'មេផ្ទះ', '', '',
+      '', '', '', ''
     ];
 
     const sampleRow2 = [
-      'KTPTTC-2026-12P2-002',
-      '១២+២',
-      'ក្រុម ក',
-      'ចាន់ ធីតា',
-      'Chan Thida',
-      'ស្រី',
-      '2005-08-25',
-      '098765432',
-      'ខេត្តក្រចេះ',
-      'ស្រុកឆ្លូង',
-      'ឃុំឆ្លូង',
-      'ភូមិឆ្លូង',
-      'ខេត្តក្រចេះ',
-      'ចាន់ រិទ្ធី',
-      'គ្រូបង្រៀន',
-      'សួន ផល្លា',
-      'អាជីវករ'
+      '3853', 'បរិញ្ញាបត្រ+១', 'ក្រុម ក', 'ហ៊ង ឆាយលី', 'Horng Chhayly', 'ស្រី', '01 តុលា 2002', '24', '088 96 21 297', '3853', '3853',
+      'ខេត្តក្រចេះ', 'ស្រុកស្នួល', 'ឃុំស្នួល', 'ភូមិស្នួល',
+      'ខេត្តក្រចេះ', 'ស្រុកស្នួល', 'ឃុំស្នួល', 'ភូមិស្នួល',
+      'ចាស', 'ទេ', 'ទេ', 'ទេ', 'ទេ', 'ទេ', 'ទេ',
+      'ហ៊ង លី', 'អាជីវករ', 'សុខ គឹម', 'អាជីវករ', '', '',
+      '', '', '', ''
     ];
 
     if (format === 'xlsx' && typeof XLSX !== 'undefined') {
-      const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow1, sampleRow2]);
+      const ws = XLSX.utils.aoa_to_sheet([headers0, headers1, sampleRow1, sampleRow2]);
       ws['!cols'] = [
-        { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 20 },
-        { wch: 18 }, { wch: 10 }, { wch: 16 }, { wch: 20 },
+        { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 22 }, { wch: 20 },
+        { wch: 10 }, { wch: 18 }, { wch: 10 }, { wch: 20 }, { wch: 14 }, { wch: 14 },
         { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
-        { wch: 20 }, { wch: 18 }, { wch: 14 }, { wch: 18 },
-        { wch: 14 }
+        { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+        { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
+        { wch: 18 }, { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 24 }, { wch: 14 },
+        { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 12 }
       ];
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'គំរូនាំចូល_សិស្ស');
-      XLSX.writeFile(wb, 'គំរូនាំចូល_បញ្ជីចុះឈ្មោះសិស្ស_MoEYS.xlsx');
-      showToast('🎉 បានទាញយកឯកសារគំរូសិស្ស Excel (.xlsx) ដោយជោគជ័យ!', 'success');
+      XLSX.utils.book_append_sheet(wb, ws, 'គរុនិស្សិត');
+      XLSX.writeFile(wb, 'គំរូនាំចូល_បញ្ជីឈ្មោះគរុនិស្សិត_MoEYS_KTPTTC.xlsx');
+      showToast('🎉 បានទាញយកឯកសារគំរូសិស្ស Excel (.xlsx) ស្តង់ដារផ្លូវការដោយជោគជ័យ!', 'success');
       return;
     }
 
-    const csvContent = '\uFEFF' + [headers.join(','), sampleRow1.join(','), sampleRow2.join(',')].join('\r\n');
+    const csvHeaders = [
+      'អត្តលេខ', 'ថ្នាក់', 'ក្រុម', 'ឈ្មោះ សិស្ស', 'ឈ្មោះសិស្សជាឡាតាំង', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'អាយុ', 'លេខទូរស័ព្ទអាណាព្យាបាល', 'ឈ្មោះគណនី', 'ពាក្យសម្ងាត់',
+      'ខេត្តកំណើត', 'ស្រុកកំណើត', 'ឃុំកំណើត', 'ភូមិកំណើត',
+      'ខេត្តបច្ចុប្បន្ន', 'ស្រុកបច្ចុប្បន្ន', 'ឃុំបច្ចុប្បន្ន', 'ភូមិបច្ចុប្បន្ន',
+      'ឈ្មោះឪពុក', 'មុខរបរឪពុក', 'ឈ្មោះម្តាយ', 'មុខរបរម្តាយ'
+    ];
+    const csvRow1 = ['3852', 'បរិញ្ញាបត្រ+១', 'ក្រុម ក', 'ហុង សាមុត', 'Hong Samut', 'ប្រុស', '06 ឧសភា 1997', '29', '097 79 62 621', '3852', '3852', 'ខេត្តក្រចេះ', 'ក្រុងក្រចេះ', 'សង្កាត់ក្រចេះ', 'ភូមិ១', 'ខេត្តក្រចេះ', 'ក្រុងក្រចេះ', 'សង្កាត់ក្រចេះ', 'ភូមិ១', 'ហុង គង់', 'កសិករ', 'ជា ស្រី', 'មេផ្ទះ'];
+    const csvRow2 = ['3853', 'បរិញ្ញាបត្រ+១', 'ក្រុម ក', 'ហ៊ង ឆាយលី', 'Horng Chhayly', 'ស្រី', '01 តុលា 2002', '24', '088 96 21 297', '3853', '3853', 'ខេត្តក្រចេះ', 'ស្រុកស្នួល', 'ឃុំស្នួល', 'ភូមិស្នួល', 'ខេត្តក្រចេះ', 'ស្រុកស្នួល', 'ឃុំស្នួល', 'ភូមិស្នួល', 'ហ៊ង លី', 'អាជីវករ', 'សុខ គឹម', 'អាជីវករ'];
+    const csvContent = '\uFEFF' + [csvHeaders.join(','), csvRow1.join(','), csvRow2.join(',')].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'គំរូនាំចូល_បញ្ជីចុះឈ្មោះសិស្ស_MoEYS.csv';
+    a.download = 'គំរូនាំចូល_បញ្ជីឈ្មោះគរុនិស្សិត_MoEYS_KTPTTC.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
