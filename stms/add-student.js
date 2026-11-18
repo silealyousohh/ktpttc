@@ -416,8 +416,98 @@ function populateDynamicClasses(selectedClass = null) {
   if (selectedClass) {
     syncClassInputFromSelected(selectedClass);
   }
+
+  // Also refresh teacher class checkboxes
+  try {
+    populateTeacherClassCheckboxes();
+  } catch (e) {}
 }
 window.populateDynamicClasses = populateDynamicClasses;
+
+// Populate Multiple Checkboxes for Teacher's Assigned Classes (គ្រូម្នាក់បង្រៀនច្រើនថ្នាក់)
+function populateTeacherClassCheckboxes(selectedClasses = null) {
+  const container = document.getElementById('teacherClassesCheckboxList');
+  if (!container) return;
+
+  // Preserve existing checks if no explicit array passed
+  let currentSelected = [];
+  if (Array.isArray(selectedClasses)) {
+    currentSelected = selectedClasses.map(c => String(c).trim());
+  } else {
+    container.querySelectorAll('input[name="teacherAssignedClass"]:checked').forEach(cb => {
+      if (cb.value) currentSelected.push(cb.value.trim());
+    });
+  }
+
+  // Extract all available system classes
+  let classList = [];
+  try {
+    const raw = localStorage.getItem('ktpttc_stms_data_v2');
+    if (raw) {
+      const data = JSON.parse(raw);
+      const set = new Set();
+      (data.cohorts || []).forEach(c => {
+        (c.classes || []).forEach(cls => { if (cls) set.add(cls.trim()); });
+      });
+      (data.customClasses || []).forEach(c => {
+        const name = typeof c === 'string' ? c : c?.name;
+        if (name) set.add(name.trim());
+      });
+      (data.trainees || []).forEach(t => {
+        if (t.className) set.add(t.className.trim());
+      });
+      classList = Array.from(set);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (classList.length === 0) {
+    classList = ['១២+២ ក្រុម ក', '១២+២ ក្រុម ខ', '១២+៤ ជំនាន់ទី១ ក្រុម ក', '១២+៤ ជំនាន់ទី១ ក្រុម ខ'];
+  }
+
+  // If nothing is currently selected, select all by default so new teachers teach all classes
+  const isAllNew = currentSelected.length === 0;
+
+  container.innerHTML = classList.map(cls => {
+    const isChecked = isAllNew ? true : currentSelected.includes(cls);
+    return `
+      <label class="class-checkbox-pill ${isChecked ? 'active' : ''}" style="display:inline-flex; align-items:center; gap:8px; background:${isChecked ? '#dcfce7' : '#ffffff'}; border:1.5px solid ${isChecked ? '#16a34a' : '#cbd5e1'}; padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:700; color:${isChecked ? '#15803d' : '#334155'}; cursor:pointer; user-select:none; transition:all 0.18s ease; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+        <input type="checkbox" name="teacherAssignedClass" value="${cls}" ${isChecked ? 'checked' : ''} onchange="onTeacherClassCheckboxChange(this)" style="accent-color:#16a34a; width:16px; height:16px; cursor:pointer;">
+        <span><i class="fas fa-users" style="color:${isChecked ? '#16a34a' : '#94a3b8'}; margin-right:3px;"></i>${cls}</span>
+      </label>
+    `;
+  }).join('');
+}
+window.populateTeacherClassCheckboxes = populateTeacherClassCheckboxes;
+
+function onTeacherClassCheckboxChange(checkbox) {
+  const pill = checkbox.closest('label');
+  if (pill) {
+    if (checkbox.checked) {
+      pill.style.background = '#dcfce7';
+      pill.style.borderColor = '#16a34a';
+      pill.style.color = '#15803d';
+      pill.classList.add('active');
+    } else {
+      pill.style.background = '#ffffff';
+      pill.style.borderColor = '#cbd5e1';
+      pill.style.color = '#334155';
+      pill.classList.remove('active');
+    }
+  }
+}
+window.onTeacherClassCheckboxChange = onTeacherClassCheckboxChange;
+
+function selectAllTeacherClasses(select = true) {
+  const container = document.getElementById('teacherClassesCheckboxList');
+  if (!container) return;
+  container.querySelectorAll('input[name="teacherAssignedClass"]').forEach(cb => {
+    cb.checked = select;
+    onTeacherClassCheckboxChange(cb);
+  });
+}
+window.selectAllTeacherClasses = selectAllTeacherClasses;
 
 function syncClassInputFromSelected(val) {
   const classInput = document.getElementById('regClass');
@@ -835,6 +925,10 @@ function checkEditMode() {
 
       if (document.getElementById('regTeacherSubject')) document.getElementById('regTeacherSubject').value = tr.subject || 'PED-101';
       if (document.getElementById('teacherSubjectSelector')) document.getElementById('teacherSubjectSelector').value = tr.subject || 'PED-101';
+      
+      // Load Assigned Classes
+      const trAssigned = tr.assignedClasses || tr.classes || (tr.className ? [tr.className] : []);
+      populateTeacherClassCheckboxes(trAssigned);
       if (document.getElementById('regTeacherQual')) document.getElementById('regTeacherQual').value = tr.qualification || 'អនុបណ្ឌិតគរុកោសល្យ';
       if (document.getElementById('regTeacherNameKh')) document.getElementById('regTeacherNameKh').value = tr.nameKh || '';
       if (document.getElementById('regTeacherNameEn')) document.getElementById('regTeacherNameEn').value = tr.nameEn || '';
@@ -1592,6 +1686,21 @@ function handleSaveTeacher() {
 
   const subj = (window.KTPTTC_ALL_SUBJECTS || []).find(s => s.code === subject);
 
+  // Collect checked assigned classes (គ្រូម្នាក់បង្រៀនច្រើនថ្នាក់)
+  let assignedClasses = [];
+  document.querySelectorAll('input[name="teacherAssignedClass"]:checked').forEach(cb => {
+    if (cb.value && cb.value.trim() && !assignedClasses.includes(cb.value.trim())) {
+      assignedClasses.push(cb.value.trim());
+    }
+  });
+  if (assignedClasses.length === 0) {
+    document.querySelectorAll('input[name="teacherAssignedClass"]').forEach(cb => {
+      if (cb.value && cb.value.trim() && !assignedClasses.includes(cb.value.trim())) {
+        assignedClasses.push(cb.value.trim());
+      }
+    });
+  }
+
   const teacherRecord = {
     id,
     nameKh,
@@ -1608,6 +1717,8 @@ function handleSaveTeacher() {
     roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
     subject,
     subjectName: subj ? subj.nameKh : '',
+    assignedClasses: assignedClasses,
+    classes: assignedClasses,
     position: roleTitle,
     experience,
     photo: currentPhotoData || '',
@@ -1733,6 +1844,11 @@ function resetFormForNextStudent(nextRoll) {
   if (img) img.style.display = 'none';
   if (placeholder) placeholder.style.display = 'block';
 
+  // Reset assigned class checkboxes
+  try {
+    populateTeacherClassCheckboxes([]);
+  } catch (e) {}
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1771,6 +1887,11 @@ function resetFormForNextTeacher() {
   const placeholder = document.getElementById('photoPlaceholder');
   if (img) img.style.display = 'none';
   if (placeholder) placeholder.style.display = 'block';
+
+  // Reset assigned class checkboxes
+  try {
+    populateTeacherClassCheckboxes([]);
+  } catch (e) {}
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }

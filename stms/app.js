@@ -1728,6 +1728,7 @@ function renderTrainersView(container) {
               <th style="width: 60px; text-align: center;">អាយុ</th>
               <th style="min-width: 160px;">ទីកន្លែងកំណើត</th>
               <th style="min-width: 180px;">មុខវិជ្ជាទទួលបន្ទុក</th>
+              <th style="min-width: 190px;">ថ្នាក់ទទួលបន្ទុកបង្រៀន</th>
               <th style="min-width: 160px;">កម្រិតវប្បធម៌ / ឯកទេស</th>
               <th style="width: 130px; text-align: center;">លេខទូរស័ព្ទ</th>
               <th style="min-width: 140px; text-align: center;">ឈ្មោះគណនី Login</th>
@@ -1737,7 +1738,7 @@ function renderTrainersView(container) {
           <tbody>
             ${displayed.length === 0 ? `
               <tr>
-                <td colspan="12" style="text-align:center; padding:55px 20px; color:#64748b;">
+                <td colspan="13" style="text-align:center; padding:55px 20px; color:#64748b;">
                   <i class="fas fa-chalkboard-teacher fa-3x" style="color:#cbd5e1; margin-bottom:14px; display:block;"></i>
                   <div style="font-size:1.1rem; font-weight:700; color:#1e3a8a; margin-bottom:8px;">មិនទាន់មានទិន្នន័យគ្រូឧទ្ទេសនៅឡើយទេ</div>
                   <p style="font-size:0.875rem; color:#94a3b8; max-width:520px; margin:0 auto 18px auto; line-height:1.6;">
@@ -1754,6 +1755,7 @@ function renderTrainersView(container) {
               const dobVal = tr.dob ? formatDobDisplay(tr.dob) : '15/05/1985';
               const pobVal = tr.pob || (typeof tr.birthplace === 'object' ? formatBirthplaceDisplay(tr) : tr.birthplace) || 'ខេត្តក្រចេះ';
               const qualVal = tr.qualification || 'អនុបណ្ឌិតគរុកោសល្យ';
+              const trClasses = typeof getTrainerAssignedClasses === 'function' ? getTrainerAssignedClasses(tr) : (tr.assignedClasses || tr.classes || []);
 
               return `
                 <tr data-trainer-row="${tr.id}">
@@ -1774,6 +1776,17 @@ function renderTrainersView(container) {
                   <td>
                     <div style="font-weight:700; color:#1e40af; font-size:0.85rem;">
                       ${subj ? `${subj.code} • ${subj.nameKh}` : (tr.subject || '-')}
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+                      ${trClasses.length > 0 
+                        ? trClasses.map(c => `<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.74rem; font-weight:700; padding:2px 7px; border-radius:10px; display:inline-flex; align-items:center; gap:3px;"><i class="fas fa-users" style="font-size:0.65rem;"></i>${c}</span>`).join('') 
+                        : `<span style="color:#94a3b8; font-size:0.75rem;">គ្រប់ថ្នាក់</span>`
+                      }
+                      <button type="button" onclick="openAdminAssignTeacherClassesModal('${tr.id}')" style="background:#f8fafc; border:1px solid #cbd5e1; color:#2563eb; border-radius:6px; cursor:pointer; font-size:0.75rem; padding:2px 6px; display:inline-flex; align-items:center; gap:3px; font-weight:600;" title="ចាត់តាំង ឬកែប្រែថ្នាក់បង្រៀន">
+                        <i class="fas fa-edit"></i> កំណត់ថ្នាក់
+                      </button>
                     </div>
                   </td>
                   <td>${qualVal}</td>
@@ -3962,6 +3975,13 @@ function openTraineeReportsModal() {
 // 7. HUB MODAL: កិច្ចព្រមព្រៀង & កម្មសិក្សា (PRACTICUM & CODE OF CONDUCT)
 // --------------------------------------------------------------------------
 function openTraineeGuidelinesModal(activeSection = 'rules') {
+  const studentClass = (currentTraineeUser && currentTraineeUser.className) ? currentTraineeUser.className.trim() : '';
+  const myAssignments = (stmsData.assignments || []).filter(hw => {
+    if (!hw.targetClass || hw.targetClass === 'all') return true;
+    if (!studentClass) return true;
+    return (hw.targetClass || '').trim() === studentClass;
+  });
+
   let modalHtml = `
     <div class="stms-modal-backdrop" id="traineeGuidelinesModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
       <div class="stms-modal-dialog" style="max-width:760px;">
@@ -3982,7 +4002,7 @@ function openTraineeGuidelinesModal(activeSection = 'rules') {
           <!-- Guideline Tabs -->
           <div class="stms-modal-tabs">
             <button class="modal-tab-btn ${activeSection==='assignments'?'active':''}" onclick="openTraineeGuidelinesModal('assignments')">
-              <i class="fas fa-tasks"></i> កិច្ចការសិស្ស (${(stmsData.assignments||[]).length})
+              <i class="fas fa-tasks"></i> កិច្ចការសិស្ស (${myAssignments.length})
             </button>
             <button class="modal-tab-btn ${activeSection==='rules'?'active':''}" onclick="openTraineeGuidelinesModal('rules')">បទបញ្ជាផ្ទៃក្នុង</button>
             <button class="modal-tab-btn ${activeSection==='practicum'?'active':''}" onclick="openTraineeGuidelinesModal('practicum')">កម្មសិក្សាគរុកោសល្យ</button>
@@ -3992,13 +4012,18 @@ function openTraineeGuidelinesModal(activeSection = 'rules') {
 
           ${activeSection === 'assignments' ? `
             <div style="display:flex; flex-direction:column; gap:12px;">
-              ${(stmsData.assignments && stmsData.assignments.length > 0) ? stmsData.assignments.map(hw => `
+              ${(myAssignments.length > 0) ? myAssignments.map(hw => `
                 <div style="background:#ffffff; border:1px solid #fed7aa; border-radius:12px; padding:16px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
                   <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                     <div>
-                      <span class="badge" style="background:#ffedd5; color:#c2410c; font-size:0.75rem; margin-bottom:4px; display:inline-block;">
-                        ${hw.subjectCode} • ${hw.subjectName || hw.subjectCode}
-                      </span>
+                      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px;">
+                        <span class="badge" style="background:#ffedd5; color:#c2410c; font-size:0.75rem;">
+                          ${hw.subjectCode} • ${hw.subjectName || hw.subjectCode}
+                        </span>
+                        <span class="badge badge-outline" style="font-size:0.72rem;">
+                          <i class="fas fa-chalkboard"></i> ${hw.targetClass && hw.targetClass !== 'all' ? hw.targetClass : 'គ្រប់ថ្នាក់'}
+                        </span>
+                      </div>
                       <h4 style="margin:2px 0 4px 0; color:#1e293b; font-size:1rem;">${hw.title}</h4>
                       <div style="font-size:0.78rem; color:#64748b;">
                         គ្រូឧទ្ទេស៖ <strong>${hw.trainerName || 'គ្រូបង្រៀន'}</strong> • កាលបរិច្ឆេទដាក់៖ ${hw.createdAt || ''}
@@ -4027,7 +4052,7 @@ function openTraineeGuidelinesModal(activeSection = 'rules') {
               `).join('') : `
                 <div style="text-align:center; padding:32px; color:#94a3b8; font-size:0.9rem;">
                   <i class="fas fa-tasks fa-2x" style="margin-bottom:8px; opacity:0.5;"></i>
-                  <p>មិនទាន់មានកិច្ចការដែលគ្រូបានដាក់នៅឡើយទេ។</p>
+                  <p>មិនទាន់មានកិច្ចការដែលគ្រូបានដាក់សម្រាប់ថ្នាក់របស់អ្នកនៅឡើយទេ។</p>
                 </div>
               `}
             </div>
@@ -7259,6 +7284,340 @@ function getTrainerAssignedSubjectCodes(tr) {
   return list;
 }
 
+// --------------------------------------------------------------------------
+// MULTI-CLASS TEACHING ASSIGNMENTS & STUDENT GROUPING (គ្រូម្នាក់បង្រៀនច្រើនថ្នាក់)
+// --------------------------------------------------------------------------
+
+// Helper: Get all classes assigned to a specific trainer (គ្រូម្នាក់បង្រៀនច្រើនថ្នាក់)
+function getTrainerAssignedClasses(tr) {
+  if (!tr) return [];
+  const assigned = [];
+  
+  // 1. Direct assignedClasses or classes array
+  if (Array.isArray(tr.assignedClasses) && tr.assignedClasses.length > 0) {
+    tr.assignedClasses.forEach(c => {
+      if (c && typeof c === 'string' && c.trim() && !assigned.includes(c.trim())) assigned.push(c.trim());
+    });
+  } else if (Array.isArray(tr.classes) && tr.classes.length > 0) {
+    tr.classes.forEach(c => {
+      if (c && typeof c === 'string' && c.trim() && !assigned.includes(c.trim())) assigned.push(c.trim());
+    });
+  } else if (tr.className && typeof tr.className === 'string' && tr.className.trim()) {
+    assigned.push(tr.className.trim());
+  }
+
+  // 2. Check in timetables where this teacher is assigned
+  if (Array.isArray(stmsData.timetables) && tr.nameKh) {
+    const cleanName = tr.nameKh.replace(/^(សាស្ត្រាចារ្យ|លោកស្រី|លោក|អ្នកគ្រូ|លោកគ្រូ)\s+/, '').trim();
+    stmsData.timetables.forEach(tt => {
+      if (tt && (tt.teacher === tr.nameKh || (cleanName && tt.teacher && tt.teacher.includes(cleanName))) && tt.className && !assigned.includes(tt.className)) {
+        assigned.push(tt.className);
+      }
+    });
+  }
+
+  // 3. Fallback: If no classes specifically limited, return all existing classes so the teacher is not locked out
+  if (assigned.length === 0) {
+    const allCls = typeof getAllSystemClasses === 'function' ? getAllSystemClasses() : [];
+    return allCls.length > 0 ? allCls : ['១២+២ ក្រុម ក', '១២+២ ក្រុម ខ'];
+  }
+  return assigned;
+}
+window.getTrainerAssignedClasses = getTrainerAssignedClasses;
+
+// Helper: Group students by class/group (បែងចែកសិស្សតាមថ្នាក់ក្រុមនីមួយៗ)
+function groupStudentsByClass(studentsList, classFilter = 'all') {
+  let list = Array.isArray(studentsList) ? studentsList : [];
+  if (classFilter && classFilter !== 'all') {
+    list = list.filter(s => (s.className || '').trim() === classFilter.trim());
+  }
+  const groups = {};
+  list.forEach(s => {
+    const cls = (s.className && s.className.trim()) ? s.className.trim() : 'មិនទាន់កំណត់ថ្នាក់';
+    if (!groups[cls]) groups[cls] = [];
+    groups[cls].push(s);
+  });
+  return groups;
+}
+window.groupStudentsByClass = groupStudentsByClass;
+
+let currentTeacherPortalClassFilter = 'all';
+function setTeacherPortalClassFilter(className) {
+  currentTeacherPortalClassFilter = className;
+  if (currentView === 'trainer-portal') {
+    renderTrainerPortalView(document.getElementById('stmsContentViewport') || document.getElementById('mainContentArea'));
+  }
+}
+window.setTeacherPortalClassFilter = setTeacherPortalClassFilter;
+
+// Admin Modal: Assign Classes to Teacher (ចាត់តាំងថ្នាក់បង្រៀនជូនគ្រូឧទ្ទេស)
+function openAdminAssignTeacherClassesModal(trainerId) {
+  const tr = (stmsData.users || []).find(u => u.id === trainerId);
+  if (!tr) {
+    showToast('រកមិនឃើញគ្រូឧទ្ទេស!', 'error');
+    return;
+  }
+  const allCls = typeof getAllSystemClasses === 'function' ? getAllSystemClasses() : [];
+  const currentAssigned = getTrainerAssignedClasses(tr);
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="assignTeacherClassesModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:620px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-users-class"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.1rem; margin:0;">ចាត់តាំងថ្នាក់ទទួលបន្ទុកបង្រៀន</h3>
+              <p style="color:#bfdbfe; font-size:0.82rem; margin:2px 0 0 0;">${tr.nameKh} (${tr.id}) • គ្រូម្នាក់អាចបង្រៀនច្រើនថ្នាក់</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px;">
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:0.82rem; color:#1e40af; line-height:1.5;">
+            <i class="fas fa-info-circle"></i> <strong>លក្ខខណ្ឌការបង្រៀន៖</strong> គ្រូម្នាក់អាចបង្រៀនច្រើនថ្នាក់ ហើយប្រព័ន្ធនឹងបែងចែកសិស្ស ស្រង់វត្តមាន និងបញ្ចូលពិន្ទុតាមថ្នាក់ក្រុមនីមួយៗដោយស្វ័យប្រវត្តិ។
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-weight:700; color:#1e293b; font-size:0.88rem;">ជ្រើសរើសថ្នាក់ដែលត្រូវបង្រៀន៖</span>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn btn-outline" style="height:28px; font-size:0.75rem; padding:0 8px;" onclick="toggleAllAdminClassCheckboxes(true)">ជ្រើសរើសទាំងអស់</button>
+              <button type="button" class="btn btn-outline" style="height:28px; font-size:0.75rem; padding:0 8px;" onclick="toggleAllAdminClassCheckboxes(false)">សម្អាត</button>
+            </div>
+          </div>
+
+          <div id="adminAssignClassesContainer" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; max-height:260px; overflow-y:auto; padding:4px;">
+            ${allCls.map(cls => {
+              const isChecked = currentAssigned.includes(cls);
+              return `
+                <label class="class-checkbox-pill ${isChecked ? 'active' : ''}" style="display:inline-flex; align-items:center; gap:8px; background:${isChecked ? '#dcfce7' : '#ffffff'}; border:1.5px solid ${isChecked ? '#16a34a' : '#cbd5e1'}; padding:8px 16px; border-radius:20px; font-size:0.84rem; font-weight:700; color:${isChecked ? '#15803d' : '#334155'}; cursor:pointer; user-select:none; transition:all 0.18s ease;">
+                  <input type="checkbox" name="adminAssignClassCheckbox" value="${cls}" ${isChecked ? 'checked' : ''} onchange="onAdminClassCheckboxChange(this)" style="accent-color:#16a34a; width:16px; height:16px; cursor:pointer;">
+                  <span><i class="fas fa-users" style="color:${isChecked ? '#16a34a' : '#94a3b8'}; margin-right:4px;"></i>${cls}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #e2e8f0; padding-top:16px;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+            <button class="btn btn-primary" onclick="saveAdminAssignTeacherClasses('${tr.id}')">
+              <i class="fas fa-save"></i> រក្សាទុកការកំណត់
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openAdminAssignTeacherClassesModal = openAdminAssignTeacherClassesModal;
+
+function onAdminClassCheckboxChange(checkbox) {
+  const pill = checkbox.closest('label');
+  if (pill) {
+    if (checkbox.checked) {
+      pill.style.background = '#dcfce7';
+      pill.style.borderColor = '#16a34a';
+      pill.style.color = '#15803d';
+      pill.classList.add('active');
+    } else {
+      pill.style.background = '#ffffff';
+      pill.style.borderColor = '#cbd5e1';
+      pill.style.color = '#334155';
+      pill.classList.remove('active');
+    }
+  }
+}
+window.onAdminClassCheckboxChange = onAdminClassCheckboxChange;
+
+function toggleAllAdminClassCheckboxes(select = true) {
+  document.querySelectorAll('input[name="adminAssignClassCheckbox"]').forEach(cb => {
+    cb.checked = select;
+    onAdminClassCheckboxChange(cb);
+  });
+}
+window.toggleAllAdminClassCheckboxes = toggleAllAdminClassCheckboxes;
+
+function saveAdminAssignTeacherClasses(trainerId) {
+  const tr = (stmsData.users || []).find(u => u.id === trainerId);
+  if (!tr) return;
+
+  const checkedClasses = [];
+  document.querySelectorAll('input[name="adminAssignClassCheckbox"]:checked').forEach(cb => {
+    if (cb.value && cb.value.trim() && !checkedClasses.includes(cb.value.trim())) {
+      checkedClasses.push(cb.value.trim());
+    }
+  });
+
+  tr.assignedClasses = checkedClasses;
+  tr.classes = checkedClasses;
+  saveData();
+  closeStmsModal();
+  showToast(`🎉 បានកំណត់ថ្នាក់បង្រៀនជូន «${tr.nameKh}» ចំនួន ${checkedClasses.length} ថ្នាក់ដោយជោគជ័យ!`, 'success');
+  if (currentView === 'trainers') {
+    renderTrainersView(document.getElementById('mainContentArea'));
+  } else if (currentView === 'trainer-portal') {
+    renderTrainerPortalView(document.getElementById('stmsContentViewport') || document.getElementById('mainContentArea'));
+  }
+}
+window.saveAdminAssignTeacherClasses = saveAdminAssignTeacherClasses;
+
+// Teacher Modal: View and Manage Students by Class & Group (បែងចែកសិស្សតាមថ្នាក់ក្រុមនីមួយៗ)
+function openTeacherClassStudentsModal(selectedClass = 'all') {
+  const tr = getActiveTrainerProfile();
+  const myClasses = getTrainerAssignedClasses(tr);
+  if (!selectedClass || (selectedClass !== 'all' && !myClasses.includes(selectedClass))) {
+    selectedClass = 'all';
+  }
+
+  let students = (stmsData.trainees || []).filter(t => myClasses.includes(t.className) || myClasses.length === 0);
+  if (selectedClass !== 'all') {
+    students = students.filter(t => t.className === selectedClass);
+  }
+
+  const grouped = groupStudentsByClass(students, selectedClass);
+  const totalStudents = students.length;
+  const femaleCount = students.filter(t => t.gender === 'ស្រី').length;
+  const maleCount = totalStudents - femaleCount;
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="teacherClassStudentsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:960px; width:95%; max-height:92vh;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-users-class"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">បញ្ជីគរុសនិស្សិតតាមថ្នាក់ និងក្រុមនីមួយៗ</h3>
+              <p style="color:#bfdbfe; font-size:0.82rem; margin:2px 0 0 0;">${tr.nameKh} • បង្រៀន ${myClasses.length} ថ្នាក់ • សិស្សសរុប ${totalStudents} នាក់</p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px; max-height:78vh; overflow-y:auto;">
+          
+          <!-- Class Tabs Header -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              <button class="t-filter-pill ${selectedClass === 'all' ? 'active' : ''}" onclick="openTeacherClassStudentsModal('all')">
+                <i class="fas fa-layer-group"></i> គ្រប់ថ្នាក់ (${totalStudents})
+              </button>
+              ${myClasses.map(c => {
+                const count = (stmsData.trainees || []).filter(t => t.className === c).length;
+                return `
+                  <button class="t-filter-pill ${selectedClass === c ? 'active' : ''}" onclick="openTeacherClassStudentsModal('${c}')">
+                    <i class="fas fa-chalkboard"></i> ${c} <span class="pill-badge">${count}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+            <div style="display:flex; gap:10px; font-size:0.82rem; font-weight:700; color:#1e3a8a; background:#eff6ff; padding:6px 12px; border-radius:8px; border:1px solid #bfdbfe;">
+              <span>សរុប៖ <strong>${totalStudents} នាក់</strong></span>
+              <span>•</span>
+              <span style="color:#db2777;">ស្រី៖ <strong>${femaleCount} នាក់</strong></span>
+              <span>•</span>
+              <span style="color:#2563eb;">ប្រុស៖ <strong>${maleCount} នាក់</strong></span>
+            </div>
+          </div>
+
+          <!-- Students Table Grouped by Class -->
+          <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
+            <table class="stms-table" style="font-size:0.85rem;">
+              <thead style="background:#f8fafc;">
+                <tr>
+                  <th style="width:50px; text-align:center;">ល.រ</th>
+                  <th style="width:130px;">អត្តលេខ</th>
+                  <th>ឈ្មោះគរុសនិស្សិត</th>
+                  <th style="width:60px; text-align:center;">ភេទ</th>
+                  <th style="width:110px; text-align:center;">ថ្ងៃខែឆ្នាំកំណើត</th>
+                  <th style="min-width:140px;">ថ្នាក់ &amp; ក្រុម</th>
+                  <th style="width:100px; text-align:center;">វត្តមាន</th>
+                  <th style="width:120px; text-align:center;">លេខទូរស័ព្ទ</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${Object.keys(grouped).length === 0 ? `
+                  <tr>
+                    <td colspan="8" style="text-align:center; padding:45px 20px; color:#64748b;">
+                      <i class="fas fa-user-graduate fa-2x" style="color:#cbd5e1; margin-bottom:10px; display:block;"></i>
+                      មិនទាន់មានទិន្នន័យគរុសនិស្សិតក្នុងថ្នាក់នេះនៅឡើយទេ
+                    </td>
+                  </tr>
+                ` : Object.entries(grouped).map(([grpName, grpStudents]) => {
+                  const fSub = grpStudents.filter(t => t.gender === 'ស្រី').length;
+                  return `
+                    <tr class="att-group-header-row">
+                      <td colspan="8" style="padding:10px 14px; background:#eff6ff; border-top:1.5px solid #bfdbfe; border-bottom:1.5px solid #bfdbfe;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                          <span style="font-weight:700; color:#1e40af; font-size:0.9rem;">
+                            <i class="fas fa-chalkboard" style="color:#2563eb; margin-right:6px;"></i> ថ្នាក់៖ ${grpName}
+                          </span>
+                          <span style="font-size:0.78rem; background:#ffffff; color:#1d4ed8; font-weight:700; padding:2px 10px; border-radius:12px; border:1px solid #bfdbfe;">
+                            សរុប ${grpStudents.length} នាក់ (ស្រី ${fSub} នាក់)
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    ${grpStudents.map((t, idx) => {
+                      const att = t.attendanceSummary || { present: 0, absent: 0 };
+                      const totAtt = (att.present || 0) + (att.absent || 0) + (att.late || 0) + (att.permission || 0);
+                      const attRate = totAtt > 0 ? Math.round(((totAtt - (att.absent || 0)) / totAtt) * 100) : 100;
+                      return `
+                        <tr>
+                          <td style="text-align:center; font-weight:600;">${idx + 1}</td>
+                          <td><code>${t.id}</code></td>
+                          <td>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                              <span style="width:26px; height:26px; border-radius:50%; background:#dbeafe; color:#1e40af; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">
+                                ${getKhmerFirstLetter(t.nameKh)}
+                              </span>
+                              <div>
+                                <strong>${t.nameKh}</strong>
+                                ${t.nameEn ? `<div style="font-size:0.72rem; color:#64748b;">${t.nameEn}</div>` : ''}
+                              </div>
+                            </div>
+                          </td>
+                          <td style="text-align:center;">${t.gender}</td>
+                          <td style="text-align:center;">${t.dob ? formatDobDisplay(t.dob) : '-'}</td>
+                          <td>
+                            <span style="background:#f1f5f9; color:#1e293b; padding:2px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">
+                              ${t.className || grpName}
+                            </span>
+                          </td>
+                          <td style="text-align:center;">
+                            <span style="color:#16a34a; font-weight:700;">${attRate}%</span>
+                          </td>
+                          <td style="text-align:center;">${t.parentPhone || t.phone || '-'}</td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Bottom Footer -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+            <div style="font-size:0.8rem; color:#64748b;">
+              <i class="fas fa-info-circle"></i> សិស្សត្រូវបានបែងចែកតាមថ្នាក់ក្រុមនីមួយៗយ៉ាងត្រឹមត្រូវ
+            </div>
+            <button class="btn btn-primary" onclick="closeStmsModal()">
+              យល់ព្រម
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+window.openTeacherClassStudentsModal = openTeacherClassStudentsModal;
+
 // Switcher for Admin previewing specific teachers
 function previewSpecificTrainer(trainerId) {
   const user = (stmsData.users || []).find(u => u.id === trainerId);
@@ -7281,6 +7640,18 @@ function renderTrainerPortalView(container) {
   const myCodes = getTrainerAssignedSubjectCodes(tr);
   const mySubjects = allSubjects.filter(s => myCodes.includes(s.code));
   const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
+
+  // Multi-Class Teaching Assignments (គ្រូម្នាក់បង្រៀនច្រើនថ្នាក់)
+  const myClasses = getTrainerAssignedClasses(tr);
+  if (currentTeacherPortalClassFilter !== 'all' && !myClasses.includes(currentTeacherPortalClassFilter)) {
+    currentTeacherPortalClassFilter = 'all';
+  }
+
+  // Scoped trainees belonging to teacher's classes
+  const allMyStudents = (stmsData.trainees || []).filter(t => myClasses.includes(t.className) || myClasses.length === 0);
+  const scopedStudents = currentTeacherPortalClassFilter === 'all' 
+    ? allMyStudents 
+    : allMyStudents.filter(t => t.className === currentTeacherPortalClassFilter);
 
   let avatarHtml = '';
   if (tr.photo && String(tr.photo).trim() !== '') {
@@ -7335,22 +7706,25 @@ function renderTrainerPortalView(container) {
     }
   }).join('');
 
-  // Attendance metrics filtered for this teacher's subject sessions
-  const totalStudents = stmsData.trainees.length || 1;
+  // Attendance metrics filtered for scoped students
+  const totalStudents = scopedStudents.length || 1;
   const mySessions = (stmsData.attendanceSessions || []).filter(s => myCodes.includes(s.subjectCode));
   let totalPresent = 0, totalPerm = 0, totalLate = 0, totalAbsent = 0;
+  
   if (mySessions.length > 0) {
+    const scopedIds = scopedStudents.map(s => s.id);
     mySessions.forEach(sess => {
-      Object.values(sess.records || {}).forEach(st => {
-        if (st === 'present') totalPresent++;
-        else if (st === 'permission') totalPerm++;
-        else if (st === 'late') totalLate++;
-        else if (st === 'absent') totalAbsent++;
+      Object.entries(sess.records || {}).forEach(([stId, st]) => {
+        if (scopedIds.includes(stId) || currentTeacherPortalClassFilter === 'all') {
+          if (st === 'present') totalPresent++;
+          else if (st === 'permission') totalPerm++;
+          else if (st === 'late') totalLate++;
+          else if (st === 'absent') totalAbsent++;
+        }
       });
     });
   } else {
-    // Default fallback from student summary
-    stmsData.trainees.forEach(t => {
+    scopedStudents.forEach(t => {
       totalPresent += (t.attendanceSummary?.present || 0);
       totalPerm += (t.attendanceSummary?.permission || 0);
       totalLate += (t.attendanceSummary?.late || 0);
@@ -7378,7 +7752,7 @@ function renderTrainerPortalView(container) {
             <h1 class="trainee-hero-name">${tr.nameKh || 'គ្រូឧទ្ទេស'}</h1>
             <div class="trainee-hero-badges">
               <span class="trainee-badge-pill role"><i class="fas fa-chalkboard-teacher"></i> ${tr.roleLabel || 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន'}</span>
-              <span class="trainee-badge-pill class"><i class="fas fa-chalkboard"></i> ${activeStream.label.split(' • ')[0]}</span>
+              <span class="trainee-badge-pill class" style="background:#2563eb; color:#fff; font-weight:700;"><i class="fas fa-users-class"></i> ទទួលបន្ទុក ${myClasses.length} ថ្នាក់</span>
               <span class="trainee-badge-pill class" style="background:#10b981; color:#fff; font-weight:700;"><i class="fas fa-book-reader"></i> ${mySubjects.map(s => s.code + ' ' + s.nameKh).join(' & ')}</span>
             </div>
             
@@ -7397,22 +7771,41 @@ function renderTrainerPortalView(container) {
           </div>
         </div>
         <div class="trainee-hero-actions">
-          <button class="btn-hero-action primary" onclick="openTeacherHomeworkModal('${myCodes[0]}')">
+          <button class="btn-hero-action primary" onclick="openTeacherHomeworkModal('${myCodes[0]}', 'create', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-plus-circle"></i> ដាក់កិច្ចការថ្មី
           </button>
-          <button class="btn-hero-action secondary" onclick="openTeacherAttendanceModal('${myCodes[0]}')">
+          <button class="btn-hero-action secondary" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-calendar-check"></i> ស្រង់វត្តមាន
           </button>
-          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherGradingModal('${myCodes[0]}')">
+          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherGradingModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-calculator"></i> បញ្ចូលពិន្ទុ
           </button>
         </div>
       </div>
 
+      <!-- Teacher Multi-Class Filter & Group Switcher Bar (គ្រូម្នាក់បង្រៀនច្រើនថ្នាក់ & បែងចែកសិស្សតាមថ្នាក់ក្រុម) -->
+      <div class="teacher-class-filter-bar">
+        <span class="t-filter-label"><i class="fas fa-chalkboard"></i> ថ្នាក់ទទួលបន្ទុកបង្រៀន (${myClasses.length})៖</span>
+        <button class="t-filter-pill ${currentTeacherPortalClassFilter === 'all' ? 'active' : ''}" onclick="setTeacherPortalClassFilter('all')">
+          <i class="fas fa-layer-group"></i> គ្រប់ថ្នាក់ (${myClasses.length}) <span class="pill-badge">${allMyStudents.length} នាក់</span>
+        </button>
+        ${myClasses.map(cls => {
+          const count = (stmsData.trainees || []).filter(t => t.className === cls).length;
+          return `
+            <button class="t-filter-pill ${currentTeacherPortalClassFilter === cls ? 'active' : ''}" onclick="setTeacherPortalClassFilter('${cls}')">
+              <i class="fas fa-users"></i> ${cls} <span class="pill-badge">${count}</span>
+            </button>
+          `;
+        }).join('')}
+        <button class="t-filter-pill add-btn" onclick="openAdminAssignTeacherClassesModal('${tr.id}')" title="កំណត់ថ្នាក់បង្រៀនបន្ថែម">
+          <i class="fas fa-plus"></i> កំណត់ថ្នាក់
+        </button>
+      </div>
+
       <!-- Security Notice Banner -->
-      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px 16px; display:flex; align-items:center; gap:10px; font-size:0.83rem; color:#1e40af;">
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px 16px; display:flex; align-items:center; gap:10px; font-size:0.83rem; color:#1e40af; margin-bottom:18px;">
         <i class="fas fa-shield-alt" style="font-size:1.1rem; color:#2563eb;"></i>
-        <span><strong>សិទ្ធិអំណាចគ្រូឧទ្ទេស (RBAC Scope)៖</strong> លោកគ្រូ/អ្នកគ្រូមានសិទ្ធិដាក់ពិន្ទុ ស្រង់វត្តមាន ដាក់កិច្ចការ និង Upload មេរៀន/វីដេអូ <strong>តែចំពោះមុខវិជ្ជា «${mySubjects.map(s => s.nameKh).join(', ')}» ដែលខ្លួនទទួលបន្ទុកប៉ុណ្ណោះ</strong>។ មុខវិជ្ជាផ្សេងទៀតត្រូវបានចាក់សោសុវត្ថិភាព។</span>
+        <span><strong>លក្ខខណ្ឌការបង្រៀន &amp; សិទ្ធិអំណាច (Teaching Scope)៖</strong> លោកគ្រូ/អ្នកគ្រូទទួលបន្ទុកបង្រៀន <strong>${myClasses.length} ថ្នាក់</strong> លើមុខវិជ្ជា <strong>«${mySubjects.map(s => s.nameKh).join(', ')}»</strong>។ ទិន្នន័យសិស្សត្រូវបានបែងចែកតាមថ្នាក់ក្រុមនីមួយៗយ៉ាងត្រឹមត្រូវ។</span>
       </div>
 
       <!-- 2. Teacher 8 Pastel Hub Menu Grid (Identical Layout to Student Portal) -->
@@ -7451,7 +7844,7 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 5. កិច្ចការសិស្ស (Amber) -->
-        <div class="trainee-hub-card card-amber" onclick="openTeacherHomeworkModal('${myCodes[0]}')">
+        <div class="trainee-hub-card card-amber" onclick="openTeacherHomeworkModal('${myCodes[0]}', 'create', '${currentTeacherPortalClassFilter}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-tasks"></i></div>
           <div class="hub-card-title">កិច្ចការសិស្ស</div>
@@ -7459,7 +7852,7 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 6. បញ្ចូលពិន្ទុ (Purple) -->
-        <div class="trainee-hub-card card-purple" onclick="openTeacherGradingModal('${myCodes[0]}')">
+        <div class="trainee-hub-card card-purple" onclick="openTeacherGradingModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-calculator"></i></div>
           <div class="hub-card-title">បញ្ចូលពិន្ទុ</div>
@@ -7467,19 +7860,19 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 7. វត្តមានសិស្ស (Teal) -->
-        <div class="trainee-hub-card card-teal" onclick="openTeacherAttendanceModal('${myCodes[0]}')">
+        <div class="trainee-hub-card card-teal" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-clipboard-check"></i></div>
           <div class="hub-card-title">វត្តមានសិស្ស</div>
           <div class="hub-card-sub">ស្រង់វត្តមានប្រចាំថ្ងៃ</div>
         </div>
 
-        <!-- 8. វេទិកា & សំណើ (Sky) -->
-        <div class="trainee-hub-card card-sky" onclick="openTraineeForumModal()">
+        <!-- 8. បញ្ជីសិស្សតាមថ្នាក់ (Sky) -->
+        <div class="trainee-hub-card card-sky" onclick="openTeacherClassStudentsModal('${currentTeacherPortalClassFilter}')">
           <div class="hub-card-pattern"></div>
-          <div class="hub-card-icon"><i class="fas fa-comment-dots"></i></div>
-          <div class="hub-card-title">វេទិកា & សំណើ</div>
-          <div class="hub-card-sub">ឆ្លើយតបសំណើសិស្ស</div>
+          <div class="hub-card-icon"><i class="fas fa-users-class"></i></div>
+          <div class="hub-card-title">សិស្សតាមថ្នាក់</div>
+          <div class="hub-card-sub">${scopedStudents.length} នាក់ (${currentTeacherPortalClassFilter === 'all' ? 'គ្រប់ថ្នាក់' : currentTeacherPortalClassFilter})</div>
         </div>
 
       </div>
@@ -7490,8 +7883,8 @@ function renderTrainerPortalView(container) {
         <!-- Class Attendance Overview -->
         <div class="table-card">
           <div class="table-toolbar">
-            <strong style="color:#1e3a8a;"><i class="fas fa-calendar-check" style="color:#10b981;"></i> ស្ថិតិវត្តមានគរុសនិស្សិត (មុខវិជ្ជា ${mySubjects.map(s => s.code).join('/')})</strong>
-            <button class="btn btn-primary" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherAttendanceModal('${myCodes[0]}')">
+            <strong style="color:#1e3a8a;"><i class="fas fa-calendar-check" style="color:#10b981;"></i> ស្ថិតិវត្តមានគរុសនិស្សិត (${currentTeacherPortalClassFilter === 'all' ? 'គ្រប់ថ្នាក់' : currentTeacherPortalClassFilter})</strong>
+            <button class="btn btn-primary" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
               <i class="fas fa-plus"></i> ស្រង់វត្តមានឥឡូវនេះ
             </button>
           </div>
@@ -7500,7 +7893,124 @@ function renderTrainerPortalView(container) {
               <span style="font-size:2.4rem; font-weight:800; color:#10b981; line-height:1;">
                 ${avgAttendanceRate}%
               </span>
-              <span style="font-size:0.85rem; color:#64748b; font-weight:600;">អត្រាវត្តមានសរុប (គរុសិស្ស ${totalStudents} នាក់)</span>
+              <span style="font-size:0.85rem; color:#64748b; font-weight:600;">អត្រាវត្តមាន (${currentTeacherPortalClassFilter === 'all' ? `គរុសិស្ស ${scopedStudents.length} នាក់` : `ថ្នាក់ ${currentTeacherPortalClassFilter} - ${scopedStudents.length} នាក់`})</span>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center; font-size:0.82rem;">
+              <div style="background:#f0fdf4; padding:10px 6px; border-radius:8px; border:1px solid #bbf7d0;">
+                <div style="font-weight:800; color:#15803d; font-size:1.15rem;">${totalPresent}</div>
+                <div style="color:#166534; font-size:0.75rem; font-weight:600;">វត្តមានសរុប</div>
+              </div>
+              <div style="background:#fffbeb; padding:10px 6px; border-radius:8px; border:1px solid #fde68a;">
+                <div style="font-weight:800; color:#b45309; font-size:1.15rem;">${totalPerm}</div>
+                <div style="color:#92400e; font-size:0.75rem; font-weight:600;">ច្បាប់</div>
+              </div>
+              <div style="background:#fff7ed; padding:10px 6px; border-radius:8px; border:1px solid #fed7aa;">
+                <div style="font-weight:800; color:#c2410c; font-size:1.15rem;">${totalLate}</div>
+                <div style="color:#9a3412; font-size:0.75rem; font-weight:600;">យឺត</div>
+              </div>
+              <div style="background:#fef2f2; padding:10px 6px; border-radius:8px; border:1px solid #fecaca;">
+                <div style="font-weight:800; color:#b91c1c; font-size:1.15rem;">${totalAbsent}</div>
+                <div style="color:#991b1b; font-size:0.75rem; font-weight:600;">ឥតច្បាប់</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grading & Homework Status Overview (Scoped to My Subjects Only) -->
+        <div class="table-card">
+          <div class="table-toolbar">
+            <strong style="color:#1e3a8a;"><i class="fas fa-tasks" style="color:#7c3aed;"></i> ស្ថានភាពមុខវិជ្ជាទទួលបន្ទុក</strong>
+            <button class="btn btn-outline" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherGradingModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
+              <i class="fas fa-edit"></i> បញ្ចូលពិន្ទុ
+            </button>
+          </div>
+          <div style="padding:20px;">
+            <p style="font-size:0.83rem; color:#64748b; margin-bottom:12px;">
+              ស្ថានភាពកិច្ចការ និងការដាក់ពិន្ទុក្នុងមុខវិជ្ជាដែលលោកគ្រូ/អ្នកគ្រូបង្រៀន៖
+            </p>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              ${mySubjects.map(s => {
+                const isGraded = scopedStudents.some(t => t.scores && t.scores[s.code] && t.scores[s.code].status === 'published');
+                const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === s.code).length;
+                const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === s.code).length;
+                return `
+                  <div style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; padding:10px 14px; border-radius:8px; font-size:0.85rem; border:1px solid #bbf7d0;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <i class="fas fa-check-circle" style="color:#10b981; font-size:1rem;"></i>
+                      <div>
+                        <strong style="color:#1e3a8a;">${s.nameKh}</strong>
+                        <div style="font-size:0.75rem; color:#64748b;">${hwCount} កិច្ចការ • ${lsnCount} មេរៀន • ${s.credits} ក្រេឌីត</div>
+                      </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span class="badge ${isGraded ? 'badge-present' : 'badge-draft'}">${isGraded ? 'បានផ្សព្វផ្សាយពិន្ទុ' : 'រង់ចាំដាក់ពិន្ទុ'}</span>
+                      <button class="btn btn-primary" style="height:26px; padding:0 10px; font-size:0.72rem;" onclick="openTeacherGradingModal('${s.code}', '${currentTeacherPortalClassFilter}')">ដាក់ពិន្ទុ</button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <div style="margin-top:12px; font-size:0.75rem; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-user-shield"></i> មុខវិជ្ជាផ្សេងទៀតត្រូវបានការពារសុវត្ថិភាព និងមិនបង្ហាញក្នុងផ្ទាំងនេះឡើយ។
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 4. Class & Group Breakdown Showcase (ការបែងចែកគរុសនិស្សិតតាមថ្នាក់ និងក្រុមនីមួយៗ) -->
+      <div class="table-card" style="margin-top:20px;">
+        <div class="table-toolbar" style="background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+          <strong style="color:#1e3a8a; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-users-class" style="color:#2563eb;"></i>
+            <span>ការបែងចែកគរុសនិស្សិតតាមថ្នាក់ និងក្រុមនីមួយៗ (Class &amp; Group Breakdown)</span>
+          </strong>
+          <button class="btn btn-primary" style="height:30px; font-size:0.78rem;" onclick="openTeacherClassStudentsModal('${currentTeacherPortalClassFilter}')">
+            <i class="fas fa-list-ul"></i> មើលបញ្ជីសិស្សតាមថ្នាក់
+          </button>
+        </div>
+        <div style="padding:18px;">
+          <p style="font-size:0.83rem; color:#64748b; margin-bottom:14px;">
+            ព័ត៌មានលម្អិតអំពីថ្នាក់រៀន និងការបែងចែកសិស្សដែលលោកគ្រូ/អ្នកគ្រូទទួលបន្ទុកបង្រៀន (${myClasses.length} ថ្នាក់)៖
+          </p>
+          <div class="teacher-class-cards-grid">
+            ${myClasses.map(cls => {
+              const clsStudents = (stmsData.trainees || []).filter(t => t.className === cls);
+              const fCount = clsStudents.filter(t => t.gender === 'ស្រី').length;
+              const mCount = clsStudents.length - fCount;
+              return `
+                <div class="teacher-class-card-item">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                    <div>
+                      <span style="font-size:0.7rem; font-weight:700; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; padding:2px 8px; border-radius:12px;">
+                        <i class="fas fa-school"></i> ថ្នាក់បង្រៀន
+                      </span>
+                      <h4 style="margin:6px 0 0 0; color:#0f172a; font-size:1.02rem; font-weight:700;">${cls}</h4>
+                    </div>
+                    <span style="font-size:1.15rem; font-weight:800; color:#16a34a;">${clsStudents.length} <span style="font-size:0.75rem; color:#64748b; font-weight:600;">នាក់</span></span>
+                  </div>
+                  <div style="display:flex; gap:12px; font-size:0.78rem; color:#64748b; margin:6px 0 12px 0;">
+                    <span>👩 ស្រី៖ <strong>${fCount}</strong></span>
+                    <span>👨 ប្រុស៖ <strong>${mCount}</strong></span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:auto; padding-top:10px; border-top:1px solid #f1f5f9;">
+                    <button class="btn btn-outline" style="height:30px; font-size:0.74rem; padding:0 6px; font-weight:700; border-color:#10b981; color:#059669;" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${cls}')" title="ស្រង់វត្តមាន ${cls}">
+                      <i class="fas fa-check"></i> វត្តមាន
+                    </button>
+                    <button class="btn btn-outline" style="height:30px; font-size:0.74rem; padding:0 6px; font-weight:700; border-color:#8b5cf6; color:#7c3aed;" onclick="openTeacherGradingModal('${myCodes[0]}', '${cls}')" title="បញ្ចូលពិន្ទុ ${cls}">
+                      <i class="fas fa-calculator"></i> ពិន្ទុ
+                    </button>
+                    <button class="btn btn-primary" style="height:30px; font-size:0.74rem; padding:0 6px; font-weight:700;" onclick="openTeacherClassStudentsModal('${cls}')" title="មើលសិស្ស ${cls}">
+                      <i class="fas fa-users"></i> សិស្ស
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
             </div>
             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center; font-size:0.82rem;">
               <div style="background:#f0fdf4; padding:10px 6px; border-radius:8px; border:1px solid #bbf7d0;">
@@ -7575,54 +8085,80 @@ function renderTrainerPortalView(container) {
 // --------------------------------------------------------------------------
 // 4. TEACHER MODAL: ដាក់ពិន្ទុសិស្ស & ផ្សព្វផ្សាយ (GRADING & SCORING - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
-function openTeacherGradingModal(selectedSubjectCode) {
+function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
   const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+  const myClasses = getTrainerAssignedClasses(tr);
 
   // Access Control Guard: Teacher can only grade assigned subjects!
   if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
     selectedSubjectCode = myCodes[0];
   }
 
+  // If selectedClass is not in myClasses and not 'all', default to 'all'
+  if (selectedClass !== 'all' && !myClasses.includes(selectedClass)) {
+    selectedClass = 'all';
+  }
+
   const currentSubject = mySubjects.find(s => s.code === selectedSubjectCode) || mySubjects[0];
-  const students = stmsData.trainees || [];
+  const allStudents = stmsData.trainees || [];
+
+  // Scoped students: only those belonging to classes taught by this teacher (or fallback to all if none match)
+  const teacherStudents = allStudents.filter(s => myClasses.includes((s.className || '').trim()));
+  const eligibleStudents = teacherStudents.length > 0 ? teacherStudents : allStudents;
+
+  // Group students by class & group
+  const classGroups = groupStudentsByClass(eligibleStudents, selectedClass);
+  const totalFilteredCount = Object.values(classGroups).reduce((sum, arr) => sum + arr.length, 0);
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherGradingModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:920px;">
+      <div class="stms-modal-dialog" style="max-width:960px;">
         <div class="stms-modal-header" style="background:linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%); color:#ffffff;">
           <div style="display:flex; align-items:center; gap:12px;">
             <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
               <i class="fas fa-calculator"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ដាក់ពិន្ទុសិស្ស &amp; ផ្សព្វផ្សាយជាផ្លូវការ</h3>
-              <p style="color:#ede9fe; font-size:0.82rem; margin:2px 0 0 0;">ពិន្ទុដែលរក្សាទុកនឹងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ!</p>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ដាក់ពិន្ទុសិស្ស &amp; ផ្សព្វផ្សាយជាផ្លូវការ (បែងចែកតាមថ្នាក់/ក្រុម)</h3>
+              <p style="color:#ede9fe; font-size:0.82rem; margin:2px 0 0 0;">ពិន្ទុដែលរក្សាទុកនឹងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ តាមមុខវិជ្ជា និងថ្នាក់នីមួយៗ</p>
             </div>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
-          <!-- Subject Selector (Strictly Scoped to My Subjects) -->
+          <!-- Filters Row: Subject + Class Selector -->
           <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:14px 18px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <label style="font-weight:700; color:#4c1d95; font-size:0.88rem;">មុខវិជ្ជាទទួលបន្ទុក៖</label>
-              <select id="gradingSubjectSelect" class="form-input" style="width:auto; min-width:260px; font-weight:700; color:#4c1d95;" onchange="openTeacherGradingModal(this.value)">
-                ${mySubjects.map(s => `
-                  <option value="${s.code}" ${s.code === currentSubject.code ? 'selected' : ''}>
-                    ${s.code} • ${s.nameKh} (${s.credits} ក្រេឌីត)
-                  </option>
-                `).join('')}
-              </select>
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:14px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-weight:700; color:#4c1d95; font-size:0.85rem;"><i class="fas fa-book-open" style="color:#7c3aed;"></i> មុខវិជ្ជា៖</label>
+                <select id="gradingSubjectSelect" class="form-input" style="width:auto; min-width:220px; font-weight:700; color:#4c1d95;" onchange="openTeacherGradingModal(this.value, '${selectedClass}')">
+                  ${mySubjects.map(s => `
+                    <option value="${s.code}" ${s.code === currentSubject.code ? 'selected' : ''}>
+                      ${s.code} • ${s.nameKh} (${s.credits} ក្រេឌីត)
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-weight:700; color:#4c1d95; font-size:0.85rem;"><i class="fas fa-users" style="color:#7c3aed;"></i> បង្ហាញថ្នាក់៖</label>
+                <select id="gradingClassSelect" class="form-input" style="width:auto; min-width:180px; font-weight:700; color:#4c1d95;" onchange="openTeacherGradingModal('${currentSubject.code}', this.value)">
+                  <option value="all" ${selectedClass === 'all' ? 'selected' : ''}>-- គ្រប់ថ្នាក់ដែលបង្រៀន (${myClasses.length} ថ្នាក់) --</option>
+                  ${myClasses.map(c => `
+                    <option value="${c}" ${selectedClass === c ? 'selected' : ''}>ថ្នាក់៖ ${c}</option>
+                  `).join('')}
+                </select>
+              </div>
             </div>
             <div style="font-size:0.8rem; color:#6d28d9; font-weight:600;">
               កិច្ចការ (10%) + វត្តមាន (10%) + ប្រចាំខែ (30%) + ឆមាស (50%) = 100%
             </div>
           </div>
 
-          <!-- Students Grading Table -->
+          <!-- Students Grading Table with Class Group Header Rows -->
           <div class="data-table-responsive" style="border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; margin-bottom:18px;">
             <table class="grading-input-table">
               <thead>
@@ -7638,50 +8174,67 @@ function openTeacherGradingModal(selectedSubjectCode) {
                 </tr>
               </thead>
               <tbody id="teacherGradingTableBody">
-                ${students.map(t => {
-                  const sc = (t.scores && t.scores[currentSubject.code]) || {
-                    homework: 9,
-                    attendance: 10,
-                    monthly: 27,
-                    final: 44,
-                    total: 90,
-                    grade: 'A'
-                  };
-                  return `
-                    <tr data-student-id="${t.id}">
-                      <td>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                          <span style="width:28px; height:28px; border-radius:50%; background:#e0e7ff; color:#3730a3; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">
-                            ${getKhmerFirstLetter(t.nameKh)}
-                          </span>
-                          <div>
-                            <strong style="color:#1e293b;">${t.nameKh}</strong>
-                            <div style="font-size:0.72rem; color:#64748b;">${t.gender === 'ស្រី' ? 'កញ្ញា' : 'លោក'} • ${t.className || 'ថ្នាក់បឋម ១២+២'}</div>
+                ${Object.keys(classGroups).length === 0 ? `
+                  <tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">មិនមានគរុសិស្សនៅក្នុងថ្នាក់ដែលបានជ្រើសរើសឡើយ។</td></tr>
+                ` : Object.entries(classGroups).map(([clsName, groupStudents]) => `
+                  <tr class="grading-group-header-row" style="background:#f5f3ff !important; color:#4c1d95 !important; border-top:2px solid #ddd6fe; border-bottom:2px solid #ddd6fe;">
+                    <td colspan="8" style="padding:8px 14px;">
+                      <div class="grading-group-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700; font-size:0.88rem;">
+                          <i class="fas fa-chalkboard" style="color:#7c3aed; margin-right:8px;"></i> ថ្នាក់ក្រុម៖ <strong>${clsName}</strong> 
+                          <span class="badge" style="background:#ddd6fe; color:#5b21b6; margin-left:8px; font-size:0.75rem;">${groupStudents.length} នាក់</span>
+                        </span>
+                        <span style="font-size:0.78rem; color:#6d28d9; font-weight:600;">
+                          <i class="fas fa-chalkboard-teacher"></i> គ្រូទទួលបន្ទុក៖ ${tr.nameKh}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                  ${groupStudents.map(t => {
+                    const sc = (t.scores && t.scores[currentSubject.code]) || {
+                      homework: 9,
+                      attendance: 10,
+                      monthly: 27,
+                      final: 44,
+                      total: 90,
+                      grade: 'A'
+                    };
+                    return `
+                      <tr data-student-id="${t.id}">
+                        <td>
+                          <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="width:28px; height:28px; border-radius:50%; background:#e0e7ff; color:#3730a3; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">
+                              ${getKhmerFirstLetter(t.nameKh)}
+                            </span>
+                            <div>
+                              <strong style="color:#1e293b;">${t.nameKh}</strong>
+                              <div style="font-size:0.72rem; color:#64748b;">${t.gender === 'ស្រី' ? 'កញ្ញា' : 'លោក'} • <span class="badge badge-outline" style="font-size:0.68rem; padding:1px 6px;">${t.className || clsName}</span></div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td><code>${t.id}</code></td>
-                      <td>
-                        <input type="number" class="input-hw" min="0" max="10" step="0.5" value="${sc.homework ?? 10}" oninput="calcGradingRow(this)" />
-                      </td>
-                      <td>
-                        <input type="number" class="input-att" min="0" max="10" step="0.5" value="${sc.attendance ?? 10}" oninput="calcGradingRow(this)" />
-                      </td>
-                      <td>
-                        <input type="number" class="input-mon" min="0" max="30" step="0.5" value="${sc.monthly ?? 27}" oninput="calcGradingRow(this)" />
-                      </td>
-                      <td>
-                        <input type="number" class="input-fin" min="0" max="50" step="0.5" value="${sc.final ?? sc.semester ?? 44}" oninput="calcGradingRow(this)" />
-                      </td>
-                      <td>
-                        <strong class="cell-total" style="color:#2563eb; font-size:1rem;">${sc.total ?? 91}</strong>
-                      </td>
-                      <td class="cell-grade">
-                        <span class="score-badge-live badge ${sc.grade === 'A' ? 'badge-present' : 'badge-published'}">${sc.grade ?? 'A'}</span>
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
+                        </td>
+                        <td><code>${t.id}</code></td>
+                        <td>
+                          <input type="number" class="input-hw" min="0" max="10" step="0.5" value="${sc.homework ?? 10}" oninput="calcGradingRow(this)" />
+                        </td>
+                        <td>
+                          <input type="number" class="input-att" min="0" max="10" step="0.5" value="${sc.attendance ?? 10}" oninput="calcGradingRow(this)" />
+                        </td>
+                        <td>
+                          <input type="number" class="input-mon" min="0" max="30" step="0.5" value="${sc.monthly ?? 27}" oninput="calcGradingRow(this)" />
+                        </td>
+                        <td>
+                          <input type="number" class="input-fin" min="0" max="50" step="0.5" value="${sc.final ?? sc.semester ?? 44}" oninput="calcGradingRow(this)" />
+                        </td>
+                        <td>
+                          <strong class="cell-total" style="color:#2563eb; font-size:1rem;">${sc.total ?? 91}</strong>
+                        </td>
+                        <td class="cell-grade">
+                          <span class="score-badge-live badge ${sc.grade === 'A' ? 'badge-present' : 'badge-published'}">${sc.grade ?? 'A'}</span>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                `).join('')}
               </tbody>
             </table>
           </div>
@@ -7689,7 +8242,7 @@ function openTeacherGradingModal(selectedSubjectCode) {
           <!-- Action Buttons Bar -->
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div style="font-size:0.8rem; color:#64748b;">
-              * និទ្ទេស A: 90-100 • B+: 85-89 • B: 80-84 • C+: 75-79 • C: 70-74 • D: 60-69 • F: &lt;50
+              * បង្ហាញសិស្សសរុប៖ <strong>${totalFilteredCount} នាក់</strong> • និទ្ទេស A: 90-100 • B+: 85-89 • B: 80-84 • C+: 75-79 • C: 70-74 • D: 60-69 • F: &lt;50
             </div>
             <div style="display:flex; gap:10px;">
               <button class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
@@ -7808,29 +8361,40 @@ function saveTeacherGrades(subjectCode) {
 // --------------------------------------------------------------------------
 // 5. TEACHER MODAL: ដាក់វត្តមានសិស្ស (ATTENDANCE CONTROLLER - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
-function openTeacherAttendanceModal(selectedSubjectCode) {
+function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') {
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
   const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+  const myClasses = getTrainerAssignedClasses(tr);
 
   if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
     selectedSubjectCode = myCodes[0];
   }
 
+  if (selectedClass !== 'all' && !myClasses.includes(selectedClass)) {
+    selectedClass = 'all';
+  }
+
   const currentSubject = mySubjects.find(s => s.code === selectedSubjectCode) || mySubjects[0];
-  const students = stmsData.trainees || [];
+  const allStudents = stmsData.trainees || [];
+  const teacherStudents = allStudents.filter(s => myClasses.includes((s.className || '').trim()));
+  const eligibleStudents = teacherStudents.length > 0 ? teacherStudents : allStudents;
+
+  // Group students by class & group
+  const classGroups = groupStudentsByClass(eligibleStudents, selectedClass);
+  const totalFilteredCount = Object.values(classGroups).reduce((sum, arr) => sum + arr.length, 0);
   const todayStr = new Date().toISOString().split('T')[0];
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherAttendanceModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:880px;">
+      <div class="stms-modal-dialog" style="max-width:920px;">
         <div class="stms-modal-header" style="background:linear-gradient(135deg, #0d9488 0%, #059669 100%); color:#ffffff;">
           <div style="display:flex; align-items:center; gap:12px;">
             <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
               <i class="fas fa-clipboard-check"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ស្រង់វត្តមានគរុសនិស្សិតប្រចាំថ្ងៃ</h3>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ស្រង់វត្តមានគរុសនិស្សិត (បែងចែកតាមថ្នាក់/ក្រុម)</h3>
               <p style="color:#ccfbf1; font-size:0.82rem; margin:2px 0 0 0;">វត្តមានដែលបានស្រង់ នឹងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ!</p>
             </div>
           </div>
@@ -7843,26 +8407,35 @@ function openTeacherAttendanceModal(selectedSubjectCode) {
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
               <div>
                 <label style="font-size:0.75rem; color:#166534; font-weight:700; display:block;">កាលបរិច្ឆេទ</label>
-                <input type="date" id="teacherAttDate" class="form-input" style="height:32px; font-size:0.82rem; width:140px;" value="${todayStr}">
+                <input type="date" id="teacherAttDate" class="form-input" style="height:32px; font-size:0.82rem; width:135px;" value="${todayStr}">
               </div>
               <div>
                 <label style="font-size:0.75rem; color:#166534; font-weight:700; display:block;">វេនសិក្សា</label>
-                <select id="teacherAttSession" class="form-input" style="height:32px; font-size:0.82rem; width:110px;">
-                  <option value="ព្រឹក" selected>ព្រឹក (Morning)</option>
-                  <option value="រសៀល">រសៀល (Afternoon)</option>
+                <select id="teacherAttSession" class="form-input" style="height:32px; font-size:0.82rem; width:100px;">
+                  <option value="ព្រឹក" selected>ព្រឹក</option>
+                  <option value="រសៀល">រសៀល</option>
                 </select>
               </div>
               <div>
                 <label style="font-size:0.75rem; color:#166534; font-weight:700; display:block;">មុខវិជ្ជាទទួលបន្ទុក</label>
-                <select id="teacherAttSubject" class="form-input" style="height:32px; font-size:0.82rem; width:220px; font-weight:700; color:#166534;">
+                <select id="teacherAttSubject" class="form-input" style="height:32px; font-size:0.82rem; width:200px; font-weight:700; color:#166534;" onchange="openTeacherAttendanceModal(this.value, '${selectedClass}')">
                   ${mySubjects.map(s => `
                     <option value="${s.code}" ${s.code === currentSubject.code ? 'selected' : ''}>${s.code} • ${s.nameKh}</option>
                   `).join('')}
                 </select>
               </div>
+              <div>
+                <label style="font-size:0.75rem; color:#166534; font-weight:700; display:block;">ថ្នាក់/ក្រុមគោលដៅ</label>
+                <select id="teacherAttClass" class="form-input" style="height:32px; font-size:0.82rem; width:180px; font-weight:700; color:#166534;" onchange="openTeacherAttendanceModal('${currentSubject.code}', this.value)">
+                  <option value="all" ${selectedClass === 'all' ? 'selected' : ''}>-- គ្រប់ថ្នាក់ដែលបង្រៀន (${myClasses.length} ថ្នាក់) --</option>
+                  ${myClasses.map(c => `
+                    <option value="${c}" ${selectedClass === c ? 'selected' : ''}>ថ្នាក់៖ ${c}</option>
+                  `).join('')}
+                </select>
+              </div>
             </div>
             <div>
-              <button class="btn btn-outline" style="height:32px; font-size:0.78rem; background:#ffffff;" onclick="setAllAttendance('present')">
+              <button class="btn btn-outline" style="height:32px; font-size:0.78rem; background:#ffffff; border-color:#86efac; color:#15803d; font-weight:700;" onclick="setAllAttendance('present')">
                 <i class="fas fa-check-double" style="color:#16a34a;"></i> វត្តមានទាំងអស់
               </button>
             </div>
@@ -7880,36 +8453,54 @@ function openTeacherAttendanceModal(selectedSubjectCode) {
                 </tr>
               </thead>
               <tbody id="teacherAttTableBody">
-                ${students.map((t, idx) => `
-                  <tr data-student-id="${t.id}">
-                    <td>${idx + 1}</td>
-                    <td>
-                      <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="width:26px; height:26px; border-radius:50%; background:#dcfce7; color:#15803d; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">
-                          ${getKhmerFirstLetter(t.nameKh)}
+                ${Object.keys(classGroups).length === 0 ? `
+                  <tr><td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;">មិនមានគរុសិស្សនៅក្នុងថ្នាក់ដែលបានជ្រើសរើសឡើយ។</td></tr>
+                ` : Object.entries(classGroups).map(([clsName, groupStudents]) => `
+                  <tr class="att-group-header-row" style="background:#f0fdf4 !important; color:#166534 !important; border-top:2px solid #bbf7d0; border-bottom:2px solid #bbf7d0;">
+                    <td colspan="4" style="padding:8px 14px;">
+                      <div class="att-group-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700; font-size:0.88rem;">
+                          <i class="fas fa-chalkboard" style="color:#16a34a; margin-right:8px;"></i> ថ្នាក់ក្រុម៖ <strong>${clsName}</strong> 
+                          <span class="badge" style="background:#bbf7d0; color:#166534; margin-left:8px; font-size:0.75rem;">${groupStudents.length} នាក់</span>
                         </span>
-                        <strong>${t.nameKh}</strong>
-                        <span style="font-size:0.75rem; color:#64748b;">(${t.gender})</span>
-                      </div>
-                    </td>
-                    <td><code>${t.id}</code></td>
-                    <td style="text-align:center;">
-                      <div class="att-pill-group">
-                        <button type="button" class="att-pill-btn active present" onclick="setStudentAttendance('${t.id}', 'present', this)">
-                          <i class="fas fa-check"></i> វត្តមាន
-                        </button>
-                        <button type="button" class="att-pill-btn permission" onclick="setStudentAttendance('${t.id}', 'permission', this)">
-                          <i class="fas fa-envelope-open-text"></i> ច្បាប់
-                        </button>
-                        <button type="button" class="att-pill-btn late" onclick="setStudentAttendance('${t.id}', 'late', this)">
-                          <i class="fas fa-clock"></i> យឺត
-                        </button>
-                        <button type="button" class="att-pill-btn absent" onclick="setStudentAttendance('${t.id}', 'absent', this)">
-                          <i class="fas fa-times"></i> ឥតច្បាប់
+                        <button type="button" class="btn btn-outline" style="height:24px; padding:0 8px; font-size:0.7rem; background:#ffffff; border-color:#86efac; color:#15803d; font-weight:700;" onclick="setGroupAttendance('${clsName.replace(/'/g, "\\'")}', 'present')">
+                          <i class="fas fa-check"></i> វត្តមានក្រុមនេះទាំងអស់
                         </button>
                       </div>
                     </td>
                   </tr>
+                  ${groupStudents.map((t, idx) => `
+                    <tr data-student-id="${t.id}" data-group-name="${clsName}">
+                      <td>${idx + 1}</td>
+                      <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                          <span style="width:26px; height:26px; border-radius:50%; background:#dcfce7; color:#15803d; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">
+                            ${getKhmerFirstLetter(t.nameKh)}
+                          </span>
+                          <strong>${t.nameKh}</strong>
+                          <span style="font-size:0.75rem; color:#64748b;">(${t.gender})</span>
+                          <span class="badge badge-outline" style="font-size:0.68rem; padding:1px 6px;">${t.className || clsName}</span>
+                        </div>
+                      </td>
+                      <td><code>${t.id}</code></td>
+                      <td style="text-align:center;">
+                        <div class="att-pill-group">
+                          <button type="button" class="att-pill-btn active present" onclick="setStudentAttendance('${t.id}', 'present', this)">
+                            <i class="fas fa-check"></i> វត្តមាន
+                          </button>
+                          <button type="button" class="att-pill-btn permission" onclick="setStudentAttendance('${t.id}', 'permission', this)">
+                            <i class="fas fa-envelope-open-text"></i> ច្បាប់
+                          </button>
+                          <button type="button" class="att-pill-btn late" onclick="setStudentAttendance('${t.id}', 'late', this)">
+                            <i class="fas fa-clock"></i> យឺត
+                          </button>
+                          <button type="button" class="att-pill-btn absent" onclick="setStudentAttendance('${t.id}', 'absent', this)">
+                            <i class="fas fa-times"></i> ឥតច្បាប់
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
                 `).join('')}
               </tbody>
             </table>
@@ -7918,7 +8509,7 @@ function openTeacherAttendanceModal(selectedSubjectCode) {
           <!-- Attendance Summary Counters Bar -->
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; gap:14px; font-size:0.84rem; font-weight:700;">
-              <span style="color:#15803d;"><i class="fas fa-check-circle"></i> វត្តមាន៖ <span id="attCounterPres">${students.length}</span></span>
+              <span style="color:#15803d;"><i class="fas fa-check-circle"></i> វត្តមាន៖ <span id="attCounterPres">${totalFilteredCount}</span></span>
               <span style="color:#b45309;"><i class="fas fa-envelope"></i> ច្បាប់៖ <span id="attCounterPerm">0</span></span>
               <span style="color:#c2410c;"><i class="fas fa-clock"></i> យឺត៖ <span id="attCounterLate">0</span></span>
               <span style="color:#b91c1c;"><i class="fas fa-times-circle"></i> ឥតច្បាប់៖ <span id="attCounterAbs">0</span></span>
@@ -7938,6 +8529,24 @@ function openTeacherAttendanceModal(selectedSubjectCode) {
 
   showModal(modalHtml);
 }
+
+// Group Attendance Shortcut
+function setGroupAttendance(groupName, status = 'present') {
+  const rows = document.querySelectorAll(`#teacherAttTableBody tr[data-group-name="${groupName}"]`);
+  rows.forEach(row => {
+    const group = row.querySelector('.att-pill-group');
+    if (group) {
+      group.querySelectorAll('.att-pill-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.classList.contains(status)) {
+          b.classList.add('active');
+        }
+      });
+    }
+  });
+  updateAttendanceModalCounters();
+}
+window.setGroupAttendance = setGroupAttendance;
 
 // Attendance Pill Status Selector
 function setStudentAttendance(studentId, status, btn) {
@@ -7989,11 +8598,14 @@ function saveTeacherAttendance() {
   const dateInput = document.getElementById('teacherAttDate');
   const subjInput = document.getElementById('teacherAttSubject');
   const sessionInput = document.getElementById('teacherAttSession');
+  const classInput = document.getElementById('teacherAttClass');
 
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
+  const myClasses = getTrainerAssignedClasses(tr);
 
   const subjectCode = subjInput ? subjInput.value : myCodes[0];
+  const targetClass = classInput ? classInput.value : 'all';
 
   // Security Check: Reject if subject is not assigned to this teacher!
   if (!myCodes.includes(subjectCode)) {
@@ -8004,7 +8616,7 @@ function saveTeacherAttendance() {
   const date = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
   const session = sessionInput ? sessionInput.value : 'ព្រឹក';
 
-  const rows = document.querySelectorAll('#teacherAttTableBody tr');
+  const rows = document.querySelectorAll('#teacherAttTableBody tr[data-student-id]');
   if (rows.length === 0) {
     showToast('មិនមានសិស្សសម្រាប់ស្រង់វត្តមាន!', 'warning');
     return;
@@ -8033,7 +8645,8 @@ function saveTeacherAttendance() {
     subjectCode: subjectCode,
     subjectName: subj.nameKh,
     session: session,
-    cohort: 'ថ្នាក់បឋមសិក្សា ១២+២ ក្រុម ខ',
+    cohort: targetClass === 'all' ? `គ្រប់ថ្នាក់ (${myClasses.join(', ')})` : targetClass,
+    targetClass: targetClass,
     trainerName: tr.nameKh,
     records: records,
     createdAt: new Date().toISOString()
@@ -8086,6 +8699,7 @@ function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
   const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+  const myClasses = getTrainerAssignedClasses(tr);
 
   if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
     selectedSubjectCode = myCodes[0];
@@ -8105,7 +8719,7 @@ function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
             </div>
             <div>
               <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ដាក់កិច្ចការឱ្យគរុសនិស្សិត (Homework &amp; Assignments)</h3>
-              <p style="color:#fef3c7; font-size:0.82rem; margin:2px 0 0 0;">កិច្ចការដែលបានដាក់ នឹងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ!</p>
+              <p style="color:#fef3c7; font-size:0.82rem; margin:2px 0 0 0;">កិច្ចការដែលបានដាក់ នឹងលោតចូលក្នុងប្រព័ន្ធសិស្សតាមថ្នាក់ដោយស្វ័យប្រវត្តិ!</p>
             </div>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
@@ -8136,19 +8750,30 @@ function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
                   </select>
                 </div>
                 <div>
+                  <label class="form-label" style="font-weight:700;"><i class="fas fa-users" style="color:#f59e0b;"></i> ថ្នាក់/ក្រុមគោលដៅទទួលកិច្ចការ</label>
+                  <select id="hwTargetClass" class="form-input" style="font-weight:700; color:#b45309;">
+                    <option value="all">គ្រប់ថ្នាក់ដែលបង្រៀន (${myClasses.length} ថ្នាក់)</option>
+                    ${myClasses.map(c => `
+                      <option value="${c}">${c}</option>
+                    `).join('')}
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
                   <label class="form-label" style="font-weight:700;">កាលបរិច្ឆេទផុតកំណត់</label>
                   <input type="date" id="hwDateInput" class="form-input" value="2026-11-30" />
+                </div>
+                <div>
+                  <label class="form-label" style="font-weight:700;">ពិន្ទុអតិបរមា</label>
+                  <input type="number" id="hwPointsInput" class="form-input" value="10" min="1" max="100" />
                 </div>
               </div>
 
               <div>
                 <label class="form-label" style="font-weight:700;">ចំណងជើងកិច្ចការ / ប្រធានបទស្រាវជ្រាវ</label>
                 <input type="text" id="hwTitleInput" class="form-input" placeholder="ឧទាហរណ៍៖ រៀបចំកិច្ចតែងការបង្រៀនគំរូ ៥ ជំហាន..." />
-              </div>
-
-              <div style="margin-bottom:12px;">
-                <label class="form-label" style="font-weight:700;">ពិន្ទុអតិបរមា</label>
-                <input type="number" id="hwPointsInput" class="form-input" value="10" min="1" max="100" />
               </div>
 
               <div>
@@ -8217,7 +8842,12 @@ function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
                 <div style="background:#ffffff; border:1px solid #fed7aa; border-radius:12px; padding:16px;">
                   <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <div>
-                      <span class="badge badge-warning" style="font-size:0.75rem; margin-bottom:4px; display:inline-block;">${hw.subjectCode} • ${hw.subjectName || ''}</span>
+                      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px;">
+                        <span class="badge badge-warning" style="font-size:0.75rem;">${hw.subjectCode} • ${hw.subjectName || ''}</span>
+                        <span class="badge" style="background:#fef3c7; color:#92400e; font-size:0.72rem; border:1px solid #fde68a;">
+                          <i class="fas fa-chalkboard"></i> ${hw.targetClass && hw.targetClass !== 'all' ? hw.targetClass : 'គ្រប់ថ្នាក់'}
+                        </span>
+                      </div>
                       <h4 style="margin:2px 0 4px 0; color:#1e293b; font-size:1rem;">${hw.title}</h4>
                       <div style="font-size:0.78rem; color:#64748b;">
                         ផុតកំណត់៖ <strong>${hw.dueDate}</strong> • ពិន្ទុ៖ <strong>${hw.points} ពិន្ទុ</strong> • ដាក់ដោយ៖ ${hw.trainerName || 'គ្រូឧទ្ទេស'}
@@ -8259,16 +8889,17 @@ function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
 // Save & Auto-Sync Homework to Student System (Strictly Scoped)
 function saveTeacherHomework() {
   const subjEl = document.getElementById('hwSubjectSelect');
+  const targetClassEl = document.getElementById('hwTargetClass');
   const titleEl = document.getElementById('hwTitleInput');
   const dateEl = document.getElementById('hwDateInput');
   const pointsEl = document.getElementById('hwPointsInput');
   const descEl = document.getElementById('hwDescInput');
-  const attachEl = document.getElementById('hwAttachmentInput');
 
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
 
   const subjectCode = subjEl ? subjEl.value : myCodes[0];
+  const targetClass = targetClassEl ? targetClassEl.value : 'all';
 
   // Security Check
   if (!myCodes.includes(subjectCode)) {
@@ -8294,6 +8925,8 @@ function saveTeacherHomework() {
     id: 'HW-' + Date.now(),
     subjectCode: subjectCode,
     subjectName: subj.nameKh,
+    targetClass: targetClass,
+    targetClassName: targetClass === 'all' ? 'គ្រប់ថ្នាក់' : targetClass,
     title: titleEl.value.trim(),
     dueDate: dateEl ? dateEl.value : '2026-11-30',
     points: pointsEl ? parseInt(pointsEl.value, 10) || 10 : 10,

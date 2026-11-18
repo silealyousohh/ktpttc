@@ -752,6 +752,42 @@
                 </div>
               </div>
 
+              <!-- Row 1.5: Multi-Class Teaching Assignment (គ្រូម្នាក់អាចបង្រៀនច្រើនថ្នាក់) -->
+              <div class="teacher-assigned-classes-card" style="margin: 16px 0; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 16px 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #15803d; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                      <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div>
+                      <label class="form-label" style="margin-bottom: 0; font-weight: 700; color: #14532d; font-size: 0.92rem;">
+                        ថ្នាក់ទទួលបន្ទុកបង្រៀន (Assigned Classes) <span class="required">*</span>
+                      </label>
+                      <div style="font-size: 0.76rem; color: #166534;">
+                        គ្រូម្នាក់អាចបង្រៀនច្រើនថ្នាក់ • ប្រព័ន្ធនឹងបែងចែកសិស្សតាមថ្នាក់ក្រុមនីមួយៗដោយស្វ័យប្រវត្តិ
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="button" onclick="selectAllTeacherClasses(true)" style="background: #ffffff; border: 1px solid #86efac; color: #15803d; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                      <i class="fas fa-check-double"></i> ជ្រើសរើសទាំងអស់
+                    </button>
+                    <button type="button" onclick="selectAllTeacherClasses(false)" style="background: #ffffff; border: 1px solid #cbd5e1; color: #64748b; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                      <i class="fas fa-times"></i> សម្អាត
+                    </button>
+                    <button type="button" onclick="openQuickAddClassModal()" style="background: #15803d; border: none; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                      <i class="fas fa-plus"></i> + បន្ថែមថ្នាក់ថ្មី
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Dynamic Checkbox Container -->
+                <div id="teacherClassesCheckboxList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; min-height: 40px; align-items: center;">
+                  <!-- Checkboxes populated via JS -->
+                </div>
+                <input type="hidden" id="regTeacherAssignedClasses" value="">
+              </div>
+
               <!-- Row 2: Latin Name, Gender, DOB -->
               <div class="fields-grid-3">
                 <div class="form-group">
