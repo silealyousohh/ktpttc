@@ -1608,7 +1608,7 @@ function handleSaveStudent() {
       username: username,
       password: password,
       role: "trainee",
-      roleLabel: "គរុសនិស្សិត",
+      roleLabel: "គរុនិស្សិត",
       email: parentPhone ? `${username}@student.ktpttc.edu.kh` : "portal@student.ktpttc.edu.kh",
       phone: parentPhone,
       className,
@@ -1646,13 +1646,13 @@ function handleSaveStudent() {
   }
 
   if (isEditMode) {
-    showToast(`បានកែប្រែព័ត៌មានគរុសនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
+    showToast(`បានកែប្រែព័ត៌មានគរុនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
     sessionStorage.setItem('stms_target_view', 'trainees');
     setTimeout(() => {
       window.location.href = 'index.html';
     }, 1200);
   } else {
-    showToast(`🎉 បានចុះឈ្មោះគរុសនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
+    showToast(`🎉 បានចុះឈ្មោះគរុនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
     resetFormForNextStudent(students.length + 1);
   }
 }
@@ -2329,7 +2329,7 @@ function handleExcelImport(input) {
             username: id.toLowerCase(),
             password: 'ktpttc123',
             role: 'trainee',
-            roleLabel: 'គរុសនិស្សិត',
+            roleLabel: 'គរុនិស្សិត',
             phone: parentPhone,
             className,
             status: 'active',

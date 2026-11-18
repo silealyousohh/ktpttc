@@ -1,5 +1,5 @@
 /**
- * STMS - Student & Teacher Management System (ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត)
+ * STMS - Student & Teacher Management System (ប្រព័ន្ធគ្រប់គ្រងគរុនិស្សិត)
  * សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)
  * Core Controller, Workflows & RBAC State Management
  */
@@ -612,7 +612,7 @@ function loginSuccess(user, notify = true) {
   const roleEl = document.getElementById('navbarUserRole');
   const avatarEl = document.getElementById('navbarUserAvatar');
   if (nameEl) nameEl.textContent = user.nameKh;
-  if (roleEl) roleEl.textContent = user.roleLabel || (currentRole === 'trainee' ? 'គរុសនិស្សិត' : currentRole === 'trainer' ? 'គ្រូឧទ្ទេស' : 'អ្នកគ្រប់គ្រងប្រព័ន្ធ');
+  if (roleEl) roleEl.textContent = user.roleLabel || (currentRole === 'trainee' ? 'គរុនិស្សិត' : currentRole === 'trainer' ? 'គ្រូឧទ្ទេស' : 'អ្នកគ្រប់គ្រងប្រព័ន្ធ');
   if (avatarEl) {
     if (user.photo) {
       avatarEl.innerHTML = `<img src="${user.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
@@ -767,7 +767,7 @@ function switchRole(role, notify = true) {
   if (role === 'trainee') {
     previewUser = getActiveTraineeProfile();
     currentTraineeUser = previewUser;
-    currentUser = { ...previewUser, role: 'trainee', roleLabel: 'គរុសនិស្សិត' };
+    currentUser = { ...previewUser, role: 'trainee', roleLabel: 'គរុនិស្សិត' };
   } else if (role === 'trainer') {
     previewUser = getActiveTrainerProfile();
     currentUser = { ...previewUser, role: 'trainer', roleLabel: 'គ្រូឧទ្ទេស' };
@@ -784,7 +784,7 @@ function switchRole(role, notify = true) {
   const avatarEl = document.getElementById('navbarUserAvatar');
 
   if (nameEl) nameEl.textContent = previewUser.nameKh;
-  if (roleEl) roleEl.textContent = previewUser.roleLabel || (role === 'trainee' ? 'គរុសនិស្សិត' : role === 'trainer' ? 'គ្រូឧទ្ទេស' : 'អ្នកគ្រប់គ្រងប្រព័ន្ធ');
+  if (roleEl) roleEl.textContent = previewUser.roleLabel || (role === 'trainee' ? 'គរុនិស្សិត' : role === 'trainer' ? 'គ្រូឧទ្ទេស' : 'អ្នកគ្រប់គ្រងប្រព័ន្ធ');
   if (avatarEl) {
     if (previewUser.photo) {
       avatarEl.innerHTML = `<img src="${previewUser.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
@@ -835,7 +835,7 @@ function renderSidebar() {
       <li class="sidebar-label">ទំព័រដើម &amp; ស្ថិតិ</li>
       <li><a class="sidebar-item-link ${currentView==='dashboard'?'active':''}" onclick="navigateView('dashboard')"><i class="fas fa-th-large"></i> <span>ផ្ទាំងព័ត៌មាន (Dashboard)</span></a></li>
 
-      <li class="sidebar-label">កិច្ចការគ្រូ &amp; គរុសនិស្សិត</li>
+      <li class="sidebar-label">កិច្ចការគ្រូ &amp; គរុនិស្សិត</li>
       <li><a class="sidebar-item-link ${currentView==='trainees'?'active':''}" onclick="navigateView('trainees')"><i class="fas fa-user-graduate"></i> <span>បញ្ជីរាយនាមសិស្ស</span></a></li>
       <li><a class="sidebar-item-link ${currentView==='trainers'?'active':''}" onclick="navigateView('trainers')"><i class="fas fa-chalkboard-teacher"></i> <span>បញ្ជីរាយនាមគ្រូឧទ្ទេស</span></a></li>
       <li><a class="sidebar-item-link" href="add-student.html?role=student"><i class="fas fa-user-plus"></i> <span>ចុះឈ្មោះសិស្សថ្មី</span></a></li>
@@ -980,7 +980,7 @@ function renderDashboardView(container) {
     <div class="clean-dashboard-welcome">
       <div class="clean-welcome-title">
         <h2>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</h2>
-        <p>ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត និងព័ត៌មានវិទ្យា (STMS) &bull; ឆ្នាំសិក្សា ២០២៦ - ២០២៧</p>
+        <p>ប្រព័ន្ធគ្រប់គ្រងគរុនិស្សិត និងព័ត៌មានវិទ្យា (STMS) &bull; ឆ្នាំសិក្សា ២០២៦ - ២០២៧</p>
       </div>
       <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         <a href="add-student.html" class="btn btn-primary" style="height:38px; display:inline-flex; align-items:center; gap:6px;">
@@ -1010,7 +1010,7 @@ function renderDashboardView(container) {
         </div>
         <div class="clean-action-text">
           <strong>ចុះឈ្មោះសិស្សថ្មី</strong>
-          <span>បញ្ចូលទិន្នន័យគរុសនិស្សិត</span>
+          <span>បញ្ចូលទិន្នន័យគរុនិស្សិត</span>
         </div>
       </a>
 
@@ -1052,10 +1052,10 @@ function renderDashboardView(container) {
           <div class="alert-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
           <div>
             <h4 style="color:#b91c1c; font-size:0.95rem; font-weight:700;">
-              ការជូនដំណឹងវិន័យ៖ មានគរុសនិស្សិតចំនួន ${alertTrainees.length} នាក់ អវត្តមានគ្មានច្បាប់លើសកំណត់ (>៣ ដង)
+              ការជូនដំណឹងវិន័យ៖ មានគរុនិស្សិតចំនួន ${alertTrainees.length} នាក់ អវត្តមានគ្មានច្បាប់លើសកំណត់ (>៣ ដង)
             </h4>
             <p style="color:#991b1b; font-size:0.82rem;">
-              គរុសនិស្សិតខាងក្រោមប្រឈមនឹងការដកសិទ្ធិប្រឡងបញ្ចប់ ឬត្រូវកោះហៅអាណាព្យាបាលមកដោះស្រាយជាមួយផ្នែកវិន័យ។
+              គរុនិស្សិតខាងក្រោមប្រឈមនឹងការដកសិទ្ធិប្រឡងបញ្ចប់ ឬត្រូវកោះហៅអាណាព្យាបាលមកដោះស្រាយជាមួយផ្នែកវិន័យ។
             </p>
           </div>
         </div>
@@ -1067,7 +1067,7 @@ function renderDashboardView(container) {
     <div class="kpi-grid" style="margin-bottom:22px;">
       <div class="kpi-card">
         <div class="kpi-left">
-          <span>គរុសនិស្សិតសរុប</span>
+          <span>គរុនិស្សិតសរុប</span>
           <h3>${total} នាក់</h3>
           <p>ស្រី: ${female} (${femalePct}%) &bull; ប្រុស: ${male}</p>
         </div>
@@ -1117,7 +1117,7 @@ function renderDashboardView(container) {
       <div class="table-card">
         <div class="table-toolbar" style="border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:12px;">
           <strong style="color:#1e3a8a; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
-            <i class="fas fa-users" style="color:#2563eb;"></i> បញ្ជីគរុសនិស្សិតចុងក្រោយ
+            <i class="fas fa-users" style="color:#2563eb;"></i> បញ្ជីគរុនិស្សិតចុងក្រោយ
           </strong>
           <a onclick="navigateView('trainees')" style="color:#2563eb; font-size:0.84rem; font-weight:600; cursor:pointer;">
             មើលបញ្ជីពេញលេញ (១២ ជួរឈរ) &rarr;
@@ -1141,7 +1141,7 @@ function renderDashboardView(container) {
                 <tr>
                   <td colspan="7" style="text-align:center; padding:40px 15px; color:#64748b;">
                     <i class="fas fa-inbox fa-2x" style="color:#cbd5e1; margin-bottom:8px; display:block;"></i>
-                    <div style="font-weight:700; color:#1e3a8a; font-size:0.95rem;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតទេ</div>
+                    <div style="font-weight:700; color:#1e3a8a; font-size:0.95rem;">មិនទាន់មានទិន្នន័យគរុនិស្សិតទេ</div>
                     <p style="font-size:0.8rem; color:#94a3b8; margin:4px 0 12px 0;">ប្រព័ន្ធរង់ចាំការបញ្ចូលព័ត៌មានពីគ្រូបង្រៀន ឬរដ្ឋបាល</p>
                     <a class="btn btn-primary" style="padding:6px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;" href="add-student.html">
                       <i class="fas fa-plus"></i> ចុះឈ្មោះសិស្សដំបូង
@@ -1323,7 +1323,7 @@ function setRosterSort(type) {
 
 function saveCurrentRosterOrder() {
   if (!stmsData.trainees || stmsData.trainees.length === 0) {
-    showToast('ពុំមានទិន្នន័យគរុសនិស្សិតសម្រាប់រក្សាទុកលំដាប់ឡើយ', 'warning');
+    showToast('ពុំមានទិន្នន័យគរុនិស្សិតសម្រាប់រក្សាទុកលំដាប់ឡើយ', 'warning');
     return;
   }
   let list = [...stmsData.trainees];
@@ -1348,15 +1348,15 @@ function saveCurrentRosterOrder() {
 
 function confirmDeleteAllStudents() {
   if (!stmsData.trainees || stmsData.trainees.length === 0) {
-    showToast('ពុំមានទិន្នន័យគរុសនិស្សិតសម្រាប់លុបឡើយ', 'info');
+    showToast('ពុំមានទិន្នន័យគរុនិស្សិតសម្រាប់លុបឡើយ', 'info');
     return;
   }
-  if (!confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យគរុសនិស្សិតទាំងអស់មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានឡើយ!')) {
+  if (!confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យគរុនិស្សិតទាំងអស់មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានឡើយ!')) {
     return;
   }
   stmsData.trainees = [];
   saveData();
-  showToast('បានលុបទិន្នន័យគរុសនិស្សិតទាំងអស់រួចរាល់', 'info');
+  showToast('បានលុបទិន្នន័យគរុនិស្សិតទាំងអស់រួចរាល់', 'info');
   renderView('trainees');
 }
 
@@ -1508,11 +1508,11 @@ function renderTraineesView(container) {
               <tr>
                 <td colspan="12" style="text-align:center; padding:55px 20px; color:#64748b;">
                   <i class="fas fa-user-graduate fa-3x" style="color:#cbd5e1; margin-bottom:14px; display:block;"></i>
-                  <div style="font-size:1.1rem; font-weight:700; color:#1e3a8a; margin-bottom:8px;">មិនទាន់មានទិន្នន័យគរុសនិស្សិតនៅឡើយទេ</div>
+                  <div style="font-size:1.1rem; font-weight:700; color:#1e3a8a; margin-bottom:8px;">មិនទាន់មានទិន្នន័យគរុនិស្សិតនៅឡើយទេ</div>
                   <p style="font-size:0.875rem; color:#94a3b8; max-width:520px; margin:0 auto 18px auto; line-height:1.6;">
-                    សូមចុចប៊ូតុងខាងក្រោមដើម្បីបង្កើតគណនី ឬចុះឈ្មោះគរុសនិស្សិតថ្មី
+                    សូមចុចប៊ូតុងខាងក្រោមដើម្បីបង្កើតគណនី ឬចុះឈ្មោះគរុនិស្សិតថ្មី
                   </p>
-                  <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិត</button>
+                  <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុនិស្សិត</button>
                   <button class="btn btn-outline" onclick="openBulkImportModal('student')" style="margin-left:8px; border-color:#10b981; color:#059669; font-weight:700;"><i class="fas fa-file-excel"></i> នាំចូល Excel / CSV</button>
                 </td>
               </tr>
@@ -1880,7 +1880,7 @@ function openEditStudent(id) {
 // Open Edit Student Selector Modal
 function openEditStudentModal() {
   if (!stmsData.trainees || stmsData.trainees.length === 0) {
-    showToast('ពុំទាន់មានទិន្នន័យគរុសនិស្សិតដើម្បីកែប្រែនៅឡើយទេ! សូមចុះឈ្មោះគរុសនិស្សិតជាមុន។', 'warning');
+    showToast('ពុំទាន់មានទិន្នន័យគរុនិស្សិតដើម្បីកែប្រែនៅឡើយទេ! សូមចុះឈ្មោះគរុនិស្សិតជាមុន។', 'warning');
     return;
   }
 
@@ -1889,7 +1889,7 @@ function openEditStudentModal() {
       <div class="stms-modal-window" style="max-width:680px; width:95%;">
         <div class="modal-header-bar" style="border-bottom:1px solid #e2e8f0; padding:16px 20px;">
           <div class="modal-header-title" style="font-size:1.05rem; font-weight:700; color:#1e3a8a; display:flex; align-items:center; gap:8px;">
-            <i class="fas fa-edit" style="color:#2563eb;"></i> ជ្រើសរើសគរុសនិស្សិតដើម្បីកែប្រែព័ត៌មាន
+            <i class="fas fa-edit" style="color:#2563eb;"></i> ជ្រើសរើសគរុនិស្សិតដើម្បីកែប្រែព័ត៌មាន
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
         </div>
@@ -1915,7 +1915,7 @@ function openEditStudentModal() {
 
 function renderEditStudentItems(list) {
   if (!list || list.length === 0) {
-    return `<div style="text-align:center; padding:30px 10px; color:#94a3b8;"><i class="fas fa-search fa-2x" style="margin-bottom:8px; display:block; color:#cbd5e1;"></i>រកមិនឃើញគរុសនិស្សិតដែលត្រូវនឹងពាក្យស្វែងរកឡើយ</div>`;
+    return `<div style="text-align:center; padding:30px 10px; color:#94a3b8;"><i class="fas fa-search fa-2x" style="margin-bottom:8px; display:block; color:#cbd5e1;"></i>រកមិនឃើញគរុនិស្សិតដែលត្រូវនឹងពាក្យស្វែងរកឡើយ</div>`;
   }
   return list.map(t => `
     <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; transition:all 0.2s;">
@@ -2031,7 +2031,7 @@ function submitEnrollForm() {
         username,
         password,
         role: "trainee",
-        roleLabel: "គរុសនិស្សិត",
+        roleLabel: "គរុនិស្សិត",
         email: phone ? `${username}@student.ktpttc.edu.kh` : "portal@student.ktpttc.edu.kh",
         phone,
         className,
@@ -2044,7 +2044,7 @@ function submitEnrollForm() {
 
   saveData();
   closeStmsModal();
-  showToast(`បានចុះឈ្មោះគរុសនិស្សិត «${nameKh}» (${id}) ព្រមទាំងបង្កើតគណនី Login ដោយជោគជ័យ!`, 'success');
+  showToast(`បានចុះឈ្មោះគរុនិស្សិត «${nameKh}» (${id}) ព្រមទាំងបង្កើតគណនី Login ដោយជោគជ័យ!`, 'success');
   renderView('trainees');
 }
 
@@ -2058,7 +2058,7 @@ function viewTraineeCard(id) {
     if (stmsData.trainees.length > 0) {
       t = stmsData.trainees[0];
     } else {
-      showToast('មិនទាន់មានទិន្នន័យគរុសនិស្សិតដើម្បីបង្ហាញប័ណ្ណសម្គាល់ខ្លួនទេ។ សូមចុះឈ្មោះគរុសនិស្សិតជាមុន!', 'warning');
+      showToast('មិនទាន់មានទិន្នន័យគរុនិស្សិតដើម្បីបង្ហាញប័ណ្ណសម្គាល់ខ្លួនទេ។ សូមចុះឈ្មោះគរុនិស្សិតជាមុន!', 'warning');
       return;
     }
   }
@@ -2067,7 +2067,7 @@ function viewTraineeCard(id) {
     <div class="stms-modal-backdrop" id="cardModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
       <div class="stms-modal-window" style="max-width:440px; text-align:center;">
         <div class="modal-header-bar">
-          <div class="modal-header-title"><i class="fas fa-id-card"></i> ប័ណ្ណសម្គាល់ខ្លួនគរុសនិស្សិត KTPTTC</div>
+          <div class="modal-header-title"><i class="fas fa-id-card"></i> ប័ណ្ណសម្គាល់ខ្លួនគរុនិស្សិត KTPTTC</div>
           <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
         </div>
         <div class="modal-body-scroll" style="display:flex; justify-content:center; padding:30px 20px;">
@@ -2126,7 +2126,7 @@ function editTraineeStatus(id) {
   const t = stmsData.trainees.find(x => x.id === id);
   if (!t) return;
 
-  const newStatus = prompt(`កែសម្រួលស្ថានភាពសិក្សារបស់គរុសនិស្សិត «${t.nameKh}»៖\n(កំពុងសិក្សា, បញ្ចប់ការសិក្សា, ព្យួរការសិក្សា, លាឈប់)`, t.status);
+  const newStatus = prompt(`កែសម្រួលស្ថានភាពសិក្សារបស់គរុនិស្សិត «${t.nameKh}»៖\n(កំពុងសិក្សា, បញ្ចប់ការសិក្សា, ព្យួរការសិក្សា, លាឈប់)`, t.status);
   if (newStatus && ['កំពុងសិក្សា', 'បញ្ចប់ការសិក្សា', 'ព្យួរការសិក្សា', 'លាឈប់'].includes(newStatus.trim())) {
     t.status = newStatus.trim();
     saveData();
@@ -2138,7 +2138,7 @@ function editTraineeStatus(id) {
 function deleteTraineeRecord(id) {
   const t = stmsData.trainees.find(x => x.id === id);
   if (!t) return;
-  if (!confirm(`តើអ្នកពិតជាចង់លុបទិន្នន័យគរុសនិស្សិត «${t.nameKh}» មែនទេ?`)) return;
+  if (!confirm(`តើអ្នកពិតជាចង់លុបទិន្នន័យគរុនិស្សិត «${t.nameKh}» មែនទេ?`)) return;
 
   stmsData.trainees = stmsData.trainees.filter(x => x.id !== id);
   saveData();
@@ -2174,7 +2174,7 @@ function renderAttendanceView(container) {
   let html = `
     <div class="view-header">
       <div class="view-title-group">
-        <h2><i class="fas fa-calendar-check"></i> ម៉ូឌុលស្រង់ និងតាមដានវត្តមានគរុសនិស្សិត (Module 3)</h2>
+        <h2><i class="fas fa-calendar-check"></i> ម៉ូឌុលស្រង់ និងតាមដានវត្តមានគរុនិស្សិត (Module 3)</h2>
         <p>កត់ត្រាវត្តមាន ៤ កម្រិត៖ វត្តមាន (Present), អវត្តមានឥតច្បាប់ (Absent), ច្បាប់ (Permission), យឺត (Late)</p>
       </div>
       <div class="view-actions-group">
@@ -2252,11 +2252,11 @@ function renderAttendanceView(container) {
     ${classTrainees.length === 0 ? `
       <div style="text-align:center; padding:45px 20px; background:#fff; border-radius:10px; border:1px solid var(--border-color); color:#64748b;">
         <i class="fas fa-users-slash fa-3x" style="color:#cbd5e1; margin-bottom:12px; display:block;"></i>
-        <h4 style="color:#1e3a8a; font-size:1.05rem; margin-bottom:6px;">មិនទាន់មានគរុសនិស្សិតក្នុងថ្នាក់នេះនៅឡើយទេ</h4>
+        <h4 style="color:#1e3a8a; font-size:1.05rem; margin-bottom:6px;">មិនទាន់មានគរុនិស្សិតក្នុងថ្នាក់នេះនៅឡើយទេ</h4>
         <p style="font-size:0.85rem; color:#94a3b8; max-width:500px; margin:0 auto 16px auto; line-height:1.6;">
-          សូមបញ្ចូលគរុសនិស្សិតចូលក្នុងថ្នាក់រៀនជាមុនសិន ដើម្បីចាប់ផ្តើមស្រង់វត្តមាន។
+          សូមបញ្ចូលគរុនិស្សិតចូលក្នុងថ្នាក់រៀនជាមុនសិន ដើម្បីចាប់ផ្តើមស្រង់វត្តមាន។
         </p>
-        <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិត</button>
+        <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុនិស្សិត</button>
       </div>
     ` : `
       <div class="attendance-grid">
@@ -2354,7 +2354,7 @@ function renderGradingView(container) {
   let html = `
     <div class="view-header">
       <div class="view-title-group">
-        <h2><i class="fas fa-calculator"></i> ម៉ូឌុលគ្រប់គ្រងពិន្ទុ &amp; វាយតម្លៃគរុសនិស្សិត (Module 4)</h2>
+        <h2><i class="fas fa-calculator"></i> ម៉ូឌុលគ្រប់គ្រងពិន្ទុ &amp; វាយតម្លៃគរុនិស្សិត (Module 4)</h2>
         <p>
           រចនាសម្ព័ន្ធមេគុណ៖ កិច្ចការស្រាវជ្រាវ (${weights.homeworkPercent}%) + វត្តមាន (${weights.attendancePercent}%) + ប្រឡងប្រចាំខែ (${weights.monthlyExamPercent}%) + ប្រឡងឆមាស (${weights.semesterExamPercent}%) = ១០០%
         </p>
@@ -2438,7 +2438,7 @@ function renderGradingView(container) {
             <tr>
               <th>ល.រ</th>
               <th>អត្តលេខ</th>
-              <th>ឈ្មោះគរុសនិស្សិត</th>
+              <th>ឈ្មោះគរុនិស្សិត</th>
               <th>កិច្ចការ (${weights.homeworkPercent}%)</th>
               <th>វត្តមាន (${weights.attendancePercent}%)</th>
               <th>ប្រឡងខែ (${weights.monthlyExamPercent}%)</th>
@@ -2454,11 +2454,11 @@ function renderGradingView(container) {
               <tr>
                 <td colspan="11" style="text-align:center; padding:50px 20px; color:#64748b;">
                   <i class="fas fa-clipboard-list fa-3x" style="color:#cbd5e1; margin-bottom:12px; display:block;"></i>
-                  <div style="font-size:1.05rem; font-weight:700; color:#1e3a8a; margin-bottom:6px;">មិនទាន់មានគរុសនិស្សិតក្នុងថ្នាក់នេះនៅឡើយទេ</div>
+                  <div style="font-size:1.05rem; font-weight:700; color:#1e3a8a; margin-bottom:6px;">មិនទាន់មានគរុនិស្សិតក្នុងថ្នាក់នេះនៅឡើយទេ</div>
                   <p style="font-size:0.85rem; color:#94a3b8; max-width:480px; margin:0 auto 16px auto; line-height:1.6;">
-                    សូមចុះឈ្មោះគរុសនិស្សិតចូលក្នុងថ្នាក់រៀនជាមុនសិន ដើម្បីគ្រូឧទ្ទេសអាចបញ្ចូលពិន្ទុ និងគណនាលទ្ធផលស្វ័យប្រវត្តិ។
+                    សូមចុះឈ្មោះគរុនិស្សិតចូលក្នុងថ្នាក់រៀនជាមុនសិន ដើម្បីគ្រូឧទ្ទេសអាចបញ្ចូលពិន្ទុ និងគណនាលទ្ធផលស្វ័យប្រវត្តិ។
                   </p>
-                  <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុសនិស្សិត</button>
+                  <button class="btn btn-primary" onclick="openEnrollModal()"><i class="fas fa-user-plus"></i> ចុះឈ្មោះគរុនិស្សិត</button>
                   <button class="btn btn-outline" onclick="openBulkImportModal('student')" style="margin-left:8px; border-color:#10b981; color:#059669; font-weight:700;"><i class="fas fa-file-excel"></i> នាំចូល Excel / CSV</button>
                 </td>
               </tr>
@@ -2550,7 +2550,7 @@ function publishAllSubjectScores() {
   });
 
   saveData();
-  showToast(`បានអនុម័ត និងផ្សព្វផ្សាយពិន្ទុមុខវិជ្ជា ${currentGradingSubject} ទៅកាន់គរុសនិស្សិតទាំងអស់!`, 'success');
+  showToast(`បានអនុម័ត និងផ្សព្វផ្សាយពិន្ទុមុខវិជ្ជា ${currentGradingSubject} ទៅកាន់គរុនិស្សិតទាំងអស់!`, 'success');
   renderGradingView(document.getElementById('mainContentArea'));
 }
 
@@ -2736,7 +2736,7 @@ function submitAddSlot() {
 }
 
 // ==========================================================================
-// 6. TRAINEE PORTAL VIEW (ផតថលផ្ទាល់ខ្លួនគរុសនិស្សិត - MODELED AFTER MOCKUP)
+// 6. TRAINEE PORTAL VIEW (ផតថលផ្ទាល់ខ្លួនគរុនិស្សិត - MODELED AFTER MOCKUP)
 // ==========================================================================
 
 let TRAINEE_STREAMS = [
@@ -2900,7 +2900,7 @@ function getActiveTraineeProfile() {
         dob: '2001-11-16',
         className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
         cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុសនិស្សិត',
+        roleLabel: 'គរុនិស្សិត',
         status: 'កំពុងសិក្សា',
         phone: '098 765 432',
         email: 'yousoh.silal@ktpttc.edu.kh',
@@ -4151,7 +4151,7 @@ function openTraineeGuidelinesModal(activeSection = 'rules') {
               <i class="fas fa-clipboard-check"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">កិច្ចព្រមព្រៀង & បទបញ្ជាផ្ទៃក្នុងគរុសនិស្សិត</h3>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">កិច្ចព្រមព្រៀង & បទបញ្ជាផ្ទៃក្នុងគរុនិស្សិត</h3>
               <p style="color:#ccfbf1; font-size:0.82rem; margin:2px 0 0 0;">ក្រមសីលធម៌វិជ្ជាជីវៈគ្រូបង្រៀន និងសៀវភៅណែនាំកម្មសិក្សាគរុកោសល្យ KTPTTC</p>
             </div>
           </div>
@@ -4220,7 +4220,7 @@ function openTraineeGuidelinesModal(activeSection = 'rules') {
             <div style="display:flex; flex-direction:column; gap:14px;">
               <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
                 <h4 style="color:#0f766e; font-size:0.95rem; margin:0 0 6px 0;"><i class="fas fa-user-check"></i> ១. វិន័យ និងវត្តមានសិក្សា</h4>
-                <p style="margin:0;">គរុសនិស្សិតត្រូវមានវត្តមានយ៉ាងតិច <strong>៨០%</strong> នៃម៉ោងសិក្សាសរុបនៃមុខវិជ្ជានីមួយៗ។ ករណីអវត្តមានលើសពី <strong>២០%</strong> នឹងពុំត្រូវបានអនុញ្ញាតឱ្យចូលរួមការប្រឡងបញ្ចប់ឆមាសឡើយ។</p>
+                <p style="margin:0;">គរុនិស្សិតត្រូវមានវត្តមានយ៉ាងតិច <strong>៨០%</strong> នៃម៉ោងសិក្សាសរុបនៃមុខវិជ្ជានីមួយៗ។ ករណីអវត្តមានលើសពី <strong>២០%</strong> នឹងពុំត្រូវបានអនុញ្ញាតឱ្យចូលរួមការប្រឡងបញ្ចប់ឆមាសឡើយ។</p>
               </div>
               <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
                 <h4 style="color:#0f766e; font-size:0.95rem; margin:0 0 6px 0;"><i class="fas fa-user-tie"></i> ២. ឯកសណ្ឋាន និងសេចក្តីថ្លៃថ្នូរ</h4>
@@ -4262,7 +4262,7 @@ function openTraineeGuidelinesModal(activeSection = 'rules') {
           ` : `
             <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:16px; text-align:center;">
               <i class="fas fa-hand-holding-heart fa-2x" style="color:#dc2626; margin-bottom:8px;"></i>
-              <h4 style="color:#991b1b; font-size:1rem; margin-bottom:8px;">លិខិតសន្យាគរុសនិស្សិត KTPTTC</h4>
+              <h4 style="color:#991b1b; font-size:1rem; margin-bottom:8px;">លិខិតសន្យាគរុនិស្សិត KTPTTC</h4>
               <p style="font-size:0.86rem; color:#7f1d1d; max-width:550px; margin:0 auto 16px auto; line-height:1.6;">
                 "ខ្ញុំបាទ/នាងខ្ញុំ សូមសន្យាថានឹងខិតខំរៀនសូត្រ ប្រកាន់ខ្ជាប់នូវបទបញ្ជាផ្ទៃក្នុង គោរពពេលវេលា មិនអវត្តមានដោយគ្មានច្បាប់ និងលះបង់កម្លាំងកាយចិត្តដើម្បីក្លាយជាគ្រូបង្រៀនគំរូរបស់ជាតិ។"
               </p>
@@ -4464,7 +4464,7 @@ function openTeacherSyllabusModal(code) {
           
           <!-- Instructions Callout -->
           <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px 16px; margin-bottom:18px; font-size:0.83rem; color:#1e40af; line-height:1.6;">
-            <i class="fas fa-info-circle"></i> <strong>ការណែនាំ៖</strong> លោកគ្រូ-អ្នកគ្រូអាចកំណត់ បន្ថែម ឬកែប្រែជំពូក និងប្រធានបទមេរៀននៃមុខវិជ្ជានេះ។ មាតិកានេះនឹងបង្ហាញជូនគរុសនិស្សិតទាំងអស់ក្នុងកម្រងមេរៀន Course Syllabus និងអាចទាញយកជា PDF បាន។
+            <i class="fas fa-info-circle"></i> <strong>ការណែនាំ៖</strong> លោកគ្រូ-អ្នកគ្រូអាចកំណត់ បន្ថែម ឬកែប្រែជំពូក និងប្រធានបទមេរៀននៃមុខវិជ្ជានេះ។ មាតិកានេះនឹងបង្ហាញជូនគរុនិស្សិតទាំងអស់ក្នុងកម្រងមេរៀន Course Syllabus និងអាចទាញយកជា PDF បាន។
           </div>
 
           <!-- Dynamic Chapters Container -->
@@ -4915,7 +4915,7 @@ function renderTraineeAttendanceView(container) {
       <div style="padding:24px;">
         <h4 style="color:#1e3a8a; margin-bottom:14px;">អត្រាវត្តមានសរុប៖ <strong style="color:#10b981;">${t.attendanceSummary?.rate || 100}%</strong></h4>
         <p style="font-size:0.85rem; color:#64748b; margin-bottom:20px;">
-          គរុសនិស្សិតត្រូវមានវត្តមានយ៉ាងតិច <strong>៨០%</strong> នៃម៉ោងសិក្សាសរុប ដើម្បីមានសិទ្ធិចូលរួមប្រឡងបញ្ចប់វគ្គបណ្តុះបណ្តាល។
+          គរុនិស្សិតត្រូវមានវត្តមានយ៉ាងតិច <strong>៨០%</strong> នៃម៉ោងសិក្សាសរុប ដើម្បីមានសិទ្ធិចូលរួមប្រឡងបញ្ចប់វគ្គបណ្តុះបណ្តាល។
         </p>
 
         <div class="data-table-responsive">
@@ -5080,7 +5080,7 @@ function renderRequestsView(container) {
   let html = `
     <div class="view-header">
       <div class="view-title-group">
-        <h2><i class="fas fa-clipboard-list"></i> សំណើកែប្រែព័ត៌មានពីគរុសនិស្សិត</h2>
+        <h2><i class="fas fa-clipboard-list"></i> សំណើកែប្រែព័ត៌មានពីគរុនិស្សិត</h2>
         <p>ពិនិត្យផ្ទៀងផ្ទាត់ និងអនុម័តសំណើកែប្រែទិន្នន័យ</p>
       </div>
     </div>
@@ -5091,7 +5091,7 @@ function renderRequestsView(container) {
           <thead>
             <tr>
               <th>លេខកូដសំណើ</th>
-              <th>ឈ្មោះគរុសនិស្សិត</th>
+              <th>ឈ្មោះគរុនិស្សិត</th>
               <th>ប្រធានបទកែប្រែ</th>
               <th>ព័ត៌មានថ្មី</th>
               <th>មូលហេតុ</th>
@@ -5338,7 +5338,7 @@ function renderRBACView(container) {
         <i class="fas fa-shield-alt"></i>
       </div>
       <div style="font-size:0.85rem; color:#1e40af; line-height:1.6;">
-        <strong>គោលការណ៍សុវត្ថិភាពចូលប្រើប្រព័ន្ធ៖</strong> គ្រប់ user ទាំងអស់ (Admin, គ្រូឧទ្ទេស, និងគរុសនិស្សិត) ត្រូវមានគណនី Username និង Password ដែលបានចុះឈ្មោះ និងកំណត់ដោយ Admin សិក្សាធិការ ដើម្បីអាច Login ចូលប្រើប្រាស់មុខងារតាមសិទ្ធិអំណាចរៀងខ្លួន។
+        <strong>គោលការណ៍សុវត្ថិភាពចូលប្រើប្រព័ន្ធ៖</strong> គ្រប់ user ទាំងអស់ (Admin, គ្រូឧទ្ទេស, និងគរុនិស្សិត) ត្រូវមានគណនី Username និង Password ដែលបានចុះឈ្មោះ និងកំណត់ដោយ Admin សិក្សាធិការ ដើម្បីអាច Login ចូលប្រើប្រាស់មុខងារតាមសិទ្ធិអំណាចរៀងខ្លួន។
       </div>
     </div>
 
@@ -5373,7 +5373,7 @@ function renderRBACView(container) {
 
       <div class="rbac-metric-card ${currentRbacRoleFilter === 'trainee' ? 'active active-trainee' : ''}" onclick="setRbacRoleFilter('trainee')" title="ចុចដើម្បីចម្រាញ់យកតែគរុនិស្សិត">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div style="font-size:0.75rem; color:#64748b; font-weight:600;">គរុសនិស្សិត (Trainees)</div>
+          <div style="font-size:0.75rem; color:#64748b; font-weight:600;">គរុនិស្សិត (Trainees)</div>
           ${currentRbacRoleFilter === 'trainee' ? '<span class="badge" style="background:#fef3c7; color:#b45309; font-size:0.65rem; padding:1px 6px;">កំពុងមើល</span>' : ''}
         </div>
         <div style="font-size:1.45rem; font-weight:800; color:#d97706; margin-top:4px;">${traineeCount} នាក់</div>
@@ -5398,9 +5398,9 @@ function renderRBACView(container) {
       </div>
 
       <!-- 3. Trainee Card (Light Mint Green Pastel with Teal/Green text) -->
-      <div class="rbac-big-card card-trainee ${currentRbacRoleFilter === 'trainee' ? 'active' : ''}" onclick="setRbacRoleFilter('trainee')" title="ចុចដើម្បីមើល និងគ្រប់គ្រង គណនីគរុសិស្ស">
+      <div class="rbac-big-card card-trainee ${currentRbacRoleFilter === 'trainee' ? 'active' : ''}" onclick="setRbacRoleFilter('trainee')" title="ចុចដើម្បីមើល និងគ្រប់គ្រង គណនីគរុនិស្សិត">
         <span class="rbac-big-card-indicator"><i class="fas fa-check-circle"></i> កំពុងមើល</span>
-        <div class="rbac-big-card-title">គណនីគរុសិស្ស</div>
+        <div class="rbac-big-card-title">គណនីគរុនិស្សិត</div>
         <div class="rbac-big-card-meta"><i class="fas fa-user-graduate"></i> ${traineeCount} គណនី</div>
       </div>
     </div>
@@ -5508,7 +5508,7 @@ function renderRbacTableOnly() {
     roleBannerHtml = `
       <div style="background:#fffbeb; border-bottom:1px solid #fde68a; padding:10px 18px; font-size:0.82rem; color:#92400e; display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <strong style="color:#b45309;"><i class="fas fa-user-graduate"></i> គណនីគរុសនិស្សិត (Teacher Trainees / Students - ${total} នាក់)</strong>
+          <strong style="color:#b45309;"><i class="fas fa-user-graduate"></i> គណនីគរុនិស្សិត (Teacher Trainees / Students - ${total} នាក់)</strong>
           <span style="color:#475569; margin-left:6px;">ចូលសិក្សា ទស្សនាមេរៀន បញ្ជូនកិច្ចការ និងតាមដានវត្តមាន/ពិន្ទុផ្ទាល់ខ្លួន</span>
         </div>
         <span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700;">Student Access</span>
@@ -5561,7 +5561,7 @@ function renderRbacTableOnly() {
               ? `<span class="badge" style="background:#dbeafe; color:#1d4ed8; font-weight:700;"><i class="fas fa-user-shield"></i> អ្នកគ្រប់គ្រង (Admin)</span>`
               : u.role === 'trainer' 
               ? `<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;"><i class="fas fa-chalkboard-teacher"></i> គ្រូឧទ្ទេស (Teacher)</span>`
-              : `<span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700;"><i class="fas fa-user-graduate"></i> គរុសនិស្សិត</span>`;
+              : `<span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700;"><i class="fas fa-user-graduate"></i> គរុនិស្សិត</span>`;
 
             return `
               <tr id="userRow-${u.id}">
@@ -5745,7 +5745,7 @@ function openRegisterUserModal(defaultRole = null) {
                 <label class="form-label">កម្រិតតួនាទីក្នុងប្រព័ន្ធ (Role)*</label>
                 <select id="regRole" class="form-input" required onchange="handleRegRoleChange(this.value)">
                   <option value="trainer" ${defaultRole === 'trainer' ? 'selected' : ''}>Trainer / Teacher (គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន)</option>
-                  <option value="trainee" ${defaultRole === 'trainee' ? 'selected' : ''}>Trainee Teacher (គរុសនិស្សិត)</option>
+                  <option value="trainee" ${defaultRole === 'trainee' ? 'selected' : ''}>Trainee Teacher (គរុនិស្សិត)</option>
                   <option value="admin" ${defaultRole === 'admin' ? 'selected' : ''}>Administrator (អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ)</option>
                 </select>
               </div>
@@ -5843,7 +5843,7 @@ function submitRegisterUser() {
   }
 
   const rolePrefix = role === 'admin' ? 'USR-ADM' : role === 'trainer' ? 'USR-TRN' : 'USR-STU';
-  const roleLabel = role === 'admin' ? 'អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ' : role === 'trainer' ? 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន' : 'គរុសនិស្សិត';
+  const roleLabel = role === 'admin' ? 'អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ' : role === 'trainer' ? 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន' : 'គរុនិស្សិត';
   const newId = `${rolePrefix}-${String((stmsData.users || []).length + 1).padStart(3, '0')}`;
 
   const newUser = {
@@ -6029,7 +6029,7 @@ function deleteUserAccount(userId) {
 // Export Filtered or All User Credentials to CSV / Excel
 function exportUserCredentialsExcel() {
   const users = getFilteredRbacUsers();
-  const roleTitleKh = currentRbacRoleFilter === 'admin' ? 'Admin' : currentRbacRoleFilter === 'trainer' ? 'គ្រូឧទ្ទេស' : currentRbacRoleFilter === 'trainee' ? 'គរុសនិស្សិត' : 'ទាំងអស់';
+  const roleTitleKh = currentRbacRoleFilter === 'admin' ? 'Admin' : currentRbacRoleFilter === 'trainer' ? 'គ្រូឧទ្ទេស' : currentRbacRoleFilter === 'trainee' ? 'គរុនិស្សិត' : 'ទាំងអស់';
   const roleNameEn = currentRbacRoleFilter === 'admin' ? 'Admins' : currentRbacRoleFilter === 'trainer' ? 'Trainers' : currentRbacRoleFilter === 'trainee' ? 'Trainees' : 'All_Users';
 
   const headers = ['អត្តលេខគណនី', 'ឈ្មោះពេញ (ខ្មែរ)', 'ឈ្មោះឡាតាំង', 'Username', 'Password', 'តួនាទី (Role)', 'មុខវិជ្ជា/ថ្នាក់', 'អ៊ីមែល', 'លេខទូរស័ព្ទ', 'ស្ថានភាព'];
@@ -6061,14 +6061,14 @@ function renderBackupView(container) {
     <div class="view-header">
       <div class="view-title-group">
         <h2><i class="fas fa-database"></i> បម្រុងទុក & ស្តារទិន្នន័យ (Database Backup)</h2>
-        <p>រក្សាទុកសុវត្ថិភាពទិន្នន័យគរុសនិស្សិត និងប្រព័ន្ធ STMS KTPTTC</p>
+        <p>រក្សាទុកសុវត្ថិភាពទិន្នន័យគរុនិស្សិត និងប្រព័ន្ធ STMS KTPTTC</p>
       </div>
     </div>
 
     <div style="background:#ffffff; border-radius:12px; border:1px solid var(--border-color); padding:28px; max-width:600px;">
       <h3 style="color:#1e3a8a; margin-bottom:12px;"><i class="fas fa-download"></i> ទាញយកទិន្នន័យបម្រុងទុក (JSON Export)</h3>
       <p style="font-size:0.85rem; color:#64748b; margin-bottom:18px;">
-        ទាញយកទិន្នន័យគរុសនិស្សិត វត្តមាន ពិន្ទុ និងកាលវិភាគទាំងអស់ជារូបវន្ត JSON ដើម្បីរក្សាទុកក្នុងកុំព្យូទ័រ។
+        ទាញយកទិន្នន័យគរុនិស្សិត វត្តមាន ពិន្ទុ និងកាលវិភាគទាំងអស់ជារូបវន្ត JSON ដើម្បីរក្សាទុកក្នុងកុំព្យូទ័រ។
       </p>
       <button class="btn btn-primary" onclick="exportDatabaseJson()"><i class="fas fa-file-download"></i> ទាញយក Data Backup (.json)</button>
 
@@ -6802,7 +6802,7 @@ function executeBulkImport(role) {
         username: String(st.username || st.id).trim().toLowerCase(),
         password: String(st.password || st.id || 'ktpttc123').trim(),
         role: 'trainee',
-        roleLabel: 'គរុសនិស្សិត',
+        roleLabel: 'គរុនិស្សិត',
         phone: st.phone || st.parentPhone || '',
         className: st.className,
         status: 'active',
@@ -7003,7 +7003,7 @@ window.downloadBulkImportTemplate = downloadBulkImportTemplate;
 // Excel Export Helpers
 function exportTraineeRosterExcel() {
   if (stmsData.trainees.length === 0) {
-    showToast('ពុំទាន់មានទិន្នន័យគរុសនិស្សិតសម្រាប់ទាញយកទេ។ សូមបញ្ចូលទិន្នន័យជាមុន!', 'warning');
+    showToast('ពុំទាន់មានទិន្នន័យគរុនិស្សិតសម្រាប់ទាញយកទេ។ សូមបញ្ចូលទិន្នន័យជាមុន!', 'warning');
     return;
   }
   const headers = ['អត្តលេខ', 'គោត្តនាម-នាម', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'ថ្នាក់រៀន', 'ជំនាន់', 'លេខទូរស័ព្ទ', 'ទីកន្លែងកំណើត', 'ស្ថានភាព'];
@@ -7016,7 +7016,7 @@ function exportTraineeRosterExcel() {
   a.download = `KTPTTC_Trainee_Roster_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('បានទាញយកបញ្ជីគរុសនិស្សិត CSV/Excel រួចរាល់!', 'success');
+  showToast('បានទាញយកបញ្ជីគរុនិស្សិត CSV/Excel រួចរាល់!', 'success');
 }
 
 function exportAttendanceExcel() {
@@ -7024,7 +7024,7 @@ function exportAttendanceExcel() {
     showToast('ពុំទាន់មានទិន្នន័យកំណត់ត្រាវត្តមានសម្រាប់ទាញយកទេ។ សូមស្រង់វត្តមានជាមុន!', 'warning');
     return;
   }
-  const headers = ['កាលបរិច្ឆេទ', 'ថ្នាក់រៀន', 'មុខវិជ្ជា', 'អត្តលេខសិស្ស', 'ឈ្មោះគរុសនិស្សិត', 'ស្ថានភាពវត្តមាន'];
+  const headers = ['កាលបរិច្ឆេទ', 'ថ្នាក់រៀន', 'មុខវិជ្ជា', 'អត្តលេខសិស្ស', 'ឈ្មោះគរុនិស្សិត', 'ស្ថានភាពវត្តមាន'];
   const rows = [];
   stmsData.attendanceSessions.forEach(sess => {
     Object.keys(sess.records).forEach(id => {
@@ -7063,12 +7063,12 @@ function renderApp() {
 
 // Reset STMS to initial clean data
 function resetStmsDatabase() {
-  if (confirm('តើអ្នកពិតជាចង់កំណត់ទិន្នន័យប្រព័ន្ធទៅជាស្ថានភាពដើមវិញមែនទេ? (ទិន្នន័យគរុសនិស្សិតទាំងអស់នឹងត្រូវជម្រះទទេស្អាត)')) {
+  if (confirm('តើអ្នកពិតជាចង់កំណត់ទិន្នន័យប្រព័ន្ធទៅជាស្ថានភាពដើមវិញមែនទេ? (ទិន្នន័យគរុនិស្សិតទាំងអស់នឹងត្រូវជម្រះទទេស្អាត)')) {
     localStorage.removeItem('ktpttc_stms_data_v1');
     localStorage.removeItem('ktpttc_stms_data_v2');
     loadData();
     renderApp();
-    showToast('បានកំណត់ទិន្នន័យប្រព័ន្ធដើមឡើងវិញជោគជ័យ (ទិន្នន័យគរុសនិស្សិតទទេស្អាត)!', 'success');
+    showToast('បានកំណត់ទិន្នន័យប្រព័ន្ធដើមឡើងវិញជោគជ័យ (ទិន្នន័យគរុនិស្សិតទទេស្អាត)!', 'success');
   }
 }
 
@@ -7115,10 +7115,10 @@ function renderSystemFlowView(container) {
       <!-- ROW 1: Module 1, Module 2, Module 3 -->
       <div class="flow-modules-row">
         
-        <!-- MODULE 1: ម៉ូឌុលរដ្ឋបាល និងគរុសនិស្សិត -->
+        <!-- MODULE 1: ម៉ូឌុលរដ្ឋបាល និងគរុនិស្សិត -->
         <div class="flow-module-box">
           <div class="flow-module-header">
-            <span><i class="fas fa-user-shield"></i> 1. ម៉ូឌុលរដ្ឋបាល និងគរុសនិស្សិត</span>
+            <span><i class="fas fa-user-shield"></i> 1. ម៉ូឌុលរដ្ឋបាល និងគរុនិស្សិត</span>
             <i class="fas fa-arrow-right" style="color:#60a5fa;"></i>
           </div>
           <div class="flow-module-body">
@@ -7323,7 +7323,7 @@ function renderSystemFlowView(container) {
                     <tbody>
                       ${stmsData.trainees.length === 0 ? `
                         <tr>
-                          <td colspan="5" style="padding:10px; color:#94a3b8; font-size:0.6rem; text-align:center;">រង់ចាំការបញ្ចូលគរុសនិស្សិត</td>
+                          <td colspan="5" style="padding:10px; color:#94a3b8; font-size:0.6rem; text-align:center;">រង់ចាំការបញ្ចូលគរុនិស្សិត</td>
                         </tr>
                       ` : stmsData.trainees.slice(0, 3).map((t, idx) => `
                         <tr style="border-bottom:1px solid #e2e8f0; text-align:center;">
@@ -7508,7 +7508,7 @@ function openCertificateModal(traineeId) {
     <div class="stms-modal-backdrop" id="certModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
       <div class="stms-modal-window" style="max-width:850px; background:#f8fafc;">
         <div class="modal-header-bar" style="background:#1e3a8a; color:#fff;">
-          <div class="modal-header-title"><i class="fas fa-award"></i> វិញ្ញាបនបត្រ / ប័ណ្ណសរសើរគរុសនិស្សិត (Certificate of Excellence)</div>
+          <div class="modal-header-title"><i class="fas fa-award"></i> វិញ្ញាបនបត្រ / ប័ណ្ណសរសើរគរុនិស្សិត (Certificate of Excellence)</div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
         </div>
         <div class="modal-body-scroll" style="padding:20px; text-align:center;">
@@ -7543,7 +7543,7 @@ function openCertificateModal(traineeId) {
             </div>
 
             <p style="font-size:0.92rem; color:#1e293b; max-width:620px; margin:0 auto 18px auto; line-height:1.7;">
-              ជាគរុសនិស្សិត <strong>${trainee.className}</strong> ${trainee.cohort} ឆ្នាំសិក្សា ២០២៦-២០២៧ ដែលបានខិតខំប្រឹងប្រែងរៀនសូត្រ គោរពវិន័យ វត្តមានខ្ជាប់ខ្ជួន និងទទួលបានលទ្ធផលឆ្នើម <strong>និទ្ទេស A (កិត្តិយសលេខ ១)</strong> ក្នុងការវាយតម្លៃលទ្ធផលសិក្សាគរុកោសល្យ។
+              ជាគរុនិស្សិត <strong>${trainee.className}</strong> ${trainee.cohort} ឆ្នាំសិក្សា ២០២៦-២០២៧ ដែលបានខិតខំប្រឹងប្រែងរៀនសូត្រ គោរពវិន័យ វត្តមានខ្ជាប់ខ្ជួន និងទទួលបានលទ្ធផលឆ្នើម <strong>និទ្ទេស A (កិត្តិយសលេខ ១)</strong> ក្នុងការវាយតម្លៃលទ្ធផលសិក្សាគរុកោសល្យ។
             </p>
 
             <!-- Seals & Date -->
@@ -7745,7 +7745,7 @@ function openMonthlyAttendanceReportModal() {
               <thead>
                 <tr>
                   <th>អត្តលេខ</th>
-                  <th>ឈ្មោះគរុសនិស្សិត</th>
+                  <th>ឈ្មោះគរុនិស្សិត</th>
                   <th>វត្តមាន (P)</th>
                   <th>ច្បាប់ (L)</th>
                   <th>យឺត (Late)</th>
@@ -7800,13 +7800,13 @@ function openAutoNotificationModal() {
         </div>
         <div class="modal-body-scroll" style="padding:20px;">
           <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:12px; margin-bottom:16px; font-size:0.85rem; color:#991b1b;">
-            <i class="fas fa-exclamation-triangle"></i> ប្រព័ន្ធបានកំណត់កម្រិតព្រមាន៖ ប្រសិនបើគរុសនិស្សិតអវត្តមានគ្មានច្បាប់លើស <strong>៣ ដង</strong> ក្នុងមួយឆមាស ប្រព័ន្ធនឹងផ្ញើលិខិតព្រមានជាស្វ័យប្រវត្តិតាមរយៈ SMS/Telegram ទៅកាន់សាមីខ្លួន និងអាណាព្យាបាល ព្រមទាំងរាយការណ៍ជូននាយកដ្ឋានសិក្សាធិការ និងវិន័យ។
+            <i class="fas fa-exclamation-triangle"></i> ប្រព័ន្ធបានកំណត់កម្រិតព្រមាន៖ ប្រសិនបើគរុនិស្សិតអវត្តមានគ្មានច្បាប់លើស <strong>៣ ដង</strong> ក្នុងមួយឆមាស ប្រព័ន្ធនឹងផ្ញើលិខិតព្រមានជាស្វ័យប្រវត្តិតាមរយៈ SMS/Telegram ទៅកាន់សាមីខ្លួន និងអាណាព្យាបាល ព្រមទាំងរាយការណ៍ជូននាយកដ្ឋានសិក្សាធិការ និងវិន័យ។
           </div>
 
           <h4 style="color:#1e3a8a; font-size:0.92rem; margin-bottom:10px;">
-            បញ្ជីគរុសនិស្សិតដែលត្រូវទទួលការព្រមាន (${struggling.length} នាក់)
+            បញ្ជីគរុនិស្សិតដែលត្រូវទទួលការព្រមាន (${struggling.length} នាក់)
           </h4>
-          ${struggling.length === 0 ? '<p style="color:#64748b; font-size:0.85rem;">ពុំមានគរុសនិស្សិតណាម្នាក់អវត្តមានលើស ៣ ដងឡើយ។ វិន័យល្អប្រសើរ!</p>' : `
+          ${struggling.length === 0 ? '<p style="color:#64748b; font-size:0.85rem;">ពុំមានគរុនិស្សិតណាម្នាក់អវត្តមានលើស ៣ ដងឡើយ។ វិន័យល្អប្រសើរ!</p>' : `
             <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
               ${struggling.map(s => `
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#fff; border:1px solid #e2e8f0; border-radius:8px;">
@@ -7824,7 +7824,7 @@ function openAutoNotificationModal() {
         </div>
         <div class="modal-footer-bar">
           <button class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
-          <button class="btn btn-danger" onclick="closeStmsModal(); showToast('បានផ្ញើការជូនដំណឹងស្វ័យប្រវត្តិទៅកាន់គរុសនិស្សិត និងអាណាព្យាបាលរួចរាល់!', 'success');">
+          <button class="btn btn-danger" onclick="closeStmsModal(); showToast('បានផ្ញើការជូនដំណឹងស្វ័យប្រវត្តិទៅកាន់គរុនិស្សិត និងអាណាព្យាបាលរួចរាល់!', 'success');">
             <i class="fas fa-paper-plane"></i> ចេញលិខិត &amp; ផ្ញើការជូនដំណឹងឥឡូវនេះ
           </button>
         </div>
@@ -8206,7 +8206,7 @@ function openTeacherClassStudentsModal(selectedClass = 'all') {
               <i class="fas fa-users-class"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">បញ្ជីគរុសនិស្សិតតាមថ្នាក់ និងក្រុមនីមួយៗ</h3>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">បញ្ជីគរុនិស្សិតតាមថ្នាក់ និងក្រុមនីមួយៗ</h3>
               <p style="color:#bfdbfe; font-size:0.82rem; margin:2px 0 0 0;">${tr.nameKh} • បង្រៀន ${myClasses.length} ថ្នាក់ • សិស្សសរុប ${totalStudents} នាក់</p>
             </div>
           </div>
@@ -8245,7 +8245,7 @@ function openTeacherClassStudentsModal(selectedClass = 'all') {
                 <tr>
                   <th style="width:50px; text-align:center;">ល.រ</th>
                   <th style="width:130px;">អត្តលេខ</th>
-                  <th>ឈ្មោះគរុសនិស្សិត</th>
+                  <th>ឈ្មោះគរុនិស្សិត</th>
                   <th style="width:60px; text-align:center;">ភេទ</th>
                   <th style="width:110px; text-align:center;">ថ្ងៃខែឆ្នាំកំណើត</th>
                   <th style="min-width:140px;">ថ្នាក់ &amp; ក្រុម</th>
@@ -8258,7 +8258,7 @@ function openTeacherClassStudentsModal(selectedClass = 'all') {
                   <tr>
                     <td colspan="8" style="text-align:center; padding:45px 20px; color:#64748b;">
                       <i class="fas fa-user-graduate fa-2x" style="color:#cbd5e1; margin-bottom:10px; display:block;"></i>
-                      មិនទាន់មានទិន្នន័យគរុសនិស្សិតក្នុងថ្នាក់នេះនៅឡើយទេ
+                      មិនទាន់មានទិន្នន័យគរុនិស្សិតក្នុងថ្នាក់នេះនៅឡើយទេ
                     </td>
                   </tr>
                 ` : Object.entries(grouped).map(([grpName, grpStudents]) => {
@@ -8601,7 +8601,7 @@ function renderTrainerPortalView(container) {
         <!-- Class Attendance Overview -->
         <div class="table-card">
           <div class="table-toolbar">
-            <strong style="color:#1e3a8a;"><i class="fas fa-calendar-check" style="color:#10b981;"></i> ស្ថិតិវត្តមានគរុសនិស្សិត (${currentTeacherPortalClassFilter === 'all' ? 'គ្រប់ថ្នាក់' : currentTeacherPortalClassFilter})</strong>
+            <strong style="color:#1e3a8a;"><i class="fas fa-calendar-check" style="color:#10b981;"></i> ស្ថិតិវត្តមានគរុនិស្សិត (${currentTeacherPortalClassFilter === 'all' ? 'គ្រប់ថ្នាក់' : currentTeacherPortalClassFilter})</strong>
             <button class="btn btn-primary" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
               <i class="fas fa-plus"></i> ស្រង់វត្តមានឥឡូវនេះ
             </button>
@@ -8677,12 +8677,12 @@ function renderTrainerPortalView(container) {
 
       </div>
 
-      <!-- 4. Class & Group Breakdown Showcase (ការបែងចែកគរុសនិស្សិតតាមថ្នាក់ និងក្រុមនីមួយៗ) -->
+      <!-- 4. Class & Group Breakdown Showcase (ការបែងចែកគរុនិស្សិតតាមថ្នាក់ និងក្រុមនីមួយៗ) -->
       <div class="table-card" style="margin-top:20px;">
         <div class="table-toolbar" style="background:#f8fafc; border-bottom:1px solid #e2e8f0;">
           <strong style="color:#1e3a8a; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
             <i class="fas fa-users-class" style="color:#2563eb;"></i>
-            <span>ការបែងចែកគរុសនិស្សិតតាមថ្នាក់ និងក្រុមនីមួយៗ (Class &amp; Group Breakdown)</span>
+            <span>ការបែងចែកគរុនិស្សិតតាមថ្នាក់ និងក្រុមនីមួយៗ (Class &amp; Group Breakdown)</span>
           </strong>
           <button class="btn btn-primary" style="height:30px; font-size:0.78rem;" onclick="openTeacherClassStudentsModal('${currentTeacherPortalClassFilter}')">
             <i class="fas fa-list-ul"></i> មើលបញ្ជីសិស្សតាមថ្នាក់
@@ -8881,7 +8881,7 @@ function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
             <table class="grading-input-table">
               <thead>
                 <tr>
-                  <th style="min-width:180px;">ឈ្មោះគរុសនិស្សិត</th>
+                  <th style="min-width:180px;">ឈ្មោះគរុនិស្សិត</th>
                   <th style="width:80px;">អត្តលេខ</th>
                   <th style="width:80px;">កិច្ចការ (10)</th>
                   <th style="width:80px;">វត្តមាន (10)</th>
@@ -9112,7 +9112,7 @@ function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') 
               <i class="fas fa-clipboard-check"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ស្រង់វត្តមានគរុសនិស្សិត (បែងចែកតាមថ្នាក់/ក្រុម)</h3>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ស្រង់វត្តមានគរុនិស្សិត (បែងចែកតាមថ្នាក់/ក្រុម)</h3>
               <p style="color:#ccfbf1; font-size:0.82rem; margin:2px 0 0 0;">វត្តមានដែលបានស្រង់ នឹងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ!</p>
             </div>
           </div>
@@ -9165,7 +9165,7 @@ function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') 
               <thead style="background:#f8fafc;">
                 <tr>
                   <th style="width:50px;">ល.រ</th>
-                  <th>ឈ្មោះគរុសនិស្សិត</th>
+                  <th>ឈ្មោះគរុនិស្សិត</th>
                   <th>អត្តលេខ</th>
                   <th style="text-align:center;">ជ្រើសរើសស្ថានភាពវត្តមាន</th>
                 </tr>
@@ -9436,7 +9436,7 @@ function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
               <i class="fas fa-tasks"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ដាក់កិច្ចការឱ្យគរុសនិស្សិត (Homework &amp; Assignments)</h3>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ដាក់កិច្ចការឱ្យគរុនិស្សិត (Homework &amp; Assignments)</h3>
               <p style="color:#fef3c7; font-size:0.82rem; margin:2px 0 0 0;">កិច្ចការដែលបានដាក់ នឹងលោតចូលក្នុងប្រព័ន្ធសិស្សតាមថ្នាក់ដោយស្វ័យប្រវត្តិ!</p>
             </div>
           </div>
@@ -10767,7 +10767,7 @@ function openTeacherSubjectDetailModal(code) {
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
           <p style="font-size:0.88rem; color:#475569; margin-bottom:16px;">
-            សូមជ្រើសរើសសកម្មភាពគ្រប់គ្រងមុខវិជ្ជា «<strong>${subj.nameKh}</strong>» សម្រាប់គរុសនិស្សិត៖
+            សូមជ្រើសរើសសកម្មភាពគ្រប់គ្រងមុខវិជ្ជា «<strong>${subj.nameKh}</strong>» សម្រាប់គរុនិស្សិត៖
           </p>
 
           <!-- 6 Core Teacher Actions Grid -->
@@ -10829,7 +10829,7 @@ function openTeacherSubjectDetailModal(code) {
                 </div>
                 <strong style="color:#334155; font-size:0.95rem;">ពិនិត្យទំព័រមុខវិជ្ជា</strong>
               </div>
-              <p style="margin:0; font-size:0.75rem; color:#64748b;">មើលទម្រង់ដូចគរុសនិស្សិតឃើញ</p>
+              <p style="margin:0; font-size:0.75rem; color:#64748b;">មើលទម្រង់ដូចគរុនិស្សិតឃើញ</p>
             </div>
           </div>
 
@@ -11350,11 +11350,11 @@ function renderAdminPortalView(container) {
           <div class="hub-card-sub">${trainers.length} នាក់ • វត្តមាន &amp; បំពេញការងារ</div>
         </div>
 
-        <!-- 2. គ្រប់គ្រងគរុសនិស្សិត (Blue) -->
+        <!-- 2. គ្រប់គ្រងគរុនិស្សិត (Blue) -->
         <div class="trainee-hub-card card-blue" onclick="openAdminStudentModal()">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-user-graduate"></i></div>
-          <div class="hub-card-title">គរុសនិស្សិត</div>
+          <div class="hub-card-title">គរុនិស្សិត</div>
           <div class="hub-card-sub">${trainees.length} នាក់ • គ្រប់គ្រងសិស្ស &amp; ផ្ទេរថ្នាក់</div>
         </div>
 
@@ -11458,7 +11458,7 @@ function renderAdminPortalView(container) {
               <span style="font-size:2.4rem; font-weight:800; color:#10b981; line-height:1;">
                 ${avgAttendanceRate}%
               </span>
-              <span style="font-size:0.85rem; color:#64748b; font-weight:600;">អត្រាវត្តមានសរុបស្ថាប័ន (គរុសនិស្សិត ${totalStudents} នាក់)</span>
+              <span style="font-size:0.85rem; color:#64748b; font-weight:600;">អត្រាវត្តមានសរុបស្ថាប័ន (គរុនិស្សិត ${totalStudents} នាក់)</span>
             </div>
             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center; font-size:0.82rem; margin-bottom:16px;">
               <div style="background:#f0fdf4; padding:10px 6px; border-radius:8px; border:1px solid #bbf7d0;">
@@ -11510,7 +11510,7 @@ function renderAdminPortalView(container) {
                 <div style="font-size:0.72rem; color:#3b82f6;">៨ មុខវិជ្ជាស្នូល MoEYS</div>
               </div>
               <div style="background:#f5f3ff; padding:14px; border-radius:8px; border:1px solid #ddd6fe;">
-                <div style="font-size:0.75rem; color:#5b21b6; font-weight:600;">គរុសនិស្សិតសរុប (Trainees)</div>
+                <div style="font-size:0.75rem; color:#5b21b6; font-weight:600;">គរុនិស្សិតសរុប (Trainees)</div>
                 <div style="font-size:1.6rem; font-weight:800; color:#6d28d9; margin:4px 0;">${trainees.length} នាក់</div>
                 <div style="font-size:0.72rem; color:#7c3aed;">ជំនាន់ទី ៣៤ / បរិញ្ញាបត្រ+១</div>
               </div>
@@ -11697,7 +11697,7 @@ function saveAdminTeacher(e) {
 }
 
 // --------------------------------------------------------------------------
-// 4. ADMIN MODAL 2: គ្រប់គ្រងគរុសនិស្សិត (TRAINEE TEACHER ROSTER MANAGEMENT)
+// 4. ADMIN MODAL 2: គ្រប់គ្រងគរុនិស្សិត (TRAINEE TEACHER ROSTER MANAGEMENT)
 // --------------------------------------------------------------------------
 function openAdminStudentModal() {
   closeStmsModal();
@@ -11707,7 +11707,7 @@ function openAdminStudentModal() {
 // Render Admin Student Table
 function renderAdminStudentTableRows(list) {
   if (!list || list.length === 0) {
-    return `<div style="text-align:center; padding:40px 10px; color:#94a3b8;"><i class="fas fa-user-slash fa-2x" style="margin-bottom:8px; display:block; color:#cbd5e1;"></i>មិនមានទិន្នន័យគរុសនិស្សិតដែលត្រូវនឹងពាក្យស្វែងរកឡើយ</div>`;
+    return `<div style="text-align:center; padding:40px 10px; color:#94a3b8;"><i class="fas fa-user-slash fa-2x" style="margin-bottom:8px; display:block; color:#cbd5e1;"></i>មិនមានទិន្នន័យគរុនិស្សិតដែលត្រូវនឹងពាក្យស្វែងរកឡើយ</div>`;
   }
 
   return `
@@ -11716,7 +11716,7 @@ function renderAdminStudentTableRows(list) {
         <tr>
           <th style="padding:10px;">ល.រ</th>
           <th style="padding:10px;">អត្តលេខ</th>
-          <th style="padding:10px;">ឈ្មោះគរុសនិស្សិត</th>
+          <th style="padding:10px;">ឈ្មោះគរុនិស្សិត</th>
           <th style="padding:10px;">ភេទ</th>
           <th style="padding:10px;">ថ្នាក់រៀន &amp; ជំនាន់</th>
           <th style="padding:10px; text-align:center;">វត្តមាន</th>
@@ -11821,7 +11821,7 @@ function saveAdminStudent(e) {
     phone,
     className,
     cohort,
-    roleLabel: "គរុសនិស្សិត",
+    roleLabel: "គរុនិស្សិត",
     status: "កំពុងសិក្សា",
     avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
     attendanceSummary: { rate: 100, present: 0, permission: 0, late: 0, absent: 0 },
@@ -11842,7 +11842,7 @@ function saveAdminStudent(e) {
     username,
     password: "student123",
     role: "trainee",
-    roleLabel: "គរុសនិស្សិត",
+    roleLabel: "គរុនិស្សិត",
     phone: phone || "012 345 678",
     className,
     status: "active",
@@ -11850,7 +11850,7 @@ function saveAdminStudent(e) {
   });
 
   saveData();
-  showToast(`🎉 បានចុះឈ្មោះគរុសនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
+  showToast(`🎉 បានចុះឈ្មោះគរុនិស្សិត «${nameKh}» ដោយជោគជ័យ!`, 'success');
   openAdminStudentModal();
   if (currentView === 'admin-portal') {
     renderAdminPortalView(document.getElementById('stmsContentViewport'));
@@ -11867,7 +11867,7 @@ function openAdminEditStudentModal(id) {
       <div class="stms-modal-window" style="max-width:540px; width:95%;">
         <div class="modal-header-bar" style="background:#1e3a8a; color:#fff; border-radius:12px 12px 0 0; padding:14px 20px;">
           <div class="modal-header-title" style="color:#fff; font-size:1.05rem;">
-            <i class="fas fa-edit"></i> កែប្រែព័ត៌មានគរុសនិស្សិត (${t.nameKh})
+            <i class="fas fa-edit"></i> កែប្រែព័ត៌មានគរុនិស្សិត (${t.nameKh})
           </div>
           <button class="modal-close-icon" onclick="openAdminStudentModal()" style="color:#fff;">&times;</button>
         </div>
@@ -11953,11 +11953,11 @@ function updateAdminStudent(id, e) {
 function deleteAdminStudent(id) {
   const t = (stmsData.trainees || []).find(x => x.id === id);
   if (!t) return;
-  if (!confirm(`តើអ្នកពិតជាចង់លុបទិន្នន័យគរុសនិស្សិត «${t.nameKh}» (${t.id}) មែនទេ?`)) return;
+  if (!confirm(`តើអ្នកពិតជាចង់លុបទិន្នន័យគរុនិស្សិត «${t.nameKh}» (${t.id}) មែនទេ?`)) return;
 
   stmsData.trainees = (stmsData.trainees || []).filter(x => x.id !== id);
   saveData();
-  showToast(`🗑️ បានលុបទិន្នន័យគរុសនិស្សិត «${t.nameKh}» ដោយជោគជ័យ!`, 'info');
+  showToast(`🗑️ បានលុបទិន្នន័យគរុនិស្សិត «${t.nameKh}» ដោយជោគជ័យ!`, 'info');
   openAdminStudentModal();
   if (currentView === 'admin-portal') {
     renderAdminPortalView(document.getElementById('stmsContentViewport'));
@@ -12781,7 +12781,7 @@ function openAdminAttendanceAuditModal() {
         <div class="modal-body-scroll" style="padding:20px;">
           
           <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:14px; margin-bottom:16px; color:#92400e; font-size:0.85rem; line-height:1.6;">
-            <strong><i class="fas fa-exclamation-triangle"></i> បទបញ្ជាផ្ទៃក្នុងស្តីពីវត្តមានគរុសនិស្សិត (MoEYS Standard):</strong>
+            <strong><i class="fas fa-exclamation-triangle"></i> បទបញ្ជាផ្ទៃក្នុងស្តីពីវត្តមានគរុនិស្សិត (MoEYS Standard):</strong>
             <div>• អវត្តមានឥតច្បាប់ <strong>លើសពី ៣ លើក</strong> ត្រូវទទួលការព្រមានជាលាយលក្ខណ៍អក្សរលើកទី ១</div>
             <div>• អវត្តមានសរុបលើសពី <strong>២០%</strong> នៃម៉ោងសិក្សា គ្មានសិទ្ធិប្រឡងបញ្ចប់ឆមាសឡើយ</div>
           </div>
@@ -12892,7 +12892,7 @@ function openAdminGradingModal() {
           ` : `
             <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:14px 18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
               <div style="font-size:0.85rem; color:#92400e; line-height:1.6;">
-                <strong>តួនាទី Admin សិក្សាធិការ (Student Monitoring)៖</strong> ផ្ទៀងផ្ទាត់ពិន្ទុដែលគ្រូឧទ្ទេសបានបញ្ចូល ពិនិត្យការគណនាមធ្យមភាគ និងចុចអនុម័តដើម្បីផ្សព្វផ្សាយជាផ្លូវការទៅកាន់គណនីគរុសិស្ស។
+                <strong>តួនាទី Admin សិក្សាធិការ (Student Monitoring)៖</strong> ផ្ទៀងផ្ទាត់ពិន្ទុដែលគ្រូឧទ្ទេសបានបញ្ចូល ពិនិត្យការគណនាមធ្យមភាគ និងចុចអនុម័តដើម្បីផ្សព្វផ្សាយជាផ្លូវការទៅកាន់គណនីគរុនិស្សិត។
               </div>
               <button class="btn btn-primary" onclick="publishAdminMasterGrades()" style="background:#10b981; border-color:#059669; font-size:0.85rem; padding:8px 16px;">
                 <i class="fas fa-check-double"></i> ផ្ទៀងផ្ទាត់ &amp; អនុម័តតារាងពិន្ទុ
@@ -12906,7 +12906,7 @@ function openAdminGradingModal() {
               <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
                 <tr>
                   <th style="padding:8px 10px;">ល.រ</th>
-                  <th style="padding:8px 10px;">ឈ្មោះគរុសនិស្សិត</th>
+                  <th style="padding:8px 10px;">ឈ្មោះគរុនិស្សិត</th>
                   <th style="padding:8px 10px;">ថ្នាក់</th>
                   ${subjects.map(s => `<th style="padding:8px 10px; text-align:center;">${s.code}</th>`).join('')}
                   <th style="padding:8px 10px; text-align:center; background:#eff6ff;">មធ្យមភាគ</th>
@@ -12990,7 +12990,7 @@ function publishAdminMasterGrades() {
     }
   });
   saveData();
-  showToast('🎉 បានផ្ទៀងផ្ទាត់ និងអនុម័តតារាងពិន្ទុជាផ្លូវការទូទាំងវិទ្យាស្ថាន! គរុសនិស្សិតទាំងអស់អាចពិនិត្យពិន្ទុក្នុងគណនីបានភ្លាមៗ។', 'success');
+  showToast('🎉 បានផ្ទៀងផ្ទាត់ និងអនុម័តតារាងពិន្ទុជាផ្លូវការទូទាំងវិទ្យាស្ថាន! គរុនិស្សិតទាំងអស់អាចពិនិត្យពិន្ទុក្នុងគណនីបានភ្លាមៗ។', 'success');
   openAdminGradingModal();
   if (currentView === 'admin-portal') {
     renderAdminPortalView(document.getElementById('stmsContentViewport'));
@@ -13888,7 +13888,7 @@ function openSystemRolesModal() {
                   👨‍🎓
                 </div>
                 <div>
-                  <h4 style="margin:0; color:#5b21b6; font-size:1.05rem;">៣. Student (គរុសនិស្សិត)</h4>
+                  <h4 style="margin:0; color:#5b21b6; font-size:1.05rem;">៣. Student (គរុនិស្សិត)</h4>
                   <span class="badge" style="background:#ede9fe; color:#5b21b6; font-size:0.72rem;">Learner & Progress Tracking</span>
                 </div>
               </div>
@@ -13994,7 +13994,7 @@ window.openSystemRolesModal = openSystemRolesModal;
 function openAdminTransferStudentModal(studentId) {
   const t = (stmsData.trainees || []).find(x => x.id === studentId);
   if (!t) {
-    showToast('ពុំអាចស្វែងរកគរុសនិស្សិតនេះឃើញឡើយ!', 'error');
+    showToast('ពុំអាចស្វែងរកគរុនិស្សិតនេះឃើញឡើយ!', 'error');
     return;
   }
 
@@ -14828,7 +14828,7 @@ function getActiveUserProfile() {
     return {
       ...t,
       role: 'trainee',
-      roleLabel: t.roleLabel || 'គរុសនិស្សិត (Trainee)',
+      roleLabel: t.roleLabel || 'គរុនិស្សិត (Trainee)',
       username: t.username || 'trainee',
       email: t.email || 'yousoh.silal@ktpttc.edu.kh',
       phone: t.phone || '098 765 432',
@@ -14897,7 +14897,7 @@ function renderUserMenuModal() {
           
           <div style="margin-bottom:16px;">
             <span class="badge badge-primary" style="font-size:0.82rem; padding:4px 14px; border-radius:20px;">
-              <i class="fas fa-shield-alt" style="margin-right:4px;"></i> ${activeUser.roleLabel || (role==='trainee'?'គរុសនិស្សិត':role==='trainer'?'គ្រូឧទ្ទេស':'អ្នកគ្រប់គ្រង')}
+              <i class="fas fa-shield-alt" style="margin-right:4px;"></i> ${activeUser.roleLabel || (role==='trainee'?'គរុនិស្សិត':role==='trainer'?'គ្រូឧទ្ទេស':'អ្នកគ្រប់គ្រង')}
             </span>
           </div>
 
@@ -14990,7 +14990,7 @@ function openProfileSettingsModal(activeTab = 'general') {
               <div>
                 <div style="font-size:0.75rem; color:#64748b; font-weight:700; text-transform:uppercase;">គណនីដែលកំពុងកែប្រែ</div>
                 <h4 style="margin:2px 0 0 0; font-size:0.95rem; color:#1e3a8a; font-weight:700;">
-                  ${role === 'trainee' ? 'គណនីគរុសិស្ស (Student Profile)' : role === 'trainer' ? 'គណនីគ្រូឧទ្ទេស (Teacher Profile)' : 'គណនីអ្នកគ្រប់គ្រង (Admin Profile)'}
+                  ${role === 'trainee' ? 'គណនីគរុនិស្សិត (Student Profile)' : role === 'trainer' ? 'គណនីគ្រូឧទ្ទេស (Teacher Profile)' : 'គណនីអ្នកគ្រប់គ្រង (Admin Profile)'}
                 </h4>
               </div>
             </div>
@@ -15081,7 +15081,7 @@ function openProfileSettingsModal(activeTab = 'general') {
                   <span>អត្តលេខប្រព័ន្ធ៖ <strong>${user.id || (role==='trainer'?'USR-TRN-001':role==='trainee'?'ktpttc-2026-st-001':'USR-ADM-001')}</strong></span>
                   <span>ឈ្មោះគណនី Login៖ <strong>${user.username || (role==='trainer'?'trainer':role==='trainee'?'trainee':'admin')}</strong></span>
                 </div>
-                <div>កម្រិតសិទ្ធិ៖ <strong>${user.roleLabel || (role==='trainee'?'គរុសនិស្សិត':role==='trainer'?'គ្រូឧទ្ទេស':'អ្នកគ្រប់គ្រង')}</strong> (កំណត់ដោយរដ្ឋបាល KTPTTC)</div>
+                <div>កម្រិតសិទ្ធិ៖ <strong>${user.roleLabel || (role==='trainee'?'គរុនិស្សិត':role==='trainer'?'គ្រូឧទ្ទេស':'អ្នកគ្រប់គ្រង')}</strong> (កំណត់ដោយរដ្ឋបាល KTPTTC)</div>
               </div>
 
               <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
@@ -15274,7 +15274,7 @@ function saveProfileSettings(tab) {
     }
 
     currentTraineeUser = t;
-    currentUser = { ...currentUser, ...t, role: 'trainee', roleLabel: 'គរុសនិស្សិត' };
+    currentUser = { ...currentUser, ...t, role: 'trainee', roleLabel: 'គរុនិស្សិត' };
     updatedUser = t;
 
   } else if (role === 'trainer') {

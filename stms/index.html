@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ដំណើរការប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត | សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC - STMS)</title>
+  <title>ដំណើរការប្រព័ន្ធគ្រប់គ្រងគរុនិស្សិត | សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC - STMS)</title>
   <link rel="icon" type="image/png" href="assets/ktpttc-logo.png">
 
   <!-- Google Fonts for Khmer & Inter -->
@@ -44,7 +44,7 @@
         <span>Trainer / Teacher</span>
       </button>
       <button type="button" class="role-tab-btn" data-role="trainee" onclick="switchRole('trainee')"
-        title="សិទ្ធិគរុសនិស្សិត៖ មើលប្រវត្តិរូប វត្តមាន ពិន្ទុ &amp; កាលវិភាគ">
+        title="សិទ្ធិគរុនិស្សិត៖ មើលប្រវត្តិរូប វត្តមាន ពិន្ទុ &amp; កាលវិភាគ">
         <i class="fas fa-user-graduate"></i>
         <span>Trainee Teacher</span>
       </button>
@@ -118,7 +118,7 @@
                     <i class="fas ${myAbsent > 3 ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ស្ថានភាពវត្តមានសិក្សា
                   </div>
                   <div style="font-size:0.85rem; color:#475569;">
-                    គរុសនិស្សិត៖ <strong>${currentTrainee.nameKh || 'យូសុះ ស៊ីលាល'}</strong> (${currentTrainee.id || '-'})<br>
+                    គរុនិស្សិត៖ <strong>${currentTrainee.nameKh || 'យូសុះ ស៊ីលាល'}</strong> (${currentTrainee.id || '-'})<br>
                     ចំនួនអវត្តមានសរុប៖ <strong>${myAbsent} លើក</strong> ${myAbsent > 3 ? '<span class="badge badge-danger" style="margin-left:6px;">លើសកម្រិតវិន័យ</span>' : '<span class="badge badge-success" style="margin-left:6px;">ល្អប្រសើរ</span>'}
                   </div>
                 </div>
@@ -167,7 +167,7 @@
             </div>
             <div class="modal-body-scroll" style="padding:20px;">
               <h4 style="color:#1e3a8a; font-size:0.95rem; margin-bottom:10px;">
-                <i class="fas fa-user-times" style="color:#ef4444;"></i> គរុសនិស្សិតមានអវត្តមានគ្មានច្បាប់លើស ៣ លើក (${struggling.length} នាក់)
+                <i class="fas fa-user-times" style="color:#ef4444;"></i> គរុនិស្សិតមានអវត្តមានគ្មានច្បាប់លើស ៣ លើក (${struggling.length} នាក់)
               </h4>
               ${struggling.length === 0 ? '<p style="color:#64748b; font-size:0.85rem;">ពុំមានករណីអវត្តមានលើសកម្រិតវិន័យឡើយ។</p>' : `
                 <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
@@ -236,7 +236,7 @@
               <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; font-size:0.82rem; text-align:left; color:#475569; margin-bottom:18px;">
                 <div><strong>ឈ្មោះគណនី (Username)៖</strong> <code>${activeUser.username || '-'}</code></div>
                 <div><strong>សាលារៀន៖</strong> សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
-                <div><strong>កម្រិតសិទ្ធិ៖</strong> ${window.currentRole === 'admin' ? 'គ្រប់គ្រងពេញលេញ (Admin Access)' : window.currentRole === 'trainer' ? 'គ្រូឧទ្ទេសបង្រៀន (Trainer Access)' : 'គរុសនិស្សិត (Trainee Portal)'}</div>
+                <div><strong>កម្រិតសិទ្ធិ៖</strong> ${window.currentRole === 'admin' ? 'គ្រប់គ្រងពេញលេញ (Admin Access)' : window.currentRole === 'trainer' ? 'គ្រូឧទ្ទេសបង្រៀន (Trainer Access)' : 'គរុនិស្សិត (Trainee Portal)'}</div>
                 <div><strong>ស្ថានភាពគណនី៖</strong> សកម្ម (Active Session)</div>
               </div>
               <div style="display:flex; flex-direction:column; gap:8px;">
@@ -288,7 +288,7 @@
         <div class="login-brand-inst-en">Kratie Provincial Teacher Training Center (KTPTTC)</div>
 
         <div class="login-heading-wrapper">
-          <h2 class="login-main-heading">ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត</h2>
+          <h2 class="login-main-heading">ប្រព័ន្ធគ្រប់គ្រងគរុនិស្សិត</h2>
           <div class="login-brand-sub">STUDENT &amp; TEACHER MANAGEMENT SYSTEM (STMS)</div>
         </div>
 
@@ -298,7 +298,7 @@
             <div class="feat-icon"><i class="fas fa-user-shield"></i></div>
             <div class="feat-text">
               <span class="feat-num">ម៉ូឌុល ១</span>
-              <strong>រដ្ឋបាល &amp; គរុសនិស្សិត</strong>
+              <strong>រដ្ឋបាល &amp; គរុនិស្សិត</strong>
             </div>
           </div>
           <div class="login-feature-item feat-sky">
