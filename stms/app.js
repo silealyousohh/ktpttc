@@ -11,11 +11,136 @@ let currentRole = 'admin'; // 'admin' | 'trainer' | 'trainee'
 let currentView = 'dashboard';
 let currentTraineeUser = null; // When in trainee role
 
+// ==========================================================================
+// RESILIENT INDEXEDDB STORAGE (FOR LARGE FILES & COMPLETE PERSISTENCE)
+// ==========================================================================
+const STMS_IDB_NAME = 'KTPTTC_STMS_STORAGE';
+const STMS_IDB_VERSION = 1;
+let stmsIdbInstance = null;
+
+function getStmsDb() {
+  if (stmsIdbInstance) return Promise.resolve(stmsIdbInstance);
+  return new Promise((resolve) => {
+    if (!window.indexedDB) return resolve(null);
+    try {
+      const req = indexedDB.open(STMS_IDB_NAME, STMS_IDB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('files')) {
+          db.createObjectStore('files');
+        }
+        if (!db.objectStoreNames.contains('appdata')) {
+          db.createObjectStore('appdata');
+        }
+      };
+      req.onsuccess = (e) => {
+        stmsIdbInstance = e.target.result;
+        resolve(stmsIdbInstance);
+      };
+      req.onerror = () => resolve(null);
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
+async function idbSet(storeName, key, value) {
+  try {
+    const db = await getStmsDb();
+    if (!db) return false;
+    return new Promise((resolve) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      tx.objectStore(storeName).put(value, key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    });
+  } catch (e) {
+    return false;
+  }
+}
+
+async function idbGet(storeName, key) {
+  try {
+    const db = await getStmsDb();
+    if (!db) return null;
+    return new Promise((resolve) => {
+      const tx = db.transaction(storeName, 'readonly');
+      const req = tx.objectStore(storeName).get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch (e) {
+    return null;
+  }
+}
+
 // Initialize Application - Enforce Mandatory Login Gate
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
   initAuth();
 });
+
+let isSyncingToServer = false;
+let serverSyncTimeout = null;
+
+// Async Background Fetch from Server
+async function fetchServerStmsData() {
+  try {
+    const res = await fetch('/api/stms/data');
+    if (!res.ok) return;
+    const json = await res.json();
+    if (json && json.success && json.data) {
+      const srv = json.data;
+      let hasNew = false;
+      // Merge lessons from server if any exist
+      if (Array.isArray(srv.lessons)) {
+        if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
+        srv.lessons.forEach(srvL => {
+          if (!stmsData.lessons.some(l => l.id === srvL.id)) {
+            stmsData.lessons.unshift(srvL);
+            hasNew = true;
+          }
+        });
+      }
+      // Merge videos
+      if (Array.isArray(srv.videoLessons)) {
+        if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
+        srv.videoLessons.forEach(srvV => {
+          if (!stmsData.videoLessons.some(v => v.id === srvV.id)) {
+            stmsData.videoLessons.unshift(srvV);
+            hasNew = true;
+          }
+        });
+      }
+      // Merge assignments
+      if (Array.isArray(srv.assignments)) {
+        if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
+        srv.assignments.forEach(srvA => {
+          if (!stmsData.assignments.some(a => a.id === srvA.id)) {
+            stmsData.assignments.unshift(srvA);
+            hasNew = true;
+          }
+        });
+      }
+      // Merge cohorts
+      if (Array.isArray(srv.cohorts) && srv.cohorts.length > (stmsData.cohorts || []).length) {
+        stmsData.cohorts = srv.cohorts;
+        hasNew = true;
+      }
+      // Merge customClasses
+      if (Array.isArray(srv.customClasses) && srv.customClasses.length > (stmsData.customClasses || []).length) {
+        stmsData.customClasses = srv.customClasses;
+        hasNew = true;
+      }
+      if (hasNew) {
+        saveData(false);
+        if (currentView) renderView(currentView);
+      }
+    }
+  } catch (e) {
+    // Non-blocking
+  }
+}
 
 // Load from LocalStorage or Clean Config (No Auto Student Generation)
 function loadData() {
@@ -27,6 +152,9 @@ function loadData() {
       if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
       if (!Array.isArray(stmsData.attendanceSessions)) stmsData.attendanceSessions = [];
       if (!Array.isArray(stmsData.profileRequests)) stmsData.profileRequests = [];
+      if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
+      if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
+      if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
 
       // Auto-sanitize trainees: clean any binary corrupted entries (e.g. invalid xlsx raw text import)
       const countBefore = stmsData.trainees.length;
@@ -120,6 +248,9 @@ function loadData() {
       if (!Array.isArray(stmsData.subjects)) stmsData.subjects = [];
       if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
       if (!Array.isArray(stmsData.customClasses)) stmsData.customClasses = [];
+      if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
+      if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
+      if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
       if (!stmsData.syllabi) stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
       saveData();
     }
@@ -130,6 +261,9 @@ function loadData() {
     if (!Array.isArray(stmsData.subjects)) stmsData.subjects = [];
     if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
     if (!Array.isArray(stmsData.customClasses)) stmsData.customClasses = [];
+    if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
+    if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
+    if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
     if (!stmsData.syllabi) stmsData.syllabi = JSON.parse(JSON.stringify(window.KTPTTC_DEFAULT_SYLLABI || window.KTPTTC_INITIAL_DATA?.syllabi || {}));
   }
 
@@ -137,15 +271,118 @@ function loadData() {
   ensureSyncedCollections();
   syncAllSubjects();
   syncTraineeStreams();
+
+  // Async restore lessons/files from IndexedDB if any
+  idbGet('appdata', 'ktpttc_stms_data_v2').then(idbData => {
+    if (idbData && Array.isArray(idbData.lessons) && idbData.lessons.length > (stmsData.lessons || []).length) {
+      if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
+      idbData.lessons.forEach(idbL => {
+        if (!stmsData.lessons.some(l => l.id === idbL.id)) {
+          stmsData.lessons.unshift(idbL);
+        }
+      });
+      saveData(false);
+      if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
+        renderView(currentView);
+      }
+    }
+  });
+
+  // Async fetch from server
+  fetchServerStmsData();
 }
 
-// Persist to LocalStorage
-function saveData() {
+// Persist to LocalStorage with Quota Protection, IndexedDB & Background Server Sync
+function saveData(syncToServerBool = true) {
   try {
-    localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsData));
+    // 1. If any lesson/assignment has a large fileData, save to IndexedDB store 'files'
+    if (Array.isArray(stmsData.lessons)) {
+      stmsData.lessons.forEach(l => {
+        if (l && l.fileData && l.fileData.length > 50000) {
+          idbSet('files', l.id, l.fileData);
+        }
+      });
+    }
+    if (Array.isArray(stmsData.assignments)) {
+      stmsData.assignments.forEach(a => {
+        if (a && a.fileData && a.fileData.length > 50000) {
+          idbSet('files', a.id, a.fileData);
+        }
+      });
+    }
+
+    // 2. LocalStorage Persistence with Quota Protection
+    try {
+      localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsData));
+    } catch (quotaErr) {
+      console.warn('LocalStorage quota exceeded, optimizing payload with external file references...', quotaErr);
+      const safeData = JSON.parse(JSON.stringify(stmsData));
+      if (Array.isArray(safeData.lessons)) {
+        safeData.lessons.forEach(l => {
+          if (l && l.fileData && l.fileData.length > 50000) {
+            l.fileData = null;
+            l.hasStoredFile = true;
+          }
+        });
+      }
+      if (Array.isArray(safeData.assignments)) {
+        safeData.assignments.forEach(a => {
+          if (a && a.fileData && a.fileData.length > 50000) {
+            a.fileData = null;
+            a.hasStoredFile = true;
+          }
+        });
+      }
+      localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(safeData));
+    }
+
+    // 3. Persist complete unstripped snapshot to IndexedDB
+    idbSet('appdata', 'ktpttc_stms_data_v2', stmsData);
+
     updateAlertBadge();
+
+    // 4. Background Server Sync
+    if (syncToServerBool) {
+      if (serverSyncTimeout) clearTimeout(serverSyncTimeout);
+      serverSyncTimeout = setTimeout(() => {
+        syncToServer();
+      }, 1500);
+    }
   } catch (e) {
     console.error('Failed to save data:', e);
+  }
+}
+
+async function syncToServer() {
+  if (isSyncingToServer) return;
+  isSyncingToServer = true;
+  try {
+    const syncData = JSON.parse(JSON.stringify(stmsData));
+    if (Array.isArray(syncData.lessons)) {
+      syncData.lessons.forEach(l => {
+        if (l && l.fileData && l.fileData.length > 500000) {
+          l.fileData = null;
+          l.hasStoredFile = true;
+        }
+      });
+    }
+    if (Array.isArray(syncData.assignments)) {
+      syncData.assignments.forEach(a => {
+        if (a && a.fileData && a.fileData.length > 500000) {
+          a.fileData = null;
+          a.hasStoredFile = true;
+        }
+      });
+    }
+    await fetch('/api/stms/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: syncData })
+    });
+  } catch (e) {
+    // Graceful offline
+  } finally {
+    isSyncingToServer = false;
   }
 }
 
@@ -188,17 +425,36 @@ function initAuth() {
     if (raw) savedUser = JSON.parse(raw);
   } catch (e) {}
 
-  if (authSession) {
-    authenticatedUser = authSession;
-    window.authenticatedUser = authSession;
+  const sessionUser = authSession || savedUser;
+  if (!sessionUser || (!sessionUser.username && !sessionUser.id && !sessionUser.role)) {
+    showLoginScreen();
+    return;
   }
 
-  if (savedUser && (savedUser.username || savedUser.role)) {
-    const savedActiveRole = localStorage.getItem('ktpttc_active_role') || (authSession ? authSession.role : savedUser.role);
-    window.currentRole = savedActiveRole;
-    currentRole = savedActiveRole;
+  // Lookup the exact user in stmsData to reflect any fresh changes (e.g. subjects, avatar)
+  let freshUser = null;
+  if (sessionUser.id) {
+    freshUser = (stmsData.users || []).find(u => u && u.id === sessionUser.id) ||
+                (stmsData.trainees || []).find(t => t && t.id === sessionUser.id);
+  }
+  if (!freshUser && sessionUser.username) {
+    freshUser = (stmsData.users || []).find(u => u && u.username && u.username.toLowerCase() === sessionUser.username.toLowerCase());
+  }
+  if (!freshUser) {
+    freshUser = sessionUser;
+  }
 
-    // Load fresh dedicated profile for active role
+  // Enforce global authenticated user
+  window.authenticatedUser = freshUser;
+  authenticatedUser = freshUser;
+  localStorage.setItem('ktpttc_auth_session', JSON.stringify(freshUser));
+
+  if (freshUser.role === 'admin') {
+    // Administrator: Can preview roles
+    const savedActiveRole = localStorage.getItem('ktpttc_active_role') || 'admin';
+    currentRole = savedActiveRole;
+    window.currentRole = savedActiveRole;
+
     let activeProfile;
     if (savedActiveRole === 'trainee') {
       activeProfile = getActiveTraineeProfile();
@@ -206,14 +462,30 @@ function initAuth() {
     } else if (savedActiveRole === 'trainer') {
       activeProfile = getActiveTrainerProfile();
     } else {
-      activeProfile = getActiveAdminProfile();
+      activeProfile = freshUser;
     }
-
     loginSuccess(activeProfile, false);
-    return;
+  } else if (freshUser.role === 'trainer') {
+    // Trainer/Teacher: MUST STRICTLY STAY AS THEMSELVES!
+    currentRole = 'trainer';
+    window.currentRole = 'trainer';
+    currentTrainerPreviewId = freshUser.id;
+    localStorage.setItem('ktpttc_active_role', 'trainer');
+    localStorage.setItem('ktpttc_profile_trainer', JSON.stringify(freshUser));
+    loginSuccess(freshUser, false);
+  } else if (freshUser.role === 'trainee') {
+    // Trainee/Student: MUST STRICTLY STAY AS THEMSELVES!
+    currentRole = 'trainee';
+    window.currentRole = 'trainee';
+    currentTraineeUser = freshUser;
+    localStorage.setItem('ktpttc_active_role', 'trainee');
+    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(freshUser));
+    loginSuccess(freshUser, false);
+  } else {
+    currentRole = freshUser.role || 'trainer';
+    window.currentRole = currentRole;
+    loginSuccess(freshUser, false);
   }
-
-  showLoginScreen();
 }
 
 function showLoginScreen() {
@@ -388,10 +660,14 @@ function handleLogout() {
     sessionStorage.removeItem('ktpttc_current_user');
     localStorage.removeItem('ktpttc_active_role');
     localStorage.removeItem('ktpttc_auth_session');
+    localStorage.removeItem('ktpttc_profile_trainer');
+    localStorage.removeItem('ktpttc_profile_trainee');
     authenticatedUser = null;
     window.authenticatedUser = null;
     window.currentRole = null;
     window.currentTrainerPreviewId = null;
+    currentTrainerPreviewId = null;
+    currentTraineeUser = null;
     currentUser = null;
     document.body.classList.remove('role-admin', 'role-trainer', 'role-trainee', 'role-staff', 'role-student', 'trainee-mode', 'trainer-mode', 'admin-mode', 'is-admin-session');
     const sidebarAside = document.querySelector('.stms-sidebar') || document.getElementById('stmsSidebar');
@@ -2553,6 +2829,17 @@ function getSubjectTheme(code) {
 }
 
 function getActiveTraineeProfile() {
+  if (currentUser && currentUser.role === 'trainee' && currentUser.nameKh) {
+    return currentUser;
+  }
+  if (window.authenticatedUser && window.authenticatedUser.role === 'trainee' && window.authenticatedUser.nameKh) {
+    return window.authenticatedUser;
+  }
+  if (currentTraineeUser && currentTraineeUser.id) {
+    const fresh = (stmsData.trainees || []).find(t => t && t.id === currentTraineeUser.id);
+    return fresh || currentTraineeUser;
+  }
+
   let saved = null;
   try {
     const raw = localStorage.getItem('ktpttc_profile_trainee');
@@ -2563,7 +2850,7 @@ function getActiveTraineeProfile() {
     return saved;
   }
 
-  let t = currentTraineeUser || (stmsData.trainees && stmsData.trainees.length > 0 ? stmsData.trainees[0] : null);
+  let t = (stmsData.trainees && stmsData.trainees.length > 0 ? stmsData.trainees[0] : null);
   if (!t || !t.id) {
     if (currentUser && currentUser.role === 'trainee' && currentUser.nameKh) {
       t = currentUser;
@@ -6886,28 +7173,35 @@ function ensureSyncedCollections() {
 let currentTrainerPreviewId = null;
 
 function getActiveTrainerProfile() {
+  // 1. If active currentUser is a trainer, ALWAYS return currentUser!
+  if (currentUser && currentUser.role === 'trainer' && currentUser.nameKh) {
+    return currentUser;
+  }
+
+  // 2. If authenticated session user is a trainer, return authenticatedUser!
+  if (window.authenticatedUser && window.authenticatedUser.role === 'trainer' && window.authenticatedUser.nameKh) {
+    return window.authenticatedUser;
+  }
+
+  // 3. If admin is previewing a specific trainer
   if (currentTrainerPreviewId) {
-    const found = (stmsData.users || []).find(u => u.id === currentTrainerPreviewId);
+    const found = (stmsData.users || []).find(u => u && u.id === currentTrainerPreviewId);
     if (found) return found;
   }
 
-  // 1. Dedicated localStorage profile
+  // 4. Dedicated localStorage profile
   let saved = null;
   try {
     const raw = localStorage.getItem('ktpttc_profile_trainer');
     if (raw) saved = JSON.parse(raw);
   } catch (e) {}
 
-  if (saved && saved.nameKh) {
+  if (saved && saved.nameKh && saved.role === 'trainer') {
     return saved;
   }
 
-  if (currentUser && currentUser.role === 'trainer' && currentUser.nameKh) {
-    return currentUser;
-  }
-
-  // 2. Find trainer in stmsData.users (excluding student name if accidental bleed occurred)
-  const foundTrainer = (stmsData.users || []).find(u => u.role === 'trainer' && u.nameKh !== 'យូសុះ ស៊ីលាល');
+  // 5. Find trainer in stmsData.users
+  const foundTrainer = (stmsData.users || []).find(u => u && u.role === 'trainer' && u.nameKh !== 'យូសុះ ស៊ីលាល');
   if (foundTrainer) return foundTrainer;
 
   return {
@@ -6936,12 +7230,26 @@ function getTrainerAssignedSubjectCodes(tr) {
   if (tr.subject && !list.includes(tr.subject)) {
     list.push(tr.subject);
   }
-  // Check in KTPTTC_ALL_SUBJECTS where instructor name matches
-  if (list.length === 0 && tr.nameKh) {
+  // Check in KTPTTC_ALL_SUBJECTS / stmsData.subjects where instructor name matches
+  const allSubjs = Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0 ? stmsData.subjects : KTPTTC_ALL_SUBJECTS;
+  if (tr.nameKh) {
     const cleanName = tr.nameKh.replace(/^(សាស្ត្រាចារ្យ|លោកស្រី|លោក|អ្នកគ្រូ|លោកគ្រូ)\s+/, '').trim();
-    KTPTTC_ALL_SUBJECTS.forEach(s => {
-      if (s.trainer && s.trainer.includes(cleanName) && !list.includes(s.code)) {
+    allSubjs.forEach(s => {
+      if (s.trainer && (s.trainer.includes(cleanName) || cleanName.includes(s.trainer)) && !list.includes(s.code)) {
         list.push(s.code);
+      }
+    });
+  }
+  // Also guarantee any subject where this trainer uploaded lessons or assignments is included
+  if (tr.nameKh) {
+    (stmsData.lessons || []).forEach(l => {
+      if (l && l.uploadedBy === tr.nameKh && l.subjectCode && !list.includes(l.subjectCode)) {
+        list.push(l.subjectCode);
+      }
+    });
+    (stmsData.assignments || []).forEach(a => {
+      if (a && a.assignedBy === tr.nameKh && a.subjectCode && !list.includes(a.subjectCode)) {
+        list.push(a.subjectCode);
       }
     });
   }
@@ -8003,6 +8311,10 @@ function saveTeacherHomework() {
   }
   stmsData.assignments.unshift(newHw);
 
+  if (fileInfo && fileInfo.dataUrl) {
+    idbSet('files', newHw.id, fileInfo.dataUrl);
+  }
+
   // Reset pending file
   window.pendingHwFileData = {
     name: 'KTPTTC_Assignment_Guide.docx',
@@ -8190,14 +8502,25 @@ function removeLessonSelectedFile() {
 }
 
 // Download Lesson File (Real File Download)
-function downloadLessonFile(lessonId) {
+async function downloadLessonFile(lessonId) {
   const l = (stmsData.lessons || []).find(x => x.id === lessonId);
   if (!l) return;
   const fileName = l.fileName || `${l.title || 'Lesson_Material'}.pdf`;
 
-  if (l.fileData && l.fileData.startsWith('data:')) {
+  let dataUrl = l.fileData;
+  if (!dataUrl) {
+    // Try to load from IndexedDB
+    try {
+      dataUrl = await idbGet('files', lessonId);
+      if (dataUrl) {
+        l.fileData = dataUrl;
+      }
+    } catch (e) {}
+  }
+
+  if (dataUrl && dataUrl.startsWith('data:')) {
     const a = document.createElement('a');
-    a.href = l.fileData;
+    a.href = dataUrl;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
@@ -8660,6 +8983,10 @@ function saveTeacherLesson() {
     stmsData.lessons = [];
   }
   stmsData.lessons.unshift(newLesson);
+
+  if (fileInfo && fileInfo.dataUrl) {
+    idbSet('files', newLesson.id, fileInfo.dataUrl);
+  }
 
   // Reset pending lesson file to default
   window.pendingLessonFileData = {

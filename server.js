@@ -851,6 +851,78 @@ app.get(['/add-student', '/add-student.html', '/TeacherGuideApp/add-student', '/
 // REST API ENDPOINTS
 // ==========================================
 
+// 0. STMS (Student & Teacher Management System) Sync API
+const STMS_DB_FILE = path.join(__dirname, 'data', 'stms_db.json');
+
+async function readStmsDb() {
+  try {
+    const collection = await getMongoCollection();
+    if (collection) {
+      const doc = await collection.findOne({ _id: 'stms_store' });
+      if (doc && doc.data) {
+        return doc.data;
+      }
+    }
+  } catch (e) {
+    console.warn('MongoDB STMS read error:', e.message);
+  }
+
+  try {
+    if (fs.existsSync(STMS_DB_FILE)) {
+      const raw = fs.readFileSync(STMS_DB_FILE, 'utf8');
+      if (raw) return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.warn('File STMS read error:', e.message);
+  }
+  return null;
+}
+
+async function writeStmsDb(data) {
+  try {
+    const dir = path.dirname(STMS_DB_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(STMS_DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    console.error('File STMS write error:', e.message);
+  }
+
+  try {
+    const collection = await getMongoCollection();
+    if (collection) {
+      await collection.updateOne(
+        { _id: 'stms_store' },
+        { $set: { _id: 'stms_store', data, updatedAt: new Date().toISOString() } },
+        { upsert: true }
+      );
+    }
+  } catch (e) {
+    console.warn('MongoDB STMS write error:', e.message);
+  }
+}
+
+app.get('/api/stms/data', async (req, res) => {
+  try {
+    const data = await readStmsDb();
+    res.json({ success: true, data: data || null });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/stms/sync', async (req, res) => {
+  try {
+    const incoming = req.body && req.body.data ? req.body.data : req.body;
+    if (!incoming || typeof incoming !== 'object') {
+      return res.status(400).json({ success: false, message: 'Invalid payload' });
+    }
+    await writeStmsDb(incoming);
+    res.json({ success: true, message: 'STMS data synced successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // 1. Settings API
 app.get('/api/settings', async (req, res) => {
   const settings = await readDbField('settings');
