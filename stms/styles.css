@@ -2794,7 +2794,29 @@ body:has(.admin-portal-container) .stms-content-viewport {
   background: rgba(37, 99, 235, 0.08);
 }
 
-/* Video Player Simulation */
+/* Real Responsive YouTube & HTML5 Video Player */
+.stms-responsive-video-wrap {
+  width: 100%;
+  position: relative;
+  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+  background: #000000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  margin-bottom: 16px;
+}
+
+.stms-responsive-video-wrap iframe,
+.stms-responsive-video-wrap video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Video Player Simulation & Fallback */
 .stms-video-player-wrap {
   width: 100%;
   background: #000000;

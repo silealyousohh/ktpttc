@@ -195,6 +195,17 @@ function loadData() {
       }
       if (Array.isArray(stmsData.videoLessons)) {
         stmsData.videoLessons = stmsData.videoLessons.filter(v => v && v.id !== 'VID-001');
+        stmsData.videoLessons.forEach(v => {
+          if (v && v.videoUrl) {
+            const ytId = extractYouTubeId(v.videoUrl);
+            if (ytId) {
+              v.youtubeId = ytId;
+              if (!v.embedUrl) v.embedUrl = getYouTubeEmbedUrl(v.videoUrl, true);
+              if (!v.watchUrl) v.watchUrl = getYouTubeWatchUrl(v.videoUrl);
+              if (!v.thumbnail) v.thumbnail = getYouTubeThumbnail(v.videoUrl);
+            }
+          }
+        });
       }
       if (Array.isArray(stmsData.studentRequests)) {
         stmsData.studentRequests = stmsData.studentRequests.filter(r => r && r.id !== 'REQ-001' && r.id !== 'REQ-002');
@@ -3340,22 +3351,80 @@ function openTraineeTimetableModal() {
 }
 
 // --------------------------------------------------------------------------
-// 3. HUB MODAL: វីដេអូ & មេរៀន E-LEARNING (PEDAGOGICAL VIDEO HUB)
+// 3. HUB MODAL: វីដេអូ & មេរៀន E-LEARNING (PEDAGOGICAL VIDEO HUB & YOUTUBE)
 // --------------------------------------------------------------------------
 const KTPTTC_VIDEO_LESSONS = [];
 
+// Helper functions for YouTube & Video integration
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const str = String(url).trim();
+  const iframeMatch = str.match(/src=["'](?:https?:)?\/\/(?:www\.)?youtube\.com\/embed\/([\w-]{11})["']/i);
+  if (iframeMatch && iframeMatch[1]) return iframeMatch[1];
+  const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|live\/|watch\?.+&v=))([\w-]{11})/i);
+  if (match && match[1]) return match[1];
+  if (/^[\w-]{11}$/.test(str)) return str;
+  return null;
+}
+
+function getYouTubeEmbedUrl(url, autoplay = true) {
+  const id = extractYouTubeId(url);
+  if (id) {
+    const ap = autoplay ? '1' : '0';
+    return `https://www.youtube.com/embed/${id}?autoplay=${ap}&rel=0&modestbranding=1&enablejsapi=1`;
+  }
+  return url || '';
+}
+
+function getYouTubeWatchUrl(url) {
+  const id = extractYouTubeId(url);
+  if (id) {
+    return `https://www.youtube.com/watch?v=${id}`;
+  }
+  return url || '';
+}
+
+function getYouTubeThumbnail(url) {
+  const id = extractYouTubeId(url);
+  if (id) {
+    return `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+  }
+  return '';
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function openTraineeLessonsModal(activeCategory = 'all') {
-  const teacherVideos = (stmsData.videoLessons || []).map(v => ({
-    id: v.id,
-    subject: v.subjectCode || 'PED-101',
-    category: v.category || 'គរុកោសល្យ',
-    title: v.title,
-    trainer: v.trainer || 'គ្រូឧទ្ទេស',
-    duration: v.duration || '២០ នាទី',
-    views: v.views || 0,
-    desc: v.desc || `មេរៀនវីដេអូបង្រៀន Upload ដោយ ${v.trainer || 'គ្រូឧទ្ទេស'} (${v.date || ''})`,
-    isTeacherUpload: true
-  }));
+  const teacherVideos = (stmsData.videoLessons || []).map(v => {
+    const rawUrl = v.videoUrl || '';
+    const ytId = v.youtubeId || extractYouTubeId(rawUrl);
+    return {
+      id: v.id,
+      subject: v.subjectCode || 'PED-101',
+      subjectCode: v.subjectCode || 'PED-101',
+      category: v.category || 'គរុកោសល្យ',
+      title: v.title,
+      trainer: v.trainer || 'គ្រូឧទ្ទេស',
+      duration: v.duration || '២០ នាទី',
+      views: v.views || 0,
+      desc: v.desc || `មេរៀនវីដេអូបង្រៀន Upload ដោយ ${v.trainer || 'គ្រូឧទ្ទេស'} (${v.date || ''})`,
+      videoUrl: rawUrl,
+      embedUrl: ytId ? getYouTubeEmbedUrl(rawUrl, true) : (v.embedUrl || rawUrl),
+      watchUrl: ytId ? getYouTubeWatchUrl(rawUrl) : (v.watchUrl || rawUrl),
+      youtubeId: ytId || '',
+      thumbnail: ytId ? getYouTubeThumbnail(rawUrl) : (v.thumbnail || ''),
+      date: v.date,
+      isTeacherUpload: true
+    };
+  });
 
   const allLessons = [...teacherVideos, ...KTPTTC_VIDEO_LESSONS];
   const filtered = activeCategory === 'all' 
@@ -3364,14 +3433,14 @@ function openTraineeLessonsModal(activeCategory = 'all') {
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="traineeLessonsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:760px;">
+      <div class="stms-modal-dialog" style="max-width:780px;">
         <div class="stms-modal-header" style="background:linear-gradient(135deg, #c2410c 0%, #ea580c 100%); color:#ffffff;">
           <div style="display:flex; align-items:center; gap:12px;">
             <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
               <i class="fas fa-play-circle"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">វីដេអូ & មេរៀន E-Learning គរុកោសល្យ</h3>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">វីដេអូ &amp; មេរៀន E-Learning គរុកោសល្យ</h3>
               <p style="color:#ffedd5; font-size:0.82rem; margin:2px 0 0 0;">កម្រងវីដេអូបង្រៀនគំរូ និងស្លាយបង្រៀនឌីជីថល KTPTTC</p>
             </div>
           </div>
@@ -3381,7 +3450,7 @@ function openTraineeLessonsModal(activeCategory = 'all') {
           
           <!-- Category Tabs -->
           <div class="stms-modal-tabs">
-            <button class="modal-tab-btn ${activeCategory==='all'?'active':''}" onclick="openTraineeLessonsModal('all')">ទាំងអស់</button>
+            <button class="modal-tab-btn ${activeCategory==='all'?'active':''}" onclick="openTraineeLessonsModal('all')">ទាំងអស់ (${allLessons.length})</button>
             <button class="modal-tab-btn ${activeCategory==='គរុកោសល្យ'?'active':''}" onclick="openTraineeLessonsModal('គរុកោសល្យ')">គរុកោសល្យ</button>
             <button class="modal-tab-btn ${activeCategory==='ភាសាខ្មែរ'?'active':''}" onclick="openTraineeLessonsModal('ភាសាខ្មែរ')">ភាសាខ្មែរ</button>
             <button class="modal-tab-btn ${activeCategory==='គណិតវិទ្យា'?'active':''}" onclick="openTraineeLessonsModal('គណិតវិទ្យា')">គណិតវិទ្យា</button>
@@ -3396,27 +3465,50 @@ function openTraineeLessonsModal(activeCategory = 'all') {
                 <div style="font-weight:600; font-size:0.95rem; color:#64748b;">មិនទាន់មានវីដេអូបង្រៀនក្នុងផ្នែកនេះទេ</div>
                 <div style="font-size:0.8rem; margin-top:4px;">គ្រូឧទ្ទេសអាចបញ្ចូលវីដេអូបង្រៀនថ្មីពីផ្ទាំងគ្រប់គ្រងមុខវិជ្ជា</div>
               </div>
-            ` : filtered.map(v => `
+            ` : filtered.map(v => {
+              const thumb = v.thumbnail || (v.youtubeId ? getYouTubeThumbnail(v.youtubeId) : '');
+              const ytWatchUrl = v.watchUrl || (v.youtubeId ? `https://www.youtube.com/watch?v=${v.youtubeId}` : '');
+              return `
               <div style="display:flex; gap:16px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center; transition:all 0.2s;" onmouseover="this.style.borderColor='#fdba74'" onmouseout="this.style.borderColor='var(--border-color)'">
-                <div style="width:96px; height:68px; border-radius:10px; background:linear-gradient(135deg, #09204a 0%, #1e3a8a 100%); display:flex; align-items:center; justify-content:center; color:#ffffff; flex-shrink:0; position:relative; cursor:pointer;" onclick="playTraineeVideo('${v.id}')">
-                  <i class="fas fa-play" style="font-size:1.4rem; color:#f97316;"></i>
-                  <span style="position:absolute; bottom:4px; right:6px; font-size:0.65rem; background:rgba(0,0,0,0.7); padding:1px 5px; border-radius:4px;">${v.duration}</span>
+                <div style="width:110px; height:74px; border-radius:10px; overflow:hidden; background:linear-gradient(135deg, #09204a 0%, #1e3a8a 100%); display:flex; align-items:center; justify-content:center; color:#ffffff; flex-shrink:0; position:relative; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.15);" onclick="playTraineeVideo('${v.id}')">
+                  ${thumb ? `
+                    <img src="${thumb}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" alt="${escapeHtml(v.title)}" />
+                    <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center;">
+                      <div style="width:32px; height:32px; border-radius:50%; background:rgba(234, 88, 12, 0.95); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.4);">
+                        <i class="fas fa-play" style="font-size:0.8rem; color:#ffffff; margin-left:2px;"></i>
+                      </div>
+                    </div>
+                  ` : `
+                    <i class="fas fa-play" style="font-size:1.4rem; color:#f97316;"></i>
+                  `}
+                  <span style="position:absolute; bottom:4px; right:6px; font-size:0.65rem; background:rgba(0,0,0,0.75); color:#ffffff; padding:1px 5px; border-radius:4px; font-weight:600;">${v.duration}</span>
                 </div>
-                <div style="flex:1;">
-                  <span style="font-size:0.72rem; font-weight:700; color:#ea580c; background:#fff7ed; padding:2px 8px; border-radius:6px;">${v.category}</span>
-                  ${v.isTeacherUpload ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:6px; margin-left:4px;"><i class="fas fa-sparkles"></i> ថ្មីពីគ្រូឧទ្ទេស</span>` : ''}
-                  <h4 style="margin:4px 0 3px 0; font-size:0.92rem; color:#1e293b; line-height:1.4; cursor:pointer;" onclick="playTraineeVideo('${v.id}')">${v.title}</h4>
-                  <p style="margin:0 0 4px 0; font-size:0.78rem; color:#64748b; line-height:1.4;">${v.desc}</p>
-                  <div style="font-size:0.75rem; color:#94a3b8; display:flex; gap:12px;">
-                    <span>👨‍🏫 ${v.trainer}</span>
+                <div style="flex:1; min-width:0;">
+                  <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:3px;">
+                    <span style="font-size:0.72rem; font-weight:700; color:#ea580c; background:#fff7ed; padding:2px 8px; border-radius:6px;">${v.category}</span>
+                    ${v.youtubeId ? `<span style="font-size:0.7rem; font-weight:700; color:#dc2626; background:#fee2e2; padding:1px 6px; border-radius:4px;"><i class="fab fa-youtube"></i> YouTube</span>` : ''}
+                    ${v.isTeacherUpload ? `<span style="font-size:0.7rem; font-weight:700; color:#15803d; background:#dcfce7; padding:1px 6px; border-radius:4px;"><i class="fas fa-sparkles"></i> ថ្មីពីគ្រូឧទ្ទេស</span>` : ''}
+                  </div>
+                  <h4 style="margin:2px 0 4px 0; font-size:0.92rem; color:#1e293b; line-height:1.4; cursor:pointer;" onclick="playTraineeVideo('${v.id}')">${escapeHtml(v.title)}</h4>
+                  <p style="margin:0 0 6px 0; font-size:0.78rem; color:#64748b; line-height:1.4;">${escapeHtml(v.desc)}</p>
+                  <div style="font-size:0.75rem; color:#94a3b8; display:flex; gap:12px; flex-wrap:wrap;">
+                    <span>👨‍🏫 ${escapeHtml(v.trainer)}</span>
                     <span>👁️ ${v.views} នាក់បានទស្សនា</span>
                   </div>
                 </div>
-                <button class="btn btn-primary" style="height:34px; padding:0 14px; font-size:0.82rem;" onclick="playTraineeVideo('${v.id}')">
-                  <i class="fas fa-play"></i> ទស្សនា
-                </button>
+                <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                  <button class="btn btn-primary" style="height:32px; padding:0 12px; font-size:0.8rem;" onclick="playTraineeVideo('${v.id}')">
+                    <i class="fas fa-play"></i> ទស្សនា
+                  </button>
+                  ${ytWatchUrl ? `
+                    <a href="${ytWatchUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="height:28px; padding:0 10px; font-size:0.75rem; color:#dc2626; border-color:#fca5a5; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+                      <i class="fab fa-youtube"></i> YouTube
+                    </a>
+                  ` : ''}
+                </div>
               </div>
-            `).join('')}
+            `;
+            }).join('')}
           </div>
 
           <div style="margin-top:20px; display:flex; justify-content:flex-end;">
@@ -3432,76 +3524,128 @@ function openTraineeLessonsModal(activeCategory = 'all') {
 
 function playTraineeVideo(id) {
   const allVids = [...(stmsData.videoLessons || []), ...KTPTTC_VIDEO_LESSONS];
-  const v = allVids.find(item => item.id === id) || allVids[0] || {
-    id: id,
-    title: 'វីដេអូបង្រៀនគរុកោសល្យ',
-    trainer: 'គ្រូឧទ្ទេស KTPTTC',
-    duration: '២០ នាទី',
-    desc: 'មេរៀន E-Learning គរុកោសល្យ'
-  };
+  let v = allVids.find(item => item.id === id);
+  if (!v) {
+    showToast('រកមិនឃើញវីដេអូដែលបានជ្រើសរើសទេ!', 'warning');
+    return;
+  }
+
+  // Increment views
+  v.views = (v.views || 0) + 1;
+  saveData(false);
+
+  const rawUrl = v.videoUrl || '';
+  const ytId = v.youtubeId || extractYouTubeId(rawUrl);
+  const embedUrl = ytId ? getYouTubeEmbedUrl(rawUrl, true) : (v.embedUrl || rawUrl);
+  const watchUrl = ytId ? getYouTubeWatchUrl(rawUrl) : (v.watchUrl || rawUrl);
+  const isDirectVideo = /\.(mp4|webm|ogg)($|\?)/i.test(rawUrl);
+
+  const isTeacherOrAdmin = (currentRole === 'admin' || currentRole === 'teacher' || currentRole === 'trainer' || currentView === 'admin-portal' || currentView === 'trainer-portal');
+  const returnCallback = (currentView === 'trainer-portal' || currentRole === 'teacher' || currentRole === 'trainer')
+    ? `openTeacherUploadModal('${v.subjectCode || ''}', 'video')`
+    : `openTraineeLessonsModal()`;
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="videoPlayerModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:760px;">
-        <div class="stms-modal-header" style="background:#09204a; color:#ffffff;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <i class="fas fa-play-circle" style="color:#ea580c; font-size:1.3rem;"></i>
-            <h3 style="color:#ffffff; font-size:1.05rem; margin:0;">${v.title}</h3>
+      <div class="stms-modal-dialog" style="max-width:820px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #09204a 0%, #1e3a8a 100%); color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+            <div style="width:38px; height:38px; border-radius:10px; background:rgba(234, 88, 12, 0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <i class="${ytId ? 'fab fa-youtube' : 'fas fa-play-circle'}" style="color:${ytId ? '#ef4444' : '#ea580c'}; font-size:1.35rem;"></i>
+            </div>
+            <div style="min-width:0;">
+              <h3 style="color:#ffffff; font-size:1.05rem; margin:0; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(v.title)}</h3>
+              <div style="font-size:0.75rem; color:#93c5fd; margin-top:2px;">
+                <span>👨‍🏫 ${escapeHtml(v.trainer || 'គ្រូឧទ្ទេស')}</span> • <span>⏱️ ${escapeHtml(v.duration || '២០ នាទី')}</span> • <span>មុខវិជ្ជា៖ ${escapeHtml(v.subjectCode || v.subject || 'ICT')}</span>
+              </div>
+            </div>
           </div>
-          <button class="modal-close-icon" onclick="openTraineeLessonsModal()" style="color:#ffffff;">&times;</button>
+          <button class="modal-close-icon" onclick="${returnCallback}" style="color:#ffffff;">&times;</button>
         </div>
-        <div class="stms-modal-body" style="padding:20px;">
+        <div class="stms-modal-body" style="padding:20px; max-height:80vh; overflow-y:auto;">
           
-          <!-- Mock HTML5 Video Player -->
-          <div class="stms-video-player-wrap">
-            <div class="video-screen-mock">
-              <div class="video-play-big-btn" onclick="showToast('កំពុងចាក់វីដេអូមេរៀន...', 'success')">
-                <i class="fas fa-play"></i>
+          <!-- Sample Link Notice if old dummy link was used -->
+          ${(rawUrl.includes('dQw4w9WgXcQ') || ytId === 'dQw4w9WgXcQ') ? `
+            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px 14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <div style="font-size:0.8rem; color:#92400e;">
+                <i class="fas fa-info-circle" style="color:#d97706; margin-right:4px;"></i> វីដេអូនេះកំពុងប្រើ Link គំរូ។ លោកគ្រូ/អ្នកគ្រូអាចចុច «កែប្រែ Link» ដើម្បីដាក់ Link YouTube ជាក់ស្តែងនៃមេរៀន។
               </div>
-              <h4 style="color:#ffffff; margin:0 0 6px 0; font-size:1rem;">${v.title}</h4>
-              <p style="color:#cbd5e1; font-size:0.82rem; margin:0;">គ្រូឧទ្ទេស៖ ${v.trainer} • រយៈពេល ${v.duration}</p>
+              ${isTeacherOrAdmin ? `
+                <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#b45309; border-color:#fcd34d; background:#ffffff;" onclick="editTeacherVideo('${v.id}')">
+                  <i class="fas fa-edit"></i> កែប្រែ Link YouTube
+                </button>
+              ` : ''}
             </div>
-            <div class="video-player-bar">
-              <i class="fas fa-play" style="cursor:pointer;" onclick="showToast('ចាក់/ផ្អាកវីដេអូ', 'info')"></i>
-              <div class="video-prog-track" onclick="showToast('បានរំកិលម៉ោងវីដេអូ', 'info')">
-                <div class="video-prog-fill"></div>
+          ` : ''}
+
+          <!-- Responsive 16:9 Video Player -->
+          <div class="stms-responsive-video-wrap">
+            ${ytId ? `
+              <iframe 
+                src="${embedUrl}" 
+                title="${escapeHtml(v.title)}"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen>
+              </iframe>
+            ` : (isDirectVideo ? `
+              <video src="${v.videoUrl}" controls autoplay style="width:100%; height:100%; object-fit:contain;"></video>
+            ` : `
+              <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff; padding:24px; text-align:center;">
+                <i class="fab fa-youtube" style="font-size:3.5rem; color:#ef4444; margin-bottom:12px;"></i>
+                <h4 style="color:#ffffff; margin:0 0 8px 0; font-size:1.05rem;">${escapeHtml(v.title)}</h4>
+                <p style="color:#cbd5e1; font-size:0.85rem; max-width:480px; margin:0 0 16px 0;">
+                  ${rawUrl ? 'សូមចុចប៊ូតុងខាងក្រោមដើម្បីទស្សនាវីដេអូនៅលើ YouTube ឬក្នុង Browser ផ្ទាល់៖' : 'មិនទាន់មានតំណភ្ជាប់វីដេអូនៅឡើយទេ។'}
+                </p>
+                ${rawUrl ? `
+                  <a href="${rawUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="background:#ef4444; border-color:#dc2626; font-size:0.9rem; padding:8px 18px;">
+                    <i class="fab fa-youtube"></i> បើកមើលលើ YouTube ផ្ទាល់
+                  </a>
+                ` : ''}
               </div>
-              <span>12:15 / ${v.duration}</span>
-              <i class="fas fa-volume-up" style="cursor:pointer;"></i>
-              <i class="fas fa-expand" style="cursor:pointer;" onclick="showToast('បើកពេញអេក្រង់', 'info')"></i>
-            </div>
+            `)}
           </div>
 
-          <!-- Video Details & Actions -->
-          <div style="background:#f8fafc; border-radius:10px; padding:16px; border:1px solid var(--border-color); margin-bottom:16px;">
-            <h4 style="font-size:0.92rem; color:#1e3a8a; margin-bottom:8px;"><i class="fas fa-info-circle"></i> ខ្លឹមសារសង្ខេបនៃមេរៀន</h4>
-            <p style="font-size:0.86rem; color:#334155; line-height:1.6; margin:0 0 12px 0;">${v.desc}</p>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn btn-outline" style="font-size:0.8rem;" onclick="showToast('បានទាញយកស្លាយបង្រៀន (PowerPoint) ដោយជោគជ័យ!', 'success')">
-                <i class="fas fa-file-powerpoint" style="color:#ea580c;"></i> ទាញយកស្លាយបង្រៀន (PPTX)
-              </button>
-              <button class="btn btn-outline" style="font-size:0.8rem;" onclick="showToast('បានទាញយកកម្រងលំហាត់ (PDF) ដោយជោគជ័យ!', 'success')">
-                <i class="fas fa-file-pdf" style="color:#e11d48;"></i> ទាញយកឯកសារជំនួយ (PDF)
-              </button>
+          <!-- Video Details & Action Toolbar -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:0.75rem; font-weight:700; color:#ea580c; background:#fff7ed; padding:3px 10px; border-radius:6px;">
+                  ${escapeHtml(v.category || 'គរុកោសល្យ')}
+                </span>
+                <span style="font-size:0.78rem; color:#64748b;">
+                  <i class="fas fa-eye"></i> ${v.views || 1} នាក់បានទស្សនា
+                </span>
+                <span style="font-size:0.78rem; color:#64748b;">
+                  <i class="fas fa-calendar-alt"></i> ${v.date || '2026-11-18'}
+                </span>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                ${watchUrl ? `
+                  <a href="${watchUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size:0.78rem; height:30px; padding:0 12px; color:#dc2626; border-color:#fca5a5; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fab fa-youtube"></i> បើកលើ YouTube ផ្ទាល់
+                  </a>
+                ` : ''}
+                <button class="btn btn-outline" style="font-size:0.78rem; height:30px; padding:0 12px; color:#475569;" onclick="navigator.clipboard.writeText('${watchUrl || rawUrl || ''}'); showToast('បានចម្លង Link វីដេអូ!', 'success');">
+                  <i class="fas fa-copy"></i> ចម្លង Link
+                </button>
+                ${isTeacherOrAdmin ? `
+                  <button class="btn btn-outline" style="font-size:0.78rem; height:30px; padding:0 12px; color:#2563eb; border-color:#bfdbfe;" onclick="editTeacherVideo('${v.id}')">
+                    <i class="fas fa-edit"></i> កែប្រែ Link
+                  </button>
+                ` : ''}
+              </div>
             </div>
+            <p style="font-size:0.86rem; color:#334155; line-height:1.6; margin:0;">
+              ${escapeHtml(v.desc || `មេរៀនវីដេអូបង្រៀនគំរូនៃមុខវិជ្ជា ${v.subjectCode || ''} បង្ហាញដោយ ${v.trainer || 'គ្រូឧទ្ទេស'}`)}
+            </p>
           </div>
 
-          <!-- Knowledge Check Quiz -->
-          <div style="border:1px solid #fed7aa; background:#fff7ed; border-radius:10px; padding:14px;">
-            <h5 style="color:#c2410c; margin:0 0 8px 0; font-size:0.88rem;"><i class="fas fa-question-circle"></i> សំណួរស្វ័យវាយតម្លៃបន្ទាប់ពីទស្សនា</h5>
-            <p style="font-size:0.84rem; color:#431407; margin-bottom:10px;">តើជំហានដំបូងនៃវិធីសាស្ត្រសូរសំឡេង គឺត្រូវបង្រៀនអ្វីដល់សិស្ស?</p>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-              <button class="btn btn-outline" style="background:#ffffff; justify-content:flex-start; font-size:0.82rem; height:auto; padding:8px 12px;" onclick="showToast('សូមព្យាយាមម្តងទៀត!', 'warning')">
-                ក. ការអានអត្ថបទវែងៗភ្លាមៗ
-              </button>
-              <button class="btn btn-outline" style="background:#ffffff; justify-content:flex-start; font-size:0.82rem; height:auto; padding:8px 12px;" onclick="showToast('ចម្លើយត្រឹមត្រូវ! ទទួលពិន្ទុពេញ ១០/១០ 🎉', 'success')">
-                ខ. ការស្គាល់សូរ និងរូបរាងនៃព្យញ្ជនៈ និងស្រៈ (Phonemic Awareness)
-              </button>
-            </div>
-          </div>
-
-          <div style="margin-top:18px; display:flex; justify-content:space-between;">
-            <button class="btn btn-outline" onclick="openTraineeLessonsModal()">← ត្រឡប់ទៅបញ្ជីវីដេអូ</button>
+          <!-- Bottom Navigation Buttons -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+            <button class="btn btn-outline" onclick="${returnCallback}">
+              ← ត្រឡប់ក្រោយ
+            </button>
             <button class="btn btn-primary" onclick="closeStmsModal()">រួចរាល់</button>
           </div>
 
@@ -4623,6 +4767,46 @@ function openSubjectDetailModal(code) {
                     </button>
                   </div>
                 `}).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Teacher Uploaded Video Lessons -->
+          ${subjectVideos.length > 0 ? `
+            <div style="margin-bottom:18px;">
+              <h4 style="font-size:0.92rem; color:#1e3a8a; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+                <span><i class="fab fa-youtube" style="color:#ef4444;"></i> វីដេអូបង្រៀនដែលគ្រូបាន Upload (${subjectVideos.length})</span>
+              </h4>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                ${subjectVideos.map(v => {
+                  const ytId = v.youtubeId || extractYouTubeId(v.videoUrl);
+                  const thumb = v.thumbnail || (ytId ? getYouTubeThumbnail(v.videoUrl) : '');
+                  return `
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                      <div style="display:flex; align-items:center; gap:12px; min-width:0; cursor:pointer;" onclick="playTraineeVideo('${v.id}')">
+                        <div style="width:64px; height:42px; border-radius:6px; overflow:hidden; background:#09204a; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative;">
+                          ${thumb ? `
+                            <img src="${thumb}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
+                            <div style="position:absolute; inset:0; background:rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center;">
+                              <i class="fas fa-play" style="color:#ffffff; font-size:0.7rem;"></i>
+                            </div>
+                          ` : `
+                            <i class="fas fa-play" style="color:#f97316; font-size:0.8rem;"></i>
+                          `}
+                        </div>
+                        <div style="min-width:0;">
+                          <div style="font-weight:700; color:#1e293b; font-size:0.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(v.title)}</div>
+                          <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                            <span>${v.duration || '២០ នាទី'}</span> • <span>${v.trainer || 'គ្រូឧទ្ទេស'}</span> • <span>${v.date || ''}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 12px; height:28px; flex-shrink:0;" onclick="playTraineeVideo('${v.id}')">
+                        <i class="fas fa-play"></i> ទស្សនា
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </div>
           ` : ''}
@@ -9690,18 +9874,22 @@ function openTeacherUploadModal(selectedSubjectCode, activeTab = 'lesson') {
               </div>
 
               <div>
-                <label class="form-label" style="font-weight:700;">ចំណងជើងវីដេអូបង្រៀន</label>
+                <label class="form-label" style="font-weight:700;">ចំណងជើងវីដេអូបង្រៀន <span style="color:#ef4444;">*</span></label>
                 <input type="text" id="videoTitleInput" class="form-input" placeholder="ឧ. បច្ចេកទេសគ្រប់គ្រងថ្នាក់រៀនបែបសកម្ម..." />
               </div>
 
               <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
                 <div>
-                  <label class="form-label" style="font-weight:700;">Link វីដេអូ YouTube ឬ MP4</label>
-                  <input type="text" id="videoUrlInput" class="form-input" placeholder="https://www.youtube.com/watch?v=..." value="https://www.youtube.com/embed/dQw4w9WgXcQ" />
+                  <label class="form-label" style="font-weight:700;">Link វីដេអូ YouTube ឬ MP4 <span style="color:#ef4444;">*</span></label>
+                  <input type="url" id="videoUrlInput" class="form-input" placeholder="ឧ. https://www.youtube.com/watch?v=... ឬ https://youtu.be/..." oninput="previewTeacherVideoInput(this.value)" />
+                  <small style="color:#64748b; font-size:0.74rem; display:block; margin-top:4px;">
+                    <i class="fab fa-youtube" style="color:#ef4444;"></i> គាំទ្រ Link YouTube គ្រប់ទម្រង់ (Watch, Share youtu.be, Shorts, Embed) ឬតំណភ្ជាប់ MP4
+                  </small>
+                  <div id="videoUrlPreviewBox" style="margin-top:8px; display:none;"></div>
                 </div>
                 <div>
                   <label class="form-label" style="font-weight:700;">រយៈពេល</label>
-                  <input type="text" id="videoDurationInput" class="form-input" placeholder="ឧ. ២២ នាទី" value="២២ នាទី" />
+                  <input type="text" id="videoDurationInput" class="form-input" placeholder="ឧ. ២២ នាទី" value="២០ នាទី" />
                 </div>
               </div>
 
@@ -9713,21 +9901,60 @@ function openTeacherUploadModal(selectedSubjectCode, activeTab = 'lesson') {
               </div>
 
               <!-- List of Uploaded Videos (Strictly Scoped) -->
-              <h4 style="margin:16px 0 8px 0; color:#1e3a8a; font-size:0.92rem;">
-                <i class="fas fa-play-circle"></i> វីដេអូដែលបាន Upload ក្នុងមុខវិជ្ជារបស់ខ្ញុំ (${videos.length})
+              <h4 style="margin:16px 0 8px 0; color:#1e3a8a; font-size:0.92rem; display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fas fa-play-circle" style="color:#ea580c;"></i> វីដេអូដែលបាន Upload ក្នុងមុខវិជ្ជារបស់ខ្ញុំ (${videos.length})</span>
+                <span style="font-size:0.75rem; color:#64748b; font-weight:normal;">ចុច «ទស្សនា» ដើម្បីមើល ឬ «កែប្រែ» ដើម្បីប្តូរ Link YouTube</span>
               </h4>
               <div style="display:flex; flex-direction:column; gap:8px;">
-                ${videos.length > 0 ? videos.map(v => `
-                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                      <strong style="color:#1e293b; font-size:0.88rem;"><i class="fas fa-play" style="color:#ea580c; margin-right:6px;"></i> ${v.title}</strong>
-                      <div style="font-size:0.75rem; color:#64748b;">${v.duration} • ${v.subjectCode} • ${v.date}</div>
+                ${videos.length > 0 ? videos.map(v => {
+                  const rawUrl = v.videoUrl || '';
+                  const ytId = v.youtubeId || extractYouTubeId(rawUrl);
+                  const thumb = v.thumbnail || (ytId ? getYouTubeThumbnail(rawUrl) : '');
+                  const watchUrl = v.watchUrl || (ytId ? getYouTubeWatchUrl(rawUrl) : rawUrl);
+                  return `
+                  <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:12px; transition:all 0.2s;" onmouseover="this.style.borderColor='#cbd5e1'" onmouseout="this.style.borderColor='#e2e8f0'">
+                    <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                      <div style="width:70px; height:46px; border-radius:6px; overflow:hidden; background:#09204a; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; cursor:pointer;" onclick="playTraineeVideo('${v.id}')">
+                        ${thumb ? `
+                          <img src="${thumb}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" alt="" />
+                          <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center;">
+                            <i class="fas fa-play" style="color:#ffffff; font-size:0.75rem;"></i>
+                          </div>
+                        ` : `
+                          <i class="fas fa-play" style="color:#f97316; font-size:0.9rem;"></i>
+                        `}
+                      </div>
+                      <div style="min-width:0;">
+                        <div style="font-weight:700; color:#1e293b; font-size:0.88rem; cursor:pointer; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" onclick="playTraineeVideo('${v.id}')">
+                          ${escapeHtml(v.title)}
+                        </div>
+                        <div style="font-size:0.74rem; color:#64748b; margin-top:2px; display:flex; align-items:center; gap:8px;">
+                          <span>⏱️ ${escapeHtml(v.duration || '២០ នាទី')}</span>
+                          <span>• ${escapeHtml(v.subjectCode)}</span>
+                          <span>• ${v.date || ''}</span>
+                          ${ytId ? `<span style="color:#dc2626; font-weight:600;"><i class="fab fa-youtube"></i> YouTube</span>` : ''}
+                        </div>
+                      </div>
                     </div>
-                    <button class="btn btn-outline" style="color:#ef4444; border-color:#fca5a5; font-size:0.72rem; height:26px; padding:0 8px;" onclick="deleteTeacherVideo('${v.id}')">
-                      <i class="fas fa-trash"></i>
-                    </button>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                      <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#2563eb; border-color:#bfdbfe;" onclick="playTraineeVideo('${v.id}')" title="ទស្សនាវីដេអូ">
+                        <i class="fas fa-play"></i> ទស្សនា
+                      </button>
+                      ${watchUrl ? `
+                        <a href="${watchUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 8px; color:#dc2626; border-color:#fca5a5; display:inline-flex; align-items:center;" title="បើកមើលលើ YouTube">
+                          <i class="fab fa-youtube"></i>
+                        </a>
+                      ` : ''}
+                      <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 8px; color:#475569;" onclick="editTeacherVideo('${v.id}')" title="កែប្រែ">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-outline" style="color:#ef4444; border-color:#fca5a5; font-size:0.75rem; height:28px; padding:0 8px;" onclick="deleteTeacherVideo('${v.id}')" title="លុប">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
                   </div>
-                `).join('') : `
+                `;
+                }).join('') : `
                   <div style="text-align:center; padding:20px; color:#94a3b8; font-size:0.82rem;">
                     មិនទាន់មានវីដេអូដែលបាន Upload ក្នុងមុខវិជ្ជានេះនៅឡើយទេ។
                   </div>
@@ -9858,9 +10085,20 @@ function saveTeacherVideo() {
   }
 
   if (!titleEl || !titleEl.value.trim()) {
-    showToast('សូមបញ្ចូលចំណងជើងវីដេអូ!', 'warning');
+    showToast('សូមបញ្ចូលចំណងជើងវីដេអូបង្រៀន!', 'warning');
     return;
   }
+
+  if (!urlEl || !urlEl.value.trim()) {
+    showToast('សូមបញ្ចូលតំណភ្ជាប់ (Link) វីដេអូ YouTube ឬ MP4!', 'warning');
+    return;
+  }
+
+  const rawUrl = urlEl.value.trim();
+  const ytId = extractYouTubeId(rawUrl);
+  const embedUrl = ytId ? getYouTubeEmbedUrl(rawUrl, true) : rawUrl;
+  const watchUrl = ytId ? getYouTubeWatchUrl(rawUrl) : rawUrl;
+  const thumb = ytId ? getYouTubeThumbnail(rawUrl) : '';
 
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
 
@@ -9869,7 +10107,11 @@ function saveTeacherVideo() {
     subjectCode: subjectCode,
     subjectName: subj.nameKh,
     title: titleEl.value.trim(),
-    videoUrl: urlEl && urlEl.value.trim() ? urlEl.value.trim() : 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    videoUrl: rawUrl,
+    embedUrl: embedUrl,
+    watchUrl: watchUrl,
+    youtubeId: ytId || '',
+    thumbnail: thumb,
     duration: durEl && durEl.value.trim() ? durEl.value.trim() : '២០ នាទី',
     category: catEl ? catEl.value : 'គរុកោសល្យ',
     trainer: tr.nameKh,
@@ -9886,6 +10128,112 @@ function saveTeacherVideo() {
   saveData();
   showToast(`🎉 បាន Upload វីដេអូ «${newVideo.title}» និងលោតចូលក្នុងប្រព័ន្ធសិស្សដោយស្វ័យប្រវត្តិ!`, 'success');
   openTeacherUploadModal(subjectCode, 'video');
+  if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
+    renderView(currentView);
+  }
+}
+
+// Edit Video Modal
+function editTeacherVideo(videoId) {
+  const v = (stmsData.videoLessons || []).find(x => x.id === videoId);
+  if (!v) return;
+
+  const currentUrl = v.videoUrl || (v.youtubeId ? `https://www.youtube.com/watch?v=${v.youtubeId}` : '');
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="editTeacherVideoModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:580px;">
+        <div class="stms-modal-header" style="background:#09204a; color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-edit" style="color:#f97316; font-size:1.2rem;"></i>
+            <h3 style="color:#ffffff; font-size:1.05rem; margin:0;">កែប្រែព័ត៌មាន &amp; Link វីដេអូ</h3>
+          </div>
+          <button class="modal-close-icon" onclick="openTeacherUploadModal('${v.subjectCode}', 'video')" style="color:#ffffff;">&times;</button>
+        </div>
+        <div class="stms-modal-body" style="padding:22px;">
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+              <label class="form-label" style="font-weight:700;">ចំណងជើងវីដេអូ <span style="color:#ef4444;">*</span></label>
+              <input type="text" id="editVideoTitleInput" class="form-input" value="${escapeHtml(v.title || '')}" />
+            </div>
+
+            <div>
+              <label class="form-label" style="font-weight:700;">Link វីដេអូ YouTube ឬ MP4 <span style="color:#ef4444;">*</span></label>
+              <input type="url" id="editVideoUrlInput" class="form-input" value="${escapeHtml(currentUrl)}" placeholder="https://www.youtube.com/watch?v=..." oninput="previewEditVideoInput(this.value)" />
+              <small style="color:#64748b; font-size:0.75rem; display:block; margin-top:4px;">
+                <i class="fab fa-youtube" style="color:#ef4444;"></i> បញ្ចូល Link ពី YouTube (Watch, Shorts, youtu.be) ឬ Link ឯកសារ MP4
+              </small>
+              <div id="editVideoUrlPreviewBox" style="margin-top:8px;"></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label class="form-label" style="font-weight:700;">រយៈពេល</label>
+                <input type="text" id="editVideoDurationInput" class="form-input" value="${escapeHtml(v.duration || '២០ នាទី')}" />
+              </div>
+              <div>
+                <label class="form-label" style="font-weight:700;">ប្រធានបទ / Category</label>
+                <select id="editVideoCategorySelect" class="form-input">
+                  <option value="គរុកោសល្យ" ${v.category==='គរុកោសល្យ'?'selected':''}>គរុកោសល្យ</option>
+                  <option value="ភាសាខ្មែរ" ${v.category==='ភាសាខ្មែរ'?'selected':''}>ភាសាខ្មែរ</option>
+                  <option value="គណិតវិទ្យា" ${v.category==='គណិតវិទ្យា'?'selected':''}>គណិតវិទ្យា</option>
+                  <option value="ICT" ${v.category==='ICT'?'selected':''}>ICT</option>
+                  <option value="ការស្រាវជ្រាវ" ${v.category==='ការស្រាវជ្រាវ'?'selected':''}>ការស្រាវជ្រាវ</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+              <button class="btn btn-outline" onclick="openTeacherUploadModal('${v.subjectCode}', 'video')">បោះបង់</button>
+              <button class="btn btn-primary" onclick="updateTeacherVideo('${v.id}')">
+                <i class="fas fa-save"></i> រក្សាទុកការកែប្រែ
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+  setTimeout(() => {
+    previewEditVideoInput(currentUrl);
+  }, 60);
+}
+
+// Update Teacher Video
+function updateTeacherVideo(videoId) {
+  const v = (stmsData.videoLessons || []).find(x => x.id === videoId);
+  if (!v) return;
+
+  const titleEl = document.getElementById('editVideoTitleInput');
+  const urlEl = document.getElementById('editVideoUrlInput');
+  const durEl = document.getElementById('editVideoDurationInput');
+  const catEl = document.getElementById('editVideoCategorySelect');
+
+  if (!titleEl || !titleEl.value.trim()) {
+    showToast('សូមបញ្ចូលចំណងជើងវីដេអូ!', 'warning');
+    return;
+  }
+  if (!urlEl || !urlEl.value.trim()) {
+    showToast('សូមបញ្ចូល Link វីដេអូ YouTube ឬ MP4!', 'warning');
+    return;
+  }
+
+  const rawUrl = urlEl.value.trim();
+  const ytId = extractYouTubeId(rawUrl);
+
+  v.title = titleEl.value.trim();
+  v.videoUrl = rawUrl;
+  v.embedUrl = ytId ? getYouTubeEmbedUrl(rawUrl, true) : rawUrl;
+  v.watchUrl = ytId ? getYouTubeWatchUrl(rawUrl) : rawUrl;
+  v.youtubeId = ytId || '';
+  v.thumbnail = ytId ? getYouTubeThumbnail(rawUrl) : '';
+  v.duration = durEl && durEl.value.trim() ? durEl.value.trim() : '២០ នាទី';
+  v.category = catEl ? catEl.value : 'គរុកោសល្យ';
+
+  saveData();
+  showToast(`🎉 បានធ្វើបច្ចុប្បន្នភាពវីដេអូ «${v.title}» ដោយជោគជ័យ!`, 'success');
+  openTeacherUploadModal(v.subjectCode, 'video');
   if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
     renderView(currentView);
   }
@@ -9911,6 +10259,98 @@ function deleteTeacherVideo(videoId) {
   openTeacherUploadModal(v.subjectCode, 'video');
   if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
     renderView(currentView);
+  }
+}
+
+// Video Input Live Previews
+function previewTeacherVideoInput(url) {
+  const box = document.getElementById('videoUrlPreviewBox');
+  if (!box) return;
+  url = String(url || '').trim();
+  if (!url) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+
+  const ytId = extractYouTubeId(url);
+  if (ytId) {
+    const thumb = getYouTubeThumbnail(url);
+    box.style.display = 'flex';
+    box.style.alignItems = 'center';
+    box.style.gap = '12px';
+    box.style.background = '#f0fdf4';
+    box.style.border = '1px solid #86efac';
+    box.style.borderRadius = '8px';
+    box.style.padding = '8px 12px';
+    box.innerHTML = `
+      <img src="${thumb}" style="width:68px; height:44px; object-fit:cover; border-radius:6px; flex-shrink:0; border:1px solid #bbf7d0;" onerror="this.style.display='none'" />
+      <div style="font-size:0.78rem; color:#166534; line-height:1.4;">
+        <strong style="display:block; color:#15803d;"><i class="fab fa-youtube" style="color:#ef4444;"></i> តំណភ្ជាប់ YouTube ត្រឹមត្រូវ!</strong>
+        <span>YouTube ID: <code>${ytId}</code></span>
+      </div>
+    `;
+  } else if (/\.(mp4|webm|ogg)($|\?)/i.test(url)) {
+    box.style.display = 'flex';
+    box.style.alignItems = 'center';
+    box.style.gap = '10px';
+    box.style.background = '#eff6ff';
+    box.style.border = '1px solid #bfdbfe';
+    box.style.borderRadius = '8px';
+    box.style.padding = '8px 12px';
+    box.innerHTML = `
+      <i class="fas fa-file-video" style="font-size:1.5rem; color:#2563eb;"></i>
+      <div style="font-size:0.78rem; color:#1e40af;">
+        <strong>✅ ឯកសារវីដេអូផ្ទាល់ (Direct Video Stream)</strong>
+        <div style="color:#64748b; font-size:0.72rem; word-break:break-all;">${escapeHtml(url)}</div>
+      </div>
+    `;
+  } else {
+    box.style.display = 'flex';
+    box.style.alignItems = 'center';
+    box.style.gap = '8px';
+    box.style.background = '#fffbeb';
+    box.style.border = '1px solid #fde68a';
+    box.style.borderRadius = '8px';
+    box.style.padding = '8px 12px';
+    box.innerHTML = `
+      <i class="fas fa-info-circle" style="color:#d97706; font-size:1.1rem;"></i>
+      <div style="font-size:0.76rem; color:#92400e;">
+        សូមប្រើប្រាស់ Link ពី YouTube (ឧ. https://www.youtube.com/watch?v=... ឬ https://youtu.be/...) ឬ Link .mp4 ផ្ទាល់។
+      </div>
+    `;
+  }
+}
+
+function previewEditVideoInput(url) {
+  const box = document.getElementById('editVideoUrlPreviewBox');
+  if (!box) return;
+  url = String(url || '').trim();
+  if (!url) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+
+  const ytId = extractYouTubeId(url);
+  if (ytId) {
+    const thumb = getYouTubeThumbnail(url);
+    box.style.display = 'flex';
+    box.style.alignItems = 'center';
+    box.style.gap = '12px';
+    box.style.background = '#f0fdf4';
+    box.style.border = '1px solid #86efac';
+    box.style.borderRadius = '8px';
+    box.style.padding = '8px 12px';
+    box.innerHTML = `
+      <img src="${thumb}" style="width:68px; height:44px; object-fit:cover; border-radius:6px; flex-shrink:0; border:1px solid #bbf7d0;" onerror="this.style.display='none'" />
+      <div style="font-size:0.78rem; color:#166534; line-height:1.4;">
+        <strong style="display:block; color:#15803d;"><i class="fab fa-youtube" style="color:#ef4444;"></i> តំណភ្ជាប់ YouTube ត្រឹមត្រូវ!</strong>
+        <span>YouTube ID: <code>${ytId}</code></span>
+      </div>
+    `;
+  } else {
+    box.style.display = 'none';
   }
 }
 
