@@ -3830,6 +3830,57 @@ function renderTimetableView(container) {
   container.innerHTML = html;
 }
 
+// Smoothly Scroll to Admin Home Timetable Section & Trigger Pulse Animation
+function scrollToAdminTimetableSection() {
+  if (currentRole !== 'admin') {
+    if (currentRole === 'trainee') {
+      openTraineeTimetableModal();
+      return;
+    }
+    if (currentRole === 'trainer') {
+      openTeacherTimetableModal();
+      return;
+    }
+  }
+
+  if (currentView !== 'admin-portal') {
+    navigateView('admin-portal');
+    setTimeout(() => {
+      const el = document.getElementById('adminTimetableSection');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.classList.add('highlight-section-pulse');
+        setTimeout(() => el.classList.remove('highlight-section-pulse'), 1800);
+      } else {
+        openAdminTimetableModal();
+      }
+    }, 120);
+    return;
+  }
+
+  const el = document.getElementById('adminTimetableSection');
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.classList.add('highlight-section-pulse');
+    setTimeout(() => el.classList.remove('highlight-section-pulse'), 1800);
+  } else {
+    openAdminTimetableModal();
+  }
+}
+window.scrollToAdminTimetableSection = scrollToAdminTimetableSection;
+
+// Navbar Quick Action Handler for Timetable
+function handleNavbarTimetableClick() {
+  if (currentRole === 'trainee') {
+    openTraineeTimetableModal();
+  } else if (currentRole === 'trainer') {
+    openTeacherTimetableModal();
+  } else {
+    scrollToAdminTimetableSection();
+  }
+}
+window.handleNavbarTimetableClick = handleNavbarTimetableClick;
+
 // ==========================================================================
 // 6. TRAINEE PORTAL VIEW (ផតថលផ្ទាល់ខ្លួនគរុនិស្សិត - MODELED AFTER MOCKUP)
 // ==========================================================================
@@ -4101,6 +4152,9 @@ function renderTraineePortalView(container) {
           </div>
         </div>
         <div class="trainee-hero-actions">
+          <button class="btn-hero-action active-timetable-btn" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; border:1px solid #38bdf8; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35); display:inline-flex; align-items:center; gap:8px;" onclick="openTraineeTimetableModal()" title="មើលកាលវិភាគសិក្សា">
+            <i class="fas fa-calendar-alt"></i> កាលវិភាគ
+          </button>
           <button class="btn-hero-action primary" onclick="viewTraineeCard('${t.id}')">
             <i class="fas fa-id-card"></i> កាតសិស្ស
           </button>
@@ -4124,12 +4178,12 @@ function renderTraineePortalView(container) {
           <div class="hub-card-sub">${subjects.length} មុខវិជ្ជា</div>
         </div>
 
-        <!-- 2. ថ្នាក់ (Class / Timetable - Blue) -->
-        <div class="trainee-hub-card card-blue" onclick="openTraineeTimetableModal()">
+        <!-- 2. កាលវិភាគ (Timetable - Blue) -->
+        <div class="trainee-hub-card card-blue" onclick="openTraineeTimetableModal()" title="ចុចដើម្បីមើលកាលវិភាគសិក្សា">
           <div class="hub-card-pattern"></div>
-          <div class="hub-card-icon"><i class="fas fa-globe"></i></div>
-          <div class="hub-card-title">ថ្នាក់</div>
-          <div class="hub-card-sub">កាលវិភាគសិក្សា</div>
+          <div class="hub-card-icon"><i class="fas fa-calendar-alt"></i></div>
+          <div class="hub-card-title">កាលវិភាគ</div>
+          <div class="hub-card-sub">កាលវិភាគសិក្សាប្រចាំសប្តាហ៍</div>
         </div>
 
         <!-- 3. វីដេអូ (Video Lessons - Orange) -->
@@ -9600,6 +9654,9 @@ function renderTrainerPortalView(container) {
           </div>
         </div>
         <div class="trainee-hero-actions">
+          <button class="btn-hero-action active-timetable-btn" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; border:1px solid #38bdf8; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35); display:inline-flex; align-items:center; gap:8px;" onclick="openTeacherTimetableModal()" title="មើលកាលវិភាគបង្រៀន">
+            <i class="fas fa-calendar-alt"></i> កាលវិភាគ
+          </button>
           <button class="btn-hero-action primary" onclick="openTeacherHomeworkModal('${myCodes[0]}', 'create', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-plus-circle"></i> ដាក់កិច្ចការ/ប្រឡងខ្លី
           </button>
@@ -12430,8 +12487,8 @@ function renderAdminPortalView(container) {
           </div>
         </div>
         <div class="trainee-hero-actions">
-          <button class="btn-hero-action" style="background:#0284c7; color:#ffffff; border:1px solid #38bdf8; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openAdminTimetableModal()">
-            <i class="fas fa-calendar-alt"></i> រៀបចំកាលវិភាគ
+          <button class="btn-hero-action active-timetable-btn" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; border:1px solid #38bdf8; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35); display:inline-flex; align-items:center; gap:8px;" onclick="scrollToAdminTimetableSection()" title="មើល និងរៀបចំកាលវិភាគ">
+            <i class="fas fa-calendar-alt"></i> កាលវិភាគ
           </button>
           <button class="btn-hero-action primary" onclick="openAdminAddStudentModal()">
             <i class="fas fa-user-plus"></i> ចុះឈ្មោះសិស្សថ្មី
@@ -12475,12 +12532,12 @@ function renderAdminPortalView(container) {
           <div class="hub-card-sub">${(stmsData.cohorts||[]).length} កម្រិត &amp; បន្ទប់រៀន</div>
         </div>
 
-        <!-- 4. រៀបចំកាលវិភាគ (Green) -->
-        <div class="trainee-hub-card card-green" onclick="openAdminTimetableModal()">
+        <!-- 4. កាលវិភាគ (Green) -->
+        <div class="trainee-hub-card card-green" onclick="scrollToAdminTimetableSection()" title="ចុចដើម្បីរៀបចំកាលវិភាគបង្រៀន">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-calendar-alt"></i></div>
-          <div class="hub-card-title">រៀបចំកាលវិភាគ</div>
-          <div class="hub-card-sub">ចាត់តាំងម៉ោង ថ្នាក់ មុខវិជ្ជា &amp; គ្រូ</div>
+          <div class="hub-card-title">កាលវិភាគ</div>
+          <div class="hub-card-sub">រៀបចំ &amp; ចាត់តាំងម៉ោងបង្រៀន</div>
         </div>
 
         <!-- 5. អធិការកិច្ចវត្តមាន (Amber) -->
@@ -16579,5 +16636,9 @@ window.handleTimetableSubjectSelect = handleTimetableSubjectSelect;
 window.ensureClassTimetable = ensureClassTimetable;
 window.getAllTimetableSlots = getAllTimetableSlots;
 window.checkTimetableConflict = checkTimetableConflict;
+window.scrollToAdminTimetableSection = scrollToAdminTimetableSection;
+window.handleNavbarTimetableClick = handleNavbarTimetableClick;
+window.openTeacherTimetableModal = openTeacherTimetableModal;
+window.openTraineeTimetableModal = openTraineeTimetableModal;
 
 
