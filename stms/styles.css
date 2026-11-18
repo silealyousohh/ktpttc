@@ -1480,6 +1480,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   font-size: 1.05rem;
   background: linear-gradient(180deg, #ffffff 0%, #bfdbfe 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 4px;
   line-height: 1.6;
