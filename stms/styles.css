@@ -2249,8 +2249,21 @@ body:has(.admin-portal-container) .stms-content-viewport {
   body * {
     visibility: hidden;
   }
-  .roster-card, .roster-card * {
+  .roster-card, .roster-card *,
+  .trainee-id-card, .trainee-id-card *,
+  #printableCard, #printableCard *,
+  .batch-id-cards-grid, .batch-id-cards-grid * {
     visibility: visible;
+  }
+  .trainee-id-card, #printableCard {
+    position: absolute;
+    left: 50%;
+    top: 50px;
+    transform: translateX(-50%);
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    border: 1px solid #1e3a8a !important;
   }
   .roster-card {
     position: absolute;

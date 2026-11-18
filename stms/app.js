@@ -1155,7 +1155,7 @@ function renderDashboardView(container) {
                   <td>
                     <div class="roster-student-cell">
                       <div class="roster-student-avatar">
-                        ${t.photo ? `<img src="${t.photo}" alt="${t.nameKh}" onerror="this.outerHTML='👨‍🎓'">` : (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}
+                        ${getUserPhoto(t) ? `<img src="${getUserPhoto(t)}" alt="${t.nameKh}" onerror="this.outerHTML='${t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'}'">` : (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}
                       </div>
                       <span class="roster-student-name">${t.nameKh}</span>
                     </div>
@@ -1447,6 +1447,9 @@ function renderTraineesView(container) {
           </div>
         </div>
         <div class="roster-header-right">
+          <button class="btn btn-outline" onclick="viewTraineeCard()" style="font-size:0.85rem; height:36px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; border-color:#2563eb; color:#1d4ed8; font-weight:700;">
+            <i class="fas fa-id-card"></i> ប័ណ្ណសម្គាល់ខ្លួន (ID Cards)
+          </button>
           <button class="roster-btn-print" onclick="exportOrPrintRoster()">
             <i class="fas fa-print"></i> ទម្រង់បោះពុម្ព និង ទាញយក
           </button>
@@ -1530,7 +1533,7 @@ function renderTraineesView(container) {
                   <td>
                     <div class="roster-student-cell">
                       <div class="roster-student-avatar">
-                        ${t.photo ? `<img src="${t.photo}" alt="${t.nameKh}" onerror="this.outerHTML='👨‍🎓'">` : (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}
+                        ${getUserPhoto(t) ? `<img src="${getUserPhoto(t)}" alt="${t.nameKh}" onerror="this.outerHTML='${t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'}'">` : (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}
                       </div>
                       <span class="roster-student-name">${t.nameKh}</span>
                     </div>
@@ -1545,6 +1548,7 @@ function renderTraineesView(container) {
                   <td style="text-align: center;">${parentPhone}</td>
                   <td>
                     <div class="roster-action-group">
+                      <button class="roster-action-btn" style="color:#2563eb; border-color:#93c5fd;" onclick="viewTraineeCard('${t.id}')" title="មើលប័ណ្ណសម្គាល់ខ្លួន (ID Card)"><i class="fas fa-id-card"></i></button>
                       <button class="roster-action-btn" style="color:#0d9488; border-color:#99f6e4;" onclick="openAdminTransferStudentModal('${t.id}')" title="ចាត់ថ្នាក់រៀន ផ្ទេរថ្នាក់ &amp; គ្រប់គ្រងស្ថានភាព"><i class="fas fa-exchange-alt"></i></button>
                       <button class="roster-action-btn btn-edit-roster" onclick="openEditStudent('${t.id}')" title="កែប្រែព័ត៌មាន"><i class="fas fa-edit"></i></button>
                       <button class="roster-action-btn btn-delete-roster" onclick="deleteTraineeRecord('${t.id}')" title="លុបទិន្នន័យ"><i class="fas fa-trash"></i></button>
@@ -1780,6 +1784,7 @@ function renderTrainersView(container) {
               const pobVal = tr.pob || (typeof tr.birthplace === 'object' ? formatBirthplaceDisplay(tr) : tr.birthplace) || 'ខេត្តក្រចេះ';
               const qualVal = tr.qualification || 'អនុបណ្ឌិតគរុកោសល្យ';
               const trClasses = typeof getTrainerAssignedClasses === 'function' ? getTrainerAssignedClasses(tr) : (tr.assignedClasses || tr.classes || []);
+              const trPhoto = typeof getUserPhoto === 'function' ? getUserPhoto(tr) : (tr.photo || '');
 
               return `
                 <tr data-trainer-row="${tr.id}">
@@ -1788,7 +1793,7 @@ function renderTrainersView(container) {
                   <td>
                     <div class="roster-student-cell">
                       <div class="roster-student-avatar">
-                        ${tr.photo ? `<img src="${tr.photo}" alt="${tr.nameKh}" onerror="this.outerHTML='👨‍🏫'">` : (genderVal === 'ស្រី' ? '👩‍🏫' : '👨‍🏫')}
+                        ${trPhoto ? `<img src="${trPhoto}" alt="${tr.nameKh}" onerror="this.outerHTML='👨‍🏫'">` : (genderVal === 'ស្រី' ? '👩‍🏫' : '👨‍🏫')}
                       </div>
                       <span class="roster-student-name">${tr.nameKh}</span>
                     </div>
@@ -2048,78 +2053,461 @@ function submitEnrollForm() {
   renderView('trainees');
 }
 
-// Digital Trainee Card Modal
-function viewTraineeCard(id) {
-  let t = null;
-  if (id) {
-    t = stmsData.trainees.find(x => x.id === id);
+// --------------------------------------------------------------------------
+// STUDENT & TEACHER PROFILE PHOTO RESOLVER & SYNCHRONIZER
+// --------------------------------------------------------------------------
+
+// Grab photo from uploaded image data (student/teacher profile, photoUrl or base64)
+function getUserPhoto(u) {
+  if (!u) return '';
+  if (u.photo && typeof u.photo === 'string' && u.photo.trim() && !u.photo.includes('undefined')) {
+    return u.photo.trim();
   }
-  if (!t) {
-    if (stmsData.trainees.length > 0) {
-      t = stmsData.trainees[0];
-    } else {
-      showToast('មិនទាន់មានទិន្នន័យគរុនិស្សិតដើម្បីបង្ហាញប័ណ្ណសម្គាល់ខ្លួនទេ។ សូមចុះឈ្មោះគរុនិស្សិតជាមុន!', 'warning');
-      return;
+  
+  // 1. If trainee or has studentId
+  if (u.role === 'trainee' || u.studentId) {
+    const sId = String(u.studentId || u.id || '').trim().toLowerCase();
+    const uName = String(u.username || '').trim().toLowerCase();
+    const t = (stmsData.trainees || []).find(x => 
+      (x.id && String(x.id).trim().toLowerCase() === sId) ||
+      (x.studentId && String(x.studentId).trim().toLowerCase() === sId) ||
+      (x.username && String(x.username).trim().toLowerCase() === uName) ||
+      (x.nameKh && u.nameKh && x.nameKh === u.nameKh)
+    );
+    if (t && t.photo && typeof t.photo === 'string' && t.photo.trim() && !t.photo.includes('undefined')) {
+      return t.photo.trim();
+    }
+    // Also check stmsData.users for matching trainee photo
+    const usr = (stmsData.users || []).find(x => 
+      x.role === 'trainee' && x.photo && (
+        (x.id && String(x.id).trim().toLowerCase() === sId) ||
+        (x.studentId && String(x.studentId).trim().toLowerCase() === sId) ||
+        (x.username && String(x.username).trim().toLowerCase() === uName) ||
+        (x.nameKh && u.nameKh && x.nameKh === u.nameKh)
+      )
+    );
+    if (usr && usr.photo && typeof usr.photo === 'string' && usr.photo.trim() && !usr.photo.includes('undefined')) {
+      return usr.photo.trim();
     }
   }
 
+  // 2. If trainer
+  if (u.role === 'trainer') {
+    const trId = String(u.id || '').trim().toLowerCase();
+    const uName = String(u.username || '').trim().toLowerCase();
+    
+    // Check teachers in custom list
+    if (Array.isArray(stmsData.teachers)) {
+      const tr = stmsData.teachers.find(x => 
+        (x.id && String(x.id).trim().toLowerCase() === trId) ||
+        (x.username && String(x.username).trim().toLowerCase() === uName) ||
+        (x.nameKh && u.nameKh && x.nameKh === u.nameKh)
+      );
+      if (tr && tr.photo && typeof tr.photo === 'string' && tr.photo.trim() && !tr.photo.includes('undefined')) {
+        return tr.photo.trim();
+      }
+    }
+
+    // Check users array for any matching trainer photo
+    const usrTr = (stmsData.users || []).find(x => 
+      x.role === 'trainer' && x.photo && (
+        (x.id && String(x.id).trim().toLowerCase() === trId) ||
+        (x.username && String(x.username).trim().toLowerCase() === uName) ||
+        (x.nameKh && u.nameKh && x.nameKh === u.nameKh)
+      )
+    );
+    if (usrTr && usrTr.photo && typeof usrTr.photo === 'string' && usrTr.photo.trim() && !usrTr.photo.includes('undefined')) {
+      return usrTr.photo.trim();
+    }
+  }
+
+  return '';
+}
+window.getUserPhoto = getUserPhoto;
+
+// Synchronize uploaded photos across trainees, teachers, and users collections
+function syncPhotosAcrossCollections() {
+  if (!stmsData) return;
+  if (!Array.isArray(stmsData.users)) stmsData.users = [];
+  if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+
+  let changed = false;
+
+  stmsData.users.forEach(u => {
+    if (!u) return;
+    if (u.role === 'trainee') {
+      const sId = String(u.studentId || u.id || '').trim().toLowerCase();
+      const uName = String(u.username || '').trim().toLowerCase();
+      const match = stmsData.trainees.find(t => 
+        (t.id && String(t.id).trim().toLowerCase() === sId) ||
+        (t.studentId && String(t.studentId).trim().toLowerCase() === sId) ||
+        (t.username && String(t.username).trim().toLowerCase() === uName) ||
+        (t.nameKh && t.nameKh === u.nameKh)
+      );
+      if (match) {
+        if (!u.photo && match.photo) {
+          u.photo = match.photo;
+          changed = true;
+        } else if (!match.photo && u.photo) {
+          match.photo = u.photo;
+          changed = true;
+        }
+      }
+    } else if (u.role === 'trainer') {
+      if (Array.isArray(stmsData.teachers)) {
+        const tr = stmsData.teachers.find(t => 
+          (t.id && String(t.id).trim().toLowerCase() === String(u.id).trim().toLowerCase()) ||
+          (t.nameKh && t.nameKh === u.nameKh)
+        );
+        if (tr) {
+          if (!u.photo && tr.photo) {
+            u.photo = tr.photo;
+            changed = true;
+          } else if (!tr.photo && u.photo) {
+            tr.photo = u.photo;
+            changed = true;
+          }
+        }
+      }
+    }
+  });
+
+  // Keep active session photo in sync
+  if (currentUser) {
+    const p = getUserPhoto(currentUser);
+    if (p && currentUser.photo !== p) {
+      currentUser.photo = p;
+      try {
+        localStorage.setItem('ktpttc_current_user', JSON.stringify(currentUser));
+        sessionStorage.setItem('ktpttc_current_user', JSON.stringify(currentUser));
+      } catch (e) {}
+    }
+  }
+
+  if (changed) {
+    saveData(false);
+  }
+}
+window.syncPhotosAcrossCollections = syncPhotosAcrossCollections;
+
+// Get comprehensive list of all entered students (from trainees & users)
+function getAllEnteredStudents() {
+  const list = [];
+  const seenIds = new Set();
+  
+  // 1. Add from stmsData.trainees
+  (stmsData.trainees || []).forEach(t => {
+    if (t && (t.nameKh || t.id)) {
+      const id = String(t.id || t.studentId || '').trim();
+      const key = (id || t.nameKh).toLowerCase();
+      if (!seenIds.has(key)) {
+        seenIds.add(key);
+        list.push({
+          ...t,
+          id: id || `STU-${list.length + 1}`,
+          photo: getUserPhoto(t) || t.photo || ''
+        });
+      }
+    }
+  });
+
+  // 2. Add from stmsData.users where role is trainee
+  (stmsData.users || []).forEach(u => {
+    if (u && u.role === 'trainee') {
+      const id = String(u.studentId || u.id || u.username || '').trim();
+      const key = (id || u.nameKh).toLowerCase();
+      if (!seenIds.has(key)) {
+        seenIds.add(key);
+        list.push({
+          id: id,
+          studentId: u.studentId || id,
+          username: u.username || '',
+          nameKh: u.nameKh,
+          nameEn: u.nameEn || '',
+          gender: u.gender || 'ប្រុស',
+          dob: u.dob || '2001-01-01',
+          className: u.className || u.cohort || 'គរុនិស្សិត',
+          cohort: u.cohort || u.className || 'ជំនាន់ទី ៤',
+          photo: getUserPhoto(u) || u.photo || '',
+          avatar: u.avatar || (u.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'),
+          status: u.status || 'កំពុងសិក្សា',
+          phone: u.phone || ''
+        });
+      }
+    }
+  });
+
+  // Sort alphabetically by Khmer name
+  list.sort((a, b) => (a.nameKh || '').localeCompare(b.nameKh || '', 'km'));
+  return list;
+}
+window.getAllEnteredStudents = getAllEnteredStudents;
+
+// Digital Trainee Card Modal (Captured Dynamically from Entered Students List)
+function viewTraineeCard(id = null) {
+  closeStmsModal();
+  const allStudents = getAllEnteredStudents();
+  if (allStudents.length === 0) {
+    showToast('មិនទាន់មានទិន្នន័យគរុនិស្សិតដើម្បីបង្ហាញប័ណ្ណសម្គាល់ខ្លួនទេ។ សូមចុះឈ្មោះ ឬនាំចូលគរុនិស្សិតជាមុន!', 'warning');
+    return;
+  }
+
+  let t = null;
+  if (id) {
+    const searchId = String(id).trim().toLowerCase();
+    t = allStudents.find(x => 
+      String(x.id).toLowerCase() === searchId || 
+      String(x.studentId || '').toLowerCase() === searchId ||
+      String(x.username || '').toLowerCase() === searchId ||
+      (x.nameKh && x.nameKh.toLowerCase() === searchId)
+    );
+  }
+  
+  if (!t && currentUser && currentUser.role === 'trainee') {
+    t = allStudents.find(x => 
+      (x.id && x.id === currentUser.studentId) || 
+      (x.id && x.id === currentUser.id) || 
+      (x.username && x.username === currentUser.username) || 
+      (x.nameKh && x.nameKh === currentUser.nameKh)
+    );
+  }
+
+  if (!t) {
+    t = allStudents[0];
+  }
+
+  const currentIndex = allStudents.findIndex(x => x.id === t.id);
+  const prevStudent = currentIndex > 0 ? allStudents[currentIndex - 1] : null;
+  const nextStudent = currentIndex < allStudents.length - 1 ? allStudents[currentIndex + 1] : null;
+
+  const photo = getUserPhoto(t) || t.photo || '';
+  const photoHtml = photo 
+    ? `<img src="${photo}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:2.2rem;\\'>${t.avatar || (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}</div>'">` 
+    : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:2.2rem;">${t.avatar || (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}</div>`;
+
   const modalHtml = `
     <div class="stms-modal-backdrop" id="cardModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:440px; text-align:center;">
+      <div class="stms-modal-window" style="max-width:540px; text-align:center;">
+        
+        <!-- Header Bar -->
         <div class="modal-header-bar">
-          <div class="modal-header-title"><i class="fas fa-id-card"></i> ប័ណ្ណសម្គាល់ខ្លួនគរុនិស្សិត KTPTTC</div>
+          <div class="modal-header-title">
+            <i class="fas fa-id-card"></i> ប័ណ្ណសម្គាល់ខ្លួនគរុនិស្សិត (Trainee ID Card)
+          </div>
           <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
         </div>
-        <div class="modal-body-scroll" style="display:flex; justify-content:center; padding:30px 20px;">
+
+        <div class="modal-body-scroll" style="padding:18px 22px;">
           
-          <div class="trainee-id-card" id="printableCard">
-            <i class="fas fa-school card-watermark"></i>
-            <!-- Card Header -->
-            <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:8px;">
-              <img src="assets/ktpttc-logo.png" style="width:36px; height:36px; background:#fff; border-radius:50%; padding:2px;" onerror="this.src='assets/logo.png'">
-              <div style="text-align:left;">
-                <div style="font-size:0.75rem; font-weight:700; color:#93c5fd;">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
-                <div style="font-size:0.65rem; color:#cbd5e1;">TRAINEE TEACHER IDENTITY CARD</div>
-              </div>
+          <!-- Student Selector Toolbar (Captured from Entered Students List) -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:240px;">
+              <span style="font-size:0.8rem; font-weight:700; color:#1e3a8a; white-space:nowrap;">
+                <i class="fas fa-users"></i> គរុនិស្សិត៖
+              </span>
+              <select class="form-input" style="height:34px; font-size:0.82rem; padding:3px 8px; flex:1;" onchange="viewTraineeCard(this.value)">
+                ${allStudents.map((s, idx) => `
+                  <option value="${escapeHtml(s.id)}" ${s.id === t.id ? 'selected' : ''}>
+                    ${idx + 1}. ${escapeHtml(s.nameKh)} (${escapeHtml(s.id)}) - ${escapeHtml(s.className || 'ទូទៅ')}
+                  </option>
+                `).join('')}
+              </select>
             </div>
-
-            <!-- Card Body -->
-            <div style="display:flex; gap:14px; align-items:center; margin:10px 0;">
-              <div style="width:72px; height:85px; background:#0f172a; border:2px solid #3b82f6; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:2.4rem; overflow:hidden;">
-                ${t.photo ? `<img src="${t.photo}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML='${t.avatar}'">` : t.avatar}
-              </div>
-              <div style="text-align:left; font-size:0.82rem; line-height:1.6;">
-                <div>ឈ្មោះ៖ <strong style="font-size:0.95rem; color:#f8fafc;">${t.nameKh}</strong></div>
-                <div style="font-size:0.75rem; color:#94a3b8;">${t.nameEn || ''}</div>
-                <div>ភេទ៖ ${t.gender} | កើត៖ ${t.dob}</div>
-                <div>អត្តលេខ៖ <code style="color:#60a5fa; font-weight:700;">${t.id}</code></div>
-                <div>ថ្នាក់៖ ${t.className}</div>
-              </div>
+            
+            <div style="display:flex; gap:4px; align-items:center;">
+              <button class="btn btn-outline" style="height:32px; padding:0 10px; font-size:0.78rem;" ${prevStudent ? `onclick="viewTraineeCard('${escapeHtml(prevStudent.id)}')"` : 'disabled style="opacity:0.4; cursor:not-allowed;"'}>
+                ‹ មុន
+              </button>
+              <span style="font-size:0.75rem; color:#64748b; font-weight:700; padding:0 4px;">
+                ${currentIndex + 1}/${allStudents.length}
+              </span>
+              <button class="btn btn-outline" style="height:32px; padding:0 10px; font-size:0.78rem;" ${nextStudent ? `onclick="viewTraineeCard('${escapeHtml(nextStudent.id)}')"` : 'disabled style="opacity:0.4; cursor:not-allowed;"'}>
+                បន្ទាប់ ›
+              </button>
             </div>
+          </div>
 
-            <!-- Card Footer Barcode -->
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid rgba(255,255,255,0.2); padding-top:6px;">
-              <div style="font-size:0.65rem; color:#94a3b8; text-align:left;">
-                ឆ្នាំសិក្សា ២០២៦-២០២៧<br>សុពលភាព៖ ៣១ សីហា ២០២៧
+          <!-- Printable Digital Trainee Card -->
+          <div style="display:flex; justify-content:center; margin:10px 0 15px 0;">
+            <div class="trainee-id-card" id="printableCard">
+              <i class="fas fa-school card-watermark"></i>
+              
+              <!-- Card Header -->
+              <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.22); padding-bottom:8px;">
+                <img src="assets/ktpttc-logo.png" style="width:38px; height:38px; background:#fff; border-radius:50%; padding:2px; flex-shrink:0;" onerror="this.src='assets/logo.png'">
+                <div style="text-align:left; flex:1;">
+                  <div style="font-size:0.75rem; font-weight:800; color:#93c5fd; letter-spacing:-0.2px;">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
+                  <div style="font-size:0.62rem; color:#cbd5e1; font-weight:600; letter-spacing:0.5px;">KRATIE PROVINCIAL TEACHER TRAINING CENTER</div>
+                </div>
+                <div style="font-size:0.6rem; color:#38bdf8; font-weight:700; border:1px solid rgba(56,189,248,0.4); padding:2px 6px; border-radius:4px; text-transform:uppercase;">
+                  STUDENT ID
+                </div>
               </div>
-              <div style="font-family:monospace; letter-spacing:2px; font-weight:700; color:#38bdf8; font-size:0.8rem;">
-                ||||||||||||||||||||
+
+              <!-- Card Body -->
+              <div style="display:flex; gap:14px; align-items:center; margin:10px 0;">
+                <div style="width:75px; height:90px; background:#0f172a; border:2px solid #38bdf8; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
+                  ${photoHtml}
+                </div>
+                <div style="text-align:left; font-size:0.82rem; line-height:1.6; flex:1;">
+                  <div style="font-size:1.05rem; font-weight:800; color:#ffffff;">${escapeHtml(t.nameKh)}</div>
+                  ${t.nameEn ? `<div style="font-size:0.72rem; color:#93c5fd; font-weight:600; text-transform:uppercase;">${escapeHtml(t.nameEn)}</div>` : ''}
+                  <div style="font-size:0.75rem; color:#e2e8f0; margin-top:2px;">
+                    ភេទ៖ <strong>${escapeHtml(t.gender || 'ប្រុស')}</strong> | កើត៖ <strong>${escapeHtml(t.dob || '-')}</strong>
+                  </div>
+                  <div style="font-size:0.78rem; color:#f8fafc;">
+                    អត្តលេខ៖ <code style="color:#38bdf8; font-weight:800; font-size:0.85rem; background:rgba(15,23,42,0.6); padding:1px 6px; border-radius:4px;">${escapeHtml(t.id)}</code>
+                  </div>
+                  <div style="font-size:0.75rem; color:#cbd5e1;">
+                    ថ្នាក់៖ <strong>${escapeHtml(t.className || t.cohort || 'គរុនិស្សិត')}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card Footer Barcode -->
+              <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid rgba(255,255,255,0.22); padding-top:6px;">
+                <div style="font-size:0.62rem; color:#94a3b8; text-align:left; line-height:1.4;">
+                  <div>ឆ្នាំសិក្សា៖ ២០២៦-២០២៧</div>
+                  <div>សុពលភាព៖ ៣១ សីហា ២០២៧</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-family:monospace; letter-spacing:2px; font-weight:700; color:#38bdf8; font-size:0.82rem;">
+                    *${escapeHtml(t.id)}*
+                  </div>
+                  <div style="font-size:0.58rem; color:#64748b; text-transform:uppercase;">KTPTTC PMS VERIFIED</div>
+                </div>
               </div>
             </div>
           </div>
 
         </div>
-        <div class="modal-footer-bar" style="justify-content:center; gap:10px;">
-          <button class="btn btn-outline" style="color:#2563eb; border-color:#93c5fd;" onclick="openEditStudent('${t.id}')"><i class="fas fa-edit"></i> កែប្រែព័ត៌មាន</button>
-          <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> បោះពុម្ពប័ណ្ណ A4</button>
-          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+
+        <!-- Footer Actions -->
+        <div class="modal-footer-bar" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
+          <div>
+            <button class="btn btn-outline" style="color:#2563eb; border-color:#93c5fd; font-size:0.8rem; height:34px;" onclick="openEditStudent('${escapeHtml(t.id)}')">
+              <i class="fas fa-edit"></i> កែប្រែព័ត៌មាន
+            </button>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-success" style="font-size:0.82rem; height:34px;" onclick="openBatchIdCardsModal('${escapeHtml(t.className || '')}')">
+              <i class="fas fa-layer-group"></i> បោះពុម្ពប័ណ្ណទាំងថ្នាក់ (${escapeHtml(t.className || 'ទាំងអស់')})
+            </button>
+            <button class="btn btn-primary" style="font-size:0.82rem; height:34px;" onclick="window.print()">
+              <i class="fas fa-print"></i> បោះពុម្ពប័ណ្ណនេះ
+            </button>
+            <button class="btn btn-outline" style="font-size:0.82rem; height:34px;" onclick="closeStmsModal()">
+              បិទ
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   `;
 
   document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
+window.viewTraineeCard = viewTraineeCard;
+
+// Batch Print ID Cards Modal for a specific Class or All Students
+function openBatchIdCardsModal(className = '') {
+  closeStmsModal();
+  const allStudents = getAllEnteredStudents();
+  let filtered = allStudents;
+  if (className && className !== 'all') {
+    filtered = allStudents.filter(s => s.className === className || s.cohort === className);
+  }
+
+  const distinctClasses = Array.from(new Set(allStudents.map(s => s.className).filter(Boolean)));
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="batchCardsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:980px; width:95%;">
+        
+        <div class="modal-header-bar">
+          <div class="modal-header-title">
+            <i class="fas fa-id-card-alt"></i> បោះពុម្ពប័ណ្ណសម្គាល់ខ្លួនគរុនិស្សិតជាក្រុម (Batch Print ID Cards)
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
+        </div>
+
+        <div class="modal-body-scroll" style="padding:20px;">
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; background:#f8fafc; padding:12px 16px; border-radius:8px; border:1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:0.85rem; font-weight:700; color:#1e3a8a;"><i class="fas fa-filter"></i> ថ្នាក់រៀន៖</span>
+              <select class="form-input" style="height:36px; font-size:0.85rem; width:auto; min-width:200px;" onchange="openBatchIdCardsModal(this.value)">
+                <option value="all" ${!className || className === 'all' ? 'selected' : ''}>គ្រប់ថ្នាក់ទាំងអស់ (${allStudents.length} នាក់)</option>
+                ${distinctClasses.map(c => `
+                  <option value="${escapeHtml(c)}" ${c === className ? 'selected' : ''}>${escapeHtml(c)} (${allStudents.filter(s => s.className === c).length} នាក់)</option>
+                `).join('')}
+              </select>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> បោះពុម្ពប័ណ្ណទាំងអស់ (${filtered.length} ប័ណ្ណ)
+              </button>
+            </div>
+          </div>
+
+          <!-- Cards Grid for A4 Print (Grid layout) -->
+          <div class="batch-id-cards-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px;">
+            ${filtered.map(s => {
+              const photo = getUserPhoto(s) || s.photo || '';
+              const photoHtml = photo 
+                ? `<img src="${photo}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:2rem;\\'>${s.avatar || (s.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}</div>'">` 
+                : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:2rem;">${s.avatar || (s.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}</div>`;
+
+              return `
+                <div class="trainee-id-card" style="box-shadow:0 4px 12px rgba(0,0,0,0.15); margin:0 auto; page-break-inside:avoid;">
+                  <i class="fas fa-school card-watermark"></i>
+                  <div style="display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:6px;">
+                    <img src="assets/ktpttc-logo.png" style="width:32px; height:32px; background:#fff; border-radius:50%; padding:2px;" onerror="this.src='assets/logo.png'">
+                    <div style="text-align:left; flex:1;">
+                      <div style="font-size:0.7rem; font-weight:800; color:#93c5fd;">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
+                      <div style="font-size:0.58rem; color:#cbd5e1;">TRAINEE TEACHER IDENTITY CARD</div>
+                    </div>
+                  </div>
+                  <div style="display:flex; gap:10px; align-items:center; margin:8px 0;">
+                    <div style="width:68px; height:80px; background:#0f172a; border:2px solid #38bdf8; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+                      ${photoHtml}
+                    </div>
+                    <div style="text-align:left; font-size:0.78rem; line-height:1.5; flex:1;">
+                      <div style="font-size:0.95rem; font-weight:800; color:#ffffff;">${escapeHtml(s.nameKh)}</div>
+                      ${s.nameEn ? `<div style="font-size:0.68rem; color:#93c5fd; text-transform:uppercase;">${escapeHtml(s.nameEn)}</div>` : ''}
+                      <div>ភេទ៖ ${escapeHtml(s.gender || 'ប្រុស')} | កើត៖ ${escapeHtml(s.dob || '-')}</div>
+                      <div>អត្តលេខ៖ <code style="color:#38bdf8; font-weight:700;">${escapeHtml(s.id)}</code></div>
+                      <div>ថ្នាក់៖ ${escapeHtml(s.className || 'ទូទៅ')}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid rgba(255,255,255,0.2); padding-top:4px;">
+                    <div style="font-size:0.6rem; color:#94a3b8; text-align:left;">
+                      ឆ្នាំសិក្សា ២០២៦-២០២៧ | សុពលភាព ៣១/០៨/២០២៧
+                    </div>
+                    <div style="font-family:monospace; font-weight:700; color:#38bdf8; font-size:0.75rem;">
+                      *${escapeHtml(s.id)}*
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+        </div>
+
+        <div class="modal-footer-bar">
+          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+          <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> បោះពុម្ពឥឡូវនេះ</button>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+window.openBatchIdCardsModal = openBatchIdCardsModal;
 
 // Edit Trainee Status (Active, Suspended, Graduated, Withdrawn)
 function editTraineeStatus(id) {
@@ -2866,66 +3254,67 @@ function getSubjectTheme(code) {
 }
 
 function getActiveTraineeProfile() {
+  let profile = null;
   if (currentUser && currentUser.role === 'trainee' && currentUser.nameKh) {
-    return currentUser;
-  }
-  if (window.authenticatedUser && window.authenticatedUser.role === 'trainee' && window.authenticatedUser.nameKh) {
-    return window.authenticatedUser;
-  }
-  if (currentTraineeUser && currentTraineeUser.id) {
+    profile = { ...currentUser };
+  } else if (window.authenticatedUser && window.authenticatedUser.role === 'trainee' && window.authenticatedUser.nameKh) {
+    profile = { ...window.authenticatedUser };
+  } else if (currentTraineeUser && currentTraineeUser.id) {
     const fresh = (stmsData.trainees || []).find(t => t && t.id === currentTraineeUser.id);
-    return fresh || currentTraineeUser;
-  }
+    profile = fresh ? { ...fresh } : { ...currentTraineeUser };
+  } else {
+    let saved = null;
+    try {
+      const raw = localStorage.getItem('ktpttc_profile_trainee');
+      if (raw) saved = JSON.parse(raw);
+    } catch (e) {}
 
-  let saved = null;
-  try {
-    const raw = localStorage.getItem('ktpttc_profile_trainee');
-    if (raw) saved = JSON.parse(raw);
-  } catch (e) {}
-
-  if (saved && saved.nameKh) {
-    return saved;
-  }
-
-  let t = (stmsData.trainees && stmsData.trainees.length > 0 ? stmsData.trainees[0] : null);
-  if (!t || !t.id) {
-    if (currentUser && currentUser.role === 'trainee' && currentUser.nameKh) {
-      t = currentUser;
+    if (saved && saved.nameKh) {
+      profile = saved;
     } else {
-      t = {
-        id: 'ktpttc-2026-st-001',
-        nameKh: 'យូសុះ ស៊ីលាល',
-        nameEn: 'Yousoh Silal',
-        gender: 'ប្រុស',
-        dob: '2001-11-16',
-        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
-        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-        roleLabel: 'គរុនិស្សិត',
-        status: 'កំពុងសិក្សា',
-        phone: '098 765 432',
-        email: 'yousoh.silal@ktpttc.edu.kh',
-        avatar: '👨‍🎓',
-        attendanceSummary: {
-          rate: 98,
-          present: 46,
-          permission: 2,
-          late: 1,
-          absent: 0
-        },
-        scores: {
-          'PED-101': { total: 92, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 28, semester: 44, final: 44 },
-          'PSY-102': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 43, final: 43 },
-          'MTH-103': { total: 95, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 46, final: 46 },
-          'KHM-104': { total: 88, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 43, final: 43 },
-          'ICT-105': { total: 90, grade: 'A', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 44, final: 44 },
-          'RES-106': { total: 91, grade: 'A', status: 'published', homework: 10, attendance: 9, monthly: 27, semester: 45, final: 45 },
-          'PRAC-107': { total: 97, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 48, final: 48 },
-          'COM-108': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 44, final: 44 }
-        }
-      };
+      const allS = typeof getAllEnteredStudents === 'function' ? getAllEnteredStudents() : (stmsData.trainees || []);
+      if (allS && allS.length > 0) {
+        profile = { ...allS[0] };
+      } else {
+        profile = {
+          id: 'ktpttc-2026-st-001',
+          nameKh: 'យូសុះ ស៊ីលាល',
+          nameEn: 'Yousoh Silal',
+          gender: 'ប្រុស',
+          dob: '2001-11-16',
+          className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
+          cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
+          roleLabel: 'គរុនិស្សិត',
+          status: 'កំពុងសិក្សា',
+          phone: '098 765 432',
+          email: 'yousoh.silal@ktpttc.edu.kh',
+          avatar: '👨‍🎓',
+          attendanceSummary: {
+            rate: 98,
+            present: 46,
+            permission: 2,
+            late: 1,
+            absent: 0
+          },
+          scores: {
+            'PED-101': { total: 92, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 28, semester: 44, final: 44 },
+            'PSY-102': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 43, final: 43 },
+            'MTH-103': { total: 95, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 46, final: 46 },
+            'KHM-104': { total: 88, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 43, final: 43 },
+            'ICT-105': { total: 90, grade: 'A', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 44, final: 44 },
+            'RES-106': { total: 91, grade: 'A', status: 'published', homework: 10, attendance: 9, monthly: 27, semester: 45, final: 45 },
+            'PRAC-107': { total: 97, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 48, final: 48 },
+            'COM-108': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 44, final: 44 }
+          }
+        };
+      }
     }
   }
-  return t;
+
+  if (profile && !profile.photo && typeof getUserPhoto === 'function') {
+    profile.photo = getUserPhoto(profile);
+  }
+  return profile;
 }
 
 function prevTraineeSemester() {
@@ -5563,13 +5952,21 @@ function renderRbacTableOnly() {
               ? `<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;"><i class="fas fa-chalkboard-teacher"></i> គ្រូឧទ្ទេស (Teacher)</span>`
               : `<span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700;"><i class="fas fa-user-graduate"></i> គរុនិស្សិត</span>`;
 
+            const photo = typeof getUserPhoto === 'function' ? getUserPhoto(u) : (u.photo || '');
+            const defaultAvatar = u.avatar || (u.role === 'admin' ? '👨‍💼' : u.role === 'trainer' ? '👨‍🏫' : '👨‍🎓');
+            const avatarDisplay = photo 
+              ? `<div style="width:36px; height:36px; border-radius:50%; overflow:hidden; border:1.5px solid #cbd5e1; display:flex; align-items:center; justify-content:center; background:#f1f5f9; flex-shrink:0;">
+                   <img src="${escapeHtml(photo)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML='<span style=\\'font-size:1.2rem;\\'>${defaultAvatar}</span>'">
+                 </div>`
+              : `<span style="font-size:1.2rem;">${defaultAvatar}</span>`;
+
             return `
               <tr id="userRow-${u.id}">
                 <td style="text-align:center; font-weight:700; color:#64748b;">${actualIndex}</td>
                 <td><code>${escapeHtml(u.id)}</code></td>
                 <td>
                   <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:1.2rem;">${u.avatar || (u.role === 'admin' ? '👨‍💼' : u.role === 'trainer' ? '👨‍🏫' : '👨‍🎓')}</span>
+                    ${avatarDisplay}
                     <div>
                       <strong style="color:#0f172a; font-size:0.88rem;">${escapeHtml(u.nameKh)}</strong>
                       ${u.nameEn ? `<div style="font-size:0.72rem; color:#64748b;">${escapeHtml(u.nameEn)}</div>` : ''}
@@ -5632,6 +6029,11 @@ function renderRbacTableOnly() {
                 </td>
                 <td style="text-align:center;">
                   <div style="display:inline-flex; gap:5px;">
+                    ${u.role === 'trainee' ? `
+                      <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem; color:#2563eb; border-color:#93c5fd;" onclick="viewTraineeCard('${escapeHtml(u.studentId || u.id)}')" title="មើលប័ណ្ណសម្គាល់ខ្លួន (ID Card)">
+                        <i class="fas fa-id-card"></i> កាត
+                      </button>
+                    ` : ''}
                     <button class="btn btn-outline" style="height:28px; padding:0 8px; font-size:0.75rem;" onclick="openEditUserModal('${u.id}')" title="កែប្រែ Username &amp; ប្តូរពាក្យសម្ងាត់">
                       <i class="fas fa-key"></i> កែប្រែ
                     </button>
@@ -7077,7 +7479,8 @@ function resetStmsDatabase() {
 // Matching KPTTC PMS Infographic Architecture
 // ==========================================================================
 function renderSystemFlowView(container) {
-  const sampleTrainee = stmsData.trainees[0] || {
+  const allStus = typeof getAllEnteredStudents === 'function' ? getAllEnteredStudents() : (stmsData.trainees || []);
+  const sampleTrainee = allStus[0] || (stmsData.trainees && stmsData.trainees[0]) || {
     id: "KTPTTC-2026-12P2-001",
     nameKh: "(រង់ចាំការបញ្ចូល)",
     nameEn: "Awaiting Entry",
@@ -7086,6 +7489,7 @@ function renderSystemFlowView(container) {
     className: "ថ្នាក់បឋម ១២+២",
     cardNo: "---"
   };
+  const samplePhoto = typeof getUserPhoto === 'function' ? getUserPhoto(sampleTrainee) : (sampleTrainee.photo || '');
 
   const attendanceStats = stmsData.dailyAttendanceStats || [
     { day: "ចន្ទ", present: 96, absent: 2, permission: 2 },
@@ -7124,21 +7528,24 @@ function renderSystemFlowView(container) {
           <div class="flow-module-body">
             
             <!-- Trainee Profile Card -->
-            <div style="font-size:0.75rem; font-weight:700; color:#1e3a8a; margin-bottom:4px;">
-              <i class="fas fa-id-card"></i> ប្រវត្តិរូប Profile
+            <div style="font-size:0.75rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+              <span><i class="fas fa-id-card"></i> ប្រវត្តិរូប Profile</span>
+              <button type="button" onclick="viewTraineeCard('${sampleTrainee.id || sampleTrainee.studentId}')" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; border-radius:4px; font-size:0.7rem; font-weight:700; padding:1px 6px; cursor:pointer;">
+                <i class="fas fa-address-card"></i> មើលកាត
+              </button>
             </div>
-            <div class="profile-preview-card">
+            <div class="profile-preview-card" onclick="viewTraineeCard('${sampleTrainee.id || sampleTrainee.studentId}')" style="cursor:pointer;" title="ចុចដើម្បីបើកប័ណ្ណសម្គាល់ខ្លួន">
               <div class="trainee-passport-photo" style="background:#2563eb; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden;">
-                ${sampleTrainee.photo ? `<img src="${sampleTrainee.photo}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-user-tie" style="font-size:1.6rem;"></i><span style="font-size:0.55rem; margin-top:2px; font-weight:700;">រូបថត</span>`}
+                ${samplePhoto ? `<img src="${samplePhoto}" alt="${sampleTrainee.nameKh}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-user-tie" style="font-size:1.6rem;"></i><span style="font-size:0.55rem; margin-top:2px; font-weight:700;">រូបថត</span>`}
               </div>
               <div class="profile-card-details">
                 <div><strong>Trainee</strong></div>
-                <div>ID: <code>${sampleTrainee.id || '122123220'}</code></div>
+                <div>ID: <code>${sampleTrainee.studentId || sampleTrainee.id || '122123220'}</code></div>
                 <div>Name: <strong>${sampleTrainee.nameKh}</strong></div>
-                <div>DOB: ${sampleTrainee.dob}</div>
-                <div>Gender: ${sampleTrainee.gender}</div>
-                <div>Class: ${sampleTrainee.className}</div>
-                <div>Card no: S20210005531</div>
+                <div>DOB: ${sampleTrainee.dob || '-'}</div>
+                <div>Gender: ${sampleTrainee.gender || '-'}</div>
+                <div>Class: ${sampleTrainee.className || '-'}</div>
+                <div>Card no: ${sampleTrainee.cardNo || sampleTrainee.studentId || sampleTrainee.id || 'S20210005531'}</div>
               </div>
             </div>
 
@@ -7907,57 +8314,62 @@ function ensureSyncedCollections() {
   if (stmsData.users.length !== beforeTeacherCount) {
     saveData();
   }
+
+  // Automatic photo sync across collections
+  if (typeof syncPhotosAcrossCollections === 'function') {
+    syncPhotosAcrossCollections();
+  }
 }
 
 // 2. Active Trainer Profile Resolver & RBAC Subject Enforcement
 let currentTrainerPreviewId = null;
 
 function getActiveTrainerProfile() {
+  let res = null;
   // 1. If active currentUser is a trainer, ALWAYS return currentUser!
   if (currentUser && currentUser.role === 'trainer' && currentUser.nameKh) {
-    return currentUser;
-  }
-
-  // 2. If authenticated session user is a trainer, return authenticatedUser!
-  if (window.authenticatedUser && window.authenticatedUser.role === 'trainer' && window.authenticatedUser.nameKh) {
-    return window.authenticatedUser;
-  }
-
-  // 3. If admin is previewing a specific trainer
-  if (currentTrainerPreviewId) {
+    res = { ...currentUser };
+  } else if (window.authenticatedUser && window.authenticatedUser.role === 'trainer' && window.authenticatedUser.nameKh) {
+    res = { ...window.authenticatedUser };
+  } else if (currentTrainerPreviewId) {
     const found = (stmsData.users || []).find(u => u && u.id === currentTrainerPreviewId);
-    if (found) return found;
+    if (found) res = { ...found };
+  } else {
+    let saved = null;
+    try {
+      const raw = localStorage.getItem('ktpttc_profile_trainer');
+      if (raw) saved = JSON.parse(raw);
+    } catch (e) {}
+
+    if (saved && saved.nameKh && saved.role === 'trainer') {
+      res = { ...saved };
+    } else {
+      const foundTrainer = (stmsData.users || []).find(u => u && u.role === 'trainer' && u.nameKh !== 'យូសុះ ស៊ីលាល');
+      if (foundTrainer) {
+        res = { ...foundTrainer };
+      } else {
+        res = {
+          id: "USR-TRN-001",
+          nameKh: "គ្រូឧទ្ទេស",
+          nameEn: "Trainer",
+          username: "trainer",
+          role: "trainer",
+          roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
+          email: "trainer@ktpttc.net",
+          phone: "",
+          subject: "PED-101",
+          subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
+          cohort: "",
+          avatar: "👨‍🏫"
+        };
+      }
+    }
   }
 
-  // 4. Dedicated localStorage profile
-  let saved = null;
-  try {
-    const raw = localStorage.getItem('ktpttc_profile_trainer');
-    if (raw) saved = JSON.parse(raw);
-  } catch (e) {}
-
-  if (saved && saved.nameKh && saved.role === 'trainer') {
-    return saved;
+  if (res && !res.photo && typeof getUserPhoto === 'function') {
+    res.photo = getUserPhoto(res);
   }
-
-  // 5. Find trainer in stmsData.users
-  const foundTrainer = (stmsData.users || []).find(u => u && u.role === 'trainer' && u.nameKh !== 'យូសុះ ស៊ីលាល');
-  if (foundTrainer) return foundTrainer;
-
-  return {
-    id: "USR-TRN-001",
-    nameKh: "គ្រូឧទ្ទេស",
-    nameEn: "Trainer",
-    username: "trainer",
-    role: "trainer",
-    roleLabel: "គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន",
-    email: "trainer@ktpttc.net",
-    phone: "",
-    subject: "PED-101",
-    subjectName: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
-    cohort: "",
-    avatar: "👨‍🏫"
-  };
+  return res;
 }
 
 // Helper: Get all subject codes assigned to a specific trainer

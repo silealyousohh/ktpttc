@@ -1614,6 +1614,7 @@ function handleSaveStudent() {
       className,
       cohort: traineeRecord.cohort,
       status: "active",
+      photo: currentPhotoData || traineeRecord.photo || '',
       avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'
     };
 
