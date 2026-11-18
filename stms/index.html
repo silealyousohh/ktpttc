@@ -265,73 +265,123 @@
 
   <!-- Mandatory Login Screen (Displayed when user is not logged in) -->
   <div id="stmsLoginScreen" class="stms-login-overlay" style="display:none;">
+    <!-- Ambient Dynamic Light Glow Orbs Behind Card -->
+    <div class="login-ambient-orb login-ambient-orb-1"></div>
+    <div class="login-ambient-orb login-ambient-orb-2"></div>
+
     <div class="login-container-card">
 
       <!-- Left Column: Branding & Features -->
       <div class="login-left-brand">
+        <!-- Ministry Pill Tag -->
+        <div class="login-ministry-badge">
+          <i class="fas fa-university"></i>
+          <span>ក្រសួងអប់រំ យុវជន និងកីឡា</span>
+        </div>
+
+        <!-- Official Seal with Breathing Gold Frame -->
         <div class="login-logo-circle">
           <img src="assets/ktpttc-logo.png" alt="KTPTTC Logo" onerror="this.src='assets/logo.png'">
         </div>
-        <div class="login-brand-inst-kh">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
-        <div class="login-brand-inst-en">Regional Teacher Training Center Kratie (KPTTC)</div>
-        <h2 class="login-main-heading">ចូលគណនីប្រព័ន្ធ</h2>
-        <div class="login-brand-sub">ប្រព័ន្ធគ្រប់គ្រងគរុសិស្សិត KPTTC PMS</div>
 
-        <div class="login-feature-list">
-          <div><i class="fas fa-user-shield" style="color:#60a5fa; width:16px;"></i> <strong>ម៉ូឌុល ១៖</strong> រដ្ឋបាល
-            &amp; គរុសនិស្សិត</div>
-          <div><i class="fas fa-calendar-alt" style="color:#38bdf8; width:16px;"></i> <strong>ម៉ូឌុល ២៖</strong>
-            កាលវិភាគ &amp; ការសិក្សា</div>
-          <div><i class="fas fa-calendar-check" style="color:#34d399; width:16px;"></i> <strong>ម៉ូឌុល ៣៖</strong>
-            គ្រប់គ្រងវត្តមាន</div>
-          <div><i class="fas fa-calculator" style="color:#fbbf24; width:16px;"></i> <strong>ម៉ូឌុល ៤៖</strong> ពិន្ទុ
-            &amp; ការវាយតម្លៃ</div>
+        <div class="login-brand-inst-kh">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
+        <div class="login-brand-inst-en">Kratie Provincial Teacher Training Center (KTPTTC)</div>
+
+        <div class="login-heading-wrapper">
+          <h2 class="login-main-heading">ប្រព័ន្ធគ្រប់គ្រងគរុសនិស្សិត</h2>
+          <div class="login-brand-sub">STUDENT &amp; TEACHER MANAGEMENT SYSTEM (STMS)</div>
+        </div>
+
+        <!-- 4 Modules Showcase Grid -->
+        <div class="login-feature-grid">
+          <div class="login-feature-item feat-blue">
+            <div class="feat-icon"><i class="fas fa-user-shield"></i></div>
+            <div class="feat-text">
+              <span class="feat-num">ម៉ូឌុល ១</span>
+              <strong>រដ្ឋបាល &amp; គរុសនិស្សិត</strong>
+            </div>
+          </div>
+          <div class="login-feature-item feat-sky">
+            <div class="feat-icon"><i class="fas fa-calendar-alt"></i></div>
+            <div class="feat-text">
+              <span class="feat-num">ម៉ូឌុល ២</span>
+              <strong>កាលវិភាគ &amp; ការសិក្សា</strong>
+            </div>
+          </div>
+          <div class="login-feature-item feat-emerald">
+            <div class="feat-icon"><i class="fas fa-calendar-check"></i></div>
+            <div class="feat-text">
+              <span class="feat-num">ម៉ូឌុល ៣</span>
+              <strong>គ្រប់គ្រងវត្តមានឆ្លាតវៃ</strong>
+            </div>
+          </div>
+          <div class="login-feature-item feat-amber">
+            <div class="feat-icon"><i class="fas fa-calculator"></i></div>
+            <div class="feat-text">
+              <span class="feat-num">ម៉ូឌុល ៤</span>
+              <strong>ពិន្ទុ &amp; ការវាយតម្លៃ</strong>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Right Column: Login Form -->
       <div class="login-right-form">
-        <div style="margin-bottom: 24px;">
-          <h3 style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin: 0 0 6px 0;">
-            <i class="fas fa-lock" style="color:#38bdf8; margin-right: 6px;"></i> ផ្ទៀងផ្ទាត់ការចូលប្រើ
-          </h3>
-          <p style="font-size: 0.82rem; color: #94a3b8; margin: 0;">សូមវាយបញ្ចូលឈ្មោះគណនី និងពាក្យសម្ងាត់របស់អ្នក</p>
+        <div class="login-form-header">
+          <div class="login-icon-badge">
+            <i class="fas fa-shield-halved"></i>
+          </div>
+          <div>
+            <h3 class="login-form-title">ផ្ទៀងផ្ទាត់ការចូលប្រើ</h3>
+            <p class="login-form-subtitle">សូមវាយបញ្ចូលឈ្មោះគណនី និងពាក្យសម្ងាត់របស់អ្នកដើម្បីចូលប្រព័ន្ធ</p>
+          </div>
         </div>
 
         <form id="stmsLoginForm" onsubmit="event.preventDefault(); handleLoginSubmit();">
           <div class="login-input-group">
-            <label for="loginUsername">ឈ្មោះគណនី (Username)*</label>
+            <label for="loginUsername">
+              <i class="fas fa-user-circle" style="color:#60a5fa;"></i>
+              <span>ឈ្មោះគណនី (Username)</span>
+              <span style="color:#f87171;">*</span>
+            </label>
             <div class="login-input-wrapper">
               <i class="fas fa-user input-icon"></i>
-              <input type="text" id="loginUsername" class="login-input" placeholder="ឈ្មោះគណនី (Username ឧ. admin)..."
+              <input type="text" id="loginUsername" class="login-input" placeholder="បញ្ចូលឈ្មោះគណនី (Username ឧ. admin)..."
                 required autocomplete="username">
             </div>
           </div>
 
           <div class="login-input-group">
-            <label for="loginPassword">ពាក្យសម្ងាត់ (Password)*</label>
+            <label for="loginPassword">
+              <i class="fas fa-lock" style="color:#38bdf8;"></i>
+              <span>ពាក្យសម្ងាត់ (Password)</span>
+              <span style="color:#f87171;">*</span>
+            </label>
             <div class="login-input-wrapper">
-              <i class="fas fa-lock input-icon"></i>
+              <i class="fas fa-key input-icon"></i>
               <input type="password" id="loginPassword" class="login-input" placeholder="វាយបញ្ចូលពាក្យសម្ងាត់..."
                 required autocomplete="current-password">
-              <button type="button" class="password-toggle-btn" id="btnTogglePassword" onclick="toggleLoginPassword()">
-                <i class="fas fa-eye" id="eyeIcon"></i> <span id="eyeText">បង្ហាញ</span>
+              <button type="button" class="password-toggle-btn" id="btnTogglePassword" onclick="toggleLoginPassword()" title="បង្ហាញ ឬលាក់ពាក្យសម្ងាត់">
+                <i class="fas fa-eye" id="eyeIcon"></i>
+                <span id="eyeText">បង្ហាញ</span>
               </button>
             </div>
           </div>
 
-          <div id="loginErrorMessage"
-            style="display:none; color:#f87171; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:8px 12px; font-size:0.8rem; margin-bottom:12px;">
-            <i class="fas fa-exclamation-circle"></i> <span id="loginErrorText"></span>
+          <div id="loginErrorMessage" class="login-error-card" style="display:none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="loginErrorText"></span>
           </div>
 
           <button type="submit" class="btn-login-submit" id="btnLoginSubmit">
-            <i class="fas fa-sign-in-alt"></i> ចូលគណនី
+            <span>ចូលគណនីប្រព័ន្ធ</span>
+            <i class="fas fa-arrow-right-to-bracket"></i>
           </button>
         </form>
 
-        <div style="font-size:0.75rem; color:#64748b; text-align:center; margin-top:16px; line-height:1.5;">
-          <i class="fas fa-shield-alt"></i> ឈ្មោះគណនី និងពាក្យសម្ងាត់ ត្រូវបានចុះឈ្មោះ និងកំណត់ដោយ Admin
+        <div class="login-footer-meta">
+          <i class="fas fa-lock" style="color:#10b981;"></i>
+          <span>ការតភ្ជាប់សុវត្ថិភាពខ្ពស់ 256-Bit SSL • គណនីផ្ដល់ជូនដោយ Admin សិក្សាធិការ</span>
         </div>
       </div>
 
