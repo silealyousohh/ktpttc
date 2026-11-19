@@ -641,15 +641,10 @@ function loginSuccess(user, notify = true) {
     sidebarAside.style.display = 'none';
   }
 
-  // Center Role Switcher: Visible ONLY to Administrator for role preview (Hidden for staff/trainers & students/trainees)
+  // Role Switcher: Permanently hidden for clean production security
   const navCenterRole = document.getElementById('navCenterRole') || document.querySelector('.nav-center-role');
   if (navCenterRole) {
-    navCenterRole.style.display = isAdmin ? 'flex' : 'none';
-    if (isAdmin) {
-      document.querySelectorAll('.role-tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.role === currentRole);
-      });
-    }
+    navCenterRole.style.display = 'none';
   }
 
   // Set default starting view or check target navigation

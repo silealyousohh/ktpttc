@@ -496,6 +496,7 @@
         transform: translateY(20px);
         opacity: 0;
       }
+
       to {
         transform: translateY(0);
         opacity: 1;
@@ -527,15 +528,19 @@
   <header class="top-nav">
     <div class="nav-brand" style="display: flex; align-items: center; gap: 12px;">
       <a href="index.html" style="display: flex; align-items: center; text-decoration: none;">
-        <img src="assets/ktpttc-header-logo.png" alt="KTPTTC Logo" style="height: 38px; width: auto; object-fit: contain;" onerror="this.src='assets/logo.png'">
+        <img src="assets/ktpttc-header-logo.png" alt="KTPTTC Logo"
+          style="height: 38px; width: auto; object-fit: contain;" onerror="this.src='assets/logo.png'">
       </a>
-      <span id="navBrandSubtitle" style="border-left: 1px solid rgba(255,255,255,0.25); padding-left: 12px; font-size: 0.85rem; color: #e2e8f0; font-weight: 500;">ចុះឈ្មោះសិស្សថ្មី (Add Student)</span>
+      <span id="navBrandSubtitle"
+        style="border-left: 1px solid rgba(255,255,255,0.25); padding-left: 12px; font-size: 0.85rem; color: #e2e8f0; font-weight: 500;">ចុះឈ្មោះសិស្សថ្មី
+        (Add Student)</span>
     </div>
 
     <div class="nav-actions">
       <!-- Role Mode Switcher Tabs -->
       <div class="role-switcher-wrap">
-        <button type="button" id="tabModeStudent" class="nav-mode-btn active" onclick="switchRegistrationRole('student')">
+        <button type="button" id="tabModeStudent" class="nav-mode-btn active"
+          onclick="switchRegistrationRole('student')">
           <i class="fas fa-user-graduate"></i> សិស្ស (Student)
         </button>
         <button type="button" id="tabModeTeacher" class="nav-mode-btn" onclick="switchRegistrationRole('teacher')">
@@ -558,7 +563,8 @@
       </select>
 
       <!-- Teacher Subject Selector (Shown in teacher mode) -->
-      <select id="teacherSubjectSelector" class="nav-select" style="display:none;" onchange="syncTeacherSubject(this.value)">
+      <select id="teacherSubjectSelector" class="nav-select" style="display:none;"
+        onchange="syncTeacherSubject(this.value)">
         <option value="all">មុខវិជ្ជាទាំងអស់</option>
         <option value="PED-101" selected>PED-101 • គរុកោសល្យទូទៅ</option>
         <option value="PSY-102">PSY-102 • ចិត្តវិទ្យា</option>
@@ -570,7 +576,9 @@
         <option value="COM-108">COM-108 • សារគមនាគមន៍</option>
       </select>
 
-      <a id="btnNavRosterLink" href="index.html" onclick="sessionStorage.setItem('stms_target_view', currentRegistrationRole === 'teacher' ? 'trainers' : 'trainees');" class="nav-btn nav-btn-primary">
+      <a id="btnNavRosterLink" href="index.html"
+        onclick="sessionStorage.setItem('stms_target_view', currentRegistrationRole === 'teacher' ? 'trainers' : 'trainees');"
+        class="nav-btn nav-btn-primary">
         <i class="fas fa-users"></i> <span id="btnNavRosterText">+ បញ្ជីឈ្មោះសិស្ស</span>
       </a>
     </div>
@@ -581,30 +589,36 @@
     <div class="form-card">
       <h2 class="form-header-title" id="formHeaderTitle">គ្រប់គ្រងបញ្ជីសិស្ស</h2>
 
-      <form id="studentRegistrationForm" novalidate onsubmit="event.preventDefault(); handleUnifiedSave(); return false;">
-        
+      <form id="studentRegistrationForm" novalidate
+        onsubmit="event.preventDefault(); handleUnifiedSave(); return false;">
+
         <!-- Top: Photo + Basic Info -->
         <div class="student-basic-grid">
-          
+
           <!-- Photo Column -->
           <div class="photo-upload-wrap">
             <span class="photo-label">រូបតំណាង</span>
-            <div class="photo-preview-box" id="photoPreviewBox" onclick="triggerPhotoFileInput()" title="ចុចដើម្បីផ្ទុកឡើងរូបថត ឬទាញទម្លាក់រូបថតមកទីនេះ">
+            <div class="photo-preview-box" id="photoPreviewBox" onclick="triggerPhotoFileInput()"
+              title="ចុចដើម្បីផ្ទុកឡើងរូបថត ឬទាញទម្លាក់រូបថតមកទីនេះ">
               <i class="fas fa-image photo-placeholder-icon" id="photoPlaceholder"></i>
               <img id="photoPreviewImg" src="" alt="Photo Preview" style="display: none;">
-              <div id="photoUploadingSpinner" style="display:none; position:absolute; inset:0; background:rgba(255,255,255,0.88); flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:0.75rem; color:#2563eb; font-weight:600;">
+              <div id="photoUploadingSpinner"
+                style="display:none; position:absolute; inset:0; background:rgba(255,255,255,0.88); flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:0.75rem; color:#2563eb; font-weight:600;">
                 <i class="fas fa-spinner fa-spin fa-2x"></i>
                 <span>កំពុងផ្ទុកឡើង...</span>
               </div>
             </div>
 
-            <input type="file" id="photoFileInput" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;" onchange="handlePhotoUpload(this)">
+            <input type="file" id="photoFileInput" accept="image/png, image/jpeg, image/jpg, image/webp"
+              style="display: none;" onchange="handlePhotoUpload(this)">
 
             <div class="photo-actions">
-              <button type="button" class="btn-photo-action btn-photo-file" onclick="triggerPhotoFileInput()" title="ជ្រើសរើសឯកសាររូបថតពីម៉ាស៊ីន (Upload Photo)">
+              <button type="button" class="btn-photo-action btn-photo-file" onclick="triggerPhotoFileInput()"
+                title="ជ្រើសរើសឯកសាររូបថតពីម៉ាស៊ីន (Upload Photo)">
                 <i class="fas fa-camera"></i> ជ្រើសរូបថត
               </button>
-              <button type="button" class="btn-photo-action btn-photo-url" onclick="promptPhotoUrl()" title="ប្រើប្រាស់តំណភ្ជាប់រូបភាព (Image URL)">
+              <button type="button" class="btn-photo-action btn-photo-url" onclick="promptPhotoUrl()"
+                title="ប្រើប្រាស់តំណភ្ជាប់រូបភាព (Image URL)">
                 <i class="fas fa-link"></i> ប្រើប្រាស់តំណ URL
               </button>
             </div>
@@ -612,7 +626,7 @@
 
           <!-- Basic Info Columns -->
           <div style="flex:1;">
-            
+
             <!-- 1. Student Basic Fields -->
             <div id="studentBasicFields">
               <!-- Row 1: ID, Grade, Group, Khmer Name -->
@@ -624,8 +638,10 @@
 
                 <div class="form-group">
                   <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <label class="form-label" for="regClass" style="margin-bottom:0;">ថ្នាក់ទី<span class="required">*</span></label>
-                    <button type="button" onclick="openQuickAddClassModal()" style="background:none; border:none; color:#2563eb; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:4px;">
+                    <label class="form-label" for="regClass" style="margin-bottom:0;">ថ្នាក់ទី<span
+                        class="required">*</span></label>
+                    <button type="button" onclick="openQuickAddClassModal()"
+                      style="background:none; border:none; color:#2563eb; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:4px;">
                       <i class="fas fa-plus-circle"></i> + បន្ថែមថ្នាក់ថ្មី
                     </button>
                   </div>
@@ -673,7 +689,8 @@
 
                 <div class="form-group">
                   <label class="form-label" for="regDob">ថ្ងៃខែឆ្នាំកំណើត<span class="required">*</span></label>
-                  <input type="date" id="regDob" class="form-control" onchange="calculateAgeFromDob(this.value, 'regAge')">
+                  <input type="date" id="regDob" class="form-control"
+                    onchange="calculateAgeFromDob(this.value, 'regAge')">
                 </div>
               </div>
 
@@ -681,7 +698,8 @@
               <div class="fields-grid-4">
                 <div class="form-group">
                   <label class="form-label" for="regAge">អាយុ (ឆ្នាំ)</label>
-                  <input type="text" id="regAge" class="form-control" placeholder="អាយុនឹងត្រូវគណនាដោយស្វ័យប្រវត្តិ" readonly>
+                  <input type="text" id="regAge" class="form-control" placeholder="អាយុនឹងត្រូវគណនាដោយស្វ័យប្រវត្តិ"
+                    readonly>
                 </div>
 
                 <div class="form-group">
@@ -690,15 +708,20 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regUsername">ឈ្មោះគណនី (Username)<span class="required">*</span></label>
+                  <label class="form-label" for="regUsername">ឈ្មោះគណនី (Username)<span
+                      class="required">*</span></label>
                   <input type="text" id="regUsername" class="form-control" placeholder="Username ចូលប្រព័ន្ធ">
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regPassword">ពាក្យសម្ងាត់ (Password)<span class="required">*</span></label>
+                  <label class="form-label" for="regPassword">ពាក្យសម្ងាត់ (Password)<span
+                      class="required">*</span></label>
                   <div style="position: relative; display: flex; align-items: center;">
-                    <input type="password" id="regPassword" class="form-control" value="ktpttc123" placeholder="Password" style="padding-right: 36px;">
-                    <button type="button" onclick="toggleRegPassword('regPassword', 'regEyeIcon')" style="position: absolute; right: 10px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;" title="បង្ហាញ/លាក់">
+                    <input type="password" id="regPassword" class="form-control" value="ktpttc123"
+                      placeholder="Password" style="padding-right: 36px;">
+                    <button type="button" onclick="toggleRegPassword('regPassword', 'regEyeIcon')"
+                      style="position: absolute; right: 10px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;"
+                      title="បង្ហាញ/លាក់">
                       <i class="fas fa-eye" id="regEyeIcon"></i>
                     </button>
                   </div>
@@ -717,8 +740,10 @@
 
                 <div class="form-group">
                   <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <label class="form-label" for="regTeacherSubject" style="margin-bottom:0;">មុខវិជ្ជាទទួលបន្ទុក<span class="required">*</span></label>
-                    <button type="button" onclick="openQuickAddSubjectModal()" style="background:none; border:none; color:#2563eb; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:4px;">
+                    <label class="form-label" for="regTeacherSubject" style="margin-bottom:0;">មុខវិជ្ជាទទួលបន្ទុក<span
+                        class="required">*</span></label>
+                    <button type="button" onclick="openQuickAddSubjectModal()"
+                      style="background:none; border:none; color:#2563eb; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:4px;">
                       <i class="fas fa-plus-circle"></i> + បន្ថែមមុខវិជ្ជាថ្មី
                     </button>
                   </div>
@@ -735,7 +760,8 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regTeacherQual">កម្រិតវប្បធម៌ / ឯកទេស<span class="required">*</span></label>
+                  <label class="form-label" for="regTeacherQual">កម្រិតវប្បធម៌ / ឯកទេស<span
+                      class="required">*</span></label>
                   <select id="regTeacherQual" class="form-control">
                     <option value="អនុបណ្ឌិតគរុកោសល្យ" selected>អនុបណ្ឌិតគរុកោសល្យ</option>
                     <option value="អនុបណ្ឌិតវិទ្យាសាស្ត្រអប់រំ">អនុបណ្ឌិតវិទ្យាសាស្ត្រអប់រំ</option>
@@ -747,20 +773,25 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regTeacherNameKh">ឈ្មោះគ្រូឧទ្ទេស (ខ្មែរ)<span class="required">*</span></label>
+                  <label class="form-label" for="regTeacherNameKh">ឈ្មោះគ្រូឧទ្ទេស (ខ្មែរ)<span
+                      class="required">*</span></label>
                   <input type="text" id="regTeacherNameKh" class="form-control" placeholder="គោត្តនាម និងនាម">
                 </div>
               </div>
 
               <!-- Row 1.5: Multi-Class Teaching Assignment (គ្រូម្នាក់អាចបង្រៀនច្រើនថ្នាក់) -->
-              <div class="teacher-assigned-classes-card" style="margin: 16px 0; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 16px 18px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+              <div class="teacher-assigned-classes-card"
+                style="margin: 16px 0; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 16px 18px;">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
                   <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #15803d; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                    <div
+                      style="width: 32px; height: 32px; border-radius: 8px; background: #15803d; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
                       <i class="fas fa-chalkboard-teacher"></i>
                     </div>
                     <div>
-                      <label class="form-label" style="margin-bottom: 0; font-weight: 700; color: #14532d; font-size: 0.92rem;">
+                      <label class="form-label"
+                        style="margin-bottom: 0; font-weight: 700; color: #14532d; font-size: 0.92rem;">
                         ថ្នាក់ទទួលបន្ទុកបង្រៀន (Assigned Classes) <span class="required">*</span>
                       </label>
                       <div style="font-size: 0.76rem; color: #166534;">
@@ -769,20 +800,24 @@
                     </div>
                   </div>
                   <div style="display: flex; align-items: center; gap: 10px;">
-                    <button type="button" onclick="selectAllTeacherClasses(true)" style="background: #ffffff; border: 1px solid #86efac; color: #15803d; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                    <button type="button" onclick="selectAllTeacherClasses(true)"
+                      style="background: #ffffff; border: 1px solid #86efac; color: #15803d; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                       <i class="fas fa-check-double"></i> ជ្រើសរើសទាំងអស់
                     </button>
-                    <button type="button" onclick="selectAllTeacherClasses(false)" style="background: #ffffff; border: 1px solid #cbd5e1; color: #64748b; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                    <button type="button" onclick="selectAllTeacherClasses(false)"
+                      style="background: #ffffff; border: 1px solid #cbd5e1; color: #64748b; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                       <i class="fas fa-times"></i> សម្អាត
                     </button>
-                    <button type="button" onclick="openQuickAddClassModal()" style="background: #15803d; border: none; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                    <button type="button" onclick="openQuickAddClassModal()"
+                      style="background: #15803d; border: none; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                       <i class="fas fa-plus"></i> + បន្ថែមថ្នាក់ថ្មី
                     </button>
                   </div>
                 </div>
 
                 <!-- Dynamic Checkbox Container -->
-                <div id="teacherClassesCheckboxList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; min-height: 40px; align-items: center;">
+                <div id="teacherClassesCheckboxList"
+                  style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; min-height: 40px; align-items: center;">
                   <!-- Checkboxes populated via JS -->
                 </div>
                 <input type="hidden" id="regTeacherAssignedClasses" value="">
@@ -792,7 +827,8 @@
               <div class="fields-grid-3">
                 <div class="form-group">
                   <label class="form-label" for="regTeacherNameEn">ឈ្មោះគ្រូជាអក្សរឡាតាំង</label>
-                  <input type="text" id="regTeacherNameEn" class="form-control" placeholder="Latin Name (e.g. SOK SAMNANG)">
+                  <input type="text" id="regTeacherNameEn" class="form-control"
+                    placeholder="Latin Name (e.g. SOK SAMNANG)">
                 </div>
 
                 <div class="form-group">
@@ -805,7 +841,8 @@
 
                 <div class="form-group">
                   <label class="form-label" for="regTeacherDob">ថ្ងៃខែឆ្នាំកំណើត<span class="required">*</span></label>
-                  <input type="date" id="regTeacherDob" class="form-control" onchange="calculateAgeFromDob(this.value, 'regTeacherAge')">
+                  <input type="date" id="regTeacherDob" class="form-control"
+                    onchange="calculateAgeFromDob(this.value, 'regTeacherAge')">
                 </div>
               </div>
 
@@ -813,24 +850,31 @@
               <div class="fields-grid-4">
                 <div class="form-group">
                   <label class="form-label" for="regTeacherAge">អាយុ (ឆ្នាំ)</label>
-                  <input type="text" id="regTeacherAge" class="form-control" placeholder="គណនាដោយស្វ័យប្រវត្តិ" readonly>
+                  <input type="text" id="regTeacherAge" class="form-control" placeholder="គណនាដោយស្វ័យប្រវត្តិ"
+                    readonly>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regTeacherPhone">លេខទូរស័ព្ទផ្ទាល់ខ្លួន<span class="required">*</span></label>
+                  <label class="form-label" for="regTeacherPhone">លេខទូរស័ព្ទផ្ទាល់ខ្លួន<span
+                      class="required">*</span></label>
                   <input type="tel" id="regTeacherPhone" class="form-control" placeholder="012 345 678">
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regTeacherUsername">ឈ្មោះគណនី (Username)<span class="required">*</span></label>
+                  <label class="form-label" for="regTeacherUsername">ឈ្មោះគណនី (Username)<span
+                      class="required">*</span></label>
                   <input type="text" id="regTeacherUsername" class="form-control" placeholder="Username ចូលប្រព័ន្ធ">
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regTeacherPassword">ពាក្យសម្ងាត់ (Password)<span class="required">*</span></label>
+                  <label class="form-label" for="regTeacherPassword">ពាក្យសម្ងាត់ (Password)<span
+                      class="required">*</span></label>
                   <div style="position: relative; display: flex; align-items: center;">
-                    <input type="password" id="regTeacherPassword" class="form-control" value="ktpttc123" placeholder="Password" style="padding-right: 36px;">
-                    <button type="button" onclick="toggleRegPassword('regTeacherPassword', 'regTeacherEyeIcon')" style="position: absolute; right: 10px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;" title="បង្ហាញ/លាក់">
+                    <input type="password" id="regTeacherPassword" class="form-control" value="ktpttc123"
+                      placeholder="Password" style="padding-right: 36px;">
+                    <button type="button" onclick="toggleRegPassword('regTeacherPassword', 'regTeacherEyeIcon')"
+                      style="position: absolute; right: 10px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;"
+                      title="បង្ហាញ/លាក់">
                       <i class="fas fa-eye" id="regTeacherEyeIcon"></i>
                     </button>
                   </div>
@@ -871,22 +915,26 @@
         <div class="fields-grid-4">
           <div class="form-group">
             <label class="form-label">រាជធានី/ខេត្ត</label>
-            <input type="text" id="pobProvince" class="form-control" placeholder="វាយបញ្ចូល ឬជ្រើសរើស..." list="pobProvinceList" autocomplete="off">
+            <input type="text" id="pobProvince" class="form-control" placeholder="វាយបញ្ចូល ឬជ្រើសរើស..."
+              list="pobProvinceList" autocomplete="off">
             <datalist id="pobProvinceList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ក្រុង/ស្រុក/ខណ្ឌ</label>
-            <input type="text" id="pobDistrict" class="form-control" placeholder="ជ្រើសរើសខេត្តជាមុន..." list="pobDistrictList" autocomplete="off">
+            <input type="text" id="pobDistrict" class="form-control" placeholder="ជ្រើសរើសខេត្តជាមុន..."
+              list="pobDistrictList" autocomplete="off">
             <datalist id="pobDistrictList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ឃុំ/សង្កាត់</label>
-            <input type="text" id="pobCommune" class="form-control" placeholder="ជ្រើសរើសស្រុកជាមុន..." list="pobCommuneList" autocomplete="off">
+            <input type="text" id="pobCommune" class="form-control" placeholder="ជ្រើសរើសស្រុកជាមុន..."
+              list="pobCommuneList" autocomplete="off">
             <datalist id="pobCommuneList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ភូមិ</label>
-            <input type="text" id="pobVillage" class="form-control" placeholder="ជ្រើសរើសឃុំជាមុន..." list="pobVillageList" autocomplete="off">
+            <input type="text" id="pobVillage" class="form-control" placeholder="ជ្រើសរើសឃុំជាមុន..."
+              list="pobVillageList" autocomplete="off">
             <datalist id="pobVillageList"></datalist>
           </div>
         </div>
@@ -896,29 +944,34 @@
           <div class="section-title section-address" style="margin: 0;">
             <i class="fas fa-home"></i> <span>អាសយដ្ឋានបច្ចុប្បន្ន</span>
           </div>
-          <button type="button" onclick="copyBirthplaceToAddress()" style="background: none; border: 1px solid #bfdbfe; color: #2563eb; font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+          <button type="button" onclick="copyBirthplaceToAddress()"
+            style="background: none; border: 1px solid #bfdbfe; color: #2563eb; font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
             <i class="fas fa-copy"></i> ដូចទីកន្លែងកំណើត
           </button>
         </div>
         <div class="fields-grid-4" style="margin-top: 12px;">
           <div class="form-group">
             <label class="form-label">រាជធានី/ខេត្ត</label>
-            <input type="text" id="curProvince" class="form-control" placeholder="វាយបញ្ចូល ឬជ្រើសរើស..." list="curProvinceList" autocomplete="off">
+            <input type="text" id="curProvince" class="form-control" placeholder="វាយបញ្ចូល ឬជ្រើសរើស..."
+              list="curProvinceList" autocomplete="off">
             <datalist id="curProvinceList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ក្រុង/ស្រុក/ខណ្ឌ</label>
-            <input type="text" id="curDistrict" class="form-control" placeholder="ជ្រើសរើសខេត្តជាមុន..." list="curDistrictList" autocomplete="off">
+            <input type="text" id="curDistrict" class="form-control" placeholder="ជ្រើសរើសខេត្តជាមុន..."
+              list="curDistrictList" autocomplete="off">
             <datalist id="curDistrictList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ឃុំ/សង្កាត់</label>
-            <input type="text" id="curCommune" class="form-control" placeholder="ជ្រើសរើសស្រុកជាមុន..." list="curCommuneList" autocomplete="off">
+            <input type="text" id="curCommune" class="form-control" placeholder="ជ្រើសរើសស្រុកជាមុន..."
+              list="curCommuneList" autocomplete="off">
             <datalist id="curCommuneList"></datalist>
           </div>
           <div class="form-group">
             <label class="form-label">ភូមិ</label>
-            <input type="text" id="curVillage" class="form-control" placeholder="ជ្រើសរើសឃុំជាមុន..." list="curVillageList" autocomplete="off">
+            <input type="text" id="curVillage" class="form-control" placeholder="ជ្រើសរើសឃុំជាមុន..."
+              list="curVillageList" autocomplete="off">
             <datalist id="curVillageList"></datalist>
           </div>
         </div>
@@ -1111,12 +1164,14 @@
 
         <!-- Callout Info Note (Exact Match to Image 2) -->
         <div class="info-callout">
-          <div><i class="fas fa-info-circle"></i> <strong>បញ្ជាក់៖</strong> ចំពោះព័ត៌មានដែលមានសញ្ញា <strong>*</strong> ត្រូវតែបំពេញឱ្យបានគ្រប់ជ្រុងជ្រោយ។ អាយុនឹងត្រូវបានគណនាដោយស្វ័យប្រវត្តិ។</div>
+          <div><i class="fas fa-info-circle"></i> <strong>បញ្ជាក់៖</strong> ចំពោះព័ត៌មានដែលមានសញ្ញា <strong>*</strong>
+            ត្រូវតែបំពេញឱ្យបានគ្រប់ជ្រុងជ្រោយ។ អាយុនឹងត្រូវបានគណនាដោយស្វ័យប្រវត្តិ។</div>
           <div class="note-bold">ចំណាំ៖ ចំនួនសិស្សអតិបរមាក្នុងមួយថ្នាក់កំណត់ត្រឹម ១០០នាក់ ប៉ុណ្ណោះ។</div>
         </div>
 
         <!-- Hidden input for Excel/CSV file upload -->
-        <input type="file" id="excelFileInput" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleExcelImport(this)">
+        <input type="file" id="excelFileInput" accept=".csv, .xlsx, .xls" style="display: none;"
+          onchange="handleExcelImport(this)">
 
         <!-- Bottom Action Buttons (Exact Match to Image 2) -->
         <div class="form-bottom-actions">
@@ -1129,7 +1184,8 @@
           <button type="button" class="btn-action btn-export-excel" onclick="downloadExcelTemplate()">
             <i class="fas fa-download"></i> ទាញយកគំរូ Excel
           </button>
-          <button type="button" class="btn-action btn-import-excel" onclick="document.getElementById('excelFileInput').click()">
+          <button type="button" class="btn-action btn-import-excel"
+            onclick="document.getElementById('excelFileInput').click()">
             <i class="fas fa-file-excel"></i> នាំចូលឯកសារ Excel (.xlsx, .csv)
           </button>
         </div>

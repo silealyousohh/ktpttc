@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- STMS Custom Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=5.1">
+  <link rel="stylesheet" href="styles.css?v=5.2">
 </head>
 
 <body>
@@ -29,25 +29,6 @@
       style="cursor: pointer;">
       <img src="assets/ktpttc-header-logo.png" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" class="brand-header-logo"
         onerror="this.src='assets/ktpttc-logo.png'">
-    </div>
-
-    <!-- Center: Role-Based Access Control Switcher (Visible ONLY for Administrator, Hidden for staff & students) -->
-    <div class="nav-center-role" id="navCenterRole" role="tablist" aria-label="Role Switcher" style="display: none;">
-      <button type="button" class="role-tab-btn active" data-role="admin" onclick="switchRole('admin')"
-        title="សិទ្ធិគ្រប់គ្រងប្រព័ន្ធ បង្កើតឆ្នាំសិក្សា &amp; បម្រុងទុកទិន្នន័យ">
-        <i class="fas fa-shield-alt"></i>
-        <span>Administrator</span>
-      </button>
-      <button type="button" class="role-tab-btn" data-role="trainer" onclick="switchRole('trainer')"
-        title="សិទ្ធិគ្រូឧទ្ទេស៖ ស្រង់វត្តមាន បញ្ចូលពិន្ទុ &amp; មើលកាលវិភាគ">
-        <i class="fas fa-chalkboard-teacher"></i>
-        <span>Trainer / Teacher</span>
-      </button>
-      <button type="button" class="role-tab-btn" data-role="trainee" onclick="switchRole('trainee')"
-        title="សិទ្ធិគរុនិស្សិត៖ មើលប្រវត្តិរូប វត្តមាន ពិន្ទុ &amp; កាលវិភាគ">
-        <i class="fas fa-user-graduate"></i>
-        <span>Trainee Teacher</span>
-      </button>
     </div>
 
     <!-- Right Controls: Disciplinary Alerts & Active User Widget -->
@@ -353,8 +334,8 @@
             </label>
             <div class="login-input-wrapper">
               <i class="fas fa-user input-icon"></i>
-              <input type="text" id="loginUsername" class="login-input" placeholder="បញ្ចូលឈ្មោះគណនី (Username ឧ. admin)..."
-                required autocomplete="username">
+              <input type="text" id="loginUsername" class="login-input"
+                placeholder="បញ្ចូលឈ្មោះគណនី (Username ឧ. admin)..." required autocomplete="username">
             </div>
           </div>
 
@@ -368,7 +349,8 @@
               <i class="fas fa-key input-icon"></i>
               <input type="password" id="loginPassword" class="login-input" placeholder="វាយបញ្ចូលពាក្យសម្ងាត់..."
                 required autocomplete="current-password">
-              <button type="button" class="password-toggle-btn" id="btnTogglePassword" onclick="toggleLoginPassword()" title="បង្ហាញ ឬលាក់ពាក្យសម្ងាត់">
+              <button type="button" class="password-toggle-btn" id="btnTogglePassword" onclick="toggleLoginPassword()"
+                title="បង្ហាញ ឬលាក់ពាក្យសម្ងាត់">
                 <i class="fas fa-eye" id="eyeIcon"></i>
                 <span id="eyeText">បង្ហាញ</span>
               </button>
@@ -397,8 +379,8 @@
 
   <!-- Application Core Scripts -->
   <script src="xlsx.full.min.js"></script>
-  <script src="data.js?v=5.1"></script>
-  <script src="app.js?v=5.1"></script>
+  <script src="data.js?v=5.2"></script>
+  <script src="app.js?v=5.2"></script>
 </body>
 
 </html>

@@ -9,36 +9,36 @@
   --primary-hover: #172554;
   --primary-light: #eff6ff;
   --primary-glow: rgba(37, 99, 235, 0.25);
-  
+
   --secondary: #0ea5e9;
   --accent: #f59e0b;
   --accent-light: #fef3c7;
-  
+
   --success: #10b981;
   --success-light: #d1fae5;
   --warning: #f97316;
   --warning-light: #ffedd5;
   --danger: #ef4444;
   --danger-light: #fee2e2;
-  
+
   --bg-main: #f8fafc;
   --bg-sidebar: #0f172a;
   --bg-sidebar-active: #1e293b;
   --bg-card: #ffffff;
-  
+
   --text-main: #0f172a;
   --text-muted: #64748b;
   --text-sidebar: #94a3b8;
   --text-sidebar-active: #ffffff;
-  
+
   --border-color: #e2e8f0;
   --border-focus: #3b82f6;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-  --shadow-md: 0 6px 16px rgba(0,0,0,0.06);
-  --shadow-lg: 0 12px 30px rgba(0,0,0,0.08);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.08);
 
   --font-body: 'Kantumruy Pro', 'Inter', sans-serif;
   --font-moul: 'Moul', serif;
@@ -163,13 +163,10 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* Hide Role Switcher completely for non-admin accounts */
-#navCenterRole {
+/* Hide Role Switcher completely across all roles */
+#navCenterRole,
+.nav-center-role {
   display: none !important;
-}
-
-body.is-admin-session #navCenterRole {
-  display: flex !important;
 }
 
 .role-tab-btn {
@@ -205,8 +202,8 @@ body.is-admin-session #navCenterRole {
 }
 
 .alert-bell-btn {
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #ffffff;
   width: 38px;
   height: 38px;
@@ -220,7 +217,7 @@ body.is-admin-session #navCenterRole {
 }
 
 .alert-bell-btn:hover {
-  background: rgba(255,255,255,0.25);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .alert-badge {
@@ -637,12 +634,35 @@ body:has(.admin-portal-container) .stms-content-viewport {
   font-weight: 600;
 }
 
-.badge-present { background: #dcfce7; color: #15803d; }
-.badge-absent { background: #fee2e2; color: #b91c1c; }
-.badge-permission { background: #fef3c7; color: #b45309; }
-.badge-late { background: #ffedd5; color: #c2410c; }
-.badge-published { background: #e0e7ff; color: #3730a3; }
-.badge-draft { background: #f1f5f9; color: #475569; }
+.badge-present {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-absent {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-permission {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge-late {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.badge-published {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.badge-draft {
+  background: #f1f5f9;
+  color: #475569;
+}
 
 /* Interactive Attendance Desk Grid */
 .attendance-grid {
@@ -668,14 +688,29 @@ body:has(.admin-portal-container) .stms-content-viewport {
   box-shadow: var(--shadow-md);
 }
 
-.attendance-card.present { border-color: #22c55e; background: #f0fdf4; }
-.attendance-card.absent { border-color: #ef4444; background: #fef2f2; }
-.attendance-card.permission { border-color: #f59e0b; background: #fffbeb; }
-.attendance-card.late { border-color: #f97316; background: #fff7ed; }
+.attendance-card.present {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.attendance-card.absent {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.attendance-card.permission {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.attendance-card.late {
+  border-color: #f97316;
+  background: #fff7ed;
+}
 
 /* Disciplinary Alert Banner */
 .disciplinary-alert-box {
-  background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(245,158,11,0.1));
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(245, 158, 11, 0.1));
   border: 1px solid #fca5a5;
   border-radius: var(--radius-md);
   padding: 16px 20px;
@@ -738,8 +773,15 @@ body:has(.admin-portal-container) .stms-content-viewport {
 }
 
 @keyframes modalScale {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .modal-header-bar,
@@ -778,7 +820,9 @@ body:has(.admin-portal-container) .stms-content-viewport {
   line-height: 1;
 }
 
-.modal-close-icon:hover { color: #ef4444; }
+.modal-close-icon:hover {
+  color: #ef4444;
+}
 
 .modal-body-scroll {
   padding: 22px;
@@ -879,7 +923,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -887,8 +931,15 @@ body:has(.admin-portal-container) .stms-content-viewport {
 }
 
 @keyframes slideToast {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* ==========================================================================
@@ -1145,11 +1196,30 @@ body:has(.admin-portal-container) .stms-content-viewport {
   font-weight: 600;
 }
 
-.tt-pedagogy { background: #dcfce7; color: #15803d; }
-.tt-math { background: #dbeafe; color: #1d4ed8; }
-.tt-khmer { background: #ffe4e6; color: #be123c; }
-.tt-psych { background: #f3e8ff; color: #7e22ce; }
-.tt-ict { background: #ccfbf1; color: #0f766e; }
+.tt-pedagogy {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.tt-math {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.tt-khmer {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+.tt-psych {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.tt-ict {
+  background: #ccfbf1;
+  color: #0f766e;
+}
 
 /* Attendance Chart & Matrix in Flow */
 .attendance-flow-split {
@@ -1184,9 +1254,23 @@ body:has(.admin-portal-container) .stms-content-viewport {
   height: 65px;
 }
 
-.bar-present { width: 5px; background: #10b981; border-radius: 2px 2px 0 0; }
-.bar-absent { width: 5px; background: #ef4444; border-radius: 2px 2px 0 0; }
-.bar-permission { width: 5px; background: #f59e0b; border-radius: 2px 2px 0 0; }
+.bar-present {
+  width: 5px;
+  background: #10b981;
+  border-radius: 2px 2px 0 0;
+}
+
+.bar-absent {
+  width: 5px;
+  background: #ef4444;
+  border-radius: 2px 2px 0 0;
+}
+
+.bar-permission {
+  width: 5px;
+  background: #f59e0b;
+  border-radius: 2px 2px 0 0;
+}
 
 .chart-day-label {
   font-size: 0.6rem;
@@ -1283,7 +1367,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   margin: 0 auto;
   text-align: center;
   color: #0f172a;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .cert-cambodia-header h3 {
@@ -1319,14 +1403,46 @@ body:has(.admin-portal-container) .stms-content-viewport {
 
 /* Responsive */
 @media (max-width: 900px) {
-  .stms-sidebar { width: 70px; padding: 10px 6px; }
-  .sidebar-item-link span, .sidebar-label { display: none; }
-  .sidebar-item-link { justify-content: center; padding: 12px 0; }
-  .brand-text, .user-info-text, .brand-header-divider, .brand-system-meta { display: none; }
-  .brand-header-logo { height: 38px; max-width: 200px; }
-  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
-  .flow-modules-row, .flow-modules-row-2 { grid-template-columns: 1fr; }
-  .login-container-card { grid-template-columns: 1fr; }
+  .stms-sidebar {
+    width: 70px;
+    padding: 10px 6px;
+  }
+
+  .sidebar-item-link span,
+  .sidebar-label {
+    display: none;
+  }
+
+  .sidebar-item-link {
+    justify-content: center;
+    padding: 12px 0;
+  }
+
+  .brand-text,
+  .user-info-text,
+  .brand-header-divider,
+  .brand-system-meta {
+    display: none;
+  }
+
+  .brand-header-logo {
+    height: 38px;
+    max-width: 200px;
+  }
+
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-modules-row,
+  .flow-modules-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .login-container-card {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ==========================================================================
@@ -1343,7 +1459,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   align-items: center;
   justify-content: center;
   background-color: #030712;
-  background-image: 
+  background-image:
     radial-gradient(circle at 12% 18%, rgba(30, 58, 138, 0.45) 0%, transparent 45%),
     radial-gradient(circle at 88% 82%, rgba(37, 99, 235, 0.3) 0%, transparent 45%),
     radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
@@ -1362,6 +1478,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   pointer-events: none;
   z-index: 0;
 }
+
 .login-ambient-orb-1 {
   width: 440px;
   height: 440px;
@@ -1370,6 +1487,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   left: 15%;
   animation: orbFloat1 12s ease-in-out infinite alternate;
 }
+
 .login-ambient-orb-2 {
   width: 380px;
   height: 380px;
@@ -1380,12 +1498,23 @@ body:has(.admin-portal-container) .stms-content-viewport {
 }
 
 @keyframes orbFloat1 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(30px, 40px) scale(1.1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  100% {
+    transform: translate(30px, 40px) scale(1.1);
+  }
 }
+
 @keyframes orbFloat2 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-30px, -35px) scale(1.08); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  100% {
+    transform: translate(-30px, -35px) scale(1.08);
+  }
 }
 
 /* Glassmorphism Main Card */
@@ -1401,7 +1530,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   display: grid;
   grid-template-columns: 1.05fr 1fr;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 35px 80px -15px rgba(0, 0, 0, 0.8),
     0 0 0 1px rgba(255, 255, 255, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -1454,7 +1583,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   border-radius: 50%;
   background: #ffffff;
   padding: 6px;
-  box-shadow: 
+  box-shadow:
     0 0 32px rgba(59, 130, 246, 0.4),
     0 12px 24px rgba(0, 0, 0, 0.45);
   border: 3px solid rgba(251, 191, 36, 0.95);
@@ -1560,16 +1689,19 @@ body:has(.admin-portal-container) .stms-content-viewport {
   color: #60a5fa;
   border: 1px solid rgba(59, 130, 246, 0.35);
 }
+
 .feat-sky .feat-icon {
   background: rgba(14, 165, 233, 0.2);
   color: #38bdf8;
   border: 1px solid rgba(14, 165, 233, 0.35);
 }
+
 .feat-emerald .feat-icon {
   background: rgba(16, 185, 129, 0.2);
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.35);
 }
+
 .feat-amber .feat-icon {
   background: rgba(245, 158, 11, 0.2);
   color: #fbbf24;
@@ -1750,7 +1882,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 8px 24px -4px rgba(37, 99, 235, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
   display: flex;
@@ -1790,14 +1922,17 @@ body:has(.admin-portal-container) .stms-content-viewport {
     grid-template-columns: 1fr;
     max-width: 500px;
   }
+
   .login-left-brand {
     padding: 34px 24px;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
+
   .login-right-form {
     padding: 34px 24px;
   }
+
   .login-feature-grid {
     grid-template-columns: 1fr;
   }
@@ -2249,13 +2384,20 @@ body:has(.admin-portal-container) .stms-content-viewport {
   body * {
     visibility: hidden;
   }
-  .roster-card, .roster-card *,
-  .trainee-id-card, .trainee-id-card *,
-  #printableCard, #printableCard *,
-  .batch-id-cards-grid, .batch-id-cards-grid *,
-  .printable-timetable-sheet, .printable-timetable-sheet * {
+
+  .roster-card,
+  .roster-card *,
+  .trainee-id-card,
+  .trainee-id-card *,
+  #printableCard,
+  #printableCard *,
+  .batch-id-cards-grid,
+  .batch-id-cards-grid *,
+  .printable-timetable-sheet,
+  .printable-timetable-sheet * {
     visibility: visible;
   }
+
   .printable-timetable-sheet {
     position: absolute;
     left: 0;
@@ -2268,7 +2410,9 @@ body:has(.admin-portal-container) .stms-content-viewport {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  .trainee-id-card, #printableCard {
+
+  .trainee-id-card,
+  #printableCard {
     position: absolute;
     left: 50%;
     top: 50px;
@@ -2278,6 +2422,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
     box-shadow: none !important;
     border: 1px solid #1e3a8a !important;
   }
+
   .roster-card {
     position: absolute;
     left: 0;
@@ -2288,6 +2433,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
     border: none;
     box-shadow: none;
   }
+
   .roster-header-right,
   .roster-toolbar-row,
   .roster-action-btn,
@@ -2295,11 +2441,14 @@ body:has(.admin-portal-container) .stms-content-viewport {
   td:last-child {
     display: none !important;
   }
+
   .roster-table {
     border-collapse: collapse;
     width: 100%;
   }
-  .roster-table th, .roster-table td {
+
+  .roster-table th,
+  .roster-table td {
     border: 1px solid #000 !important;
   }
 }
@@ -2556,49 +2705,73 @@ body:has(.admin-portal-container) .stms-content-viewport {
   background: linear-gradient(135deg, #fff1f2 0%, #fce7f3 100%);
   color: #db2777;
 }
-.card-pink .hub-card-pattern { color: #f43f5e; }
+
+.card-pink .hub-card-pattern {
+  color: #f43f5e;
+}
 
 .card-blue {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   color: #0284c7;
 }
-.card-blue .hub-card-pattern { color: #0284c7; }
+
+.card-blue .hub-card-pattern {
+  color: #0284c7;
+}
 
 .card-orange {
   background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
   color: #ea580c;
 }
-.card-orange .hub-card-pattern { color: #ea580c; }
+
+.card-orange .hub-card-pattern {
+  color: #ea580c;
+}
 
 .card-green {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   color: #16a34a;
 }
-.card-green .hub-card-pattern { color: #16a34a; }
+
+.card-green .hub-card-pattern {
+  color: #16a34a;
+}
 
 .card-amber {
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   color: #d97706;
 }
-.card-amber .hub-card-pattern { color: #d97706; }
+
+.card-amber .hub-card-pattern {
+  color: #d97706;
+}
 
 .card-purple {
   background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
   color: #7c3aed;
 }
-.card-purple .hub-card-pattern { color: #7c3aed; }
+
+.card-purple .hub-card-pattern {
+  color: #7c3aed;
+}
 
 .card-teal {
   background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
   color: #0d9488;
 }
-.card-teal .hub-card-pattern { color: #0d9488; }
+
+.card-teal .hub-card-pattern {
+  color: #0d9488;
+}
 
 .card-sky {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   color: #2563eb;
 }
-.card-sky .hub-card-pattern { color: #2563eb; }
+
+.card-sky .hub-card-pattern {
+  color: #2563eb;
+}
 
 /* 3. Trainee Subjects Ribbon & Row */
 .trainee-subjects-section {
@@ -2758,12 +2931,15 @@ body:has(.admin-portal-container) .stms-content-viewport {
   .trainee-hub-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .trainee-subjects-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .trainee-stats-row {
     grid-template-columns: 1fr;
   }
+
   .trainee-hero-banner {
     flex-direction: column;
     align-items: flex-start;
@@ -2774,6 +2950,7 @@ body:has(.admin-portal-container) .stms-content-viewport {
   .trainee-subjects-grid {
     grid-template-columns: 1fr;
   }
+
   .trainee-hero-left {
     flex-direction: column;
     align-items: flex-start;
@@ -2824,7 +3001,8 @@ body:has(.admin-portal-container) .stms-content-viewport {
 .stms-responsive-video-wrap {
   width: 100%;
   position: relative;
-  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+  padding-top: 56.25%;
+  /* 16:9 Aspect Ratio */
   background: #000000;
   border-radius: 12px;
   overflow: hidden;
@@ -3137,13 +3315,47 @@ body:has(.admin-portal-container) .stms-content-viewport {
   flex-shrink: 0;
 }
 
-.file-type-pdf { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
-.file-type-word { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
-.file-type-ppt { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
-.file-type-excel { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
-.file-type-zip { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
-.file-type-image { background: #faf5ff; color: #9333ea; border: 1px solid #f3e8ff; }
-.file-type-other { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+.file-type-pdf {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+}
+
+.file-type-word {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.file-type-ppt {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #ffedd5;
+}
+
+.file-type-excel {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #dcfce7;
+}
+
+.file-type-zip {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+
+.file-type-image {
+  background: #faf5ff;
+  color: #9333ea;
+  border: 1px solid #f3e8ff;
+}
+
+.file-type-other {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
 
 .stms-file-item-row {
   background: #ffffff;
@@ -3438,22 +3650,27 @@ body:has(.admin-portal-container) .stms-content-viewport {
   background: #fee2e2;
   border: 2px solid #fecaca;
 }
+
 .rbac-big-card.card-admin .rbac-big-card-title {
   color: #0284c7;
 }
+
 .rbac-big-card.card-admin .rbac-big-card-meta {
   color: #0369a1;
 }
+
 .rbac-big-card.card-admin:hover {
   background: #fecdd3;
   border-color: #fda4af;
 }
+
 .rbac-big-card.card-admin.active {
   background: #ffe4e6;
   border: 3px solid #e11d48;
   box-shadow: 0 10px 28px rgba(225, 29, 72, 0.22);
   transform: translateY(-3px);
 }
+
 .rbac-big-card.card-admin .rbac-big-card-indicator {
   background: #e11d48;
   color: #ffffff;
@@ -3464,22 +3681,27 @@ body:has(.admin-portal-container) .stms-content-viewport {
   background: #dbeafe;
   border: 2px solid #bfdbfe;
 }
+
 .rbac-big-card.card-trainer .rbac-big-card-title {
   color: #0284c7;
 }
+
 .rbac-big-card.card-trainer .rbac-big-card-meta {
   color: #0369a1;
 }
+
 .rbac-big-card.card-trainer:hover {
   background: #bfdbfe;
   border-color: #93c5fd;
 }
+
 .rbac-big-card.card-trainer.active {
   background: #e0f2fe;
   border: 3px solid #2563eb;
   box-shadow: 0 10px 28px rgba(37, 99, 235, 0.22);
   transform: translateY(-3px);
 }
+
 .rbac-big-card.card-trainer .rbac-big-card-indicator {
   background: #2563eb;
   color: #ffffff;
@@ -3490,22 +3712,27 @@ body:has(.admin-portal-container) .stms-content-viewport {
   background: #d1fae5;
   border: 2px solid #a7f3d0;
 }
+
 .rbac-big-card.card-trainee .rbac-big-card-title {
   color: #059669;
 }
+
 .rbac-big-card.card-trainee .rbac-big-card-meta {
   color: #047857;
 }
+
 .rbac-big-card.card-trainee:hover {
   background: #a7f3d0;
   border-color: #6ee7b7;
 }
+
 .rbac-big-card.card-trainee.active {
   background: #d1fae5;
   border: 3px solid #059669;
   box-shadow: 0 10px 28px rgba(16, 185, 129, 0.22);
   transform: translateY(-3px);
 }
+
 .rbac-big-card.card-trainee .rbac-big-card-indicator {
   background: #059669;
   color: #ffffff;
@@ -3779,10 +4006,12 @@ body:has(.admin-portal-container) .stms-content-viewport {
     box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
     outline: 3px solid #0284c7;
   }
+
   50% {
     box-shadow: 0 0 25px 8px rgba(2, 132, 199, 0.35);
     outline: 3px solid #38bdf8;
   }
+
   100% {
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
     outline: 3px solid transparent;
@@ -3792,8 +4021,3 @@ body:has(.admin-portal-container) .stms-content-viewport {
 .highlight-section-pulse {
   animation: timetablePulseHighlight 1.8s cubic-bezier(0.25, 1, 0.5, 1);
 }
-
-
-
-
-
