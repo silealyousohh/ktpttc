@@ -445,6 +445,11 @@ let authenticatedUser = null;
  */
 function resolveTraineeRecord(raw) {
   if (!raw) return null;
+
+  // IMPORTANT: Never convert Administrator or Trainer/Teacher accounts to a trainee!
+  if (typeof raw === 'object' && (raw.role === 'admin' || raw.role === 'trainer')) {
+    return raw;
+  }
   
   const traineesList = (typeof getAllEnteredStudents === 'function') 
     ? getAllEnteredStudents() 
@@ -590,12 +595,11 @@ function initAuth() {
 
   // Lookup the exact user in stmsData to reflect any fresh changes (e.g. subjects, avatar)
   let freshUser = null;
-  if (sessionUser.role === 'trainee' || sessionUser.studentId) {
+  if (sessionUser.role === 'trainee') {
     freshUser = resolveTraineeRecord(sessionUser);
   } else {
     if (sessionUser.id) {
-      freshUser = (stmsData.users || []).find(u => u && u.id === sessionUser.id) ||
-                  (stmsData.trainees || []).find(t => t && t.id === sessionUser.id);
+      freshUser = (stmsData.users || []).find(u => u && u.id === sessionUser.id);
     }
     if (!freshUser && sessionUser.username) {
       freshUser = (stmsData.users || []).find(u => u && u.username && u.username.toLowerCase() === sessionUser.username.toLowerCase());
@@ -611,7 +615,7 @@ function initAuth() {
   localStorage.setItem('ktpttc_auth_session', JSON.stringify(freshUser));
 
   if (freshUser.role === 'admin') {
-    // Administrator: Can preview roles
+    // Administrator: Can preview roles if explicitly chosen, otherwise admin-portal
     const savedActiveRole = localStorage.getItem('ktpttc_active_role') || 'admin';
     currentRole = savedActiveRole;
     window.currentRole = savedActiveRole;
@@ -623,8 +627,12 @@ function initAuth() {
       window.currentTraineeUser = activeProfile;
     } else if (savedActiveRole === 'trainer') {
       activeProfile = getActiveTrainerProfile();
+      currentTraineeUser = null;
+      window.currentTraineeUser = null;
     } else {
       activeProfile = freshUser;
+      currentTraineeUser = null;
+      window.currentTraineeUser = null;
     }
     loginSuccess(activeProfile, false);
   } else if (freshUser.role === 'trainer') {
@@ -632,6 +640,8 @@ function initAuth() {
     currentRole = 'trainer';
     window.currentRole = 'trainer';
     currentTrainerPreviewId = freshUser.id;
+    currentTraineeUser = null;
+    window.currentTraineeUser = null;
     localStorage.setItem('ktpttc_active_role', 'trainer');
     localStorage.setItem('ktpttc_profile_trainer', JSON.stringify(freshUser));
     loginSuccess(freshUser, false);
@@ -742,16 +752,35 @@ function handleLoginSubmit() {
 
   if (errBox) errBox.style.display = 'none';
 
-  if (user.role === 'trainee') {
+  // Explicitly set active role to the authentic role of this logging-in account
+  const userRole = user.role || 'trainer';
+  currentRole = userRole;
+  window.currentRole = userRole;
+  localStorage.setItem('ktpttc_active_role', userRole);
+
+  if (userRole === 'trainee') {
     user = resolveTraineeRecord(user);
     currentTraineeUser = user;
     window.currentTraineeUser = user;
     localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(user));
+  } else if (userRole === 'trainer') {
+    currentTrainerPreviewId = user.id;
+    window.currentTrainerPreviewId = user.id;
+    currentTraineeUser = null;
+    window.currentTraineeUser = null;
+    localStorage.setItem('ktpttc_profile_trainer', JSON.stringify(user));
+  } else if (userRole === 'admin') {
+    currentTraineeUser = null;
+    window.currentTraineeUser = null;
+    window.currentTrainerPreviewId = null;
   }
 
   window.authenticatedUser = user;
   authenticatedUser = user;
+  currentUser = user;
   localStorage.setItem('ktpttc_auth_session', JSON.stringify(user));
+  localStorage.setItem('ktpttc_current_user', JSON.stringify(user));
+  sessionStorage.setItem('ktpttc_current_user', JSON.stringify(user));
   loginSuccess(user, true);
 }
 
@@ -764,12 +793,51 @@ function quickFillLogin(username, password) {
 }
 
 function loginSuccess(user, notify = true) {
-  // If user is trainee or active role is trainee, guarantee full trainee record
-  if (user && (user.role === 'trainee' || currentRole === 'trainee')) {
+  if (!user) return;
+
+  // On fresh login (notify === true), update global authenticated user immediately
+  if (notify) {
+    window.authenticatedUser = user;
+    authenticatedUser = user;
+    localStorage.setItem('ktpttc_auth_session', JSON.stringify(user));
+    currentRole = user.role;
+    window.currentRole = user.role;
+    localStorage.setItem('ktpttc_active_role', user.role);
+  }
+
+  const authUser = window.authenticatedUser || user;
+  const isRealAdmin = authUser && authUser.role === 'admin';
+  const isAdmin = isRealAdmin;
+
+  // Active role: if real admin on reload / preview, respect savedActiveRole; otherwise strictly user.role
+  if (isRealAdmin) {
+    if (notify) {
+      currentRole = 'admin';
+      window.currentRole = 'admin';
+      localStorage.setItem('ktpttc_active_role', 'admin');
+    } else {
+      currentRole = window.currentRole || localStorage.getItem('ktpttc_active_role') || 'admin';
+    }
+  } else {
+    currentRole = user.role;
+    window.currentRole = user.role;
+    localStorage.setItem('ktpttc_active_role', user.role);
+  }
+
+  // If this user is a trainee, resolve full trainee record
+  if (user.role === 'trainee') {
     user = resolveTraineeRecord(user);
     currentTraineeUser = user;
     window.currentTraineeUser = user;
     localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(user));
+  } else if (currentRole === 'trainee' && isRealAdmin) {
+    // Admin previewing trainee role
+    user = getActiveTraineeProfile();
+    currentTraineeUser = user;
+    window.currentTraineeUser = user;
+  } else {
+    currentTraineeUser = null;
+    window.currentTraineeUser = null;
   }
 
   if (!window.authenticatedUser) {
@@ -777,11 +845,8 @@ function loginSuccess(user, notify = true) {
     authenticatedUser = user;
     localStorage.setItem('ktpttc_auth_session', JSON.stringify(user));
   }
-  const authUser = window.authenticatedUser;
-  const isAdmin = (authUser && authUser.role === 'admin') || (user && user.role === 'admin');
 
   currentUser = user;
-  currentRole = window.currentRole || user.role;
   localStorage.setItem('ktpttc_current_user', JSON.stringify(user));
   sessionStorage.setItem('ktpttc_current_user', JSON.stringify(user));
   localStorage.setItem('ktpttc_active_role', currentRole);
