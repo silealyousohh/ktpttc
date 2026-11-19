@@ -80,19 +80,86 @@ document.addEventListener('DOMContentLoaded', () => {
   initAuth();
 });
 
+// Universal API Base URL Resolver for STMS
+function getStmsApiUrl(endpoint) {
+  const p = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+  if (typeof window !== 'undefined' && window.location) {
+    const host = (window.location.hostname || '').toLowerCase();
+    // On production domain, direct requests to Node.js backend on ktpttc.net (CORS enabled)
+    if (host.includes('ktpttc.net') || host.includes('ktpttc.com')) {
+      return 'https://ktpttc.net' + p;
+    }
+  }
+  return p;
+}
+
 let isSyncingToServer = false;
 let serverSyncTimeout = null;
 
 // Async Background Fetch from Server
 async function fetchServerStmsData() {
   try {
-    const res = await fetch('/api/stms/data');
+    const endpoint = getStmsApiUrl('/api/stms/data');
+    const res = await fetch(endpoint);
     if (!res.ok) return;
     const json = await res.json();
-    if (json && json.success && json.data) {
-      const srv = json.data;
+    if (!json || !json.success) return;
+
+    const srv = json.data;
+
+    // Case 1: If server has no trainees or default users, but local client HAS trainees created by Admin
+    // Immediately push client data to the server to seed cloud database
+    if (!srv || (typeof srv === 'object' && (!srv.trainees || srv.trainees.length === 0) && (!srv.users || srv.users.length <= 3))) {
+      if (Array.isArray(stmsData.trainees) && stmsData.trainees.length > 0) {
+        syncToServer();
+        return;
+      }
+    }
+
+    if (srv && typeof srv === 'object') {
       let hasNew = false;
-      // Merge lessons from server if any exist
+
+      // 1. Merge Trainees (គរុនិស្សិត)
+      if (Array.isArray(srv.trainees) && srv.trainees.length > 0) {
+        if (!Array.isArray(stmsData.trainees)) stmsData.trainees = [];
+        srv.trainees.forEach(srvT => {
+          if (!srvT || !srvT.id) return;
+          const idx = stmsData.trainees.findIndex(t => t && (t.id === srvT.id || (t.studentId && t.studentId === srvT.studentId)));
+          if (idx >= 0) {
+            stmsData.trainees[idx] = { ...srvT, ...stmsData.trainees[idx] };
+          } else {
+            stmsData.trainees.push(srvT);
+            hasNew = true;
+          }
+        });
+        if (stmsData.trainees.length > srv.trainees.length) {
+          syncToServer();
+        }
+      }
+
+      // 2. Merge Users (Admin, Trainers/Teachers, Staff)
+      if (Array.isArray(srv.users) && srv.users.length > 0) {
+        if (!Array.isArray(stmsData.users)) stmsData.users = [];
+        srv.users.forEach(srvU => {
+          if (!srvU || (!srvU.id && !srvU.username)) return;
+          const srvUsername = (srvU.username || '').toLowerCase();
+          const idx = stmsData.users.findIndex(u => u && (
+            (srvU.id && u.id === srvU.id) ||
+            (srvUsername && u.username && u.username.toLowerCase() === srvUsername)
+          ));
+          if (idx >= 0) {
+            stmsData.users[idx] = { ...srvU, ...stmsData.users[idx] };
+          } else {
+            stmsData.users.push(srvU);
+            hasNew = true;
+          }
+        });
+        if (stmsData.users.length > srv.users.length) {
+          syncToServer();
+        }
+      }
+
+      // 3. Merge Lessons
       if (Array.isArray(srv.lessons)) {
         if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
         srv.lessons.forEach(srvL => {
@@ -102,7 +169,8 @@ async function fetchServerStmsData() {
           }
         });
       }
-      // Merge videos
+
+      // 4. Merge Videos
       if (Array.isArray(srv.videoLessons)) {
         if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
         srv.videoLessons.forEach(srvV => {
@@ -112,13 +180,10 @@ async function fetchServerStmsData() {
           }
         });
       }
-      // Merge assignments
+
+      // 5. Merge Assignments
       if (Array.isArray(srv.assignments)) {
         if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
-      if (!Array.isArray(stmsData.onlineClasses)) stmsData.onlineClasses = [];
-      if (!Array.isArray(stmsData.teacherAttendance)) stmsData.teacherAttendance = [];
-      if (!Array.isArray(stmsData.teacherReports)) stmsData.teacherReports = [];
-      if (!stmsData.gradebookApprovals) stmsData.gradebookApprovals = {};
         srv.assignments.forEach(srvA => {
           if (!stmsData.assignments.some(a => a.id === srvA.id)) {
             stmsData.assignments.unshift(srvA);
@@ -126,23 +191,56 @@ async function fetchServerStmsData() {
           }
         });
       }
-      // Merge cohorts
+
+      // 6. Merge Cohorts
       if (Array.isArray(srv.cohorts) && srv.cohorts.length > (stmsData.cohorts || []).length) {
         stmsData.cohorts = srv.cohorts;
         hasNew = true;
       }
-      // Merge customClasses
+
+      // 7. Merge Custom Classes
       if (Array.isArray(srv.customClasses) && srv.customClasses.length > (stmsData.customClasses || []).length) {
         stmsData.customClasses = srv.customClasses;
         hasNew = true;
       }
+
+      // 8. Merge Subjects & Syllabi
+      if (Array.isArray(srv.subjects) && srv.subjects.length > (stmsData.subjects || []).length) {
+        stmsData.subjects = srv.subjects;
+        hasNew = true;
+      }
+      if (srv.syllabi && typeof srv.syllabi === 'object') {
+        stmsData.syllabi = { ...stmsData.syllabi, ...srv.syllabi };
+      }
+
+      // 9. Merge Timetables, Attendance, Reports
+      if (Array.isArray(srv.timetables) && srv.timetables.length > 0) {
+        stmsData.timetables = srv.timetables;
+        hasNew = true;
+      }
+      if (Array.isArray(srv.attendanceSessions) && srv.attendanceSessions.length > (stmsData.attendanceSessions || []).length) {
+        stmsData.attendanceSessions = srv.attendanceSessions;
+        hasNew = true;
+      }
+      if (Array.isArray(srv.teacherAttendance) && srv.teacherAttendance.length > (stmsData.teacherAttendance || []).length) {
+        stmsData.teacherAttendance = srv.teacherAttendance;
+        hasNew = true;
+      }
+      if (Array.isArray(srv.teacherReports) && srv.teacherReports.length > (stmsData.teacherReports || []).length) {
+        stmsData.teacherReports = srv.teacherReports;
+        hasNew = true;
+      }
+      if (srv.gradebookApprovals && typeof srv.gradebookApprovals === 'object') {
+        stmsData.gradebookApprovals = { ...stmsData.gradebookApprovals, ...srv.gradebookApprovals };
+      }
+
       if (hasNew) {
         saveData(false);
         if (currentView) renderView(currentView);
       }
     }
   } catch (e) {
-    // Non-blocking
+    console.warn('Background server fetch deferred:', e);
   }
 }
 
@@ -397,7 +495,8 @@ async function syncToServer() {
         }
       });
     }
-    await fetch('/api/stms/sync', {
+    const endpoint = getStmsApiUrl('/api/stms/sync');
+    await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data: syncData })
@@ -685,11 +784,12 @@ function showLoginScreen() {
   if (errBox) errBox.style.display = 'none';
 }
 
-function handleLoginSubmit() {
+async function handleLoginSubmit() {
   const uInput = document.getElementById('loginUsername');
   const pInput = document.getElementById('loginPassword');
   const errBox = document.getElementById('loginErrorMessage');
   const errText = document.getElementById('loginErrorText');
+  const btn = document.querySelector('#stmsLoginForm button[type="submit"]') || document.getElementById('btnLoginSubmit');
 
   const username = uInput ? uInput.value.trim().toLowerCase() : '';
   const password = pInput ? pInput.value : '';
@@ -702,35 +802,60 @@ function handleLoginSubmit() {
     return;
   }
 
-  let user = (stmsData.users || []).find(u => 
-    (u.username.toLowerCase() === username || 
-     (u.email && u.email.toLowerCase() === username) ||
-     (u.studentId && u.studentId.toLowerCase() === username) ||
-     (u.id && u.id.toLowerCase() === username)) &&
-    String(u.password) === String(password)
-  );
-
-  // If not found in users, check if a trainee in stmsData.trainees matches ID / username / phone
-  if (!user) {
-    const traineesList = (typeof getAllEnteredStudents === 'function') ? getAllEnteredStudents() : (stmsData.trainees || []);
-    const matchedTrainee = (traineesList || []).find(t =>
-      (t.id && t.id.toLowerCase() === username) ||
-      (t.studentId && t.studentId.toLowerCase() === username) ||
-      (t.username && t.username.toLowerCase() === username) ||
-      (t.phone && t.phone.replace(/\s+/g, '') === username.replace(/\s+/g, ''))
+  function findUser() {
+    let u = (stmsData.users || []).find(usr => 
+      (usr.username.toLowerCase() === username || 
+       (usr.email && usr.email.toLowerCase() === username) ||
+       (usr.studentId && usr.studentId.toLowerCase() === username) ||
+       (usr.id && usr.id.toLowerCase() === username)) &&
+      String(usr.password) === String(password)
     );
-    if (matchedTrainee && (matchedTrainee.password === password || password === 'student123' || password === 'ktpttc123')) {
-      user = {
-        id: matchedTrainee.id,
-        studentId: matchedTrainee.id,
-        username: matchedTrainee.username || matchedTrainee.id.toLowerCase(),
-        nameKh: matchedTrainee.nameKh,
-        nameEn: matchedTrainee.nameEn,
-        role: 'trainee',
-        roleLabel: 'គរុនិស្សិត',
-        status: 'active',
-        ...matchedTrainee
-      };
+
+    // If not found in users, check if a trainee in stmsData.trainees matches ID / username / phone
+    if (!u) {
+      const traineesList = (typeof getAllEnteredStudents === 'function') ? getAllEnteredStudents() : (stmsData.trainees || []);
+      const matchedTrainee = (traineesList || []).find(t =>
+        (t.id && t.id.toLowerCase() === username) ||
+        (t.studentId && t.studentId.toLowerCase() === username) ||
+        (t.username && t.username.toLowerCase() === username) ||
+        (t.phone && t.phone.replace(/\s+/g, '') === username.replace(/\s+/g, ''))
+      );
+      if (matchedTrainee && (matchedTrainee.password === password || password === 'student123' || password === 'ktpttc123')) {
+        u = {
+          id: matchedTrainee.id,
+          studentId: matchedTrainee.id,
+          username: matchedTrainee.username || matchedTrainee.id.toLowerCase(),
+          nameKh: matchedTrainee.nameKh,
+          nameEn: matchedTrainee.nameEn,
+          role: 'trainee',
+          roleLabel: 'គរុនិស្សិត',
+          status: 'active',
+          ...matchedTrainee
+        };
+      }
+    }
+    return u;
+  }
+
+  let user = findUser();
+
+  // If not found in local memory (e.g. newly created on Device A, now logging in on Device B)
+  if (!user) {
+    if (btn) {
+      btn.disabled = true;
+      btn.dataset.origText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងផ្ទៀងផ្ទាត់ជាមួយ Server...';
+    }
+    try {
+      await fetchServerStmsData();
+      user = findUser();
+    } catch (e) {
+      console.warn('Server authentication fallback error:', e);
+    } finally {
+      if (btn && btn.dataset.origText) {
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.origText;
+      }
     }
   }
 

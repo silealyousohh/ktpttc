@@ -818,6 +818,10 @@ const STMS_DIR = path.join(__dirname, 'stms');
 app.use((req, res, next) => {
   const host = (req.headers.host || '').toLowerCase();
   if (host.startsWith('stms.') || host.startsWith('stms:')) {
+    // Pass API requests through to Express API endpoints
+    if (req.path.startsWith('/api/') || req.path === '/api') {
+      return next();
+    }
     return express.static(STMS_DIR, { index: 'index.html' })(req, res, () => {
       const stmsPath = path.join(STMS_DIR, 'index.html');
       if (fs.existsSync(stmsPath)) return res.sendFile(stmsPath);
@@ -880,24 +884,52 @@ async function readStmsDb() {
 
 async function writeStmsDb(data) {
   try {
+    let mergedData = data;
+    try {
+      const existing = await readStmsDb();
+      if (existing && typeof existing === 'object') {
+        mergedData = { ...existing, ...data };
+        // Preserve trainees if incoming has none or fewer
+        if (Array.isArray(existing.trainees) && existing.trainees.length > 0) {
+          if (!Array.isArray(data.trainees) || data.trainees.length === 0) {
+            mergedData.trainees = existing.trainees;
+          } else {
+            const traineeMap = new Map();
+            existing.trainees.forEach(t => t && t.id && traineeMap.set(t.id, t));
+            data.trainees.forEach(t => t && t.id && traineeMap.set(t.id, { ...(traineeMap.get(t.id) || {}), ...t }));
+            mergedData.trainees = Array.from(traineeMap.values());
+          }
+        }
+        // Preserve users if incoming has none
+        if (Array.isArray(existing.users) && existing.users.length > 0) {
+          if (!Array.isArray(data.users) || data.users.length === 0) {
+            mergedData.users = existing.users;
+          } else {
+            const userMap = new Map();
+            existing.users.forEach(u => u && (u.id || u.username) && userMap.set((u.id || u.username).toLowerCase(), u));
+            data.users.forEach(u => u && (u.id || u.username) && userMap.set((u.id || u.username).toLowerCase(), { ...(userMap.get((u.id || u.username).toLowerCase()) || {}), ...u }));
+            mergedData.users = Array.from(userMap.values());
+          }
+        }
+      }
+    } catch (mergeErr) {
+      console.warn('STMS merge warning:', mergeErr.message);
+    }
+
     const dir = path.dirname(STMS_DB_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(STMS_DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    console.error('File STMS write error:', e.message);
-  }
+    fs.writeFileSync(STMS_DB_FILE, JSON.stringify(mergedData, null, 2), 'utf8');
 
-  try {
     const collection = await getMongoCollection();
     if (collection) {
       await collection.updateOne(
         { _id: 'stms_store' },
-        { $set: { _id: 'stms_store', data, updatedAt: new Date().toISOString() } },
+        { $set: { _id: 'stms_store', data: mergedData, updatedAt: new Date().toISOString() } },
         { upsert: true }
       );
     }
   } catch (e) {
-    console.warn('MongoDB STMS write error:', e.message);
+    console.error('File STMS write error:', e.message);
   }
 }
 

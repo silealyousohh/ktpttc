@@ -8,6 +8,11 @@ DirectoryIndex index.html
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  <IfModule mod_proxy.c>
+    RewriteRule ^api/(.*)$ https://ktpttc.net/api/$1 [P,L]
+  </IfModule>
+
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^(.*)$ index.html [L]

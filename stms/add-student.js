@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   populateDynamicClasses();
   populateDynamicSubjects();
   setupClassSelector();
+  fetchServerStmsDataForRegistration();
 
   // Check URL query parameters for role & edit ID
   const urlParams = new URLSearchParams(window.location.search);
@@ -83,7 +84,95 @@ function getSavedStudents() {
   return [];
 }
 
-// Save students array to localStorage
+// Universal API Base URL Resolver for STMS
+function getStmsApiUrl(endpoint) {
+  const p = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+  if (typeof window !== 'undefined' && window.location) {
+    const host = (window.location.hostname || '').toLowerCase();
+    if (host.includes('ktpttc.net') || host.includes('ktpttc.com')) {
+      return 'https://ktpttc.net' + p;
+    }
+  }
+  return p;
+}
+
+// Background Cloud Sync to MongoDB & Server Storage
+async function syncStmsToServer(stmsObj) {
+  try {
+    if (!stmsObj) {
+      const raw = localStorage.getItem('ktpttc_stms_data_v2');
+      if (raw) stmsObj = JSON.parse(raw);
+    }
+    if (!stmsObj) return;
+
+    const syncData = JSON.parse(JSON.stringify(stmsObj));
+    if (Array.isArray(syncData.lessons)) {
+      syncData.lessons.forEach(l => {
+        if (l && l.fileData && l.fileData.length > 500000) {
+          l.fileData = null;
+          l.hasStoredFile = true;
+        }
+      });
+    }
+    if (Array.isArray(syncData.assignments)) {
+      syncData.assignments.forEach(a => {
+        if (a && a.fileData && a.fileData.length > 500000) {
+          a.fileData = null;
+          a.hasStoredFile = true;
+        }
+      });
+    }
+
+    const endpoint = getStmsApiUrl('/api/stms/sync');
+    await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: syncData })
+    });
+  } catch (err) {
+    console.warn('STMS background server sync deferred:', err);
+  }
+}
+
+// Pull latest trainees & teachers from cloud server on page load
+async function fetchServerStmsDataForRegistration() {
+  try {
+    const res = await fetch(getStmsApiUrl('/api/stms/data'));
+    if (!res.ok) return;
+    const json = await res.json();
+    if (json && json.success && json.data) {
+      const srv = json.data;
+      let rawStms = localStorage.getItem('ktpttc_stms_data_v2');
+      let stmsObj = rawStms ? JSON.parse(rawStms) : (window.KTPTTC_INITIAL_DATA || {});
+      let changed = false;
+
+      if (Array.isArray(srv.trainees) && srv.trainees.length > 0) {
+        if (!Array.isArray(stmsObj.trainees) || stmsObj.trainees.length < srv.trainees.length) {
+          stmsObj.trainees = srv.trainees;
+          changed = true;
+        }
+      }
+      if (Array.isArray(srv.users) && srv.users.length > 0) {
+        if (!Array.isArray(stmsObj.users) || stmsObj.users.length < srv.users.length) {
+          stmsObj.users = srv.users;
+          changed = true;
+        }
+      }
+      if (Array.isArray(srv.customClasses) && srv.customClasses.length > 0) {
+        stmsObj.customClasses = srv.customClasses;
+        changed = true;
+      }
+      if (changed) {
+        localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+    syncStmsToServer(stmsObj);
+        populateDynamicClasses();
+        populateDynamicSubjects();
+      }
+    }
+  } catch (e) {}
+}
+
+// Save students array to localStorage & Cloud Database
 function saveStudentsToStorage(list) {
   try {
     let stmsObj = null;
@@ -95,7 +184,9 @@ function saveStudentsToStorage(list) {
     }
     stmsObj.trainees = list;
     localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+    syncStmsToServer(stmsObj);
     localStorage.setItem('krusmart_teacher_custom_students', JSON.stringify(list));
+    syncStmsToServer(stmsObj);
   } catch (e) {
     console.error(e);
   }
@@ -769,6 +860,7 @@ function saveQuickClass(event) {
     }
 
     localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+    syncStmsToServer(stmsObj);
     populateDynamicClasses(name);
     closeQuickModal();
     showToast(`✅ បានបន្ថែមថ្នាក់ «${name}» ដោយជោគជ័យ!`, 'success');
@@ -872,6 +964,7 @@ function saveQuickSubject(event) {
     }
 
     localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+    syncStmsToServer(stmsObj);
     populateDynamicSubjects(code);
     closeQuickModal();
     showToast(`✅ បានបន្ថែមមុខវិជ្ជា «${nameKh} (${code})» ដោយជោគជ័យ!`, 'success');
@@ -1631,6 +1724,7 @@ function handleSaveStudent() {
     }
 
     localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+    syncStmsToServer(stmsObj);
 
     // Sync active session if this student is currently logged in
     try {
@@ -2249,6 +2343,7 @@ function handleExcelImport(input) {
         });
 
         localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+    syncStmsToServer(stmsObj);
         showToast(`🎉 បាននាំចូលទិន្នន័យគ្រូឧទ្ទេសចំនួន ${imported} នាក់ពី Excel/CSV ដោយជោគជ័យ!`, 'success');
         setTimeout(() => {
           sessionStorage.setItem('stms_target_view', 'trainers');
@@ -2352,6 +2447,7 @@ function handleExcelImport(input) {
         });
 
         localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+    syncStmsToServer(stmsObj);
         localStorage.setItem('krusmart_teacher_custom_students', JSON.stringify(stmsObj.trainees));
         showToast(`🎉 បាននាំចូលទិន្នន័យសិស្សចំនួន ${imported} នាក់ពី Excel/CSV ដោយជោគជ័យ!`, 'success');
         setTimeout(() => {
