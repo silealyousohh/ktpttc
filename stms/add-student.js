@@ -148,6 +148,8 @@ function switchRegistrationRole(role, isInitial = false) {
   const trnEmp = document.getElementById('teacherEmploymentSection');
   const stuParents = document.getElementById('studentParentsSection');
   const trnEmerg = document.getElementById('teacherEmergencySection');
+  const stuAdditional = document.getElementById('studentAdditionalSection');
+  const noteMaxStudents = document.getElementById('noteMaxStudents');
   const submitText = document.getElementById('btnSubmitText');
 
   // Student inputs
@@ -180,12 +182,14 @@ function switchRegistrationRole(role, isInitial = false) {
     if (trnEmp) trnEmp.style.display = '';
     if (stuParents) stuParents.style.display = 'none';
     if (trnEmerg) trnEmerg.style.display = '';
+    if (stuAdditional) stuAdditional.style.display = 'none';
+    if (noteMaxStudents) noteMaxStudents.style.display = 'none';
     if (submitText && (!submitText.dataset.editing || submitText.dataset.editing === 'false')) {
       submitText.innerText = 'រក្សាទុកគ្រូឧទ្ទេស';
     }
 
     // Disable all inputs in student containers & enable teacher containers
-    [stuFields, stuStatus, stuParents].forEach(sec => {
+    [stuFields, stuStatus, stuParents, stuAdditional].forEach(sec => {
       if (sec) {
         sec.querySelectorAll('input, select, textarea').forEach(el => {
           el.disabled = true;
@@ -221,6 +225,8 @@ function switchRegistrationRole(role, isInitial = false) {
     if (trnEmp) trnEmp.style.display = 'none';
     if (stuParents) stuParents.style.display = '';
     if (trnEmerg) trnEmerg.style.display = 'none';
+    if (stuAdditional) stuAdditional.style.display = '';
+    if (noteMaxStudents) noteMaxStudents.style.display = '';
     if (submitText && (!submitText.dataset.editing || submitText.dataset.editing === 'false')) {
       submitText.innerText = 'រក្សាទុកសិស្ស';
     }
@@ -234,7 +240,7 @@ function switchRegistrationRole(role, isInitial = false) {
         });
       }
     });
-    [stuFields, stuStatus, stuParents].forEach(sec => {
+    [stuFields, stuStatus, stuParents, stuAdditional].forEach(sec => {
       if (sec) {
         sec.querySelectorAll('input, select, textarea').forEach(el => {
           el.disabled = false;

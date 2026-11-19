@@ -1143,22 +1143,24 @@
           </div>
         </div>
 
-        <!-- Section: ព័ត៌មានបន្ថែមផ្សេងៗ (Additional Info) -->
-        <div class="section-title section-additional">
-          <i class="fas fa-file-alt"></i> <span>ព័ត៌មានបន្ថែមផ្សេងៗ</span>
-        </div>
-        <div class="fields-grid-3">
-          <div class="form-group">
-            <label class="form-label">ជនជាតិដើមភាគតិច</label>
-            <input type="text" id="ethnicGroup" class="form-control" placeholder="ឧ. ព្នង, គួយ...">
+        <!-- Section: ព័ត៌មានបន្ថែមផ្សេងៗ (Additional Info - Students Only) -->
+        <div id="studentAdditionalSection">
+          <div class="section-title section-additional">
+            <i class="fas fa-file-alt"></i> <span>ព័ត៌មានបន្ថែមផ្សេងៗ</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">លក្ខណៈពិសេស</label>
-            <input type="text" id="specialNotes" class="form-control" placeholder="លក្ខណៈផ្សេងៗ...">
-          </div>
-          <div class="form-group">
-            <label class="form-label">សេវាផ្សេងៗ</label>
-            <input type="text" id="serviceNotes" class="form-control" placeholder="ព័ត៌មានបន្ថែមផ្សេងៗ...">
+          <div class="fields-grid-3">
+            <div class="form-group">
+              <label class="form-label">ជនជាតិដើមភាគតិច</label>
+              <input type="text" id="ethnicGroup" class="form-control" placeholder="ឧ. ព្នង, គួយ...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">លក្ខណៈពិសេស</label>
+              <input type="text" id="specialNotes" class="form-control" placeholder="លក្ខណៈផ្សេងៗ...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">សេវាផ្សេងៗ</label>
+              <input type="text" id="serviceNotes" class="form-control" placeholder="ព័ត៌មានបន្ថែមផ្សេងៗ...">
+            </div>
           </div>
         </div>
 
@@ -1166,7 +1168,7 @@
         <div class="info-callout">
           <div><i class="fas fa-info-circle"></i> <strong>បញ្ជាក់៖</strong> ចំពោះព័ត៌មានដែលមានសញ្ញា <strong>*</strong>
             ត្រូវតែបំពេញឱ្យបានគ្រប់ជ្រុងជ្រោយ។ អាយុនឹងត្រូវបានគណនាដោយស្វ័យប្រវត្តិ។</div>
-          <div class="note-bold">ចំណាំ៖ ចំនួនសិស្សអតិបរមាក្នុងមួយថ្នាក់កំណត់ត្រឹម ១០០នាក់ ប៉ុណ្ណោះ។</div>
+          <div class="note-bold" id="noteMaxStudents">ចំណាំ៖ ចំនួនសិស្សអតិបរមាក្នុងមួយថ្នាក់កំណត់ត្រឹម ១០០នាក់ ប៉ុណ្ណោះ។</div>
         </div>
 
         <!-- Hidden input for Excel/CSV file upload -->
@@ -1200,9 +1202,9 @@
 
   <!-- Scripts -->
   <script src="xlsx.full.min.js"></script>
-  <script src="cambodia-geo.js?v=4.8"></script>
-  <script src="data.js?v=4.8"></script>
-  <script src="add-student.js?v=4.8"></script>
+  <script src="cambodia-geo.js?v=5.2"></script>
+  <script src="data.js?v=5.2"></script>
+  <script src="add-student.js?v=5.2"></script>
 </body>
 
 </html>
