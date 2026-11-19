@@ -4063,6 +4063,48 @@ body:has(.admin-portal-container) .stms-content-viewport {
   color: #0f172a;
 }
 
+.slide-deck-stage.theme-emerald {
+  background: radial-gradient(circle at 20% 30%, #065f46 0%, #064e3b 60%, #022c22 100%);
+  color: #ffffff;
+}
+
+.pdf-continuous-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 14px;
+  background: #1e293b;
+  overflow-y: auto;
+  max-height: 68vh;
+  border-radius: 10px;
+}
+
+.pdf-page-card {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  background: #ffffff;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto;
+}
+
+.pdf-page-header {
+  width: 100%;
+  background: #0f172a;
+  color: #94a3b8;
+  padding: 6px 14px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #334155;
+}
+
 .slide-deck-inner {
   flex: 1;
   padding: 32px 42px;

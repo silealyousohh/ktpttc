@@ -11909,18 +11909,417 @@ function generateLessonSlides(l) {
   ];
 }
 
+// ============================================================================
+// MOZILLA PDF.JS & SLIDE.JS PRESENTATION ENGINE
+// ============================================================================
+
+function getPdfDataAsUint8Array(data) {
+  if (!data) return null;
+  if (data instanceof Uint8Array) return data;
+  if (data instanceof ArrayBuffer) return new Uint8Array(data);
+  if (typeof data === 'string') {
+    let base64 = data;
+    if (data.includes('base64,')) {
+      base64 = data.split('base64,')[1];
+    }
+    try {
+      const binaryStr = atob(base64);
+      const len = binaryStr.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      return bytes;
+    } catch (e) {
+      console.warn('getPdfDataAsUint8Array error:', e);
+      return null;
+    }
+  }
+  return null;
+}
+
+let _currentRenderingPdfTask = null;
+
+async function renderPdfPageToCanvas(pdfDoc, pageNum, canvasId, loadingId, zoomScale = 1.0) {
+  if (!pdfDoc) return;
+  const canvas = document.getElementById(canvasId);
+  const loading = document.getElementById(loadingId);
+  if (!canvas) return;
+
+  try {
+    const page = await pdfDoc.getPage(pageNum);
+    const container = canvas.closest('.slide-deck-stage') || canvas.parentElement;
+    const availWidth = container ? (container.clientWidth - 40) : 900;
+    const availHeight = container ? (container.clientHeight - 60) : 500;
+
+    const unscaledViewport = page.getViewport({ scale: 1.0 });
+    const scaleX = availWidth / unscaledViewport.width;
+    const scaleY = availHeight / unscaledViewport.height;
+    let baseScale = Math.min(scaleX, scaleY);
+    if (baseScale <= 0.1 || isNaN(baseScale)) baseScale = 1.0;
+
+    const dpr = window.devicePixelRatio || 1;
+    const finalScale = baseScale * zoomScale * dpr;
+    const viewport = page.getViewport({ scale: finalScale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    canvas.style.width = `${viewport.width / dpr}px`;
+    canvas.style.height = `${viewport.height / dpr}px`;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (_currentRenderingPdfTask) {
+      try { _currentRenderingPdfTask.cancel(); } catch (e) {}
+    }
+    _currentRenderingPdfTask = page.render({
+      canvasContext: ctx,
+      viewport: viewport
+    });
+    await _currentRenderingPdfTask.promise;
+    _currentRenderingPdfTask = null;
+
+    if (loading) loading.style.display = 'none';
+  } catch (err) {
+    if (err && err.name === 'RenderingCancelledException') return;
+    console.warn('renderPdfPageToCanvas error:', err);
+    if (loading) {
+      loading.innerHTML = `
+        <div style="color:#ef4444; font-size:0.85rem; font-weight:700;">
+          <i class="fas fa-exclamation-triangle"></i> មិនអាច Render ទំព័រទី ${pageNum} បានទេ
+        </div>
+      `;
+    }
+  }
+}
+
+async function renderContinuousPdf(pdfDoc, containerId, zoomScale = 1.0) {
+  const container = document.getElementById(containerId);
+  if (!container || !pdfDoc) return;
+  container.innerHTML = `
+    <div style="padding:10px 0; text-align:center; color:#94a3b8; font-size:0.82rem; font-weight:600;">
+      <i class="fas fa-file-pdf" style="color:#ef4444; font-size:1.1rem; vertical-align:middle; margin-right:4px;"></i> ឯកសារ PDF ពេញលេញ (${pdfDoc.numPages} ទំព័រ) • រំកិលចុះក្រោមដើម្បីមើលទំព័រទាំងអស់
+    </div>
+  `;
+
+  for (let p = 1; p <= pdfDoc.numPages; p++) {
+    const pageCard = document.createElement('div');
+    pageCard.className = 'pdf-page-card';
+    pageCard.id = `pdfDocCard_${p}`;
+    pageCard.innerHTML = `
+      <div class="pdf-page-header">
+        <span><i class="fas fa-file-alt"></i> ទំព័រទី ${p} នៃ ${pdfDoc.numPages}</span>
+        <span>${escapeHtml(window.activeSlideViewerState?.lesson?.title || 'ឯកសារ')}</span>
+      </div>
+      <canvas id="pdfDocCanvas_${p}" class="pdf-slide-canvas" style="display:block; max-width:100%; height:auto;"></canvas>
+    `;
+    container.appendChild(pageCard);
+
+    try {
+      const page = await pdfDoc.getPage(p);
+      const unscaledViewport = page.getViewport({ scale: 1.0 });
+      const targetWidth = Math.min(840, (container.clientWidth - 40));
+      const scale = (targetWidth / unscaledViewport.width) * zoomScale;
+      const dpr = window.devicePixelRatio || 1;
+      const viewport = page.getViewport({ scale: scale * dpr });
+
+      const canvas = document.getElementById(`pdfDocCanvas_${p}`);
+      if (canvas) {
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.width = `${viewport.width / dpr}px`;
+        canvas.style.height = `${viewport.height / dpr}px`;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+      }
+    } catch (pe) {
+      console.warn(`Error rendering continuous PDF page ${p}:`, pe);
+    }
+  }
+}
+
+async function tryParsePptxWithJSZip(fileData, lesson) {
+  if (!window.JSZip || !fileData) return null;
+  try {
+    const rawData = getPdfDataAsUint8Array(fileData);
+    if (!rawData) return null;
+    const zip = await JSZip.loadAsync(rawData);
+    const slideFiles = Object.keys(zip.files).filter(k => /^ppt\/slides\/slide[0-9]+\.xml$/i.test(k));
+    if (!slideFiles || slideFiles.length === 0) return null;
+
+    slideFiles.sort((a, b) => {
+      const numA = parseInt(a.match(/slide([0-9]+)\.xml/i)[1], 10);
+      const numB = parseInt(b.match(/slide([0-9]+)\.xml/i)[1], 10);
+      return numA - numB;
+    });
+
+    const parsedSlides = [];
+    for (let i = 0; i < slideFiles.length; i++) {
+      const fileName = slideFiles[i];
+      const xmlStr = await zip.files[fileName].async('string');
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlStr, 'application/xml');
+
+      const textNodes = doc.querySelectorAll('t');
+      const texts = [];
+      textNodes.forEach(tNode => {
+        const txt = (tNode.textContent || '').trim();
+        if (txt) texts.push(txt);
+      });
+
+      let note = '';
+      const slideNum = i + 1;
+      const noteFile = `ppt/notesSlides/notesSlide${slideNum}.xml`;
+      if (zip.files[noteFile]) {
+        try {
+          const noteXml = await zip.files[noteFile].async('string');
+          const noteDoc = parser.parseFromString(noteXml, 'application/xml');
+          const noteNodes = noteDoc.querySelectorAll('t');
+          const noteTexts = [];
+          noteNodes.forEach(n => {
+            const nt = (n.textContent || '').trim();
+            if (nt && !nt.includes(String(slideNum))) noteTexts.push(nt);
+          });
+          note = noteTexts.join(' ');
+        } catch (ne) {}
+      }
+
+      if (texts.length > 0) {
+        const slideTitle = texts[0] || `ស្លាយទី ${slideNum}`;
+        const restTexts = texts.slice(1);
+        parsedSlides.push({
+          type: 'real_pptx',
+          slideNum: slideNum,
+          badge: `ស្លាយទី ${slideNum}`,
+          title: slideTitle,
+          subtitle: `${lesson.subjectCode || ''} • ${lesson.chapter || ''}`,
+          paragraphs: restTexts.length > 0 ? restTexts.map(t => ({ text: t, isBullet: true })) : [{ text: slideTitle, isBullet: false }],
+          images: [],
+          note: note || `កំណត់សម្គាល់ស្លាយទី ${slideNum}`
+        });
+      }
+    }
+
+    if (parsedSlides.length > 0) {
+      return parsedSlides;
+    }
+  } catch (err) {
+    console.warn('tryParsePptxWithJSZip error:', err);
+  }
+  return null;
+}
+
 function renderActiveSlide(slide, index, total, theme, l) {
   const isIvory = theme === 'ivory';
-  const headerSubColor = isIvory ? '#64748b' : '#93c5fd';
+  const isEmerald = theme === 'emerald';
+  const headerSubColor = isIvory ? '#64748b' : isEmerald ? '#a7f3d0' : '#93c5fd';
   const headerMainColor = isIvory ? '#0f172a' : '#ffffff';
-  const cardBg = isIvory ? '#ffffff' : 'rgba(255, 255, 255, 0.08)';
-  const cardBorder = isIvory ? '1px solid #e2e8f0' : '1px solid rgba(255, 255, 255, 0.15)';
+  const cardBg = isIvory ? '#ffffff' : isEmerald ? 'rgba(6, 78, 59, 0.4)' : 'rgba(255, 255, 255, 0.08)';
+  const cardBorder = isIvory ? '1px solid #e2e8f0' : isEmerald ? '1px solid rgba(52, 211, 153, 0.3)' : '1px solid rgba(255, 255, 255, 0.15)';
   const textColor = isIvory ? '#1e293b' : '#ffffff';
-  const mutedText = isIvory ? '#475569' : '#cbd5e1';
+  const mutedText = isIvory ? '#475569' : isEmerald ? '#d1fae5' : '#cbd5e1';
 
   let bodyHtml = '';
 
-  if (slide.type === 'cover') {
+  if (slide.type === 'pdf_page') {
+    bodyHtml = `
+      <div class="pdf-slide-container" style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; position:relative;">
+        <div style="position:relative; max-width:100%; max-height:100%; display:flex; justify-content:center; align-items:center;">
+          <canvas id="pdfSlideCanvas_${index}" class="pdf-slide-canvas" style="box-shadow: 0 10px 25px rgba(0,0,0,0.45); border-radius:6px; max-width:100%; max-height:60vh; height:auto; background:#ffffff;"></canvas>
+          <div id="pdfCanvasLoading_${index}" style="position:absolute; inset:0; background:rgba(15,23,42,0.85); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border-radius:6px; color:#ffffff;">
+            <i class="fas fa-spinner fa-spin" style="font-size:1.8rem; color:#38bdf8;"></i>
+            <div style="font-size:0.82rem; font-weight:700;">កំពុង Render ទំព័រទី ${slide.pageNum || index} ជាមួយ Mozilla PDF.js...</div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (slide.type === 'real_pptx') {
+    const isCover = index === 1 || slide.slideNum === 1 || (slide.badge || '').includes('គម្រប');
+    const is5Steps = (slide.badge || '').includes('៥ ជំហាន') || (slide.title || '').includes('៥ ជំហាន');
+    const isObjectives = (slide.badge || '').includes('គោលបំណង') || (slide.title || '').includes('គោលបំណង');
+    const isQuestions = (slide.badge || '').includes('សំណួរ') || (slide.title || '').includes('សំណួរ');
+    const isActivity = (slide.badge || '').includes('សកម្មភាព') || (slide.badge || '').includes('Workshop') || (slide.title || '').includes('សកម្មភាព');
+    const isConclusion = (slide.badge || '').includes('សន្និដ្ឋាន') || (slide.title || '').includes('សន្និដ្ឋាន');
+
+    if (isCover) {
+      bodyHtml = `
+        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; height:100%; padding:14px 10px;">
+          <div style="display:inline-flex; align-items:center; gap:8px; background:${isIvory?'#f1f5f9':'rgba(255,255,255,0.12)'}; padding:5px 16px; border-radius:30px; margin-bottom:12px; border:1px solid ${isIvory?'#cbd5e1':'rgba(255,255,255,0.2)'};">
+            <i class="fas fa-graduation-cap" style="color:#f59e0b; font-size:1rem;"></i>
+            <span style="font-size:0.82rem; font-weight:800; color:${isIvory?'#1e3a8a':'#ffffff'};">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</span>
+          </div>
+          <div style="display:inline-flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; justify-content:center;">
+            <span style="font-size:0.75rem; font-weight:700; background:#0284c7; color:#ffffff; padding:3px 10px; border-radius:6px;">${escapeHtml(l.subjectCode || 'ICT-105')}</span>
+            <span style="font-size:0.75rem; font-weight:700; background:#059669; color:#ffffff; padding:3px 10px; border-radius:6px;">${escapeHtml(l.chapter || 'មេរៀន')}</span>
+            <span style="font-size:0.75rem; font-weight:700; background:#d97706; color:#ffffff; padding:3px 10px; border-radius:6px;">${slide.badge || 'ស្លាយគម្រប'}</span>
+          </div>
+          <h1 style="font-size:1.85rem; font-weight:800; color:${headerMainColor}; line-height:1.35; margin:6px 0 10px 0; max-width:840px; text-shadow:${isIvory?'none':'0 2px 10px rgba(0,0,0,0.5)'};">
+            ${escapeHtml(slide.title)}
+          </h1>
+          <div style="font-size:0.92rem; font-weight:600; color:${headerSubColor}; margin-bottom:14px;">
+            ${escapeHtml(slide.subtitle)}
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; max-width:820px; width:100%;">
+            ${(slide.paragraphs || []).map(p => `
+              <div style="background:${cardBg}; border:${cardBorder}; padding:10px 14px; border-radius:10px; font-size:0.82rem; color:${textColor}; text-align:left; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-check-circle" style="color:#10b981; font-size:0.9rem; flex-shrink:0;"></i>
+                <span style="line-height:1.5;">${escapeHtml(p.text || p)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    } else if (is5Steps) {
+      bodyHtml = `
+        <div style="height:100%; display:flex; flex-direction:column;">
+          <div style="margin-bottom:12px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#f43f5e; background:${isIvory?'#ffe4e6':'rgba(244,63,94,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+            <h2 style="font-size:1.4rem; font-weight:800; color:${headerMainColor}; margin:4px 0 2px 0;">${escapeHtml(slide.title)}</h2>
+            <p style="font-size:0.82rem; color:${headerSubColor}; margin:0;">${escapeHtml(slide.subtitle)}</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px; flex:1; justify-content:center;">
+            ${(slide.paragraphs || []).map((p, pIdx) => {
+              const pText = p.text || p;
+              const parts = pText.split(')៖ ');
+              const stepLabel = parts.length > 1 ? parts[0] + ')' : `ជំហានទី ${pIdx + 1}`;
+              const stepDesc = parts.length > 1 ? parts.slice(1).join(')៖ ') : pText;
+              return `
+                <div style="background:${cardBg}; border:${cardBorder}; border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:12px;">
+                  <span style="font-size:0.75rem; font-weight:800; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; padding:3px 10px; border-radius:6px; flex-shrink:0;">${escapeHtml(stepLabel)}</span>
+                  <div style="font-size:0.84rem; color:${textColor}; line-height:1.5; flex:1;">
+                    ${escapeHtml(stepDesc)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    } else if (isObjectives) {
+      bodyHtml = `
+        <div style="height:100%; display:flex; flex-direction:column;">
+          <div style="margin-bottom:12px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#38bdf8; background:${isIvory?'#e0f2fe':'rgba(56,189,248,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+            <h2 style="font-size:1.4rem; font-weight:800; color:${headerMainColor}; margin:4px 0 2px 0;">${escapeHtml(slide.title)}</h2>
+            <p style="font-size:0.82rem; color:${headerSubColor}; margin:0;">${escapeHtml(slide.subtitle)}</p>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:12px; flex:1; align-content:center;">
+            ${(slide.paragraphs || []).map((p, pIdx) => {
+              const pText = p.text || p;
+              const icons = ['fa-lightbulb', 'fa-tools', 'fa-heart'];
+              const colors = ['#f59e0b', '#0284c7', '#10b981'];
+              const curIcon = icons[pIdx % icons.length];
+              const curColor = colors[pIdx % colors.length];
+              return `
+                <div style="background:${cardBg}; border:${cardBorder}; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:8px;">
+                  <div style="width:36px; height:36px; border-radius:10px; background:${isIvory?'#f1f5f9':'rgba(255,255,255,0.1)'}; color:${curColor}; font-size:1.15rem; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <i class="fas ${curIcon}"></i>
+                  </div>
+                  <div style="font-size:0.85rem; color:${textColor}; line-height:1.6; font-weight:500;">
+                    ${escapeHtml(pText)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    } else if (isQuestions) {
+      bodyHtml = `
+        <div style="height:100%; display:flex; flex-direction:column;">
+          <div style="margin-bottom:12px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#eab308; background:${isIvory?'#fef9c3':'rgba(234,179,8,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+            <h2 style="font-size:1.4rem; font-weight:800; color:${headerMainColor}; margin:4px 0 2px 0;">${escapeHtml(slide.title)}</h2>
+            <p style="font-size:0.82rem; color:${headerSubColor}; margin:0;">${escapeHtml(slide.subtitle)}</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; flex:1; justify-content:center;">
+            ${(slide.paragraphs || []).map(p => {
+              const pText = p.text || p;
+              return `
+                <div style="background:${cardBg}; border:${cardBorder}; border-radius:12px; padding:12px 16px; display:flex; align-items:flex-start; gap:12px;">
+                  <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0;">
+                    <i class="fas fa-question"></i>
+                  </div>
+                  <div style="font-size:0.88rem; font-weight:600; color:${textColor}; line-height:1.6; padding-top:2px;">
+                    ${escapeHtml(pText)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    } else if (isActivity) {
+      bodyHtml = `
+        <div style="height:100%; display:flex; flex-direction:column;">
+          <div style="margin-bottom:12px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#a855f7; background:${isIvory?'#f3e8ff':'rgba(168,85,247,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+            <h2 style="font-size:1.4rem; font-weight:800; color:${headerMainColor}; margin:4px 0 2px 0;">${escapeHtml(slide.title)}</h2>
+            <p style="font-size:0.82rem; color:${headerSubColor}; margin:0;">${escapeHtml(slide.subtitle)}</p>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:10px; flex:1; align-content:center;">
+            ${(slide.paragraphs || []).map((p, idx) => {
+              const pText = p.text || p;
+              return `
+                <div style="background:${cardBg}; border:${cardBorder}; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:6px;">
+                  <span style="font-size:0.72rem; font-weight:800; color:#0284c7; background:${isIvory?'#e0f2fe':'rgba(2,132,199,0.2)'}; padding:2px 8px; border-radius:4px; width:fit-content;">ក្រុមទី ${idx + 1}</span>
+                  <div style="font-size:0.84rem; color:${textColor}; line-height:1.5;">${escapeHtml(pText)}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    } else if (isConclusion) {
+      bodyHtml = `
+        <div style="height:100%; display:flex; flex-direction:column;">
+          <div style="margin-bottom:12px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#10b981; background:${isIvory?'#d1fae5':'rgba(16,185,129,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+            <h2 style="font-size:1.4rem; font-weight:800; color:${headerMainColor}; margin:4px 0 2px 0;">${escapeHtml(slide.title)}</h2>
+            <p style="font-size:0.82rem; color:${headerSubColor}; margin:0;">${escapeHtml(slide.subtitle)}</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; flex:1; justify-content:center;">
+            ${(slide.paragraphs || []).map(p => {
+              const pText = p.text || p;
+              return `
+                <div style="background:${cardBg}; border:${cardBorder}; border-radius:10px; padding:14px 18px; display:flex; align-items:flex-start; gap:12px;">
+                  <i class="fas fa-check-circle" style="color:#10b981; font-size:1rem; margin-top:2px; flex-shrink:0;"></i>
+                  <div style="font-size:0.88rem; color:${textColor}; line-height:1.6;">
+                    ${escapeHtml(pText)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      // General PPTX slide
+      bodyHtml = `
+        <div style="height:100%; display:flex; flex-direction:column;">
+          <div style="margin-bottom:12px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#38bdf8; background:${isIvory?'#e0f2fe':'rgba(56,189,248,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge || `ស្លាយទី ${index}`}</span>
+            <h2 style="font-size:1.4rem; font-weight:800; color:${headerMainColor}; margin:4px 0 2px 0;">${escapeHtml(slide.title)}</h2>
+            <p style="font-size:0.82rem; color:${headerSubColor}; margin:0;">${escapeHtml(slide.subtitle || '')}</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; flex:1; justify-content:center;">
+            ${(slide.paragraphs || []).map(p => {
+              const pText = p.text || p;
+              return `
+                <div style="background:${cardBg}; border:${cardBorder}; border-radius:10px; padding:12px 16px; display:flex; align-items:flex-start; gap:12px;">
+                  <i class="fas fa-check-circle" style="color:#38bdf8; font-size:1rem; margin-top:2px; flex-shrink:0;"></i>
+                  <div style="font-size:0.88rem; color:${textColor}; line-height:1.6;">
+                    ${escapeHtml(pText)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+  } else if (slide.type === 'cover') {
     bodyHtml = `
       <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; height:100%; padding:20px 10px;">
         <div style="display:inline-flex; align-items:center; gap:8px; background:${isIvory?'#f1f5f9':'rgba(255,255,255,0.12)'}; padding:6px 16px; border-radius:30px; margin-bottom:16px; border:1px solid ${isIvory?'#cbd5e1':'rgba(255,255,255,0.2)'};">
@@ -12113,13 +12512,36 @@ function renderActiveSlide(slide, index, total, theme, l) {
         </div>
       </div>
     `;
+  } else {
+    // Ultimate fallback for any unspecified slide type so NO slide is ever blank!
+    bodyHtml = `
+      <div style="height:100%; display:flex; flex-direction:column;">
+        <div style="margin-bottom:12px;">
+          <span style="font-size:0.75rem; font-weight:700; color:#38bdf8; background:${isIvory?'#e0f2fe':'rgba(56,189,248,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge || `ស្លាយទី ${index}`}</span>
+          <h2 style="font-size:1.4rem; font-weight:800; color:${headerMainColor}; margin:4px 0 2px 0;">${escapeHtml(slide.title || 'ស្លាយមេរៀន')}</h2>
+          <p style="font-size:0.82rem; color:${headerSubColor}; margin:0;">${escapeHtml(slide.subtitle || '')}</p>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; flex:1; justify-content:center;">
+          ${Array.isArray(slide.paragraphs) ? slide.paragraphs.map(p => `
+            <div style="background:${cardBg}; border:${cardBorder}; border-radius:10px; padding:12px 16px; display:flex; align-items:flex-start; gap:12px;">
+              <i class="fas fa-check-circle" style="color:#38bdf8; font-size:1rem; margin-top:2px; flex-shrink:0;"></i>
+              <div style="font-size:0.88rem; color:${textColor}; line-height:1.6;">${escapeHtml(p.text || p)}</div>
+            </div>
+          `).join('') : `
+            <div style="background:${cardBg}; border:${cardBorder}; border-radius:10px; padding:16px; color:${textColor}; font-size:0.9rem;">
+              ${escapeHtml(slide.desc || slide.title || 'ខ្លឹមសារស្លាយ')}
+            </div>
+          `}
+        </div>
+      </div>
+    `;
   }
 
   return `
     <div class="slide-deck-inner">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid ${isIvory?'#e2e8f0':'rgba(255,255,255,0.1)'}; padding-bottom:8px; margin-bottom:12px; font-size:0.75rem; color:${headerSubColor}; font-weight:600;">
         <span><i class="fas fa-graduation-cap" style="color:#f59e0b;"></i> សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</span>
-        <span>ស្លាយ ${index} នៃ ${total}</span>
+        <span>${slide.type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ'} ${index} នៃ ${total}</span>
       </div>
       <div style="flex:1;">
         ${bodyHtml}
@@ -12147,7 +12569,56 @@ async function openLessonSlideViewerModal(lessonId) {
     } catch (e) {}
   }
 
-  const slides = generateLessonSlides(l);
+  const isPdf = (l.fileName || '').toLowerCase().endsWith('.pdf') || 
+                (l.fileType || '').toLowerCase().includes('pdf') || 
+                (typeof l.fileData === 'string' && (l.fileData.includes('application/pdf') || l.fileData.startsWith('data:application/pdf')));
+  const isPptx = (l.fileName || '').toLowerCase().endsWith('.pptx') || 
+                 (l.fileName || '').toLowerCase().endsWith('.ppt');
+
+  let pdfDoc = null;
+  let slides = null;
+
+  // 1. Try Mozilla PDF.js if PDF data is available
+  if (isPdf && l.fileData && window.pdfjsLib) {
+    try {
+      const rawPdfBytes = getPdfDataAsUint8Array(l.fileData);
+      if (rawPdfBytes) {
+        if (pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
+        }
+        const loadingTask = pdfjsLib.getDocument({ data: rawPdfBytes });
+        pdfDoc = await loadingTask.promise;
+      }
+    } catch (pdfErr) {
+      console.warn('PDF.js failed to load PDF data, falling back to slide deck:', pdfErr);
+    }
+  }
+
+  // If PDF loaded with pages, generate slides for each page
+  if (pdfDoc && pdfDoc.numPages > 0) {
+    slides = [];
+    for (let p = 1; p <= pdfDoc.numPages; p++) {
+      slides.push({
+        type: 'pdf_page',
+        pageNum: p,
+        slideNum: p,
+        badge: `ទំព័រទី ${p} • PDF`,
+        title: `${l.title} (ទំព័រទី ${p})`,
+        subtitle: `${l.subjectCode} • ${l.chapter}`,
+        note: `ទំព័រទី ${p} នៃឯកសារ ${l.fileName}`
+      });
+    }
+  }
+
+  // 2. If PPTX, try parsing with JSZip
+  if (!slides && isPptx && l.fileData) {
+    slides = await tryParsePptxWithJSZip(l.fileData, l);
+  }
+
+  // 3. Fallback to rich pedagogical slide deck
+  if (!slides || slides.length === 0) {
+    slides = generateLessonSlides(l);
+  }
 
   window.activeSlideViewerState = {
     lessonId: lessonId,
@@ -12157,22 +12628,23 @@ async function openLessonSlideViewerModal(lessonId) {
     totalSlides: slides.length,
     theme: 'blue',
     mode: 'deck',
+    pdfDoc: pdfDoc,
+    zoomScale: 1.0,
     autoplayTimer: null,
     isAutoplaying: false,
     showNotes: false
   };
 
   const fInfo = getFileIconInfo(l.fileName);
-  const isPdf = (l.fileName || '').toLowerCase().endsWith('.pdf') || l.fileType === 'application/pdf';
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="slideViewerModalBackdrop" onclick="if(event.target===this) closeSlideViewerModal()">
       <div class="stms-modal-dialog stms-slide-viewer-dialog" id="slideViewerContainer">
         
         <!-- Top Toolbar Header -->
-        <div class="stms-modal-header" style="background:#0a192f; color:#ffffff; border-bottom:1px solid #1e293b; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;">
+        <div class="stms-modal-header" style="background:#0a192f; color:#ffffff; border-bottom:1px solid #1e293b; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-            <div class="stms-file-preview-icon ${fInfo.className}" style="width:36px; height:36px; font-size:1.15rem; flex-shrink:0;">
+            <div class="stms-file-preview-icon ${fInfo.className}" style="width:38px; height:38px; font-size:1.2rem; flex-shrink:0;">
               <i class="${fInfo.icon}"></i>
             </div>
             <div style="min-width:0;">
@@ -12186,14 +12658,26 @@ async function openLessonSlideViewerModal(lessonId) {
           </div>
 
           <!-- Controls Right -->
-          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-            ${isPdf && l.fileData ? `
+          <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; flex-wrap:wrap;">
+            
+            <!-- Zoom Controls -->
+            <div style="display:inline-flex; align-items:center; background:#1e293b; border-radius:6px; padding:2px; border:1px solid #334155; margin-right:4px;">
+              <button class="btn btn-outline" style="height:26px; width:26px; padding:0; color:#e2e8f0; border:none; display:flex; align-items:center; justify-content:center; font-size:0.75rem;" onclick="changeSlideViewerZoom(-0.1)" title="ពង្រួម (Zoom Out)">
+                <i class="fas fa-minus"></i>
+              </button>
+              <span id="slideZoomText" style="font-size:0.72rem; font-weight:700; color:#38bdf8; min-width:42px; text-align:center; cursor:pointer;" onclick="changeSlideViewerZoom(0)" title="កំណត់ 100% ឡើងវិញ">100%</span>
+              <button class="btn btn-outline" style="height:26px; width:26px; padding:0; color:#e2e8f0; border:none; display:flex; align-items:center; justify-content:center; font-size:0.75rem;" onclick="changeSlideViewerZoom(0.1)" title="ពង្រីក (Zoom In)">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+
+            ${((isPdf && l.fileData) || pdfDoc) ? `
               <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#38bdf8; border-color:#0284c7; background:rgba(2,132,199,0.15);" onclick="toggleSlideViewerMode('toggle')" id="slideModeToggleBtn">
-                <i class="fas fa-file-pdf"></i> ប្តូរមើល PDF ដើម
+                <i class="fas fa-file-pdf"></i> ប្តូរមើលឯកសារពេញ (PDF)
               </button>
             ` : ''}
             
-            <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#e2e8f0; border-color:#334155;" onclick="toggleSlideViewerTheme()" title="ប្តូរពណ៌ផ្ទៃស្លាយ (Theme)">
+            <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#e2e8f0; border-color:#334155;" onclick="toggleSlideViewerTheme()" title="ប្តូរពណ៌ផ្ទៃស្លាយ (Theme: Blue, Dark, Ivory, Emerald)">
               <i class="fas fa-palette"></i> Theme
             </button>
             <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#e2e8f0; border-color:#334155;" onclick="toggleSlideViewerNotes()" title="កំណត់សម្គាល់គ្រូឧទ្ទេស">
@@ -12210,7 +12694,7 @@ async function openLessonSlideViewerModal(lessonId) {
         </div>
 
         <!-- Main Viewing Stage -->
-        <div style="padding:16px 20px; background:#0f172a; flex:1; display:flex; flex-direction:column; gap:12px;">
+        <div style="padding:14px 18px; background:#0f172a; flex:1; display:flex; flex-direction:column; gap:10px; min-height:0;">
           
           <!-- Slide Deck Presentation Canvas -->
           <div id="slideViewerStage" class="slide-deck-stage theme-blue">
@@ -12219,15 +12703,17 @@ async function openLessonSlideViewerModal(lessonId) {
             </div>
           </div>
 
-          <!-- Embedded PDF Viewer (Hidden unless mode === 'document') -->
-          <div id="slideDocumentStage" style="display:none; width:100%; height:520px; border-radius:12px; overflow:hidden; background:#ffffff;">
-            ${l.fileData ? `
-              <iframe src="${l.fileData}#toolbar=1" style="width:100%; height:100%; border:none;"></iframe>
+          <!-- Document Mode Stage (Continuous Scroll / PDF.js) -->
+          <div id="slideDocumentStage" style="display:none; width:100%; min-height:500px; border-radius:10px; overflow:hidden; background:#0f172a;">
+            ${pdfDoc ? `
+              <div id="pdfContinuousContainer" class="pdf-continuous-container"></div>
+            ` : (l.fileData && isPdf) ? `
+              <iframe src="${l.fileData}#toolbar=1" style="width:100%; height:540px; border:none; border-radius:10px; background:#ffffff;"></iframe>
             ` : `
-              <div style="text-align:center; padding:60px 20px; color:#64748b;">
+              <div style="text-align:center; padding:60px 20px; color:#94a3b8;">
                 <i class="fas fa-file-pdf" style="font-size:3rem; color:#ef4444; margin-bottom:14px; display:block;"></i>
-                <div style="font-weight:700; font-size:1.1rem; color:#1e293b;">ឯកសារដើម៖ ${escapeHtml(l.fileName)}</div>
-                <p style="font-size:0.86rem; color:#64748b; margin:8px 0 16px 0;">សូមចុចទាញយកដើម្បីបើកក្នុងកម្មវិធីកុំព្យូទ័រ</p>
+                <div style="font-weight:700; font-size:1.1rem; color:#ffffff;">ឯកសារដើម៖ ${escapeHtml(l.fileName)}</div>
+                <p style="font-size:0.86rem; color:#94a3b8; margin:8px 0 16px 0;">សូមចុចទាញយកដើម្បីបើកក្នុងកម្មវិធីកុំព្យូទ័ររបស់អ្នក</p>
                 <button class="btn btn-primary" onclick="downloadLessonFile('${l.id}')">
                   <i class="fas fa-download"></i> ទាញយកឯកសារ (${escapeHtml(l.fileSize || '15.1 MB')})
                 </button>
@@ -12241,7 +12727,7 @@ async function openLessonSlideViewerModal(lessonId) {
               <i class="fas fa-chalkboard-teacher"></i> កំណត់សម្គាល់ និងការណែនាំពីគ្រូឧទ្ទេស៖
             </div>
             <div id="slideNotesText">
-              ${slides[0].note}
+              ${escapeHtml(slides[0].note || 'គ្មានកំណត់សម្គាល់សម្រាប់ស្លាយនេះទេ។')}
             </div>
           </div>
 
@@ -12249,22 +12735,24 @@ async function openLessonSlideViewerModal(lessonId) {
           <div class="slide-deck-filmstrip" id="slideThumbnailsRail">
             ${slides.map((s, idx) => `
               <div class="slide-thumb-pill ${idx === 0 ? 'active' : ''}" onclick="goToSlideViewerIndex(${idx + 1})" id="slideThumb_${idx + 1}">
-                <span>ស្លាយ ${idx + 1}</span>
-                <span style="font-size:0.58rem; opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px;">${s.badge.split(' • ')[0]}</span>
+                <span>${s.type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ'} ${idx + 1}</span>
+                <span style="font-size:0.58rem; opacity:0.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px;">${(s.badge || '').split(' • ')[0] || ''}</span>
               </div>
             `).join('')}
           </div>
 
           <!-- Slide Navigation Controls Bar -->
-          <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:10px 16px; border-radius:10px;">
+          <div id="slideNavBar" style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:8px 14px; border-radius:10px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <button class="btn btn-outline" id="slidePrevBtn" style="color:#ffffff; border-color:#475569; font-size:0.8rem; height:32px; padding:0 12px; display:inline-flex; align-items:center; gap:6px;" onclick="changeSlideViewerIndex(-1)" disabled>
                 <i class="fas fa-chevron-left"></i> ថយក្រោយ
               </button>
-              <div style="font-size:0.82rem; font-weight:700; color:#38bdf8; padding:0 8px;" id="slideCounterText">
-                ស្លាយ 1 / ${slides.length}
+              
+              <div style="display:inline-flex; align-items:center; gap:4px; font-size:0.82rem; font-weight:700; color:#38bdf8; padding:0 4px;" id="slideCounterText">
+                ${slides[0].type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ'} 1 / ${slides.length}
               </div>
-              <button class="btn btn-primary" id="slideNextBtn" style="font-size:0.8rem; height:32px; padding:0 12px; background:#0284c7; border:none; color:#ffffff; font-weight:700; display:inline-flex; align-items:center; gap:6px;" onclick="changeSlideViewerIndex(1)">
+
+              <button class="btn btn-primary" id="slideNextBtn" style="font-size:0.8rem; height:32px; padding:0 12px; background:#0284c7; border:none; color:#ffffff; font-weight:700; display:inline-flex; align-items:center; gap:6px;" onclick="changeSlideViewerIndex(1)" ${slides.length <= 1 ? 'disabled' : ''}>
                 បន្ទាប់ <i class="fas fa-chevron-right"></i>
               </button>
             </div>
@@ -12287,17 +12775,39 @@ async function openLessonSlideViewerModal(lessonId) {
 
   showModal(modalHtml);
 
+  // If first slide is a PDF page and pdfDoc exists, render canvas
+  if (slides[0].type === 'pdf_page' && pdfDoc) {
+    setTimeout(() => {
+      renderPdfPageToCanvas(pdfDoc, 1, 'pdfSlideCanvas_1', 'pdfCanvasLoading_1', 1.0);
+    }, 50);
+  }
+
   // Setup Keyboard Navigation
   if (window._slideKeyNavHandler) {
     window.removeEventListener('keydown', window._slideKeyNavHandler);
   }
   window._slideKeyNavHandler = function(e) {
-    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
       e.preventDefault();
       changeSlideViewerIndex(1);
-    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
       e.preventDefault();
       changeSlideViewerIndex(-1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goToSlideViewerIndex(1);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      if (window.activeSlideViewerState) {
+        goToSlideViewerIndex(window.activeSlideViewerState.totalSlides);
+      }
+    } else if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      changeSlideViewerZoom(0.1);
+    } else if (e.key === '-' || e.key === '_') {
+      e.preventDefault();
+      changeSlideViewerZoom(-0.1);
     } else if (e.key === 'f' || e.key === 'F') {
       toggleSlideViewerFullscreen();
     } else if (e.key === 'Escape') {
@@ -12317,9 +12827,17 @@ function updateSlideViewerUI() {
     contentEl.innerHTML = renderActiveSlide(slide, st.currentSlide, st.totalSlides, st.theme, st.lesson);
   }
 
+  // If this slide is a PDF page and pdfDoc is available, render canvas
+  if (slide && slide.type === 'pdf_page' && st.pdfDoc) {
+    setTimeout(() => {
+      renderPdfPageToCanvas(st.pdfDoc, slide.pageNum || st.currentSlide, `pdfSlideCanvas_${st.currentSlide}`, `pdfCanvasLoading_${st.currentSlide}`, st.zoomScale || 1.0);
+    }, 20);
+  }
+
   const counterEl = document.getElementById('slideCounterText');
   if (counterEl) {
-    counterEl.textContent = `ស្លាយ ${st.currentSlide} / ${st.totalSlides}`;
+    const unit = slide && slide.type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ';
+    counterEl.textContent = `${unit} ${st.currentSlide} / ${st.totalSlides}`;
   }
 
   const prevBtn = document.getElementById('slidePrevBtn');
@@ -12368,6 +12886,32 @@ function goToSlideViewerIndex(idx) {
   }
 }
 
+function changeSlideViewerZoom(delta) {
+  const st = window.activeSlideViewerState;
+  if (!st) return;
+  if (delta === 0) {
+    st.zoomScale = 1.0;
+  } else {
+    const nextZoom = Math.round((st.zoomScale + delta) * 10) / 10;
+    if (nextZoom >= 0.5 && nextZoom <= 2.5) {
+      st.zoomScale = nextZoom;
+    }
+  }
+
+  const zoomText = document.getElementById('slideZoomText');
+  if (zoomText) {
+    zoomText.textContent = `${Math.round(st.zoomScale * 100)}%`;
+  }
+
+  if (st.mode === 'document') {
+    if (st.pdfDoc) {
+      renderContinuousPdf(st.pdfDoc, 'pdfContinuousContainer', st.zoomScale);
+    }
+  } else {
+    updateSlideViewerUI();
+  }
+}
+
 function toggleSlideViewerAutoplay() {
   const st = window.activeSlideViewerState;
   if (!st) return;
@@ -12402,7 +12946,7 @@ function toggleSlideViewerTheme() {
   const st = window.activeSlideViewerState;
   if (!st) return;
 
-  const themes = ['blue', 'dark', 'ivory'];
+  const themes = ['blue', 'dark', 'ivory', 'emerald'];
   const nextIdx = (themes.indexOf(st.theme) + 1) % themes.length;
   st.theme = themes[nextIdx];
 
@@ -12411,7 +12955,13 @@ function toggleSlideViewerTheme() {
     stage.className = `slide-deck-stage theme-${st.theme}`;
   }
   updateSlideViewerUI();
-  showToast(`បានប្តូរពណ៌ Theme ទៅ «${st.theme === 'blue' ? 'ផ្ទៃខៀវគរុកោសល្យ' : st.theme === 'dark' ? 'ផ្ទៃងងឹត (Dark)' : 'ផ្ទៃសស្អាត (Ivory)'}»`, 'info');
+  const themeLabels = {
+    blue: 'ផ្ទៃខៀវគរុកោសល្យ (Blue)',
+    dark: 'ផ្ទៃងងឹត (Dark)',
+    ivory: 'ផ្ទៃសស្អាត (Ivory)',
+    emerald: 'ផ្ទៃបៃតងគរុកោសល្យ (Emerald)'
+  };
+  showToast(`បានប្តូរ Theme ទៅ «${themeLabels[st.theme] || st.theme}»`, 'info');
 }
 
 function toggleSlideViewerNotes() {
@@ -12431,6 +12981,8 @@ function toggleSlideViewerMode(targetMode) {
   const stage = document.getElementById('slideViewerStage');
   const docStage = document.getElementById('slideDocumentStage');
   const btn = document.getElementById('slideModeToggleBtn');
+  const filmstrip = document.getElementById('slideThumbnailsRail');
+  const navBar = document.getElementById('slideNavBar');
 
   if (targetMode === 'toggle') {
     st.mode = st.mode === 'deck' ? 'document' : 'deck';
@@ -12441,11 +12993,21 @@ function toggleSlideViewerMode(targetMode) {
   if (st.mode === 'document') {
     if (stage) stage.style.display = 'none';
     if (docStage) docStage.style.display = 'block';
-    if (btn) btn.innerHTML = '<i class="fas fa-desktop"></i> ប្តូរមើលស្លាយគំរូ';
+    if (filmstrip) filmstrip.style.display = 'none';
+    if (navBar) navBar.style.display = 'none';
+    if (btn) btn.innerHTML = '<i class="fas fa-desktop"></i> ប្តូរមើលស្លាយបទបង្ហាញ';
+    
+    // Render PDF continuous scroll if pdfDoc loaded
+    if (st.pdfDoc) {
+      renderContinuousPdf(st.pdfDoc, 'pdfContinuousContainer', st.zoomScale);
+    }
   } else {
     if (stage) stage.style.display = 'flex';
     if (docStage) docStage.style.display = 'none';
-    if (btn) btn.innerHTML = '<i class="fas fa-file-pdf"></i> ប្តូរមើល PDF ដើម';
+    if (filmstrip) filmstrip.style.display = 'flex';
+    if (navBar) navBar.style.display = 'flex';
+    if (btn) btn.innerHTML = '<i class="fas fa-file-pdf"></i> ប្តូរមើលឯកសារពេញ (PDF)';
+    updateSlideViewerUI();
   }
 }
 
@@ -12479,6 +13041,10 @@ function closeSlideViewerModal() {
     window.removeEventListener('keydown', window._slideKeyNavHandler);
     window._slideKeyNavHandler = null;
   }
+  if (_currentRenderingPdfTask) {
+    try { _currentRenderingPdfTask.cancel(); } catch (e) {}
+    _currentRenderingPdfTask = null;
+  }
   window.activeSlideViewerState = null;
   closeStmsModal();
 }
@@ -12486,6 +13052,7 @@ function closeSlideViewerModal() {
 window.openLessonSlideViewerModal = openLessonSlideViewerModal;
 window.changeSlideViewerIndex = changeSlideViewerIndex;
 window.goToSlideViewerIndex = goToSlideViewerIndex;
+window.changeSlideViewerZoom = changeSlideViewerZoom;
 window.toggleSlideViewerAutoplay = toggleSlideViewerAutoplay;
 window.toggleSlideViewerTheme = toggleSlideViewerTheme;
 window.toggleSlideViewerNotes = toggleSlideViewerNotes;
