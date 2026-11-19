@@ -11949,8 +11949,8 @@ async function renderPdfPageToCanvas(pdfDoc, pageNum, canvasId, loadingId, zoomS
   try {
     const page = await pdfDoc.getPage(pageNum);
     const container = canvas.closest('.slide-deck-stage') || canvas.parentElement;
-    const availWidth = container ? (container.clientWidth - 40) : 900;
-    const availHeight = container ? (container.clientHeight - 60) : 500;
+    const availWidth = container ? (container.clientWidth - 24) : 1000;
+    const availHeight = container ? (container.clientHeight - 24) : 620;
 
     const unscaledViewport = page.getViewport({ scale: 1.0 });
     const scaleX = availWidth / unscaledViewport.width;
@@ -12123,13 +12123,13 @@ function renderActiveSlide(slide, index, total, theme, l) {
   let bodyHtml = '';
 
   if (slide.type === 'pdf_page') {
-    bodyHtml = `
-      <div class="pdf-slide-container" style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; position:relative;">
-        <div style="position:relative; max-width:100%; max-height:100%; display:flex; justify-content:center; align-items:center;">
-          <canvas id="pdfSlideCanvas_${index}" class="pdf-slide-canvas" style="box-shadow: 0 10px 25px rgba(0,0,0,0.45); border-radius:6px; max-width:100%; max-height:60vh; height:auto; background:#ffffff;"></canvas>
-          <div id="pdfCanvasLoading_${index}" style="position:absolute; inset:0; background:rgba(15,23,42,0.85); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border-radius:6px; color:#ffffff;">
-            <i class="fas fa-spinner fa-spin" style="font-size:1.8rem; color:#38bdf8;"></i>
-            <div style="font-size:0.82rem; font-weight:700;">កំពុង Render ទំព័រទី ${slide.pageNum || index} ជាមួយ Mozilla PDF.js...</div>
+    return `
+      <div class="pdf-slide-stage-wrapper" style="height:100%; width:100%; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden; padding:8px;">
+        <div class="pdf-slide-canvas-box" style="position:relative; max-width:100%; max-height:100%; display:flex; justify-content:center; align-items:center;">
+          <canvas id="pdfSlideCanvas_${index}" class="pdf-slide-canvas" style="box-shadow: 0 16px 50px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.12); border-radius:8px; max-width:100%; max-height:68vh; height:auto; background:#ffffff;"></canvas>
+          <div id="pdfCanvasLoading_${index}" style="position:absolute; inset:0; background:rgba(8,12,22,0.88); backdrop-filter:blur(4px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; border-radius:8px; color:#ffffff;">
+            <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:#38bdf8;"></i>
+            <div style="font-size:0.85rem; font-weight:700; color:#e2e8f0;">កំពុង Render ទំព័រទី ${slide.pageNum || index} ជាមួយ Mozilla PDF.js...</div>
           </div>
         </div>
       </div>
@@ -12626,7 +12626,7 @@ async function openLessonSlideViewerModal(lessonId) {
     slides: slides,
     currentSlide: 1,
     totalSlides: slides.length,
-    theme: 'blue',
+    theme: (isPdf && pdfDoc) ? 'cinema' : 'blue',
     mode: 'deck',
     pdfDoc: pdfDoc,
     zoomScale: 1.0,
@@ -12642,79 +12642,80 @@ async function openLessonSlideViewerModal(lessonId) {
       <div class="stms-modal-dialog stms-slide-viewer-dialog" id="slideViewerContainer">
         
         <!-- Top Toolbar Header -->
-        <div class="stms-modal-header" style="background:#0a192f; color:#ffffff; border-bottom:1px solid #1e293b; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div class="stms-modal-header" style="background:#080c16; color:#ffffff; border-bottom:1px solid rgba(255,255,255,0.1); padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-            <div class="stms-file-preview-icon ${fInfo.className}" style="width:38px; height:38px; font-size:1.2rem; flex-shrink:0;">
+            <div class="stms-file-preview-icon ${fInfo.className}" style="width:40px; height:40px; font-size:1.25rem; flex-shrink:0;">
               <i class="${fInfo.icon}"></i>
             </div>
             <div style="min-width:0;">
-              <h3 style="color:#ffffff; font-size:1rem; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              <h3 style="color:#ffffff; font-size:1.02rem; margin:0; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                 ${escapeHtml(l.title)}
               </h3>
-              <p style="color:#94a3b8; font-size:0.75rem; margin:2px 0 0 0;">
-                <span>${escapeHtml(l.subjectCode)}</span> • <span>${escapeHtml(l.chapter)}</span> • <span>${escapeHtml(l.uploadedBy || 'គ្រូឧទ្ទេស')}</span> (${escapeHtml(l.fileSize || '15.1 MB')})
+              <p style="color:#94a3b8; font-size:0.75rem; margin:3px 0 0 0; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span style="color:#38bdf8; font-weight:700;">${escapeHtml(l.subjectCode)}</span>
+                <span>•</span>
+                <span>${escapeHtml(l.chapter)}</span>
+                <span>•</span>
+                <span>${escapeHtml(l.uploadedBy || 'គ្រូឧទ្ទេស')}</span>
+                <span class="badge" style="background:rgba(255,255,255,0.1); color:#cbd5e1; font-size:0.68rem; padding:1px 6px;">${escapeHtml(l.fileSize || '15.1 MB')}</span>
               </p>
             </div>
           </div>
 
           <!-- Controls Right -->
-          <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0; flex-wrap:wrap;">
             
-            <!-- Zoom Controls -->
-            <div style="display:inline-flex; align-items:center; background:#1e293b; border-radius:6px; padding:2px; border:1px solid #334155; margin-right:4px;">
-              <button class="btn btn-outline" style="height:26px; width:26px; padding:0; color:#e2e8f0; border:none; display:flex; align-items:center; justify-content:center; font-size:0.75rem;" onclick="changeSlideViewerZoom(-0.1)" title="ពង្រួម (Zoom Out)">
-                <i class="fas fa-minus"></i>
-              </button>
-              <span id="slideZoomText" style="font-size:0.72rem; font-weight:700; color:#38bdf8; min-width:42px; text-align:center; cursor:pointer;" onclick="changeSlideViewerZoom(0)" title="កំណត់ 100% ឡើងវិញ">100%</span>
-              <button class="btn btn-outline" style="height:26px; width:26px; padding:0; color:#e2e8f0; border:none; display:flex; align-items:center; justify-content:center; font-size:0.75rem;" onclick="changeSlideViewerZoom(0.1)" title="ពង្រីក (Zoom In)">
-                <i class="fas fa-plus"></i>
-              </button>
+            <!-- Zoom Pill Controls -->
+            <div class="stms-slide-zoom-pill">
+              <button onclick="changeSlideViewerZoom(-0.1)" title="ពង្រួម (Zoom Out)"><i class="fas fa-search-minus"></i></button>
+              <span id="slideZoomText" onclick="changeSlideViewerZoom(0)" title="កំណត់ 100% ឡើងវិញ">100%</span>
+              <button onclick="changeSlideViewerZoom(0.1)" title="ពង្រីក (Zoom In)"><i class="fas fa-search-plus"></i></button>
             </div>
 
             ${((isPdf && l.fileData) || pdfDoc) ? `
-              <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#38bdf8; border-color:#0284c7; background:rgba(2,132,199,0.15);" onclick="toggleSlideViewerMode('toggle')" id="slideModeToggleBtn">
+              <button class="stms-slide-btn stms-slide-btn-accent" onclick="toggleSlideViewerMode('toggle')" id="slideModeToggleBtn" title="ប្តូររបៀបមើល">
                 <i class="fas fa-file-pdf"></i> ប្តូរមើលឯកសារពេញ (PDF)
               </button>
             ` : ''}
             
-            <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#e2e8f0; border-color:#334155;" onclick="toggleSlideViewerTheme()" title="ប្តូរពណ៌ផ្ទៃស្លាយ (Theme: Blue, Dark, Ivory, Emerald)">
-              <i class="fas fa-palette"></i> Theme
+            <button class="stms-slide-btn" onclick="toggleSlideViewerTheme()" title="ប្តូរពណ៌ផ្ទៃស្លាយ (Themes: Cinema, Blue, Dark, Ivory, Emerald)">
+              <i class="fas fa-palette" style="color:#f59e0b;"></i> Theme
             </button>
-            <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#e2e8f0; border-color:#334155;" onclick="toggleSlideViewerNotes()" title="កំណត់សម្គាល់គ្រូឧទ្ទេស">
-              <i class="fas fa-sticky-note"></i> កំណត់សម្គាល់
+            <button class="stms-slide-btn" onclick="toggleSlideViewerNotes()" title="កំណត់សម្គាល់គ្រូឧទ្ទេស">
+              <i class="fas fa-sticky-note" style="color:#38bdf8;"></i> កំណត់សម្គាល់
             </button>
-            <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#e2e8f0; border-color:#334155;" onclick="toggleSlideViewerFullscreen()" title="ពេញអេក្រង់ (Fullscreen)">
+            <button class="stms-slide-btn" onclick="toggleSlideViewerFullscreen()" title="ពេញអេក្រង់ (Fullscreen)">
               <i class="fas fa-expand" id="slideFullscreenIcon"></i>
             </button>
-            <button class="btn btn-primary" style="font-size:0.75rem; height:28px; padding:0 12px; background:#0284c7; border:none; color:#ffffff; font-weight:700;" onclick="downloadLessonFile('${l.id}')" title="ទាញយកឯកសារដើម">
+            <button class="stms-slide-btn stms-slide-btn-primary" onclick="downloadLessonFile('${l.id}')" title="ទាញយកឯកសារដើម">
               <i class="fas fa-download"></i> ទាញយក
             </button>
-            <button class="modal-close-icon" onclick="closeSlideViewerModal()" style="color:#ffffff; font-size:1.4rem; padding:0 6px;">&times;</button>
+            <button class="modal-close-icon" onclick="closeSlideViewerModal()" style="color:#cbd5e1; font-size:1.4rem; padding:0 8px; border:none; background:transparent; cursor:pointer;" title="បិទ">&times;</button>
           </div>
         </div>
 
         <!-- Main Viewing Stage -->
-        <div style="padding:14px 18px; background:#0f172a; flex:1; display:flex; flex-direction:column; gap:10px; min-height:0;">
+        <div style="padding:14px 18px; background:#070a12; flex:1; display:flex; flex-direction:column; gap:10px; min-height:0;">
           
           <!-- Slide Deck Presentation Canvas -->
-          <div id="slideViewerStage" class="slide-deck-stage theme-blue">
+          <div id="slideViewerStage" class="slide-deck-stage theme-${(isPdf && pdfDoc) ? 'cinema' : 'blue'}">
             <div id="slideViewerContent" style="height:100%; display:flex; flex-direction:column;">
-              ${renderActiveSlide(slides[0], 1, slides.length, 'blue', l)}
+              ${renderActiveSlide(slides[0], 1, slides.length, (isPdf && pdfDoc) ? 'cinema' : 'blue', l)}
             </div>
           </div>
 
           <!-- Document Mode Stage (Continuous Scroll / PDF.js) -->
-          <div id="slideDocumentStage" style="display:none; width:100%; min-height:500px; border-radius:10px; overflow:hidden; background:#0f172a;">
+          <div id="slideDocumentStage" style="display:none; width:100%; min-height:500px; border-radius:10px; overflow:hidden; background:#070a12;">
             ${pdfDoc ? `
               <div id="pdfContinuousContainer" class="pdf-continuous-container"></div>
             ` : (l.fileData && isPdf) ? `
-              <iframe src="${l.fileData}#toolbar=1" style="width:100%; height:540px; border:none; border-radius:10px; background:#ffffff;"></iframe>
+              <iframe src="${l.fileData}#toolbar=1" style="width:100%; height:560px; border:none; border-radius:10px; background:#ffffff;"></iframe>
             ` : `
               <div style="text-align:center; padding:60px 20px; color:#94a3b8;">
                 <i class="fas fa-file-pdf" style="font-size:3rem; color:#ef4444; margin-bottom:14px; display:block;"></i>
                 <div style="font-weight:700; font-size:1.1rem; color:#ffffff;">ឯកសារដើម៖ ${escapeHtml(l.fileName)}</div>
                 <p style="font-size:0.86rem; color:#94a3b8; margin:8px 0 16px 0;">សូមចុចទាញយកដើម្បីបើកក្នុងកម្មវិធីកុំព្យូទ័ររបស់អ្នក</p>
-                <button class="btn btn-primary" onclick="downloadLessonFile('${l.id}')">
+                <button class="stms-slide-btn stms-slide-btn-primary" onclick="downloadLessonFile('${l.id}')">
                   <i class="fas fa-download"></i> ទាញយកឯកសារ (${escapeHtml(l.fileSize || '15.1 MB')})
                 </button>
               </div>
@@ -12734,35 +12735,47 @@ async function openLessonSlideViewerModal(lessonId) {
           <!-- Thumbnails Filmstrip Rail -->
           <div class="slide-deck-filmstrip" id="slideThumbnailsRail">
             ${slides.map((s, idx) => `
-              <div class="slide-thumb-pill ${idx === 0 ? 'active' : ''}" onclick="goToSlideViewerIndex(${idx + 1})" id="slideThumb_${idx + 1}">
-                <span>${s.type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ'} ${idx + 1}</span>
-                <span style="font-size:0.58rem; opacity:0.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px;">${(s.badge || '').split(' • ')[0] || ''}</span>
+              <div class="slide-thumb-pill ${idx === 0 ? 'active' : ''}" onclick="goToSlideViewerIndex(${idx + 1})" id="slideThumb_${idx + 1}" title="ចុចទៅកាន់ ${s.type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ'} ${idx + 1}">
+                <div class="slide-thumb-num">${idx + 1}</div>
+                <div class="slide-thumb-label">${s.type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ'}</div>
               </div>
             `).join('')}
           </div>
 
           <!-- Slide Navigation Controls Bar -->
-          <div id="slideNavBar" style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:8px 14px; border-radius:10px;">
+          <div id="slideNavBar" style="display:flex; justify-content:space-between; align-items:center; background:#0b1120; border:1px solid rgba(255,255,255,0.08); padding:8px 14px; border-radius:10px; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:8px;">
-              <button class="btn btn-outline" id="slidePrevBtn" style="color:#ffffff; border-color:#475569; font-size:0.8rem; height:32px; padding:0 12px; display:inline-flex; align-items:center; gap:6px;" onclick="changeSlideViewerIndex(-1)" disabled>
+              <button class="stms-slide-btn" id="slidePrevBtn" onclick="changeSlideViewerIndex(-1)" disabled title="ថយក្រោយ (ព្រួញឆ្វេង)">
                 <i class="fas fa-chevron-left"></i> ថយក្រោយ
               </button>
               
-              <div style="display:inline-flex; align-items:center; gap:4px; font-size:0.82rem; font-weight:700; color:#38bdf8; padding:0 4px;" id="slideCounterText">
-                ${slides[0].type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ'} 1 / ${slides.length}
+              <div class="stms-slide-page-badge" id="slideCounterBadge">
+                <span>${slides[0].type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ'}</span>
+                <input type="number" id="slidePageJumpInput" min="1" max="${slides.length}" value="1" onchange="goToSlideViewerIndex(parseInt(this.value, 10))" onkeydown="if(event.key==='Enter') goToSlideViewerIndex(parseInt(this.value, 10))" title="វាយបញ្ចូលលេខទំព័រដើម្បី Jump">
+                <span>/ ${slides.length}</span>
               </div>
 
-              <button class="btn btn-primary" id="slideNextBtn" style="font-size:0.8rem; height:32px; padding:0 12px; background:#0284c7; border:none; color:#ffffff; font-weight:700; display:inline-flex; align-items:center; gap:6px;" onclick="changeSlideViewerIndex(1)" ${slides.length <= 1 ? 'disabled' : ''}>
+              <button class="stms-slide-btn stms-slide-btn-primary" id="slideNextBtn" onclick="changeSlideViewerIndex(1)" ${slides.length <= 1 ? 'disabled' : ''} title="បន្ទាប់ (ព្រួញស្តាំ)">
                 បន្ទាប់ <i class="fas fa-chevron-right"></i>
               </button>
             </div>
 
+            <!-- Keyboard shortcut hint -->
+            <div class="stms-slide-kbd-hint" style="display:flex; align-items:center; gap:6px; color:#94a3b8; font-size:0.75rem;">
+              <kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:4px; padding:1px 5px; font-size:0.68rem; color:#cbd5e1;">◀</kbd>
+              <kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:4px; padding:1px 5px; font-size:0.68rem; color:#cbd5e1;">▶</kbd>
+              <span>ប្តូរស្លាយ</span>
+              <span>•</span>
+              <kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:4px; padding:1px 5px; font-size:0.68rem; color:#cbd5e1;">F</kbd>
+              <span>ពេញអេក្រង់</span>
+            </div>
+
             <div style="display:flex; align-items:center; gap:8px;">
-              <button class="btn btn-outline" id="slideAutoplayBtn" style="color:#e2e8f0; border-color:#475569; font-size:0.75rem; height:32px; padding:0 12px; display:inline-flex; align-items:center; gap:6px;" onclick="toggleSlideViewerAutoplay()">
-                <i class="fas fa-play" id="slideAutoplayIcon"></i> <span id="slideAutoplayLabel">លេងស្វ័យប្រវត្តិ</span>
+              <button class="stms-slide-btn" id="slideAutoplayBtn" onclick="toggleSlideViewerAutoplay()" title="ចាក់ស្លាយស្វ័យប្រវត្តិ">
+                <i class="fas fa-play" id="slideAutoplayIcon" style="color:#10b981;"></i> <span id="slideAutoplayLabel">លេងស្វ័យប្រវត្តិ</span>
               </button>
-              <button class="btn btn-outline" style="color:#e2e8f0; border-color:#475569; font-size:0.75rem; height:32px; padding:0 12px;" onclick="closeSlideViewerModal()">
-                បិទ
+              <button class="stms-slide-btn stms-slide-btn-danger" onclick="closeSlideViewerModal()" title="បិទផ្ទាំង (Esc)">
+                <i class="fas fa-times"></i> បិទ
               </button>
             </div>
           </div>
@@ -12834,10 +12847,9 @@ function updateSlideViewerUI() {
     }, 20);
   }
 
-  const counterEl = document.getElementById('slideCounterText');
-  if (counterEl) {
-    const unit = slide && slide.type === 'pdf_page' ? 'ទំព័រ' : 'ស្លាយ';
-    counterEl.textContent = `${unit} ${st.currentSlide} / ${st.totalSlides}`;
+  const jumpInput = document.getElementById('slidePageJumpInput');
+  if (jumpInput) {
+    jumpInput.value = st.currentSlide;
   }
 
   const prevBtn = document.getElementById('slidePrevBtn');
@@ -12923,12 +12935,18 @@ function toggleSlideViewerAutoplay() {
     clearInterval(st.autoplayTimer);
     st.autoplayTimer = null;
     st.isAutoplaying = false;
-    if (icon) icon.className = 'fas fa-play';
+    if (icon) {
+      icon.className = 'fas fa-play';
+      icon.style.color = '#10b981';
+    }
     if (label) label.textContent = 'លេងស្វ័យប្រវត្តិ';
     showToast('បានផ្អាកការលេងស្លាយ', 'info');
   } else {
     st.isAutoplaying = true;
-    if (icon) icon.className = 'fas fa-pause';
+    if (icon) {
+      icon.className = 'fas fa-pause';
+      icon.style.color = '#f59e0b';
+    }
     if (label) label.textContent = 'ផ្អាកលេង';
     showToast('កំពុងលេងស្លាយស្វ័យប្រវត្តិ (៥ វិនាទី/ស្លាយ)', 'success');
     st.autoplayTimer = setInterval(() => {
@@ -12946,7 +12964,7 @@ function toggleSlideViewerTheme() {
   const st = window.activeSlideViewerState;
   if (!st) return;
 
-  const themes = ['blue', 'dark', 'ivory', 'emerald'];
+  const themes = ['cinema', 'blue', 'dark', 'ivory', 'emerald'];
   const nextIdx = (themes.indexOf(st.theme) + 1) % themes.length;
   st.theme = themes[nextIdx];
 
@@ -12956,6 +12974,7 @@ function toggleSlideViewerTheme() {
   }
   updateSlideViewerUI();
   const themeLabels = {
+    cinema: 'ផ្ទៃងងឹតរោងភាពយន្ត (Cinema Dark)',
     blue: 'ផ្ទៃខៀវគរុកោសល្យ (Blue)',
     dark: 'ផ្ទៃងងឹត (Dark)',
     ivory: 'ផ្ទៃសស្អាត (Ivory)',
