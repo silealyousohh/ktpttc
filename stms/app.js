@@ -1,5 +1,5 @@
 /**
- * STMS - Student & Teacher Management System (ប្រព័ន្ធគ្រប់គ្រងគរុនិស្សិត)
+ * STMS - Teaching & Learning Management System (ប្រព័ន្ធគ្រប់គ្រងការបង្រៀន និងរៀន)
  * សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)
  * Core Controller, Workflows & RBAC State Management
  */
@@ -980,7 +980,7 @@ function renderDashboardView(container) {
     <div class="clean-dashboard-welcome">
       <div class="clean-welcome-title">
         <h2>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</h2>
-        <p>ប្រព័ន្ធគ្រប់គ្រងគរុនិស្សិត និងព័ត៌មានវិទ្យា (STMS) &bull; ឆ្នាំសិក្សា ២០២៦ - ២០២៧</p>
+        <p>ប្រព័ន្ធគ្រប់គ្រងការបង្រៀន និងរៀន (STMS) &bull; ឆ្នាំសិក្សា ២០២៦ - ២០២៧</p>
       </div>
       <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         <a href="add-student.html" class="btn btn-primary" style="height:38px; display:inline-flex; align-items:center; gap:6px;">
@@ -11072,7 +11072,7 @@ async function downloadLessonFile(lessonId) {
   } else {
     const content = `========================================================================\n` +
       `សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)\n` +
-      `ប្រព័ន្ធគ្រប់គ្រងគរុសិស្ស (STMS) - មេរៀន & ស្លាយបង្រៀន E-Learning\n` +
+      `ប្រព័ន្ធគ្រប់គ្រងការបង្រៀន និងរៀន (STMS) - មេរៀន & ស្លាយបង្រៀន E-Learning\n` +
       `========================================================================\n\n` +
       `មុខវិជ្ជា៖ ${l.subjectName || l.subjectCode}\n` +
       `កូដមុខវិជ្ជា៖ ${l.subjectCode}\n` +
@@ -11198,7 +11198,7 @@ function downloadHwAttachment(hwId) {
   } else {
     const content = `========================================================================\n` +
       `សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)\n` +
-      `ប្រព័ន្ធគ្រប់គ្រងគរុសិស្ស (STMS) - សេចក្តីណែនាំកិច្ចការ & Template\n` +
+      `ប្រព័ន្ធគ្រប់គ្រងការបង្រៀន និងរៀន (STMS) - សេចក្តីណែនាំកិច្ចការ & Template\n` +
       `========================================================================\n\n` +
       `មុខវិជ្ជា៖ ${hw.subjectName || hw.subjectCode}\n` +
       `កូដមុខវិជ្ជា៖ ${hw.subjectCode}\n` +

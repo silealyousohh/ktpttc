@@ -1,5 +1,5 @@
 /**
- * STMS - Student & Teacher Management System (ប្រព័ន្ធគ្រប់គ្រងគរុនិស្សិត)
+ * STMS - Teaching & Learning Management System (ប្រព័ន្ធគ្រប់គ្រងការបង្រៀន និងរៀន)
  * សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC - Kratie Provincial Teacher Training Center)
  * Initial Seed Data & MoEYS Standard Configurations
  */
