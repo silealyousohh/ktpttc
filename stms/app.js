@@ -4185,11 +4185,11 @@ function renderTraineePortalView(container) {
           <div class="hub-card-sub">កាលវិភាគសិក្សាប្រចាំសប្តាហ៍</div>
         </div>
 
-        <!-- 3. វីដេអូ (Video Lessons - Orange) -->
-        <div class="trainee-hub-card card-orange" onclick="openTraineeLessonsModal()">
+        <!-- 3. ស្លាយ & វីដេអូ (Video Lessons & Slides - Orange) -->
+        <div class="trainee-hub-card card-orange" onclick="openTraineeLessonsModal('all', 'slides')">
           <div class="hub-card-pattern"></div>
-          <div class="hub-card-icon"><i class="fas fa-play-circle"></i></div>
-          <div class="hub-card-title">វីដេអូ</div>
+          <div class="hub-card-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+          <div class="hub-card-title">ស្លាយ &amp; វីដេអូ</div>
           <div class="hub-card-sub">មេរៀន E-Learning</div>
         </div>
 
@@ -4546,7 +4546,7 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-function openTraineeLessonsModal(activeCategory = 'all') {
+function openTraineeLessonsModal(activeCategory = 'all', activeTab = 'slides') {
   const teacherVideos = (stmsData.videoLessons || []).map(v => {
     const rawUrl = v.videoUrl || '';
     const ytId = v.youtubeId || extractYouTubeId(rawUrl);
@@ -4570,46 +4570,115 @@ function openTraineeLessonsModal(activeCategory = 'all') {
     };
   });
 
-  const allLessons = [...teacherVideos, ...KTPTTC_VIDEO_LESSONS];
-  const filtered = activeCategory === 'all' 
-    ? allLessons 
-    : allLessons.filter(v => v.category === activeCategory);
+  const allVideos = [...teacherVideos, ...KTPTTC_VIDEO_LESSONS];
+  const allLessons = stmsData.lessons || [];
+
+  // Filter lessons by category
+  const filteredLessons = activeCategory === 'all'
+    ? allLessons
+    : allLessons.filter(l => {
+        const c = activeCategory;
+        const code = l.subjectCode || '';
+        const name = l.subjectName || '';
+        if (c === 'គរុកោសល្យ') return code.startsWith('PED') || code.startsWith('EDU') || name.includes('គរុ');
+        if (c === 'ភាសាខ្មែរ') return code.startsWith('KHM') || name.includes('ខ្មែរ');
+        if (c === 'គណិតវិទ្យា') return code.startsWith('MTH') || name.includes('គណិត');
+        if (c === 'ICT') return code.startsWith('ICT') || name.includes('ICT') || name.includes('កុំព្យូទ័រ');
+        if (c === 'ការស្រាវជ្រាវ') return code.startsWith('RES') || name.includes('ស្រាវជ្រាវ');
+        return true;
+      });
+
+  // Filter videos by category
+  const filteredVideos = activeCategory === 'all' 
+    ? allVideos 
+    : allVideos.filter(v => v.category === activeCategory);
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="traineeLessonsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:780px;">
-        <div class="stms-modal-header" style="background:linear-gradient(135deg, #c2410c 0%, #ea580c 100%); color:#ffffff;">
+      <div class="stms-modal-dialog" style="max-width:820px;">
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #09204a 0%, #1e3a8a 100%); color:#ffffff;">
           <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
-              <i class="fas fa-play-circle"></i>
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+              <i class="fas fa-desktop"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">វីដេអូ &amp; មេរៀន E-Learning គរុកោសល្យ</h3>
-              <p style="color:#ffedd5; font-size:0.82rem; margin:2px 0 0 0;">កម្រងវីដេអូបង្រៀនគំរូ និងស្លាយបង្រៀនឌីជីថល KTPTTC</p>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">ស្លាយមេរៀន &amp; វីដេអូ E-Learning គរុកោសល្យ</h3>
+              <p style="color:#bfdbfe; font-size:0.82rem; margin:2px 0 0 0;">កម្រងស្លាយបង្រៀនឌីជីថល (PowerPoint/PDF) និងវីដេអូបង្រៀនគំរូ KTPTTC</p>
             </div>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
-          <!-- Category Tabs -->
-          <div class="stms-modal-tabs">
-            <button class="modal-tab-btn ${activeCategory==='all'?'active':''}" onclick="openTraineeLessonsModal('all')">ទាំងអស់ (${allLessons.length})</button>
-            <button class="modal-tab-btn ${activeCategory==='គរុកោសល្យ'?'active':''}" onclick="openTraineeLessonsModal('គរុកោសល្យ')">គរុកោសល្យ</button>
-            <button class="modal-tab-btn ${activeCategory==='ភាសាខ្មែរ'?'active':''}" onclick="openTraineeLessonsModal('ភាសាខ្មែរ')">ភាសាខ្មែរ</button>
-            <button class="modal-tab-btn ${activeCategory==='គណិតវិទ្យា'?'active':''}" onclick="openTraineeLessonsModal('គណិតវិទ្យា')">គណិតវិទ្យា</button>
-            <button class="modal-tab-btn ${activeCategory==='ICT'?'active':''}" onclick="openTraineeLessonsModal('ICT')">ICT</button>
-            <button class="modal-tab-btn ${activeCategory==='ការស្រាវជ្រាវ'?'active':''}" onclick="openTraineeLessonsModal('ការស្រាវជ្រាវ')">ការស្រាវជ្រាវ</button>
+          <!-- Top Type Switcher (Slides vs Videos) -->
+          <div style="display:flex; gap:10px; margin-bottom:14px; border-bottom:2px solid #e2e8f0; padding-bottom:12px;">
+            <button class="btn ${activeTab==='slides'?'btn-primary':'btn-outline'}" style="font-weight:700; font-size:0.86rem; padding:6px 18px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; ${activeTab==='slides'?'background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:none; color:#ffffff;':''}" onclick="openTraineeLessonsModal('${activeCategory}', 'slides')">
+              <i class="fas fa-desktop"></i> ស្លាយ &amp; ឯកសារមេរៀន (${allLessons.length})
+            </button>
+            <button class="btn ${activeTab==='videos'?'btn-primary':'btn-outline'}" style="font-weight:700; font-size:0.86rem; padding:6px 18px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; ${activeTab==='videos'?'background:linear-gradient(135deg, #ea580c 0%, #c2410c 100%); border:none; color:#ffffff;':''}" onclick="openTraineeLessonsModal('${activeCategory}', 'videos')">
+              <i class="fas fa-play-circle"></i> វីដេអូបង្រៀនគំរូ (${allVideos.length})
+            </button>
           </div>
 
+          <!-- Category Tabs -->
+          <div class="stms-modal-tabs" style="margin-bottom:16px;">
+            <button class="modal-tab-btn ${activeCategory==='all'?'active':''}" onclick="openTraineeLessonsModal('all', '${activeTab}')">ទាំងអស់</button>
+            <button class="modal-tab-btn ${activeCategory==='គរុកោសល្យ'?'active':''}" onclick="openTraineeLessonsModal('គរុកោសល្យ', '${activeTab}')">គរុកោសល្យ</button>
+            <button class="modal-tab-btn ${activeCategory==='ភាសាខ្មែរ'?'active':''}" onclick="openTraineeLessonsModal('ភាសាខ្មែរ', '${activeTab}')">ភាសាខ្មែរ</button>
+            <button class="modal-tab-btn ${activeCategory==='គណិតវិទ្យា'?'active':''}" onclick="openTraineeLessonsModal('គណិតវិទ្យា', '${activeTab}')">គណិតវិទ្យា</button>
+            <button class="modal-tab-btn ${activeCategory==='ICT'?'active':''}" onclick="openTraineeLessonsModal('ICT', '${activeTab}')">ICT</button>
+            <button class="modal-tab-btn ${activeCategory==='ការស្រាវជ្រាវ'?'active':''}" onclick="openTraineeLessonsModal('ការស្រាវជ្រាវ', '${activeTab}')">ការស្រាវជ្រាវ</button>
+          </div>
+
+          <!-- Tab Content: SLIDES -->
+          ${activeTab === 'slides' ? `
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${filteredLessons.length === 0 ? `
+                <div style="text-align:center; padding:40px 20px; color:#94a3b8; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
+                  <i class="fas fa-desktop" style="font-size:2.4rem; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+                  <div style="font-weight:600; font-size:0.95rem; color:#64748b;">មិនទាន់មានស្លាយមេរៀនក្នុងផ្នែកនេះទេ</div>
+                  <div style="font-size:0.8rem; margin-top:4px;">គ្រូឧទ្ទេសអាច Upload ស្លាយមេរៀនពីផ្ទាំងគ្រប់គ្រងមុខវិជ្ជា</div>
+                </div>
+              ` : filteredLessons.map(l => {
+                const fInfo = getFileIconInfo(l.fileName);
+                return `
+                <div style="display:flex; gap:14px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center; transition:all 0.2s;" onmouseover="this.style.borderColor='#38bdf8'; this.style.boxShadow='0 3px 12px rgba(2,132,199,0.08)';" onmouseout="this.style.borderColor='var(--border-color)'; this.style.boxShadow='none';">
+                  <div class="stms-file-preview-icon ${fInfo.className}" style="width:46px; height:46px; font-size:1.45rem; flex-shrink:0; cursor:pointer;" onclick="openLessonSlideViewerModal('${l.id}')">
+                    <i class="${fInfo.icon}"></i>
+                  </div>
+                  <div style="flex:1; min-width:0; cursor:pointer;" onclick="openLessonSlideViewerModal('${l.id}')">
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:3px;">
+                      <span style="font-size:0.72rem; font-weight:700; color:#0284c7; background:#e0f2fe; padding:2px 8px; border-radius:6px;">${escapeHtml(l.subjectCode)} • ${escapeHtml(l.chapter)}</span>
+                      <span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem; padding:1px 6px;">${escapeHtml(l.fileSize || '15.1 MB')}</span>
+                    </div>
+                    <h4 style="margin:2px 0 4px 0; font-size:0.95rem; color:#1e293b; line-height:1.4;">${escapeHtml(l.title)}</h4>
+                    <div style="font-size:0.75rem; color:#64748b; display:flex; gap:12px; flex-wrap:wrap;">
+                      <span>👨‍🏫 ${escapeHtml(l.uploadedBy || 'គ្រូឧទ្ទេស')}</span>
+                      <span>📅 ${escapeHtml(l.date || '')}</span>
+                      <span>📄 ${escapeHtml(l.fileName || 'មេរៀន')}</span>
+                    </div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                    <button class="btn btn-primary" style="height:32px; padding:0 14px; font-size:0.8rem; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:none; color:#ffffff; font-weight:700; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(2,132,199,0.3);" onclick="openLessonSlideViewerModal('${l.id}')">
+                      <i class="fas fa-desktop"></i> មើលស្លាយ
+                    </button>
+                    <button class="btn btn-outline" style="height:30px; padding:0 12px; font-size:0.76rem; color:#2563eb; border-color:#bfdbfe; display:inline-flex; align-items:center; gap:5px;" onclick="downloadLessonFile('${l.id}')">
+                      <i class="fas fa-download"></i> ទាញយក
+                    </button>
+                  </div>
+                </div>
+              `}).join('')}
+            </div>
+          ` : `
+          <!-- Tab Content: VIDEOS -->
           <div style="display:flex; flex-direction:column; gap:12px;">
-            ${filtered.length === 0 ? `
+            ${filteredVideos.length === 0 ? `
               <div style="text-align:center; padding:40px 20px; color:#94a3b8; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
                 <i class="fas fa-video-slash" style="font-size:2.4rem; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
                 <div style="font-weight:600; font-size:0.95rem; color:#64748b;">មិនទាន់មានវីដេអូបង្រៀនក្នុងផ្នែកនេះទេ</div>
                 <div style="font-size:0.8rem; margin-top:4px;">គ្រូឧទ្ទេសអាចបញ្ចូលវីដេអូបង្រៀនថ្មីពីផ្ទាំងគ្រប់គ្រងមុខវិជ្ជា</div>
               </div>
-            ` : filtered.map(v => {
+            ` : filteredVideos.map(v => {
               const thumb = v.thumbnail || (v.youtubeId ? getYouTubeThumbnail(v.youtubeId) : '');
               const ytWatchUrl = v.watchUrl || (v.youtubeId ? `https://www.youtube.com/watch?v=${v.youtubeId}` : '');
               return `
@@ -4654,6 +4723,7 @@ function openTraineeLessonsModal(activeCategory = 'all') {
             `;
             }).join('')}
           </div>
+          `}
 
           <div style="margin-top:20px; display:flex; justify-content:flex-end;">
             <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
@@ -5894,21 +5964,26 @@ function openSubjectDetailModal(code) {
                 ${subjectLessons.map(l => {
                   const fInfo = getFileIconInfo(l.fileName);
                   return `
-                  <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                      <div class="stms-file-preview-icon ${fInfo.className}" style="width:36px; height:36px; font-size:1.15rem; flex-shrink:0;">
+                  <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; transition:all 0.2s;" onmouseover="this.style.borderColor='#38bdf8'; this.style.boxShadow='0 3px 12px rgba(2,132,199,0.08)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                    <div style="display:flex; align-items:center; gap:12px; min-width:0; cursor:pointer;" onclick="openLessonSlideViewerModal('${l.id}')" title="ចុចដើម្បីមើលស្លាយមេរៀន">
+                      <div class="stms-file-preview-icon ${fInfo.className}" style="width:38px; height:38px; font-size:1.2rem; flex-shrink:0;">
                         <i class="${fInfo.icon}"></i>
                       </div>
                       <div style="min-width:0;">
-                        <div style="font-weight:700; color:#1e293b; font-size:0.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${l.title}</div>
+                        <div style="font-weight:700; color:#1e293b; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${l.title}</div>
                         <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
                           <span>${l.fileName || 'ឯកសារមេរៀន'}</span> • <span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.68rem; padding:1px 6px;">${l.fileSize || '2.4 MB'}</span> • ${l.chapter} • ${l.uploadedBy || 'គ្រូឧទ្ទេស'} (${l.date || ''})
                         </div>
                       </div>
                     </div>
-                    <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px; height:28px; color:#2563eb; border-color:#bfdbfe; flex-shrink:0;" onclick="downloadLessonFile('${l.id}')">
-                      <i class="fas fa-download"></i> ទាញយក
-                    </button>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                      <button class="btn btn-primary" style="font-size:0.76rem; padding:4px 12px; height:30px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:none; color:#ffffff; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:5px; box-shadow:0 2px 5px rgba(2,132,199,0.25); cursor:pointer;" onclick="openLessonSlideViewerModal('${l.id}')" title="ចុចដើម្បីបើកមើលស្លាយមេរៀនផ្ទាល់លើអេក្រង់">
+                        <i class="fas fa-desktop"></i> មើលស្លាយ
+                      </button>
+                      <button class="btn btn-outline" style="font-size:0.76rem; padding:4px 10px; height:30px; color:#2563eb; border-color:#bfdbfe; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" onclick="downloadLessonFile('${l.id}')" title="ទាញយកឯកសារ">
+                        <i class="fas fa-download"></i> ទាញយក
+                      </button>
+                    </div>
                   </div>
                 `}).join('')}
               </div>
@@ -9039,6 +9114,24 @@ function ensureSyncedCollections() {
   if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
   if (!Array.isArray(stmsData.customClasses)) stmsData.customClasses = [];
 
+  // Ensure default lesson 'Week01' exists so trainees can immediately view slides
+  if (!stmsData.lessons.some(l => l && (l.id === 'LSN-WEEK01' || l.title === 'Week01'))) {
+    stmsData.lessons.push({
+      id: 'LSN-WEEK01',
+      subjectCode: 'PED-101',
+      subjectName: 'គរុកោសល្យទូទៅ',
+      chapter: 'ជំពូកទី ៣',
+      title: 'Week01',
+      description: 'ស្លាយមេរៀនសប្តាហ៍ទី១៖ ទ្រឹស្តីគរុកោសល្យ និងវិធីសាស្ត្របង្រៀនសកម្មក្នុងសតវត្សរ៍ទី២១',
+      fileUrl: '#',
+      fileName: 'Week01.pptx',
+      fileSize: '15.1 MB',
+      fileType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      uploadedBy: 'យូសុះ ស៊ីលាល',
+      date: '2026-11-18'
+    });
+  }
+
   // Purge Mock Faculty Teachers (USR-TRN-002 through USR-TRN-008 and unapproved mock data)
   const mockTeacherIds = [
     'USR-TRN-002',
@@ -11092,6 +11185,785 @@ async function downloadLessonFile(lessonId) {
   }
 }
 
+// ==========================================================================
+// 10. LESSON SLIDE VIEWER ENGINE (មុខងារមើលស្លាយមេរៀន ក្នុងថ្នាលគណនីសិស្ស & គ្រូ)
+// ==========================================================================
+
+window.activeSlideViewerState = null;
+window._slideKeyNavHandler = null;
+
+function generateLessonSlides(l) {
+  const title = l.title || 'មេរៀនគរុកោសល្យ';
+  const subjName = l.subjectName || l.subjectCode || 'គរុកោសល្យទូទៅ';
+  const chapter = l.chapter || 'ជំពូកទី ១';
+  const teacher = l.uploadedBy || 'គ្រូឧទ្ទេស KTPTTC';
+  const date = l.date || '២០២៦';
+  const fileName = l.fileName || 'មេរៀន.pptx';
+  const fileSize = l.fileSize || '15.1 MB';
+  const desc = l.description || 'ឯកសារមេរៀន និងស្លាយបង្រៀនឌីជីថល សម្រាប់គរុនិស្សិត សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ';
+
+  return [
+    {
+      type: 'cover',
+      slideNum: 1,
+      badge: 'ស្លាយគម្រប • Title Slide',
+      title: title,
+      subtitle: `${chapter} • ${subjName} (${l.subjectCode})`,
+      institution: 'សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)',
+      dept: 'ដេប៉ាតឺម៉ង់បណ្តុះបណ្តាល និងស្រាវជ្រាវគរុកោសល្យ',
+      teacher: teacher,
+      date: date,
+      fileName: fileName,
+      fileSize: fileSize,
+      desc: desc,
+      note: 'សូមស្វាគមន៍គរុនិស្សិតទាំងអស់មកកាន់ការសិក្សាស្លាយមេរៀននេះ! សូមកត់ត្រាគំនិតសំខាន់ៗ និងត្រៀមសំណួរពិភាក្សា។'
+    },
+    {
+      type: 'objectives',
+      slideNum: 2,
+      badge: 'គោលបំណងមេរៀន • Objectives',
+      title: 'គោលបំណងនៃការបង្រៀន និងរៀន (Instructional Objectives)',
+      pillars: [
+        {
+          icon: 'fas fa-brain',
+          color: '#38bdf8',
+          label: '១. ផ្នែកចំណេះដឹង (Knowledge)',
+          items: [
+            `យល់ដឹងស៊ីជម្រៅអំពីទស្សនទាន គោលការណ៍គ្រឹះ និងខ្លឹមសារស្នូលនៃ «${title}»។`,
+            `កំណត់បាននូវទ្រឹស្តីបទគរុកោសល្យ និងសារៈសំខាន់នៃមុខវិជ្ជា ${subjName}។`,
+            'ពន្យល់បាននូវទំនាក់ទំនងរវាងទ្រឹស្តី និងការអនុវត្តបង្រៀនជាក់ស្តែងក្នុងថ្នាក់រៀន។'
+          ]
+        },
+        {
+          icon: 'fas fa-tools',
+          color: '#fbbf24',
+          label: '២. ផ្នែកបំណិន (Skills)',
+          items: [
+            'រៀបចំកិច្ចតែងការបង្រៀន និងកំណត់សកម្មភាពរៀនសកម្មស្របតាមកម្រិតសមត្ថភាពសិស្ស។',
+            'ចេះផលិត និងប្រើប្រាស់សម្ភារឧបទេសបង្រៀន ឬស្លាយឌីជីថលឱ្យត្រូវតាមកាលៈទេសៈ។',
+            'ដឹកនាំការគ្រប់គ្រងថ្នាក់រៀន និងសម្របសម្រួលសកម្មភាពក្រុមប្រកបដោយប្រសិទ្ធភាព។'
+          ]
+        },
+        {
+          icon: 'fas fa-heart',
+          color: '#34d399',
+          label: '៣. ផ្នែកឥរិយាបថ (Attitude)',
+          items: [
+            'បណ្តុះស្មារតីស្រឡាញ់វិជ្ជាជីវៈគ្រូបង្រៀន និងមានមនសិការទទួលខុសត្រូវខ្ពស់។',
+            'រក្សាសីលធម៌ គុណធម៌ និងភាពអត់ធ្មត់ក្នុងការអប់រំ និងអភិវឌ្ឍសិស្សគ្រប់រូប។',
+            'មានគំនិតច្នៃប្រឌិត និងស្វាហាប់ក្នុងការស្រាវជ្រាវវិធីសាស្ត្របង្រៀនថ្មីៗជានិច្ច។'
+          ]
+        }
+      ],
+      note: 'គរុនិស្សិតត្រូវក្តាប់ឱ្យបានច្បាស់នូវចំណុចទាំង ៣ នៃគោលបំណង (ចំណេះដឹង បំណិន និងឥរិយាបថ) មុននឹងចាប់ផ្តើមរៀបចំកិច្ចតែងការបង្រៀន។'
+    },
+    {
+      type: 'agenda',
+      slideNum: 3,
+      badge: 'មាតិកាមេរៀន • Lesson Agenda',
+      title: 'រចនាសម្ព័ន្ធ និងមាតិកាសង្ខេបនៃមេរៀន',
+      items: [
+        { num: '០១', title: 'សេចក្តីផ្តើម & បរិបទគរុកោសល្យ', desc: `សារៈសំខាន់នៃប្រធានបទ «${title}» ក្នុងការលើកកម្ពស់គុណភាពបង្រៀន` },
+        { num: '០២', title: 'និយមន័យ & ទស្សនទានស្នូល', desc: `ទ្រឹស្តីបទ និងគោលការណ៍គ្រឹះនៃមុខវិជ្ជា ${subjName}` },
+        { num: '០៣', title: 'យុទ្ធសាស្ត្របង្រៀនបែបសកម្ម (Active Learning)', desc: 'បច្ចេកទេសជំរុញការចូលរួម និងការគិតកម្រិតខ្ពស់របស់សិស្ស' },
+        { num: '០៤', title: 'ដំណើរការបង្រៀន ៥ ជំហាន', desc: 'ការអនុវត្តជាក់ស្តែងតាមលំដាប់លំដោយនៃកិច្ចតែងការបង្រៀនគំរូ' },
+        { num: '០៥', title: 'សកម្មភាពក្រុម & សិក្ខាសាលាអនុវត្ត', desc: 'ការបង្រៀនសាកល្បង (Microteaching) និងការវិភាគករណីសិក្សា' },
+        { num: '០៦', title: 'ការវាយតម្លៃ & សំណួរត្រួតពិនិត្យ', desc: 'ការវាស់វែងលទ្ធផលសិក្សា និងកិច្ចការស្រាវជ្រាវបន្ត' }
+      ],
+      note: 'មាតិកានេះរៀបចំឡើងជា ៦ ផ្នែកស្នូល ដើម្បីសម្រួលដល់ការតាមដាន និងការរៀបចំកិច្ចតែងការបង្រៀនបានត្រឹមត្រូវ។'
+    },
+    {
+      type: 'concepts',
+      slideNum: 4,
+      badge: 'ខ្លឹមសារស្នូល • Core Concepts',
+      title: 'គោលការណ៍គរុកោសល្យ និងទ្រឹស្តីបទសំខាន់ៗ',
+      cards: [
+        {
+          icon: 'fas fa-child',
+          color: '#38bdf8',
+          title: 'វិធីសាស្ត្រផ្តោតលើសិស្សជាមជ្ឈមណ្ឌល',
+          desc: 'ផ្ទេរតួនាទីពីគ្រូជាអ្នកបញ្ជូនចំណេះដឹងតែម្ខាង មកជាអ្នកសម្របសម្រួល (Facilitator) បង្កើតឱកាសឱ្យសិស្សបានស្វែងយល់ ពិសោធ និងសាងចំណេះដឹងដោយខ្លួនឯង។'
+        },
+        {
+          icon: 'fas fa-lightbulb',
+          color: '#fbbf24',
+          title: 'ការប្រើប្រាស់សំណួរបំផុសគំនិត (Inquiry-Based)',
+          desc: 'ប្រើប្រាស់សំណើ និងសំណួរជំរុញការត្រិះរិះពិចារណា (Critical Thinking) ដើម្បីជំរុញឱ្យសិស្សរកឃើញដំណោះស្រាយ និងបង្កើតគំនិតច្នៃប្រឌិតថ្មីៗ។'
+        },
+        {
+          icon: 'fas fa-laptop-code',
+          color: '#a78bfa',
+          title: 'ការរួមបញ្ចូលបច្ចេកវិទ្យាឌីជីថល (EdTech Integration)',
+          desc: 'ទាញយកប្រយោជន៍ពីស្លាយឌីជីថល កម្រងវីដេអូបង្រៀន និងថ្នាលរៀនអនឡាញ KTPTTC ដើម្បីធ្វើឱ្យមេរៀនកាន់តែរស់រវើក និងទាក់ទាញអារម្មណ៍សិស្ស។'
+        },
+        {
+          icon: 'fas fa-comments',
+          color: '#34d399',
+          title: 'ការឆ្លើយតបកែលម្អវិជ្ជមាន (Formative Feedback)',
+          desc: 'ផ្តល់មតិកែលម្អលើការអនុវត្តរបស់សិស្សភ្លាមៗប្រកបដោយការលើកទឹកចិត្ត ដើម្បីឱ្យសិស្សដឹងពីចំណុចខ្លាំង និងចំណុចត្រូវពង្រឹងបន្ថែម។'
+        }
+      ],
+      note: 'គោលការណ៍ទាំង ៤ នេះជាគ្រឹះក្នុងការរៀបចំថ្នាក់រៀនសតវត្សរ៍ទី២១ ប្រកបដោយបរិយាបន្ន និងប្រសិទ្ធភាពខ្ពស់។'
+    },
+    {
+      type: 'five_steps',
+      slideNum: 5,
+      badge: 'ដំណើរការបង្រៀន • 5-Step Model',
+      title: 'ដំណើរការបង្រៀនតាមលំដាប់ ៥ ជំហាន (5-Step Framework)',
+      steps: [
+        { step: 'ជំហានទី១', title: 'រដ្ឋបាលថ្នាក់ & រំលឹកមេរៀនចាស់', time: '៥ នាទី', desc: 'ពិនិត្យវត្តមាន សណ្តាប់ធ្នាប់ អនាម័យ និងចោទសួរភ្ជាប់ពីមេរៀនកន្លងមក។' },
+        { step: 'ជំហានទី២', title: 'ទំនាក់ទំនងមេរៀនថ្មី & គោលបំណង', time: '៥ នាទី', desc: `បង្ហាញចំណងជើង «${title}» គោលបំណង និងទាក់ទាញចំណាប់អារម្មណ៍សិស្ស។` },
+        { step: 'ជំហានទី៣', title: 'ពន្យល់ខ្លឹមសារ & ណែនាំសកម្មភាព', time: '១៥ នាទី', desc: 'បង្ហាញខ្លឹមសារគន្លឹះ ប្រើស្លាយ/សម្ភារឧបទេស និងណែនាំវិធីសាស្ត្រអនុវត្ត។' },
+        { step: 'ជំហានទី៤', title: 'ពង្រឹងចំណេះដឹង & អនុវត្តជាក់ស្តែង', time: '១៥ នាទី', desc: 'ឱ្យសិស្សធ្វើការជាបុគ្គល ឬជាក្រុម អនុវត្តលំហាត់ ឬកិច្ចការជាក់ស្តែងក្នុងថ្នាក់។' },
+        { step: 'ជំហានទី៥', title: 'វាយតម្លៃលទ្ធផល & ដាក់កិច្ចការផ្ទះ', time: '១០ នាទី', desc: 'សួរសំណួរត្រួតពិនិត្យ ផ្តល់ពិន្ទុលើកទឹកចិត្ត និងប្រគល់កិច្ចការស្រាវជ្រាវបន្ត។' }
+      ],
+      note: 'កិច្ចតែងការបង្រៀនគរុកោសល្យត្រូវគោរពតាមដំណាក់កាលទាំង ៥ នេះជាប្រចាំ ដើម្បីធានាការគ្រប់គ្រងពេលវេលាបានត្រឹមត្រូវ។'
+    },
+    {
+      type: 'activity',
+      slideNum: 6,
+      badge: 'សកម្មភាពជាក់ស្តែង • Workshop',
+      title: 'សកម្មភាពសិក្សាជាក្រុម និងការបង្រៀនសាកល្បង',
+      tasks: [
+        {
+          group: 'ក្រុមទី១ (Group A)',
+          topic: 'ការរៀបចំសំណួរបំផុស & សកម្មភាពរៀនសកម្ម',
+          detail: `កំណត់សំណួរគន្លឹះ ៣ សំណួរ និងសកម្មភាពហ្គេមអប់រំសម្រាប់ទាក់ទាញសិស្សក្នុងមេរៀន ${title}។`
+        },
+        {
+          group: 'ក្រុមទី២ (Group B)',
+          topic: 'ការផលិតសម្ភារឧបទេស & ស្លាយបង្រៀន',
+          detail: 'រៀបចំស្លាយគំរូ ឬសម្ភារបង្រៀនដែលងាយយល់ និងមានរូបភាពគំនូរច្បាស់លាស់សម្រាប់មុខវិជ្ជា។'
+        },
+        {
+          group: 'ក្រុមទី៣ (Group C)',
+          topic: 'ការបង្រៀនសាកល្បង (Microteaching 10mn)',
+          detail: 'តំណាងក្រុមឡើងបង្រៀនសាកល្បងជំហានទី៣ និងទី៤ នៅចំពោះមុខមិត្តរួមថ្នាក់។'
+        },
+        {
+          group: 'ក្រុមទី៤ (Group D)',
+          topic: 'ការសង្កេត និងផ្តល់មតិស្ថាបនា (Peer Review)',
+          detail: 'ប្រើប្រាស់តារាងវាយតម្លៃ (Rubric) ដើម្បីកត់ត្រាចំណុចល្អ និងចំណុចគួរកែលម្អដល់ក្រុមបង្រៀន។'
+        }
+      ],
+      note: 'សកម្មភាពក្រុមជួយឱ្យគរុនិស្សិតបង្កើនជំនាញទំនាក់ទំនង ការធ្វើការងារជាក្រុម និងភាពក្លាហានក្នុងការបង្រៀន។'
+    },
+    {
+      type: 'questions',
+      slideNum: 7,
+      badge: 'សំណួរត្រួតពិនិត្យ • Review',
+      title: 'សំណួរពិភាក្សា និងការត្រួតពិនិត្យការយល់ដឹង',
+      questions: [
+        `១. តើវិធីសាស្ត្របង្រៀន និងខ្លឹមសារក្នុងមេរៀន «${title}» ជួយដោះស្រាយបញ្ហាសិស្សរៀនយឺតយ៉ាងដូចម្តេចខ្លះ?`,
+        `២. ក្នុងនាមជាគរុនិស្សិត ពេលចុះហាត់រៀននៅសាលាបឋម/មធ្យមសិក្សា តើលោកអ្នកនឹងអនុវត្ត ${chapter} នេះយ៉ាងដូចម្តេចឱ្យសមស្របនឹងស្ថានភាពជាក់ស្តែង?`,
+        '៣. ចូរលើកឡើងពីឧទាហរណ៍ជាក់ស្តែងចំនួន ២ នៃការប្រើប្រាស់បច្ចេកវិទ្យា និងស្លាយបង្រៀនដើម្បីធ្វើឱ្យសិស្សចូលរួមរៀនយ៉ាងសកម្ម។'
+      ],
+      note: 'សូមឆ្លើយសំណួរទាំងនេះក្នុងសៀវភៅកត់ត្រា ឬចូលរួមបញ្ចេញមតិក្នុងផ្ទាំង «វេទិកាពិភាក្សា» នៃប្រព័ន្ធ STMS។'
+    },
+    {
+      type: 'conclusion',
+      slideNum: 8,
+      badge: 'សន្និដ្ឋាន & កិច្ចការ • Summary',
+      title: 'សេចក្តីសន្និដ្ឋាន និងកិច្ចការស្រាវជ្រាវបន្ត',
+      takeaways: [
+        `ការយល់ដឹងច្បាស់ពី «${title}» គឺជាមូលដ្ឋានគ្រឹះមិនអាចខ្វះបានសម្រាប់គរុនិស្សិតគ្រប់រូប។`,
+        'ការរួមបញ្ចូលវិធីសាស្ត្ររៀនសកម្ម ការប្រើសម្ភារឧបទេស និងការគ្រប់គ្រងថ្នាក់រៀន ធានាឱ្យការបង្រៀនមានប្រសិទ្ធភាពខ្ពស់។',
+        'សូមបន្តស្វ័យសិក្សា និងស្រាវជ្រាវឯកសារបន្ថែមក្នុងបណ្ណាល័យឌីជីថល KTPTTC ជាប្រចាំ។'
+      ],
+      homework: {
+        title: `កិច្ចការស្រាវជ្រាវប្រចាំសប្តាហ៍៖ រៀបចំកិច្ចតែងការបង្រៀនគំរូ ១ ទំព័រ លើប្រធានបទ ${title}`,
+        deadline: 'កាលបរិច្ឆេទផុតកំណត់៖ សប្តាហ៍ក្រោយ (សូម Upload ចូលក្នុងផ្ទាំង «កិច្ចការសិស្ស»)',
+        references: `ឯកសារយោង៖ សៀវភៅគោលគរុកោសល្យ KTPTTC, ឯកសារក្រសួងអប់រំ យុវជន និងកីឡា, និងឯកសារ ${fileName}`
+      },
+      note: 'សូមផ្ញើកិច្ចការឱ្យបានទាន់ពេលវេលាកំណត់។ ប្រសិនបើមានចម្ងល់ អាចទាក់ទងគ្រូឧទ្ទេសតាមរយៈប្រព័ន្ធ STMS នេះបាន។'
+    }
+  ];
+}
+
+function renderActiveSlide(slide, index, total, theme, l) {
+  const isIvory = theme === 'ivory';
+  const headerSubColor = isIvory ? '#64748b' : '#93c5fd';
+  const headerMainColor = isIvory ? '#0f172a' : '#ffffff';
+  const cardBg = isIvory ? '#ffffff' : 'rgba(255, 255, 255, 0.08)';
+  const cardBorder = isIvory ? '1px solid #e2e8f0' : '1px solid rgba(255, 255, 255, 0.15)';
+  const textColor = isIvory ? '#1e293b' : '#ffffff';
+  const mutedText = isIvory ? '#475569' : '#cbd5e1';
+
+  let bodyHtml = '';
+
+  if (slide.type === 'cover') {
+    bodyHtml = `
+      <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; height:100%; padding:20px 10px;">
+        <div style="display:inline-flex; align-items:center; gap:8px; background:${isIvory?'#f1f5f9':'rgba(255,255,255,0.12)'}; padding:6px 16px; border-radius:30px; margin-bottom:16px; border:1px solid ${isIvory?'#cbd5e1':'rgba(255,255,255,0.2)'};">
+          <i class="fas fa-university" style="color:#f59e0b;"></i>
+          <span style="font-size:0.82rem; font-weight:700; color:${isIvory?'#1e3a8a':'#ffffff'};">${slide.institution}</span>
+        </div>
+        <div style="font-size:0.82rem; color:${headerSubColor}; margin-bottom:8px; font-weight:600;">
+          ${slide.dept}
+        </div>
+        <div style="display:inline-flex; gap:8px; margin-bottom:12px;">
+          <span style="font-size:0.75rem; font-weight:700; background:#38bdf8; color:#0f172a; padding:3px 10px; border-radius:6px;">${slide.subtitle}</span>
+          <span style="font-size:0.75rem; font-weight:700; background:#10b981; color:#ffffff; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+        </div>
+        <h1 style="font-size:2rem; font-weight:800; color:${headerMainColor}; line-height:1.35; margin:10px 0 16px 0; max-width:820px; text-shadow:${isIvory?'none':'0 2px 10px rgba(0,0,0,0.5)'};">
+          ${escapeHtml(slide.title)}
+        </h1>
+        <p style="font-size:0.92rem; color:${mutedText}; max-width:700px; line-height:1.6; margin:0 0 24px 0;">
+          ${escapeHtml(slide.desc)}
+        </p>
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; justify-content:center; background:${cardBg}; border:${cardBorder}; padding:10px 20px; border-radius:10px; font-size:0.82rem; color:${mutedText};">
+          <span><i class="fas fa-chalkboard-teacher" style="color:#f59e0b;"></i> គ្រូឧទ្ទេស៖ <strong>${escapeHtml(slide.teacher)}</strong></span>
+          <span>•</span>
+          <span><i class="fas fa-calendar-alt" style="color:#38bdf8;"></i> ${escapeHtml(slide.date)}</span>
+          <span>•</span>
+          <span><i class="fas fa-file-powerpoint" style="color:#f97316;"></i> ${escapeHtml(slide.fileName)} (${escapeHtml(slide.fileSize)})</span>
+        </div>
+      </div>
+    `;
+  } else if (slide.type === 'objectives') {
+    bodyHtml = `
+      <div style="height:100%; display:flex; flex-direction:column;">
+        <div style="margin-bottom:16px;">
+          <span style="font-size:0.75rem; font-weight:700; color:#38bdf8; background:${isIvory?'#e0f2fe':'rgba(56,189,248,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+          <h2 style="font-size:1.45rem; font-weight:800; color:${headerMainColor}; margin:6px 0 0 0;">${escapeHtml(slide.title)}</h2>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; flex:1;">
+          ${slide.pillars.map(p => `
+            <div style="background:${cardBg}; border:${cardBorder}; border-radius:12px; padding:16px; display:flex; flex-direction:column;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid ${isIvory?'#e2e8f0':'rgba(255,255,255,0.1)'};">
+                <div style="width:34px; height:34px; border-radius:8px; background:${isIvory?'#f1f5f9':'rgba(255,255,255,0.1)'}; display:flex; align-items:center; justify-content:center; color:${p.color}; font-size:1.1rem;">
+                  <i class="${p.icon}"></i>
+                </div>
+                <div style="font-weight:700; font-size:0.88rem; color:${textColor};">${p.label}</div>
+              </div>
+              <ul style="margin:0; padding-left:18px; font-size:0.82rem; color:${mutedText}; line-height:1.65; flex:1;">
+                ${p.items.map(item => `<li style="margin-bottom:8px;">${item}</li>`).join('')}
+              </ul>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } else if (slide.type === 'agenda') {
+    bodyHtml = `
+      <div style="height:100%; display:flex; flex-direction:column;">
+        <div style="margin-bottom:16px;">
+          <span style="font-size:0.75rem; font-weight:700; color:#fbbf24; background:${isIvory?'#fef3c7':'rgba(251,191,36,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+          <h2 style="font-size:1.45rem; font-weight:800; color:${headerMainColor}; margin:6px 0 0 0;">${escapeHtml(slide.title)}</h2>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; flex:1;">
+          ${slide.items.map(item => `
+            <div style="background:${cardBg}; border:${cardBorder}; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:14px;">
+              <div style="width:40px; height:40px; border-radius:8px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                ${item.num}
+              </div>
+              <div style="min-width:0;">
+                <div style="font-weight:700; font-size:0.88rem; color:${textColor};">${item.title}</div>
+                <div style="font-size:0.78rem; color:${mutedText}; margin-top:2px; line-height:1.4;">${item.desc}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } else if (slide.type === 'concepts') {
+    bodyHtml = `
+      <div style="height:100%; display:flex; flex-direction:column;">
+        <div style="margin-bottom:16px;">
+          <span style="font-size:0.75rem; font-weight:700; color:#34d399; background:${isIvory?'#d1fae5':'rgba(52,211,153,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+          <h2 style="font-size:1.45rem; font-weight:800; color:${headerMainColor}; margin:6px 0 0 0;">${escapeHtml(slide.title)}</h2>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; flex:1;">
+          ${slide.cards.map(c => `
+            <div style="background:${cardBg}; border:${cardBorder}; border-radius:12px; padding:16px; display:flex; gap:14px;">
+              <div style="width:42px; height:42px; border-radius:10px; background:${isIvory?'#f1f5f9':'rgba(255,255,255,0.1)'}; color:${c.color}; font-size:1.3rem; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <i class="${c.icon}"></i>
+              </div>
+              <div style="min-width:0;">
+                <div style="font-weight:700; font-size:0.92rem; color:${textColor}; margin-bottom:4px;">${c.title}</div>
+                <div style="font-size:0.82rem; color:${mutedText}; line-height:1.6;">${c.desc}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } else if (slide.type === 'five_steps') {
+    bodyHtml = `
+      <div style="height:100%; display:flex; flex-direction:column;">
+        <div style="margin-bottom:16px;">
+          <span style="font-size:0.75rem; font-weight:700; color:#f43f5e; background:${isIvory?'#ffe4e6':'rgba(244,63,94,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+          <h2 style="font-size:1.45rem; font-weight:800; color:${headerMainColor}; margin:6px 0 0 0;">${escapeHtml(slide.title)}</h2>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; flex:1; justify-content:center;">
+          ${slide.steps.map(s => `
+            <div style="background:${cardBg}; border:${cardBorder}; border-radius:10px; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:14px;">
+              <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                <span style="font-size:0.78rem; font-weight:800; background:#0284c7; color:#ffffff; padding:3px 10px; border-radius:6px; flex-shrink:0;">${s.step}</span>
+                <div>
+                  <strong style="color:${textColor}; font-size:0.88rem;">${s.title}</strong>
+                  <span style="font-size:0.8rem; color:${mutedText}; margin-left:8px;">- ${s.desc}</span>
+                </div>
+              </div>
+              <span style="font-size:0.72rem; font-weight:700; color:#f59e0b; background:${isIvory?'#fef3c7':'rgba(245,158,11,0.15)'}; padding:2px 8px; border-radius:4px; flex-shrink:0;">${s.time}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } else if (slide.type === 'activity') {
+    bodyHtml = `
+      <div style="height:100%; display:flex; flex-direction:column;">
+        <div style="margin-bottom:16px;">
+          <span style="font-size:0.75rem; font-weight:700; color:#a855f7; background:${isIvory?'#f3e8ff':'rgba(168,85,247,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+          <h2 style="font-size:1.45rem; font-weight:800; color:${headerMainColor}; margin:6px 0 0 0;">${escapeHtml(slide.title)}</h2>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; flex:1;">
+          ${slide.tasks.map(t => `
+            <div style="background:${cardBg}; border:${cardBorder}; border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                  <span style="font-size:0.75rem; font-weight:800; color:#0284c7; background:${isIvory?'#e0f2fe':'rgba(2,132,199,0.2)'}; padding:2px 8px; border-radius:4px;">${t.group}</span>
+                </div>
+                <h4 style="margin:0 0 6px 0; font-size:0.92rem; color:${textColor};">${t.topic}</h4>
+                <p style="margin:0; font-size:0.82rem; color:${mutedText}; line-height:1.5;">${t.detail}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } else if (slide.type === 'questions') {
+    bodyHtml = `
+      <div style="height:100%; display:flex; flex-direction:column;">
+        <div style="margin-bottom:16px;">
+          <span style="font-size:0.75rem; font-weight:700; color:#eab308; background:${isIvory?'#fef9c3':'rgba(234,179,8,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+          <h2 style="font-size:1.45rem; font-weight:800; color:${headerMainColor}; margin:6px 0 0 0;">${escapeHtml(slide.title)}</h2>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px; flex:1; justify-content:center;">
+          ${slide.questions.map(q => `
+            <div style="background:${cardBg}; border:${cardBorder}; border-radius:12px; padding:16px 20px; display:flex; align-items:flex-start; gap:14px;">
+              <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                <i class="fas fa-question"></i>
+              </div>
+              <div style="font-size:0.92rem; font-weight:600; color:${textColor}; line-height:1.6;">${q}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } else if (slide.type === 'conclusion') {
+    bodyHtml = `
+      <div style="height:100%; display:flex; flex-direction:column;">
+        <div style="margin-bottom:14px;">
+          <span style="font-size:0.75rem; font-weight:700; color:#10b981; background:${isIvory?'#d1fae5':'rgba(16,185,129,0.15)'}; padding:3px 10px; border-radius:6px;">${slide.badge}</span>
+          <h2 style="font-size:1.45rem; font-weight:800; color:${headerMainColor}; margin:4px 0 0 0;">${escapeHtml(slide.title)}</h2>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; flex:1;">
+          <div style="background:${cardBg}; border:${cardBorder}; border-radius:12px; padding:16px;">
+            <div style="font-weight:700; font-size:0.92rem; color:${textColor}; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-check-circle" style="color:#10b981;"></i> ចំណុចសំខាន់ៗដែលទទួលបាន
+            </div>
+            <ul style="margin:0; padding-left:18px; font-size:0.82rem; color:${mutedText}; line-height:1.7;">
+              ${slide.takeaways.map(t => `<li style="margin-bottom:8px;">${t}</li>`).join('')}
+            </ul>
+          </div>
+          <div style="background:${isIvory?'#fffbeb':'rgba(245,158,11,0.08)'}; border:1px solid ${isIvory?'#fde68a':'rgba(245,158,11,0.3)'}; border-radius:12px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="font-weight:800; font-size:0.92rem; color:#b45309; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-tasks"></i> ${slide.homework.title}
+              </div>
+              <div style="font-size:0.82rem; color:${mutedText}; line-height:1.6; margin-bottom:8px;">
+                ${slide.homework.deadline}
+              </div>
+            </div>
+            <div style="font-size:0.75rem; color:${isIvory?'#64748b':'#94a3b8'}; padding-top:8px; border-top:1px dashed ${isIvory?'#fde68a':'rgba(255,255,255,0.15)'};">
+              ${slide.homework.references}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="slide-deck-inner">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid ${isIvory?'#e2e8f0':'rgba(255,255,255,0.1)'}; padding-bottom:8px; margin-bottom:12px; font-size:0.75rem; color:${headerSubColor}; font-weight:600;">
+        <span><i class="fas fa-graduation-cap" style="color:#f59e0b;"></i> សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)</span>
+        <span>ស្លាយ ${index} នៃ ${total}</span>
+      </div>
+      <div style="flex:1;">
+        ${bodyHtml}
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid ${isIvory?'#e2e8f0':'rgba(255,255,255,0.1)'}; padding-top:8px; margin-top:12px; font-size:0.72rem; color:${headerSubColor};">
+        <span>ប្រព័ន្ធគ្រប់គ្រងការបង្រៀន និងរៀន (STMS) • ${escapeHtml(l.subjectCode)}</span>
+        <span>${escapeHtml(l.uploadedBy || 'គ្រូឧទ្ទេស')}</span>
+      </div>
+    </div>
+  `;
+}
+
+async function openLessonSlideViewerModal(lessonId) {
+  const l = (stmsData.lessons || []).find(x => x.id === lessonId);
+  if (!l) {
+    showToast('រកមិនឃើញឯកសារមេរៀនដែលបានជ្រើសរើសទេ!', 'warning');
+    return;
+  }
+
+  // Load real fileData from IndexedDB if not cached in memory
+  if (!l.fileData) {
+    try {
+      const dbData = await idbGet('files', lessonId);
+      if (dbData) l.fileData = dbData;
+    } catch (e) {}
+  }
+
+  const slides = generateLessonSlides(l);
+
+  window.activeSlideViewerState = {
+    lessonId: lessonId,
+    lesson: l,
+    slides: slides,
+    currentSlide: 1,
+    totalSlides: slides.length,
+    theme: 'blue',
+    mode: 'deck',
+    autoplayTimer: null,
+    isAutoplaying: false,
+    showNotes: false
+  };
+
+  const fInfo = getFileIconInfo(l.fileName);
+  const isPdf = (l.fileName || '').toLowerCase().endsWith('.pdf') || l.fileType === 'application/pdf';
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="slideViewerModalBackdrop" onclick="if(event.target===this) closeSlideViewerModal()">
+      <div class="stms-modal-dialog stms-slide-viewer-dialog" id="slideViewerContainer">
+        
+        <!-- Top Toolbar Header -->
+        <div class="stms-modal-header" style="background:#0a192f; color:#ffffff; border-bottom:1px solid #1e293b; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+            <div class="stms-file-preview-icon ${fInfo.className}" style="width:36px; height:36px; font-size:1.15rem; flex-shrink:0;">
+              <i class="${fInfo.icon}"></i>
+            </div>
+            <div style="min-width:0;">
+              <h3 style="color:#ffffff; font-size:1rem; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${escapeHtml(l.title)}
+              </h3>
+              <p style="color:#94a3b8; font-size:0.75rem; margin:2px 0 0 0;">
+                <span>${escapeHtml(l.subjectCode)}</span> • <span>${escapeHtml(l.chapter)}</span> • <span>${escapeHtml(l.uploadedBy || 'គ្រូឧទ្ទេស')}</span> (${escapeHtml(l.fileSize || '15.1 MB')})
+              </p>
+            </div>
+          </div>
+
+          <!-- Controls Right -->
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            ${isPdf && l.fileData ? `
+              <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#38bdf8; border-color:#0284c7; background:rgba(2,132,199,0.15);" onclick="toggleSlideViewerMode('toggle')" id="slideModeToggleBtn">
+                <i class="fas fa-file-pdf"></i> ប្តូរមើល PDF ដើម
+              </button>
+            ` : ''}
+            
+            <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#e2e8f0; border-color:#334155;" onclick="toggleSlideViewerTheme()" title="ប្តូរពណ៌ផ្ទៃស្លាយ (Theme)">
+              <i class="fas fa-palette"></i> Theme
+            </button>
+            <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#e2e8f0; border-color:#334155;" onclick="toggleSlideViewerNotes()" title="កំណត់សម្គាល់គ្រូឧទ្ទេស">
+              <i class="fas fa-sticky-note"></i> កំណត់សម្គាល់
+            </button>
+            <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#e2e8f0; border-color:#334155;" onclick="toggleSlideViewerFullscreen()" title="ពេញអេក្រង់ (Fullscreen)">
+              <i class="fas fa-expand" id="slideFullscreenIcon"></i>
+            </button>
+            <button class="btn btn-primary" style="font-size:0.75rem; height:28px; padding:0 12px; background:#0284c7; border:none; color:#ffffff; font-weight:700;" onclick="downloadLessonFile('${l.id}')" title="ទាញយកឯកសារដើម">
+              <i class="fas fa-download"></i> ទាញយក
+            </button>
+            <button class="modal-close-icon" onclick="closeSlideViewerModal()" style="color:#ffffff; font-size:1.4rem; padding:0 6px;">&times;</button>
+          </div>
+        </div>
+
+        <!-- Main Viewing Stage -->
+        <div style="padding:16px 20px; background:#0f172a; flex:1; display:flex; flex-direction:column; gap:12px;">
+          
+          <!-- Slide Deck Presentation Canvas -->
+          <div id="slideViewerStage" class="slide-deck-stage theme-blue">
+            <div id="slideViewerContent" style="height:100%; display:flex; flex-direction:column;">
+              ${renderActiveSlide(slides[0], 1, slides.length, 'blue', l)}
+            </div>
+          </div>
+
+          <!-- Embedded PDF Viewer (Hidden unless mode === 'document') -->
+          <div id="slideDocumentStage" style="display:none; width:100%; height:520px; border-radius:12px; overflow:hidden; background:#ffffff;">
+            ${l.fileData ? `
+              <iframe src="${l.fileData}#toolbar=1" style="width:100%; height:100%; border:none;"></iframe>
+            ` : `
+              <div style="text-align:center; padding:60px 20px; color:#64748b;">
+                <i class="fas fa-file-pdf" style="font-size:3rem; color:#ef4444; margin-bottom:14px; display:block;"></i>
+                <div style="font-weight:700; font-size:1.1rem; color:#1e293b;">ឯកសារដើម៖ ${escapeHtml(l.fileName)}</div>
+                <p style="font-size:0.86rem; color:#64748b; margin:8px 0 16px 0;">សូមចុចទាញយកដើម្បីបើកក្នុងកម្មវិធីកុំព្យូទ័រ</p>
+                <button class="btn btn-primary" onclick="downloadLessonFile('${l.id}')">
+                  <i class="fas fa-download"></i> ទាញយកឯកសារ (${escapeHtml(l.fileSize || '15.1 MB')})
+                </button>
+              </div>
+            `}
+          </div>
+
+          <!-- Speaker Notes Collapsible Drawer -->
+          <div id="slideNotesDrawer" class="slide-notes-drawer" style="display:none;">
+            <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:#fbbf24; margin-bottom:4px;">
+              <i class="fas fa-chalkboard-teacher"></i> កំណត់សម្គាល់ និងការណែនាំពីគ្រូឧទ្ទេស៖
+            </div>
+            <div id="slideNotesText">
+              ${slides[0].note}
+            </div>
+          </div>
+
+          <!-- Thumbnails Filmstrip Rail -->
+          <div class="slide-deck-filmstrip" id="slideThumbnailsRail">
+            ${slides.map((s, idx) => `
+              <div class="slide-thumb-pill ${idx === 0 ? 'active' : ''}" onclick="goToSlideViewerIndex(${idx + 1})" id="slideThumb_${idx + 1}">
+                <span>ស្លាយ ${idx + 1}</span>
+                <span style="font-size:0.58rem; opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px;">${s.badge.split(' • ')[0]}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Slide Navigation Controls Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:10px 16px; border-radius:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn-outline" id="slidePrevBtn" style="color:#ffffff; border-color:#475569; font-size:0.8rem; height:32px; padding:0 12px; display:inline-flex; align-items:center; gap:6px;" onclick="changeSlideViewerIndex(-1)" disabled>
+                <i class="fas fa-chevron-left"></i> ថយក្រោយ
+              </button>
+              <div style="font-size:0.82rem; font-weight:700; color:#38bdf8; padding:0 8px;" id="slideCounterText">
+                ស្លាយ 1 / ${slides.length}
+              </div>
+              <button class="btn btn-primary" id="slideNextBtn" style="font-size:0.8rem; height:32px; padding:0 12px; background:#0284c7; border:none; color:#ffffff; font-weight:700; display:inline-flex; align-items:center; gap:6px;" onclick="changeSlideViewerIndex(1)">
+                បន្ទាប់ <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn-outline" id="slideAutoplayBtn" style="color:#e2e8f0; border-color:#475569; font-size:0.75rem; height:32px; padding:0 12px; display:inline-flex; align-items:center; gap:6px;" onclick="toggleSlideViewerAutoplay()">
+                <i class="fas fa-play" id="slideAutoplayIcon"></i> <span id="slideAutoplayLabel">លេងស្វ័យប្រវត្តិ</span>
+              </button>
+              <button class="btn btn-outline" style="color:#e2e8f0; border-color:#475569; font-size:0.75rem; height:32px; padding:0 12px;" onclick="closeSlideViewerModal()">
+                បិទ
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+
+  // Setup Keyboard Navigation
+  if (window._slideKeyNavHandler) {
+    window.removeEventListener('keydown', window._slideKeyNavHandler);
+  }
+  window._slideKeyNavHandler = function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      e.preventDefault();
+      changeSlideViewerIndex(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      changeSlideViewerIndex(-1);
+    } else if (e.key === 'f' || e.key === 'F') {
+      toggleSlideViewerFullscreen();
+    } else if (e.key === 'Escape') {
+      closeSlideViewerModal();
+    }
+  };
+  window.addEventListener('keydown', window._slideKeyNavHandler);
+}
+
+function updateSlideViewerUI() {
+  const st = window.activeSlideViewerState;
+  if (!st) return;
+
+  const slide = st.slides[st.currentSlide - 1];
+  const contentEl = document.getElementById('slideViewerContent');
+  if (contentEl) {
+    contentEl.innerHTML = renderActiveSlide(slide, st.currentSlide, st.totalSlides, st.theme, st.lesson);
+  }
+
+  const counterEl = document.getElementById('slideCounterText');
+  if (counterEl) {
+    counterEl.textContent = `ស្លាយ ${st.currentSlide} / ${st.totalSlides}`;
+  }
+
+  const prevBtn = document.getElementById('slidePrevBtn');
+  if (prevBtn) {
+    prevBtn.disabled = st.currentSlide <= 1;
+  }
+
+  const nextBtn = document.getElementById('slideNextBtn');
+  if (nextBtn) {
+    nextBtn.disabled = st.currentSlide >= st.totalSlides;
+  }
+
+  // Update Notes
+  const notesText = document.getElementById('slideNotesText');
+  if (notesText) {
+    notesText.textContent = slide.note || 'គ្មានកំណត់សម្គាល់សម្រាប់ស្លាយនេះទេ។';
+  }
+
+  // Update Thumbnail highlight
+  document.querySelectorAll('.slide-thumb-pill').forEach((el, idx) => {
+    if (idx === st.currentSlide - 1) {
+      el.classList.add('active');
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    } else {
+      el.classList.remove('active');
+    }
+  });
+}
+
+function changeSlideViewerIndex(delta) {
+  const st = window.activeSlideViewerState;
+  if (!st) return;
+  const newIdx = st.currentSlide + delta;
+  if (newIdx >= 1 && newIdx <= st.totalSlides) {
+    st.currentSlide = newIdx;
+    updateSlideViewerUI();
+  }
+}
+
+function goToSlideViewerIndex(idx) {
+  const st = window.activeSlideViewerState;
+  if (!st) return;
+  if (idx >= 1 && idx <= st.totalSlides) {
+    st.currentSlide = idx;
+    updateSlideViewerUI();
+  }
+}
+
+function toggleSlideViewerAutoplay() {
+  const st = window.activeSlideViewerState;
+  if (!st) return;
+
+  const icon = document.getElementById('slideAutoplayIcon');
+  const label = document.getElementById('slideAutoplayLabel');
+
+  if (st.isAutoplaying) {
+    clearInterval(st.autoplayTimer);
+    st.autoplayTimer = null;
+    st.isAutoplaying = false;
+    if (icon) icon.className = 'fas fa-play';
+    if (label) label.textContent = 'លេងស្វ័យប្រវត្តិ';
+    showToast('បានផ្អាកការលេងស្លាយ', 'info');
+  } else {
+    st.isAutoplaying = true;
+    if (icon) icon.className = 'fas fa-pause';
+    if (label) label.textContent = 'ផ្អាកលេង';
+    showToast('កំពុងលេងស្លាយស្វ័យប្រវត្តិ (៥ វិនាទី/ស្លាយ)', 'success');
+    st.autoplayTimer = setInterval(() => {
+      if (st.currentSlide >= st.totalSlides) {
+        st.currentSlide = 1;
+      } else {
+        st.currentSlide++;
+      }
+      updateSlideViewerUI();
+    }, 5000);
+  }
+}
+
+function toggleSlideViewerTheme() {
+  const st = window.activeSlideViewerState;
+  if (!st) return;
+
+  const themes = ['blue', 'dark', 'ivory'];
+  const nextIdx = (themes.indexOf(st.theme) + 1) % themes.length;
+  st.theme = themes[nextIdx];
+
+  const stage = document.getElementById('slideViewerStage');
+  if (stage) {
+    stage.className = `slide-deck-stage theme-${st.theme}`;
+  }
+  updateSlideViewerUI();
+  showToast(`បានប្តូរពណ៌ Theme ទៅ «${st.theme === 'blue' ? 'ផ្ទៃខៀវគរុកោសល្យ' : st.theme === 'dark' ? 'ផ្ទៃងងឹត (Dark)' : 'ផ្ទៃសស្អាត (Ivory)'}»`, 'info');
+}
+
+function toggleSlideViewerNotes() {
+  const st = window.activeSlideViewerState;
+  if (!st) return;
+  st.showNotes = !st.showNotes;
+  const drawer = document.getElementById('slideNotesDrawer');
+  if (drawer) {
+    drawer.style.display = st.showNotes ? 'block' : 'none';
+  }
+}
+
+function toggleSlideViewerMode(targetMode) {
+  const st = window.activeSlideViewerState;
+  if (!st) return;
+
+  const stage = document.getElementById('slideViewerStage');
+  const docStage = document.getElementById('slideDocumentStage');
+  const btn = document.getElementById('slideModeToggleBtn');
+
+  if (targetMode === 'toggle') {
+    st.mode = st.mode === 'deck' ? 'document' : 'deck';
+  } else {
+    st.mode = targetMode;
+  }
+
+  if (st.mode === 'document') {
+    if (stage) stage.style.display = 'none';
+    if (docStage) docStage.style.display = 'block';
+    if (btn) btn.innerHTML = '<i class="fas fa-desktop"></i> ប្តូរមើលស្លាយគំរូ';
+  } else {
+    if (stage) stage.style.display = 'flex';
+    if (docStage) docStage.style.display = 'none';
+    if (btn) btn.innerHTML = '<i class="fas fa-file-pdf"></i> ប្តូរមើល PDF ដើម';
+  }
+}
+
+function toggleSlideViewerFullscreen() {
+  const elem = document.getElementById('slideViewerContainer');
+  const icon = document.getElementById('slideFullscreenIcon');
+  if (!elem) return;
+
+  if (!document.fullscreenElement) {
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
+    }
+    if (icon) icon.className = 'fas fa-compress';
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+    if (icon) icon.className = 'fas fa-expand';
+  }
+}
+
+function closeSlideViewerModal() {
+  if (window.activeSlideViewerState && window.activeSlideViewerState.autoplayTimer) {
+    clearInterval(window.activeSlideViewerState.autoplayTimer);
+    window.activeSlideViewerState.autoplayTimer = null;
+    window.activeSlideViewerState.isAutoplaying = false;
+  }
+  if (window._slideKeyNavHandler) {
+    window.removeEventListener('keydown', window._slideKeyNavHandler);
+    window._slideKeyNavHandler = null;
+  }
+  window.activeSlideViewerState = null;
+  closeStmsModal();
+}
+
+window.openLessonSlideViewerModal = openLessonSlideViewerModal;
+window.changeSlideViewerIndex = changeSlideViewerIndex;
+window.goToSlideViewerIndex = goToSlideViewerIndex;
+window.toggleSlideViewerAutoplay = toggleSlideViewerAutoplay;
+window.toggleSlideViewerTheme = toggleSlideViewerTheme;
+window.toggleSlideViewerNotes = toggleSlideViewerNotes;
+window.toggleSlideViewerMode = toggleSlideViewerMode;
+window.toggleSlideViewerFullscreen = toggleSlideViewerFullscreen;
+window.closeSlideViewerModal = closeSlideViewerModal;
+
 // Homework file handlers
 function handleHwFileSelect(input) {
   if (input.files && input.files[0]) {
@@ -11375,6 +12247,9 @@ function openTeacherUploadModal(selectedSubjectCode, activeTab = 'lesson') {
                       </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                      <button class="btn btn-primary" style="font-size:0.75rem; height:28px; padding:0 10px; background:#0284c7; border:none; color:#ffffff; display:inline-flex; align-items:center; gap:4px;" onclick="openLessonSlideViewerModal('${l.id}')" title="មើលស្លាយ">
+                        <i class="fas fa-desktop"></i> មើលស្លាយ
+                      </button>
                       <button class="btn btn-outline" style="font-size:0.75rem; height:28px; padding:0 10px; color:#2563eb; border-color:#bfdbfe;" onclick="downloadLessonFile('${l.id}')" title="ទាញយកឯកសារ">
                         <i class="fas fa-download"></i> ទាញយក
                       </button>

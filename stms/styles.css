@@ -4021,3 +4021,116 @@ body:has(.admin-portal-container) .stms-content-viewport {
 .highlight-section-pulse {
   animation: timetablePulseHighlight 1.8s cubic-bezier(0.25, 1, 0.5, 1);
 }
+
+/* ==========================================================================
+   STMS LESSON SLIDE VIEWER STYLES
+   ========================================================================== */
+.stms-slide-viewer-dialog {
+  max-width: 1060px !important;
+  width: 96% !important;
+  background: #091e42;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
+}
+
+.slide-deck-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 480px;
+  max-height: 74vh;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.slide-deck-stage.theme-blue {
+  background: radial-gradient(circle at 20% 30%, #1e3a8a 0%, #09204a 60%, #020c1b 100%);
+  color: #ffffff;
+}
+
+.slide-deck-stage.theme-dark {
+  background: radial-gradient(circle at 20% 30%, #1e293b 0%, #0f172a 60%, #020617 100%);
+  color: #f8fafc;
+}
+
+.slide-deck-stage.theme-ivory {
+  background: radial-gradient(circle at 20% 30%, #fdfbf7 0%, #f4eee1 60%, #ebe2d0 100%);
+  color: #0f172a;
+}
+
+.slide-deck-inner {
+  flex: 1;
+  padding: 32px 42px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow-y: auto;
+}
+
+.slide-deck-card-box {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+}
+
+.theme-ivory .slide-deck-card-box {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.slide-deck-filmstrip {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow-x: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.slide-thumb-pill {
+  flex-shrink: 0;
+  width: 90px;
+  height: 52px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slide-thumb-pill:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.slide-thumb-pill.active {
+  border-color: #38bdf8;
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.6) 0%, rgba(3, 105, 161, 0.8) 100%);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+.slide-notes-drawer {
+  background: #0f172a;
+  color: #cbd5e1;
+  padding: 14px 20px;
+  border-top: 1px solid #334155;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
