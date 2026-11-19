@@ -87,7 +87,7 @@
     function openAlertsModal() {
       // 1. Trainee / Student View: Personal notification without "ទៅកាន់ផ្ទាំងគ្រប់គ្រង" button
       if (window.currentRole === 'trainee') {
-        const currentTrainee = window.currentTraineeUser || (window.stmsData?.trainees || [])[0] || {};
+        const currentTrainee = window.currentTraineeUser || (typeof getActiveTraineeProfile === 'function' ? getActiveTraineeProfile() : (window.stmsData?.trainees || [])[0] || {});
         const myRequests = (window.stmsData?.profileRequests || []).filter(r => r.traineeId === currentTrainee.id || r.traineeNameKh === currentTrainee.nameKh);
         const myAbsent = currentTrainee.attendanceSummary?.absent || 0;
 
@@ -378,9 +378,10 @@
   </div>
 
   <!-- Application Core Scripts -->
+  <script src="jszip.min.js"></script>
   <script src="xlsx.full.min.js"></script>
-  <script src="data.js?v=5.3"></script>
-  <script src="app.js?v=5.3"></script>
+  <script src="data.js?v=5.4"></script>
+  <script src="app.js?v=5.4"></script>
 </body>
 
 </html>

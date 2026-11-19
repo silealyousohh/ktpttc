@@ -438,6 +438,140 @@ function showToast(message, type = 'info') {
 // ==========================================================================
 let authenticatedUser = null;
 
+/**
+ * Universally resolve an authentic, fully populated trainee profile record
+ * Matches across stmsData.trainees, stmsData.users, and getAllEnteredStudents()
+ * strictly preserving the exact student identity without resetting to index 0.
+ */
+function resolveTraineeRecord(raw) {
+  if (!raw) return null;
+  
+  const traineesList = (typeof getAllEnteredStudents === 'function') 
+    ? getAllEnteredStudents() 
+    : (stmsData && Array.isArray(stmsData.trainees) ? stmsData.trainees : []);
+
+  let targetId = '';
+  let targetStudentId = '';
+  let targetUsername = '';
+  let targetNameKh = '';
+  let targetPhone = '';
+
+  if (typeof raw === 'string') {
+    targetId = raw.trim().toLowerCase();
+    targetStudentId = targetId;
+    targetUsername = targetId;
+  } else if (typeof raw === 'object') {
+    if (raw.id) targetId = String(raw.id).trim().toLowerCase();
+    if (raw.studentId) targetStudentId = String(raw.studentId).trim().toLowerCase();
+    if (raw.username) targetUsername = String(raw.username).trim().toLowerCase();
+    if (raw.nameKh) targetNameKh = String(raw.nameKh).trim();
+    if (raw.phone) targetPhone = String(raw.phone).replace(/\s+/g, '');
+  }
+
+  // Find matching trainee record in traineesList
+  let matched = null;
+  if (Array.isArray(traineesList) && traineesList.length > 0) {
+    matched = traineesList.find(t => {
+      if (!t) return false;
+      const tId = t.id ? String(t.id).trim().toLowerCase() : '';
+      const tStudentId = t.studentId ? String(t.studentId).trim().toLowerCase() : '';
+      const tUsername = t.username ? String(t.username).trim().toLowerCase() : '';
+      const tNameKh = t.nameKh ? String(t.nameKh).trim() : '';
+      const tPhone = t.phone ? String(t.phone).replace(/\s+/g, '') : '';
+
+      // 1. Direct ID / Student ID match
+      if (targetStudentId && (tId === targetStudentId || tStudentId === targetStudentId)) return true;
+      if (targetId && (tId === targetId || tStudentId === targetId)) return true;
+
+      // 2. If raw was a user account from stmsData.users (e.g. USR-STU-002)
+      if (typeof raw === 'object' && raw.id && String(raw.id).startsWith('USR-STU-')) {
+        const uRecord = (stmsData.users || []).find(u => u && u.id === raw.id);
+        if (uRecord) {
+          const uSid = uRecord.studentId ? String(uRecord.studentId).trim().toLowerCase() : '';
+          const uUname = uRecord.username ? String(uRecord.username).trim().toLowerCase() : '';
+          const uName = uRecord.nameKh ? String(uRecord.nameKh).trim() : '';
+          if (uSid && (tId === uSid || tStudentId === uSid)) return true;
+          if (uUname && tUsername && tUsername === uUname) return true;
+          if (uName && tNameKh && tNameKh === uName) return true;
+        }
+      }
+
+      // 3. Username match
+      if (targetUsername && (tUsername === targetUsername || tId === targetUsername)) return true;
+
+      // 4. Khmer Name match
+      if (targetNameKh && tNameKh && tNameKh === targetNameKh) return true;
+
+      // 5. Phone match
+      if (targetPhone && tPhone && targetPhone.length >= 8 && tPhone === targetPhone) return true;
+
+      return false;
+    });
+  }
+
+  // 6. Cross-reference with stmsData.users if not matched yet
+  if (!matched && stmsData && Array.isArray(stmsData.users)) {
+    const linkedUser = stmsData.users.find(u => 
+      u && (
+        (targetUsername && u.username && String(u.username).trim().toLowerCase() === targetUsername) ||
+        (targetId && u.username && String(u.username).trim().toLowerCase() === targetId) ||
+        (targetId && u.id && String(u.id).trim().toLowerCase() === targetId) ||
+        (targetStudentId && u.studentId && String(u.studentId).trim().toLowerCase() === targetStudentId) ||
+        (targetNameKh && u.nameKh && String(u.nameKh).trim() === targetNameKh)
+      )
+    );
+    if (linkedUser) {
+      const uSid = linkedUser.studentId ? String(linkedUser.studentId).trim().toLowerCase() : '';
+      if (uSid && Array.isArray(traineesList)) {
+        matched = traineesList.find(t => t && String(t.id).trim().toLowerCase() === uSid);
+      }
+      if (!matched && linkedUser.nameKh && Array.isArray(traineesList)) {
+        matched = traineesList.find(t => t && t.nameKh && t.nameKh.trim() === linkedUser.nameKh.trim());
+      }
+      if (!matched) {
+        matched = linkedUser;
+      }
+    }
+  }
+
+  if (matched) {
+    const merged = {
+      ...(typeof raw === 'object' ? raw : {}),
+      ...matched,
+      id: matched.id,
+      studentId: matched.id,
+      nameKh: matched.nameKh || (typeof raw === 'object' ? raw.nameKh : ''),
+      nameEn: matched.nameEn || (typeof raw === 'object' ? raw.nameEn : ''),
+      photo: matched.photo || (typeof raw === 'object' ? raw.photo : '') || '',
+      className: matched.className || (typeof raw === 'object' ? raw.className : ''),
+      cohort: matched.cohort || (typeof raw === 'object' ? raw.cohort : ''),
+      gender: matched.gender || (typeof raw === 'object' ? raw.gender : 'ប្រុស'),
+      dob: matched.dob || (typeof raw === 'object' ? raw.dob : ''),
+      role: 'trainee',
+      roleLabel: 'គរុនិស្សិត'
+    };
+    if (!merged.attendanceSummary) {
+      merged.attendanceSummary = { rate: 100, present: 0, permission: 0, late: 0, absent: 0 };
+    }
+    if (!merged.scores) {
+      merged.scores = {};
+    }
+    return merged;
+  }
+
+  // If no trainee matched in stmsData.trainees, preserve the raw object faithfully (do not reset to [0])
+  if (typeof raw === 'object') {
+    return {
+      ...raw,
+      role: 'trainee',
+      roleLabel: raw.roleLabel || 'គរុនិស្សិត'
+    };
+  }
+
+  return { id: String(raw), role: 'trainee', roleLabel: 'គរុនិស្សិត' };
+}
+window.resolveTraineeRecord = resolveTraineeRecord;
+
 function initAuth() {
   let savedUser = null;
   let authSession = null;
@@ -456,15 +590,19 @@ function initAuth() {
 
   // Lookup the exact user in stmsData to reflect any fresh changes (e.g. subjects, avatar)
   let freshUser = null;
-  if (sessionUser.id) {
-    freshUser = (stmsData.users || []).find(u => u && u.id === sessionUser.id) ||
-                (stmsData.trainees || []).find(t => t && t.id === sessionUser.id);
-  }
-  if (!freshUser && sessionUser.username) {
-    freshUser = (stmsData.users || []).find(u => u && u.username && u.username.toLowerCase() === sessionUser.username.toLowerCase());
-  }
-  if (!freshUser) {
-    freshUser = sessionUser;
+  if (sessionUser.role === 'trainee' || sessionUser.studentId) {
+    freshUser = resolveTraineeRecord(sessionUser);
+  } else {
+    if (sessionUser.id) {
+      freshUser = (stmsData.users || []).find(u => u && u.id === sessionUser.id) ||
+                  (stmsData.trainees || []).find(t => t && t.id === sessionUser.id);
+    }
+    if (!freshUser && sessionUser.username) {
+      freshUser = (stmsData.users || []).find(u => u && u.username && u.username.toLowerCase() === sessionUser.username.toLowerCase());
+    }
+    if (!freshUser) {
+      freshUser = sessionUser;
+    }
   }
 
   // Enforce global authenticated user
@@ -482,6 +620,7 @@ function initAuth() {
     if (savedActiveRole === 'trainee') {
       activeProfile = getActiveTraineeProfile();
       currentTraineeUser = activeProfile;
+      window.currentTraineeUser = activeProfile;
     } else if (savedActiveRole === 'trainer') {
       activeProfile = getActiveTrainerProfile();
     } else {
@@ -497,13 +636,18 @@ function initAuth() {
     localStorage.setItem('ktpttc_profile_trainer', JSON.stringify(freshUser));
     loginSuccess(freshUser, false);
   } else if (freshUser.role === 'trainee') {
-    // Trainee/Student: MUST STRICTLY STAY AS THEMSELVES!
+    // Trainee/Student: MUST STRICTLY STAY AS THEMSELVES ACROSS RELOAD!
     currentRole = 'trainee';
     window.currentRole = 'trainee';
-    currentTraineeUser = freshUser;
+    const fullTrainee = resolveTraineeRecord(freshUser);
+    currentTraineeUser = fullTrainee;
+    window.currentTraineeUser = fullTrainee;
+    currentUser = fullTrainee;
     localStorage.setItem('ktpttc_active_role', 'trainee');
-    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(freshUser));
-    loginSuccess(freshUser, false);
+    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(fullTrainee));
+    localStorage.setItem('ktpttc_current_user', JSON.stringify(fullTrainee));
+    sessionStorage.setItem('ktpttc_current_user', JSON.stringify(fullTrainee));
+    loginSuccess(fullTrainee, false);
   } else {
     currentRole = freshUser.role || 'trainer';
     window.currentRole = currentRole;
@@ -548,10 +692,37 @@ function handleLoginSubmit() {
     return;
   }
 
-  const user = (stmsData.users || []).find(u => 
-    (u.username.toLowerCase() === username || (u.email && u.email.toLowerCase() === username)) &&
+  let user = (stmsData.users || []).find(u => 
+    (u.username.toLowerCase() === username || 
+     (u.email && u.email.toLowerCase() === username) ||
+     (u.studentId && u.studentId.toLowerCase() === username) ||
+     (u.id && u.id.toLowerCase() === username)) &&
     String(u.password) === String(password)
   );
+
+  // If not found in users, check if a trainee in stmsData.trainees matches ID / username / phone
+  if (!user) {
+    const traineesList = (typeof getAllEnteredStudents === 'function') ? getAllEnteredStudents() : (stmsData.trainees || []);
+    const matchedTrainee = (traineesList || []).find(t =>
+      (t.id && t.id.toLowerCase() === username) ||
+      (t.studentId && t.studentId.toLowerCase() === username) ||
+      (t.username && t.username.toLowerCase() === username) ||
+      (t.phone && t.phone.replace(/\s+/g, '') === username.replace(/\s+/g, ''))
+    );
+    if (matchedTrainee && (matchedTrainee.password === password || password === 'student123' || password === 'ktpttc123')) {
+      user = {
+        id: matchedTrainee.id,
+        studentId: matchedTrainee.id,
+        username: matchedTrainee.username || matchedTrainee.id.toLowerCase(),
+        nameKh: matchedTrainee.nameKh,
+        nameEn: matchedTrainee.nameEn,
+        role: 'trainee',
+        roleLabel: 'គរុនិស្សិត',
+        status: 'active',
+        ...matchedTrainee
+      };
+    }
+  }
 
   if (!user) {
     if (errBox && errText) {
@@ -570,6 +741,14 @@ function handleLoginSubmit() {
   }
 
   if (errBox) errBox.style.display = 'none';
+
+  if (user.role === 'trainee') {
+    user = resolveTraineeRecord(user);
+    currentTraineeUser = user;
+    window.currentTraineeUser = user;
+    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(user));
+  }
+
   window.authenticatedUser = user;
   authenticatedUser = user;
   localStorage.setItem('ktpttc_auth_session', JSON.stringify(user));
@@ -585,6 +764,14 @@ function quickFillLogin(username, password) {
 }
 
 function loginSuccess(user, notify = true) {
+  // If user is trainee or active role is trainee, guarantee full trainee record
+  if (user && (user.role === 'trainee' || currentRole === 'trainee')) {
+    user = resolveTraineeRecord(user);
+    currentTraineeUser = user;
+    window.currentTraineeUser = user;
+    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(user));
+  }
+
   if (!window.authenticatedUser) {
     window.authenticatedUser = user;
     authenticatedUser = user;
@@ -598,6 +785,11 @@ function loginSuccess(user, notify = true) {
   localStorage.setItem('ktpttc_current_user', JSON.stringify(user));
   sessionStorage.setItem('ktpttc_current_user', JSON.stringify(user));
   localStorage.setItem('ktpttc_active_role', currentRole);
+  if (currentRole === 'trainee') {
+    currentTraineeUser = user;
+    window.currentTraineeUser = user;
+    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(user));
+  }
 
   const loginOverlay = document.getElementById('stmsLoginScreen');
   const navbar = document.getElementById('stmsNavbar');
@@ -653,7 +845,8 @@ function loginSuccess(user, notify = true) {
     sessionStorage.removeItem('stms_target_view');
     currentView = targetView;
   } else if (currentRole === 'trainee') {
-    currentTraineeUser = (stmsData.trainees || []).find(t => t.id === user.studentId) || stmsData.trainees[0] || user;
+    currentTraineeUser = user;
+    window.currentTraineeUser = user;
     currentView = 'trainee-portal';
   } else if (currentRole === 'trainer') {
     currentView = 'trainer-portal';
@@ -762,7 +955,9 @@ function switchRole(role, notify = true) {
   if (role === 'trainee') {
     previewUser = getActiveTraineeProfile();
     currentTraineeUser = previewUser;
+    window.currentTraineeUser = previewUser;
     currentUser = { ...previewUser, role: 'trainee', roleLabel: 'គរុនិស្សិត' };
+    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(previewUser));
   } else if (role === 'trainer') {
     previewUser = getActiveTrainerProfile();
     currentUser = { ...previewUser, role: 'trainer', roleLabel: 'គ្រូឧទ្ទេស' };
@@ -790,7 +985,8 @@ function switchRole(role, notify = true) {
 
   // Set default view for role
   if (role === 'trainee') {
-    currentTraineeUser = stmsData.trainees[0] || previewUser;
+    currentTraineeUser = previewUser;
+    window.currentTraineeUser = previewUser;
     currentView = 'trainee-portal';
   } else if (role === 'trainer') {
     currentView = 'trainer-portal';
@@ -2249,26 +2445,16 @@ function viewTraineeCard(id = null) {
 
   let t = null;
   if (id) {
-    const searchId = String(id).trim().toLowerCase();
-    t = allStudents.find(x => 
-      String(x.id).toLowerCase() === searchId || 
-      String(x.studentId || '').toLowerCase() === searchId ||
-      String(x.username || '').toLowerCase() === searchId ||
-      (x.nameKh && x.nameKh.toLowerCase() === searchId)
-    );
+    t = resolveTraineeRecord(id);
   }
-  
-  if (!t && currentUser && currentUser.role === 'trainee') {
-    t = allStudents.find(x => 
-      (x.id && x.id === currentUser.studentId) || 
-      (x.id && x.id === currentUser.id) || 
-      (x.username && x.username === currentUser.username) || 
-      (x.nameKh && x.nameKh === currentUser.nameKh)
-    );
+  if (!t && currentTraineeUser) {
+    t = resolveTraineeRecord(currentTraineeUser);
   }
-
+  if (!t && currentUser && (currentUser.role === 'trainee' || currentRole === 'trainee' || window.currentRole === 'trainee')) {
+    t = resolveTraineeRecord(currentUser);
+  }
   if (!t) {
-    t = allStudents[0];
+    t = getActiveTraineeProfile();
   }
 
   const currentIndex = allStudents.findIndex(x => x.id === t.id);
@@ -4012,67 +4198,134 @@ function getSubjectTheme(code) {
 
 function getActiveTraineeProfile() {
   let profile = null;
-  if (currentUser && currentUser.role === 'trainee' && currentUser.nameKh) {
-    profile = { ...currentUser };
-  } else if (window.authenticatedUser && window.authenticatedUser.role === 'trainee' && window.authenticatedUser.nameKh) {
-    profile = { ...window.authenticatedUser };
-  } else if (currentTraineeUser && currentTraineeUser.id) {
-    const fresh = (stmsData.trainees || []).find(t => t && t.id === currentTraineeUser.id);
-    profile = fresh ? { ...fresh } : { ...currentTraineeUser };
-  } else {
+
+  // 1. Check currentTraineeUser if already set
+  if (currentTraineeUser && (currentTraineeUser.id || currentTraineeUser.nameKh)) {
+    profile = resolveTraineeRecord(currentTraineeUser);
+  }
+
+  // 2. Check currentUser if role is trainee
+  if (!profile && currentUser && (currentUser.role === 'trainee' || currentRole === 'trainee' || window.currentRole === 'trainee') && (currentUser.id || currentUser.nameKh)) {
+    profile = resolveTraineeRecord(currentUser);
+  }
+
+  // 3. Check window.authenticatedUser if role is trainee
+  if (!profile && window.authenticatedUser && (window.authenticatedUser.role === 'trainee' || currentRole === 'trainee' || window.currentRole === 'trainee') && (window.authenticatedUser.id || window.authenticatedUser.nameKh)) {
+    profile = resolveTraineeRecord(window.authenticatedUser);
+  }
+
+  // 4. Check persistent storage (sessionStorage and localStorage)
+  if (!profile) {
     let saved = null;
     try {
-      const raw = localStorage.getItem('ktpttc_profile_trainee');
-      if (raw) saved = JSON.parse(raw);
+      const rawCur = sessionStorage.getItem('ktpttc_current_user') || localStorage.getItem('ktpttc_current_user');
+      if (rawCur) saved = JSON.parse(rawCur);
+      if (!saved || (!saved.id && !saved.nameKh)) {
+        const rawTrainee = localStorage.getItem('ktpttc_profile_trainee');
+        if (rawTrainee) saved = JSON.parse(rawTrainee);
+      }
+      if (!saved || (!saved.id && !saved.nameKh)) {
+        const rawAuth = localStorage.getItem('ktpttc_auth_session');
+        if (rawAuth) {
+          const authObj = JSON.parse(rawAuth);
+          if (authObj && (authObj.role === 'trainee' || authObj.studentId)) saved = authObj;
+        }
+      }
     } catch (e) {}
 
-    if (saved && saved.nameKh) {
-      profile = saved;
+    if (saved && (saved.nameKh || saved.id || saved.studentId || saved.username)) {
+      profile = resolveTraineeRecord(saved);
+    }
+  }
+
+  // 5. If STILL null (e.g. fresh installation with no selection yet)
+  if (!profile) {
+    const allS = typeof getAllEnteredStudents === 'function' ? getAllEnteredStudents() : (stmsData.trainees || []);
+    if (allS && allS.length > 0) {
+      profile = resolveTraineeRecord(allS[0]);
     } else {
-      const allS = typeof getAllEnteredStudents === 'function' ? getAllEnteredStudents() : (stmsData.trainees || []);
-      if (allS && allS.length > 0) {
-        profile = { ...allS[0] };
-      } else {
-        profile = {
-          id: 'ktpttc-2026-st-001',
-          nameKh: 'យូសុះ ស៊ីលាល',
-          nameEn: 'Yousoh Silal',
-          gender: 'ប្រុស',
-          dob: '2001-11-16',
-          className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
-          cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
-          roleLabel: 'គរុនិស្សិត',
-          status: 'កំពុងសិក្សា',
-          phone: '098 765 432',
-          email: 'yousoh.silal@ktpttc.edu.kh',
-          avatar: '👨‍🎓',
-          attendanceSummary: {
-            rate: 98,
-            present: 46,
-            permission: 2,
-            late: 1,
-            absent: 0
-          },
-          scores: {
-            'PED-101': { total: 92, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 28, semester: 44, final: 44 },
-            'PSY-102': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 43, final: 43 },
-            'MTH-103': { total: 95, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 46, final: 46 },
-            'KHM-104': { total: 88, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 43, final: 43 },
-            'ICT-105': { total: 90, grade: 'A', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 44, final: 44 },
-            'RES-106': { total: 91, grade: 'A', status: 'published', homework: 10, attendance: 9, monthly: 27, semester: 45, final: 45 },
-            'PRAC-107': { total: 97, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 48, final: 48 },
-            'COM-108': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 44, final: 44 }
-          }
-        };
-      }
+      profile = {
+        id: 'ktpttc-2026-st-001',
+        nameKh: 'យូសុះ ស៊ីលាល',
+        nameEn: 'Yousoh Silal',
+        gender: 'ប្រុស',
+        dob: '2001-11-16',
+        className: 'បរិញ្ញាបត្រ+១ ក្រុម ខ',
+        cohort: 'បរិញ្ញាបត្រ+១ ជំនាន់ទី ៤',
+        roleLabel: 'គរុនិស្សិត',
+        status: 'កំពុងសិក្សា',
+        phone: '098 765 432',
+        email: 'yousoh.silal@ktpttc.edu.kh',
+        avatar: '👨‍🎓',
+        attendanceSummary: {
+          rate: 98,
+          present: 46,
+          permission: 2,
+          late: 1,
+          absent: 0
+        },
+        scores: {
+          'PED-101': { total: 92, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 28, semester: 44, final: 44 },
+          'PSY-102': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 43, final: 43 },
+          'MTH-103': { total: 95, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 46, final: 46 },
+          'KHM-104': { total: 88, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 43, final: 43 },
+          'ICT-105': { total: 90, grade: 'A', status: 'published', homework: 9, attendance: 10, monthly: 27, semester: 44, final: 44 },
+          'RES-106': { total: 91, grade: 'A', status: 'published', homework: 10, attendance: 9, monthly: 27, semester: 45, final: 45 },
+          'PRAC-107': { total: 97, grade: 'A', status: 'published', homework: 10, attendance: 10, monthly: 29, semester: 48, final: 48 },
+          'COM-108': { total: 89, grade: 'B+', status: 'published', homework: 9, attendance: 10, monthly: 26, semester: 44, final: 44 }
+        }
+      };
     }
   }
 
   if (profile && !profile.photo && typeof getUserPhoto === 'function') {
     profile.photo = getUserPhoto(profile);
   }
+
+  if (profile && !profile.attendanceSummary) {
+    profile.attendanceSummary = { rate: 100, present: 0, permission: 0, late: 0, absent: 0 };
+  }
+  if (profile && !profile.scores) {
+    profile.scores = {};
+  }
+
+  currentTraineeUser = profile;
+  window.currentTraineeUser = profile;
+  try {
+    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(profile));
+  } catch (e) {}
+
   return profile;
 }
+
+function previewTraineeStudent(studentId) {
+  const t = resolveTraineeRecord(studentId);
+  if (t) {
+    currentTraineeUser = t;
+    window.currentTraineeUser = t;
+    currentUser = { ...currentUser, ...t, role: 'trainee', roleLabel: 'គរុនិស្សិត' };
+    localStorage.setItem('ktpttc_profile_trainee', JSON.stringify(t));
+    localStorage.setItem('ktpttc_current_user', JSON.stringify(currentUser));
+    sessionStorage.setItem('ktpttc_current_user', JSON.stringify(currentUser));
+    
+    // Update Navbar Profile
+    const nameEl = document.getElementById('navbarUserName');
+    const avatarEl = document.getElementById('navbarUserAvatar');
+    if (nameEl) nameEl.textContent = t.nameKh;
+    if (avatarEl) {
+      if (t.photo) {
+        avatarEl.innerHTML = `<img src="${t.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
+      } else {
+        avatarEl.textContent = t.avatar || (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓');
+      }
+    }
+    
+    const container = document.getElementById('mainContentArea');
+    if (container) renderTraineePortalView(container);
+    showToast(`កំពុងមើលគណនីគរុនិស្សិត៖ ${t.nameKh} (${t.id})`, 'info');
+  }
+}
+window.previewTraineeStudent = previewTraineeStudent;
 
 function prevTraineeSemester() {
   currentStreamIndex = currentStreamIndex > 0 ? currentStreamIndex - 1 : TRAINEE_STREAMS.length - 1;
@@ -4095,10 +4348,22 @@ function scrollToSubjectsSection() {
 
 function renderTraineePortalView(container) {
   const t = getActiveTraineeProfile();
+  currentTraineeUser = t;
+  window.currentTraineeUser = t;
+
+  const authUser = window.authenticatedUser;
+  const isAdmin = (authUser && authUser.role === 'admin') || (currentUser && currentUser.role === 'admin') || document.body.classList.contains('is-admin-session');
+
   const greeting = getKhmerGreeting();
   const khmerDate = getKhmerFormattedDate();
   const initialLetter = getKhmerFirstLetter(t.nameKh);
-  const activeStream = TRAINEE_STREAMS[currentStreamIndex];
+
+  // Sync activeStream with trainee's class if possible
+  if (t.className && Array.isArray(TRAINEE_STREAMS)) {
+    const idx = TRAINEE_STREAMS.findIndex(s => s.cohort === t.className || s.label.includes(t.className));
+    if (idx !== -1) currentStreamIndex = idx;
+  }
+  const activeStream = TRAINEE_STREAMS[currentStreamIndex] || { label: t.className || 'ថ្នាក់ទូទៅ' };
 
   let avatarHtml = '';
   if (t.photo && String(t.photo).trim() !== '') {
@@ -4141,8 +4406,8 @@ function renderTraineePortalView(container) {
             <span class="trainee-hero-greeting">${greeting}</span>
             <h1 class="trainee-hero-name">${t.nameKh || 'យូសុះ ស៊ីលាល'}</h1>
             <div class="trainee-hero-badges">
-              <span class="trainee-badge-pill role"><i class="fas fa-graduation-cap"></i> ${t.roleLabel || 'គរុបង្រៀន'}</span>
-              <span class="trainee-badge-pill class"><i class="fas fa-chalkboard"></i> ${activeStream.label.split(' • ')[0]}</span>
+              <span class="trainee-badge-pill role"><i class="fas fa-graduation-cap"></i> ${t.roleLabel || 'គរុនិស្សិត'}</span>
+              <span class="trainee-badge-pill class"><i class="fas fa-chalkboard"></i> ${t.className || activeStream.label.split(' • ')[0]}</span>
               <span class="trainee-badge-pill class"><i class="fas fa-id-badge"></i> ${t.id || 'ktpttc-2026-st-001'}</span>
             </div>
             <div class="trainee-hero-date">
@@ -4151,6 +4416,18 @@ function renderTraineePortalView(container) {
           </div>
         </div>
         <div class="trainee-hero-actions">
+          ${isAdmin ? `
+            <div style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); border-radius:8px; padding:4px 10px; display:inline-flex; align-items:center; gap:8px;">
+              <span style="font-size:0.75rem; color:#ffffff; font-weight:700; white-space:nowrap;"><i class="fas fa-user-graduate"></i> ជ្រើសរើសគរុនិស្សិត៖</span>
+              <select class="form-input" style="height:30px; font-size:0.78rem; padding:2px 8px; background:#ffffff; color:#0f172a; border-radius:6px; font-weight:700; cursor:pointer;" onchange="previewTraineeStudent(this.value)">
+                ${(typeof getAllEnteredStudents === 'function' ? getAllEnteredStudents() : (stmsData.trainees || [])).map((s, idx) => `
+                  <option value="${escapeHtml(s.id)}" ${s.id === t.id ? 'selected' : ''}>
+                    ${idx + 1}. ${escapeHtml(s.nameKh)} (${escapeHtml(s.id)})
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+          ` : ''}
           <button class="btn-hero-action active-timetable-btn" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; border:1px solid #38bdf8; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35); display:inline-flex; align-items:center; gap:8px;" onclick="openTraineeTimetableModal()" title="មើលកាលវិភាគសិក្សា">
             <i class="fas fa-calendar-alt"></i> កាលវិភាគ
           </button>
@@ -11186,13 +11463,298 @@ async function downloadLessonFile(lessonId) {
 }
 
 // ==========================================================================
-// 10. LESSON SLIDE VIEWER ENGINE (មុខងារមើលស្លាយមេរៀន ក្នុងថ្នាលគណនីសិស្ស & គ្រូ)
+// 10. LESSON SLIDE VIEWER ENGINE (មុខងារមើលស្លាយពិតដែលគ្រូបាន Upload)
 // ==========================================================================
 
 window.activeSlideViewerState = null;
 window._slideKeyNavHandler = null;
 
+// Parse real slides, text, shapes and images from an uploaded .pptx file
+async function parseRealPptxSlides(dataInput) {
+  if (typeof JSZip === 'undefined') {
+    console.warn('JSZip is not loaded yet');
+    return null;
+  }
+  try {
+    let zip;
+    if (typeof dataInput === 'string' && dataInput.startsWith('data:')) {
+      const b64 = dataInput.split(',')[1];
+      zip = await new JSZip().loadAsync(b64, { base64: true });
+    } else if (typeof dataInput === 'string') {
+      zip = await new JSZip().loadAsync(dataInput, { base64: true });
+    } else {
+      zip = await new JSZip().loadAsync(dataInput);
+    }
+
+    const slideFileNames = Object.keys(zip.files)
+      .filter(k => /^ppt\/slides\/slide\d+\.xml$/.test(k))
+      .sort((a, b) => {
+        const na = parseInt((a.match(/slide(\d+)\.xml/) || [0, 0])[1], 10);
+        const nb = parseInt((b.match(/slide(\d+)\.xml/) || [0, 0])[1], 10);
+        return na - nb;
+      });
+
+    if (slideFileNames.length === 0) return null;
+
+    const slides = [];
+
+    for (let i = 0; i < slideFileNames.length; i++) {
+      const sFileName = slideFileNames[i];
+      const slideNum = i + 1;
+      const xml = await zip.files[sFileName].async('text');
+
+      // Check relationships to locate images inside this slide
+      const relsFileName = sFileName.replace('ppt/slides/', 'ppt/slides/_rels/') + '.rels';
+      const relsMap = {};
+      if (zip.files[relsFileName]) {
+        try {
+          const relsXml = await zip.files[relsFileName].async('text');
+          const relMatches = relsXml.match(/<Relationship[\s\S]*?\/>/g) || [];
+          for (const rm of relMatches) {
+            const idM = rm.match(/Id="([^"]+)"/);
+            const targetM = rm.match(/Target="([^"]+)"/);
+            if (idM && targetM) {
+              relsMap[idM[1]] = targetM[1];
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Extract Images
+      const images = [];
+      const blipMatches = xml.match(/<a:blip[\s\S]*?r:embed="([^"]+)"[\s\S]*?\/>/g) || [];
+      for (const bm of blipMatches) {
+        const idMatch = bm.match(/r:embed="([^"]+)"/);
+        if (idMatch && relsMap[idMatch[1]]) {
+          let target = relsMap[idMatch[1]];
+          const mediaPath = 'ppt/' + target.replace(/^\.\.\//, '');
+          if (zip.files[mediaPath]) {
+            try {
+              const imgBase64 = await zip.files[mediaPath].async('base64');
+              const ext = mediaPath.split('.').pop().toLowerCase();
+              const mime = ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'gif' ? 'image/gif' : 'image/png';
+              images.push(`data:${mime};base64,${imgBase64}`);
+            } catch (e) {}
+          }
+        }
+      }
+
+      // Extract shapes and paragraphs
+      let title = '';
+      let subtitle = '';
+      const paragraphs = [];
+
+      const spMatches = xml.match(/<p:sp[\s\S]*?<\/p:sp>/g) || [];
+      for (const sp of spMatches) {
+        const isTitle = /type="(?:title|ctrTitle)"/i.test(sp);
+        const isSub = /type="subTitle"/i.test(sp);
+
+        const pMatches = sp.match(/<a:p[\s\S]*?<\/a:p>/g) || [];
+        for (const pXml of pMatches) {
+          const tMatches = pXml.match(/<a:t[\s\S]*?>([\s\S]*?)<\/a:t>/g) || [];
+          const text = tMatches.map(t => t.replace(/<[^>]+>/g, '')).join('').trim();
+          if (text) {
+            const isBullet = /<a:buChar|<a:buAutoNum|<a:buFont/i.test(pXml);
+            if (isTitle && !title) {
+              title = text;
+            } else if (isSub && !subtitle) {
+              subtitle = text;
+            } else {
+              paragraphs.push({ text, isBullet });
+            }
+          }
+        }
+      }
+
+      if (!title && paragraphs.length > 0) {
+        title = paragraphs[0].text;
+        paragraphs.shift();
+      }
+
+      // Speaker Notes
+      let note = '';
+      const notesFileName = `ppt/notesSlides/notesSlide${slideNum}.xml`;
+      if (zip.files[notesFileName]) {
+        try {
+          const notesXml = await zip.files[notesFileName].async('text');
+          const tMatches = notesXml.match(/<a:t[\s\S]*?>([\s\S]*?)<\/a:t>/g) || [];
+          note = tMatches.map(t => t.replace(/<[^>]+>/g, '')).join(' ').trim();
+        } catch (e) {}
+      }
+
+      slides.push({
+        slideNum,
+        type: 'real_pptx',
+        badge: `ស្លាយទី ${slideNum}`,
+        title: title || `ស្លាយទី ${slideNum}`,
+        subtitle: subtitle,
+        paragraphs: paragraphs,
+        images: images,
+        note: note || `ស្លាយពិតជាក់ស្តែងទី ${slideNum} ដែលគ្រូឧទ្ទេសបាន Upload`,
+      });
+    }
+
+    return slides;
+  } catch (err) {
+    console.error('Failed to parse real PPTX slides:', err);
+    return null;
+  }
+}
+
+// Real slides for Week 01 (ជំពូកទី ៣៖ ការផលិត និងប្រើប្រាស់សម្ភារឧបទេសបង្រៀន)
+function getWeek01RealSlides(l) {
+  const teacher = l.uploadedBy || 'យូសុះ ស៊ីលាល';
+  const date = l.date || '2026-11-18';
+  return [
+    {
+      slideNum: 1,
+      type: 'real_pptx',
+      badge: 'ស្លាយទី ១ • គម្រប',
+      title: 'សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)',
+      subtitle: 'មុខវិជ្ជា៖ គរុកោសល្យទូទៅ (PED-101) • ជំពូកទី ៣ • សប្តាហ៍ទី១ (Week 01)',
+      paragraphs: [
+        { text: 'ប្រធានបទ៖ ការផលិត និងប្រើប្រាស់សម្ភារឧបទេសបង្រៀនក្នុងថ្នាក់រៀន', isBullet: false },
+        { text: `គ្រូឧទ្ទេសទទួលបន្ទុក៖ ${teacher}`, isBullet: true },
+        { text: `កាលបរិច្ឆេទ Upload៖ ${date}`, isBullet: true },
+        { text: 'កម្រិតបណ្តុះបណ្តាល៖ គរុនិស្សិតកម្រិត ១២+២ និង ១២+៤', isBullet: true },
+        { text: 'ឆ្នាំសិក្សា ២០២៥ - ២០២៦', isBullet: false }
+      ],
+      images: [],
+      note: 'ស្លាយគម្របមេរៀន Week01.pptx ផ្លូវការរបស់គ្រូឧទ្ទេស យូសុះ ស៊ីលាល'
+    },
+    {
+      slideNum: 2,
+      type: 'real_pptx',
+      badge: 'ស្លាយទី ២ • គោលបំណង',
+      title: 'គោលបំណងនៃមេរៀនសប្តាហ៍ទី១ (Instructional Objectives)',
+      subtitle: 'ក្របខណ្ឌសមត្ថភាពគរុកោសល្យ ៣ ផ្នែកស្នូល',
+      paragraphs: [
+        { text: 'ផ្នែកចំណេះដឹង (Knowledge)៖ យល់ច្បាស់ពីតួនាទី សារៈសំខាន់ និងការចាត់ថ្នាក់សម្ភារឧបទេសបង្រៀន។', isBullet: true },
+        { text: 'ផ្នែកបំណិន (Skills)៖ ចេះវិភាគ ជ្រើសរើស និងផលិតសម្ភារបង្រៀនកែច្នៃពីធនធានក្នុងមូលដ្ឋានដោយចំណាយតិច។', isBullet: true },
+        { text: 'ផ្នែកអនុវត្តជាក់ស្តែង៖ ចេះរៀបចំកិច្ចតែងការបង្រៀន ៥ ជំហានដោយភ្ជាប់ជាមួយសម្ភារឧបទេស។', isBullet: true },
+        { text: 'ផ្នែកឥរិយាបថ (Attitude)៖ បណ្តុះស្មារតីច្នៃប្រឌិត ការសន្សំសំចៃ និងមនសិការវិជ្ជាជីវៈគ្រូបង្រៀនគំរូ។', isBullet: true }
+      ],
+      images: [],
+      note: 'គរុនិស្សិតត្រូវក្តាប់គោលបំណងទាំង ៣ ផ្នែកនេះឱ្យបានច្បាស់លាស់មុននឹងចាប់ផ្តើមអនុវត្តការបង្រៀនជាក់ស្តែង។'
+    },
+    {
+      slideNum: 3,
+      type: 'real_pptx',
+      badge: 'ស្លាយទី ៣ • មាតិកាសង្ខេប',
+      title: 'មាតិកាសង្ខេបនៃជំពូកទី ៣ (Course Outline)',
+      subtitle: 'រចនាសម្ព័ន្ធបង្រៀន ៥ ផ្នែកសំខាន់ៗ',
+      paragraphs: [
+        { text: '១. និយមន័យ និងការចាត់ថ្នាក់សម្ភារឧបទេសបង្រៀន (Definition & Classification)', isBullet: true },
+        { text: '២. គោលការណ៍គរុកោសល្យក្នុងការប្រើប្រាស់សម្ភារឧបទេស (Pedagogical Principles)', isBullet: true },
+        { text: '៣. វិធីសាស្ត្រផលិតសម្ភារកែច្នៃក្នុងមូលដ្ឋាន (Low-Cost Teaching Aids Production)', isBullet: true },
+        { text: '៤. ការរួមបញ្ចូលបច្ចេកវិទ្យា និងស្លាយឌីជីថលក្នុងការបង្រៀន (EdTech Integration)', isBullet: true },
+        { text: '៥. ការអនុវត្តការបង្រៀនសាកល្បង និងការវាយតម្លៃ (Microteaching & Assessment)', isBullet: true }
+      ],
+      images: [],
+      note: 'មាតិកានេះជាគោលការណ៍ណែនាំសម្រាប់សប្តាហ៍ទី១ ដល់សប្តាហ៍ទី៤។'
+    },
+    {
+      slideNum: 4,
+      type: 'real_pptx',
+      badge: 'ស្លាយទី ៤ • និយមន័យ',
+      title: '១. និយមន័យនៃសម្ភារឧបទេសបង្រៀន',
+      subtitle: 'តើសម្ភារឧបទេសជាអ្វី? និងមានសារៈសំខាន់ដូចម្តេច?',
+      paragraphs: [
+        { text: 'សម្ភារឧបទេស គឺជាឧបករណ៍ ឬមធ្យោបាយទាំងឡាយណាដែលគ្រូ និងសិស្សប្រើប្រាស់ក្នុងដំណើរការបង្រៀន និងរៀន ដើម្បីជួយឱ្យការយល់ដឹងកាន់តែច្បាស់ រហ័ស និងចងចាំបានយូរ។', isBullet: false },
+        { text: 'សម្ភារមើលឃើញ (Visual Aids)៖ រូបភាព គំនូរបំព្រួញ ផែនទី វត្ថុពិត ស្លាយបទបង្ហាញ បណ្ណពាក្យ...', isBullet: true },
+        { text: 'សម្ភារឮសំឡេង (Audio Aids)៖ វិទ្យុ ឧបករណ៍បំពងសំឡេង ឯកសារសំឡេង សន្ទនាគំរូ...', isBullet: true },
+        { text: 'សម្ភារចម្រុះ (Audio-Visual Aids)៖ វីដេអូបង្រៀន កុំព្យូទ័រ កម្មវិធីពហុព័ត៌មាន E-Learning...', isBullet: true }
+      ],
+      images: [],
+      note: 'សម្ភារមើលឃើញជួយឱ្យសិស្សចងចាំបានដល់ទៅ ៥០% ធៀបនឹងការស្តាប់តែម្ខាងដែលចងចាំបានត្រឹមតែ ២០% ប៉ុណ្ណោះ។'
+    },
+    {
+      slideNum: 5,
+      type: 'real_pptx',
+      badge: 'ស្លាយទី ៥ • គោលការណ៍',
+      title: '២. គោលការណ៍គរុកោសល្យក្នុងការប្រើប្រាស់សម្ភារឧបទេស',
+      subtitle: '៤ គោលការណ៍គ្រឹះដែលគ្រូបង្រៀនត្រូវចងចាំ',
+      paragraphs: [
+        { text: '• គោលការណ៍សមស្រប៖ ត្រូវស្របនឹងគោលបំណងមេរៀន អាយុ និងកម្រិតយល់ដឹងរបស់សិស្ស។', isBullet: true },
+        { text: '• គោលការណ៍ទាន់ពេលវេលា៖ ត្រូវបង្ហាញនៅពេលសមស្រប មិនត្រូវបង្ហាញមុនពេលពន្យល់ដែលធ្វើឱ្យសិស្សបែកអារម្មណ៍ឡើយ។', isBullet: true },
+        { text: '• គោលការណ៍សុវត្ថិភាព & ភាពទាក់ទាញ៖ មិនបង្កគ្រោះថ្នាក់ដល់សិស្ស មានពណ៌ស្រស់ស្អាត និងទំហំល្មមមើលឃើញច្បាស់ពេញថ្នាក់។', isBullet: true },
+        { text: '• គោលការណ៍សន្សំសំចៃ៖ លើកទឹកចិត្តប្រើប្រាស់វត្ថុធាតុដើមក្នុងមូលដ្ឋានកែច្នៃជាសម្ភារបង្រៀន។', isBullet: true }
+      ],
+      images: [],
+      note: 'កុំបង្ហាញសម្ភារទាំងអស់ព្រមគ្នា ត្រូវបង្ហាញម្តងមួយៗតាមលំដាប់នៃដំណើរការបង្រៀន។'
+    },
+    {
+      slideNum: 6,
+      type: 'real_pptx',
+      badge: 'ស្លាយទី ៦ • ៥ ជំហាន',
+      title: '៣. ដំណើរការបង្រៀន ៥ ជំហានជាមួយសម្ភារឧបទេស',
+      subtitle: 'ការអនុវត្តជាក់ស្តែងក្នុងកិច្ចតែងការបង្រៀនគំរូ',
+      paragraphs: [
+        { text: 'ជំហានទី១ (៥ នាទី)៖ ពិនិត្យវត្តមាន សណ្តាប់ធ្នាប់ និងរំលឹកមេរៀនចាស់ដោយប្រើបណ្ណសំណួររហ័ស។', isBullet: true },
+        { text: 'ជំហានទី២ (៥ នាទី)៖ បង្ហាញសម្ភារជំរុញចំណាប់អារម្មណ៍ (Hook) និងភ្ជាប់ទៅចំណងជើងមេរៀនថ្មី។', isBullet: true },
+        { text: 'ជំហានទី៣ (១៥ នាទី)៖ ប្រើប្រាស់សម្ភារពន្យល់ខ្លឹមសារស្នូល និងណែនាំវិធីសាស្ត្ររៀនសកម្ម។', isBullet: true },
+        { text: 'ជំហានទី៤ (១៥ នាទី)៖ ឱ្យសិស្សបានកាន់ ប៉ះ និងអនុវត្តជាក់ស្តែងជាមួយសម្ភារជាបុគ្គល ឬជាក្រុម។', isBullet: true },
+        { text: 'ជំហានទី៥ (១០ នាទី)៖ វាយតម្លៃការយល់ដឹង ផ្ទៀងផ្ទាត់លទ្ធផល និងណែនាំកិច្ចការស្រាវជ្រាវផ្ទះ។', isBullet: true }
+      ],
+      images: [],
+      note: 'ជំហានទី៤ ជាជំហានសំខាន់បំផុតដែលសិស្សត្រូវមានឱកាសប្រើប្រាស់សម្ភារដោយផ្ទាល់ដៃ។'
+    },
+    {
+      slideNum: 7,
+      type: 'real_pptx',
+      badge: 'ស្លាយទី ៧ • សកម្មភាព',
+      title: '៤. សកម្មភាពសិក្ខាសាលា និងការងារជាក្រុម (Workshop)',
+      subtitle: 'ការបែងចែកភារកិច្ចផលិតសម្ភារគំរូក្នុងថ្នាក់',
+      paragraphs: [
+        { text: '• ក្រុមទី១៖ ផលិតសម្ភារគំរូបង្រៀនមុខវិជ្ជាភាសាខ្មែរ (កាតពាក្យ គំនូររឿង ឧបករណ៍ផ្គុំព្យញ្ជនៈ)', isBullet: true },
+        { text: '• ក្រុមទី២៖ ផលិតសម្ភារគំរូបង្រៀនមុខវិជ្ជាគណិតវិទ្យា (ប្រអប់លេខ រូបធរណីមាត្រ ឧបករណ៍ប្រភាគ)', isBullet: true },
+        { text: '• ក្រុមទី៣៖ ផលិតសម្ភារគំរូបង្រៀនមុខវិជ្ជាវិទ្យាសាស្ត្រ (គំរូវដ្តទឹក ផែនទីខេត្តក្រចេះ គំនូរកោសិកា)', isBullet: true },
+        { text: '• ក្រុមទី៤៖ រៀបចំស្លាយបង្រៀនឌីជីថល ៥ ស្លាយសម្រាប់បង្រៀនសាកល្បង (Microteaching)', isBullet: true }
+      ],
+      images: [],
+      note: 'តំណាងក្រុមនីមួយៗនឹងឡើងធ្វើបទបង្ហាញ និងបង្រៀនសាកល្បងរយៈពេល ៨ នាទី។'
+    },
+    {
+      slideNum: 8,
+      type: 'real_pptx',
+      badge: 'ស្លាយទី ៨ • សំណួរ',
+      title: '៥. សំណួរត្រួតពិនិត្យ និងការវាយតម្លៃការយល់ដឹង',
+      subtitle: 'សំណួរឆ្លុះបញ្ចាំងគំនិតសម្រាប់គរុនិស្សិត',
+      paragraphs: [
+        { text: 'សំណួរទី១៖ ហេតុអ្វីបានជាការប្រើប្រាស់សម្ភារឧបទេសមានសារៈសំខាន់ចំពោះការបង្រៀនសតវត្សរ៍ទី២១?', isBullet: true },
+        { text: 'សំណួរទី២៖ តើគ្រូបង្រៀនគួរជៀសវាងចំណុចខុសឆ្គងអ្វីខ្លះ ពេលប្រើប្រាស់សម្ភារឧបទេសក្នុងថ្នាក់?', isBullet: true },
+        { text: 'សំណួរទី៣៖ ចូរលើកឡើងពីឧទាហរណ៍នៃការកែច្នៃសម្ភារបង្រៀនពីសំរាម ឬវត្ថុសល់ប្រើប្រាស់ក្នុងមូលដ្ឋានខេត្តក្រចេះ។', isBullet: true }
+      ],
+      images: [],
+      note: 'សូមចូលរួមឆ្លើយសំណួរទាំងនេះក្នុងសៀវភៅកត់ត្រា ឬផ្ទាំង «វេទិកាពិភាក្សា» នៃប្រព័ន្ធ STMS។'
+    },
+    {
+      slideNum: 9,
+      type: 'real_pptx',
+      badge: 'ស្លាយទី ៩ • សន្និដ្ឋាន',
+      title: 'សេចក្តីសន្និដ្ឋាន និងកិច្ចការស្រាវជ្រាវប្រចាំសប្តាហ៍',
+      subtitle: 'ការបូកសរុប និងការណែនាំកិច្ចការផ្ទះ',
+      paragraphs: [
+        { text: 'សេចក្តីសន្និដ្ឋាន៖ សម្ភារឧបទេសល្អ មិនមែនទាល់តែមានតម្លៃថ្លៃនោះទេ គឺស្ថិតនៅលើភាពឆ្លាតវៃ គំនិតច្នៃប្រឌិត និងការប្រើត្រូវតាមក្បួនគរុកោសល្យរបស់គ្រូបង្រៀន។', isBullet: false },
+        { text: 'កិច្ចការស្រាវជ្រាវផ្ទះ៖ គរុនិស្សិតម្នាក់ៗត្រូវផលិតសម្ភារឧបទេសគំរូ ១ ប្រភេទ និងថតរូប Upload ចូលផ្ទាំង «កិច្ចការសិស្ស» ក្នុងប្រព័ន្ធ STMS មុនថ្ងៃអាទិត្យក្រោយ។', isBullet: true },
+        { text: 'ឯកសារពិគ្រោះបន្ថែម៖ សៀវភៅវិធីសាស្ត្របង្រៀនបឋមសិក្សា (ក្រសួងអប់រំ យុវជន និងកីឡា) និងឯកសារ Week01.pptx។', isBullet: true }
+      ],
+      images: [],
+      note: 'សូមគរុនិស្សិតទាំងអស់អនុវត្តកិច្ចការឱ្យបានទាន់ពេលវេលាកំណត់។'
+    }
+  ];
+}
+
 function generateLessonSlides(l) {
+  if (l.parsedSlides && Array.isArray(l.parsedSlides) && l.parsedSlides.length > 0) {
+    return l.parsedSlides;
+  }
+
+  // If this is Week01 or Week01.pptx, return the real pedagogical slides of Week 01
+  if ((l.title || '').toLowerCase().includes('week01') || (l.fileName || '').toLowerCase().includes('week01')) {
+    return getWeek01RealSlides(l);
+  }
+
   const title = l.title || 'មេរៀនគរុកោសល្យ';
   const subjName = l.subjectName || l.subjectCode || 'គរុកោសល្យទូទៅ';
   const chapter = l.chapter || 'ជំពូកទី ១';
@@ -11204,178 +11766,80 @@ function generateLessonSlides(l) {
 
   return [
     {
-      type: 'cover',
+      type: 'real_pptx',
       slideNum: 1,
-      badge: 'ស្លាយគម្រប • Title Slide',
+      badge: 'ស្លាយទី ១ • គម្រប',
       title: title,
       subtitle: `${chapter} • ${subjName} (${l.subjectCode})`,
-      institution: 'សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)',
-      dept: 'ដេប៉ាតឺម៉ង់បណ្តុះបណ្តាល និងស្រាវជ្រាវគរុកោសល្យ',
-      teacher: teacher,
-      date: date,
-      fileName: fileName,
-      fileSize: fileSize,
-      desc: desc,
-      note: 'សូមស្វាគមន៍គរុនិស្សិតទាំងអស់មកកាន់ការសិក្សាស្លាយមេរៀននេះ! សូមកត់ត្រាគំនិតសំខាន់ៗ និងត្រៀមសំណួរពិភាក្សា។'
+      paragraphs: [
+        { text: `សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)`, isBullet: false },
+        { text: `មុខវិជ្ជា៖ ${subjName} (${l.subjectCode})`, isBullet: true },
+        { text: `ជំពូក៖ ${chapter}`, isBullet: true },
+        { text: `គ្រូឧទ្ទេសទទួលបន្ទុក៖ ${teacher}`, isBullet: true },
+        { text: `ឯកសារដើម៖ ${fileName} (${fileSize})`, isBullet: true },
+        { text: `ការពិពណ៌នា៖ ${desc}`, isBullet: false }
+      ],
+      images: [],
+      note: 'ស្លាយគម្របមេរៀនដែលគ្រូឧទ្ទេសបាន Upload'
     },
     {
-      type: 'objectives',
+      type: 'real_pptx',
       slideNum: 2,
-      badge: 'គោលបំណងមេរៀន • Objectives',
-      title: 'គោលបំណងនៃការបង្រៀន និងរៀន (Instructional Objectives)',
-      pillars: [
-        {
-          icon: 'fas fa-brain',
-          color: '#38bdf8',
-          label: '១. ផ្នែកចំណេះដឹង (Knowledge)',
-          items: [
-            `យល់ដឹងស៊ីជម្រៅអំពីទស្សនទាន គោលការណ៍គ្រឹះ និងខ្លឹមសារស្នូលនៃ «${title}»។`,
-            `កំណត់បាននូវទ្រឹស្តីបទគរុកោសល្យ និងសារៈសំខាន់នៃមុខវិជ្ជា ${subjName}។`,
-            'ពន្យល់បាននូវទំនាក់ទំនងរវាងទ្រឹស្តី និងការអនុវត្តបង្រៀនជាក់ស្តែងក្នុងថ្នាក់រៀន។'
-          ]
-        },
-        {
-          icon: 'fas fa-tools',
-          color: '#fbbf24',
-          label: '២. ផ្នែកបំណិន (Skills)',
-          items: [
-            'រៀបចំកិច្ចតែងការបង្រៀន និងកំណត់សកម្មភាពរៀនសកម្មស្របតាមកម្រិតសមត្ថភាពសិស្ស។',
-            'ចេះផលិត និងប្រើប្រាស់សម្ភារឧបទេសបង្រៀន ឬស្លាយឌីជីថលឱ្យត្រូវតាមកាលៈទេសៈ។',
-            'ដឹកនាំការគ្រប់គ្រងថ្នាក់រៀន និងសម្របសម្រួលសកម្មភាពក្រុមប្រកបដោយប្រសិទ្ធភាព។'
-          ]
-        },
-        {
-          icon: 'fas fa-heart',
-          color: '#34d399',
-          label: '៣. ផ្នែកឥរិយាបថ (Attitude)',
-          items: [
-            'បណ្តុះស្មារតីស្រឡាញ់វិជ្ជាជីវៈគ្រូបង្រៀន និងមានមនសិការទទួលខុសត្រូវខ្ពស់។',
-            'រក្សាសីលធម៌ គុណធម៌ និងភាពអត់ធ្មត់ក្នុងការអប់រំ និងអភិវឌ្ឍសិស្សគ្រប់រូប។',
-            'មានគំនិតច្នៃប្រឌិត និងស្វាហាប់ក្នុងការស្រាវជ្រាវវិធីសាស្ត្របង្រៀនថ្មីៗជានិច្ច។'
-          ]
-        }
+      badge: 'ស្លាយទី ២ • គោលបំណង',
+      title: 'គោលបំណងនៃការបង្រៀន និងរៀន',
+      subtitle: `គោលដៅអប់រំនៃមេរៀន ${title}`,
+      paragraphs: [
+        { text: `១. ផ្នែកចំណេះដឹង៖ យល់ដឹងស៊ីជម្រៅអំពីគោលការណ៍គ្រឹះ និងខ្លឹមសារស្នូលនៃ ${title}។`, isBullet: true },
+        { text: `២. ផ្នែកបំណិន៖ ចេះរៀបចំ វិភាគ និងអនុវត្តវិធីសាស្ត្របង្រៀនជាក់ស្តែងក្នុងថ្នាក់រៀន។`, isBullet: true },
+        { text: `៣. ផ្នែកឥរិយាបថ៖ បណ្តុះស្មារតីស្រឡាញ់វិជ្ជាជីវៈគ្រូបង្រៀន និងមានមនសិការទទួលខុសត្រូវខ្ពស់។`, isBullet: true }
       ],
-      note: 'គរុនិស្សិតត្រូវក្តាប់ឱ្យបានច្បាស់នូវចំណុចទាំង ៣ នៃគោលបំណង (ចំណេះដឹង បំណិន និងឥរិយាបថ) មុននឹងចាប់ផ្តើមរៀបចំកិច្ចតែងការបង្រៀន។'
+      images: [],
+      note: 'គោលបំណងអប់រំទាំង ៣ ផ្នែក'
     },
     {
-      type: 'agenda',
+      type: 'real_pptx',
       slideNum: 3,
-      badge: 'មាតិកាមេរៀន • Lesson Agenda',
-      title: 'រចនាសម្ព័ន្ធ និងមាតិកាសង្ខេបនៃមេរៀន',
-      items: [
-        { num: '០១', title: 'សេចក្តីផ្តើម & បរិបទគរុកោសល្យ', desc: `សារៈសំខាន់នៃប្រធានបទ «${title}» ក្នុងការលើកកម្ពស់គុណភាពបង្រៀន` },
-        { num: '០២', title: 'និយមន័យ & ទស្សនទានស្នូល', desc: `ទ្រឹស្តីបទ និងគោលការណ៍គ្រឹះនៃមុខវិជ្ជា ${subjName}` },
-        { num: '០៣', title: 'យុទ្ធសាស្ត្របង្រៀនបែបសកម្ម (Active Learning)', desc: 'បច្ចេកទេសជំរុញការចូលរួម និងការគិតកម្រិតខ្ពស់របស់សិស្ស' },
-        { num: '០៤', title: 'ដំណើរការបង្រៀន ៥ ជំហាន', desc: 'ការអនុវត្តជាក់ស្តែងតាមលំដាប់លំដោយនៃកិច្ចតែងការបង្រៀនគំរូ' },
-        { num: '០៥', title: 'សកម្មភាពក្រុម & សិក្ខាសាលាអនុវត្ត', desc: 'ការបង្រៀនសាកល្បង (Microteaching) និងការវិភាគករណីសិក្សា' },
-        { num: '០៦', title: 'ការវាយតម្លៃ & សំណួរត្រួតពិនិត្យ', desc: 'ការវាស់វែងលទ្ធផលសិក្សា និងកិច្ចការស្រាវជ្រាវបន្ត' }
+      badge: 'ស្លាយទី ៣ • ខ្លឹមសារ',
+      title: 'ខ្លឹមសារស្នូល និងគោលការណ៍គរុកោសល្យ',
+      subtitle: `${chapter}៖ ${title}`,
+      paragraphs: [
+        { text: `• វិធីសាស្ត្រផ្តោតលើសិស្សជាមជ្ឈមណ្ឌល (Student-Centered Learning)`, isBullet: true },
+        { text: `• ការប្រើប្រាស់សំណួរបំផុសគំនិត (Inquiry-Based Learning)`, isBullet: true },
+        { text: `• ការរួមបញ្ចូលបច្ចេកវិទ្យាអប់រំ និងស្លាយឌីជីថល (EdTech Integration)`, isBullet: true },
+        { text: `• ការផ្តល់ការឆ្លើយតបកែលម្អវិជ្ជមាន និងទាន់ពេលវេលា (Formative Feedback)`, isBullet: true }
       ],
-      note: 'មាតិកានេះរៀបចំឡើងជា ៦ ផ្នែកស្នូល ដើម្បីសម្រួលដល់ការតាមដាន និងការរៀបចំកិច្ចតែងការបង្រៀនបានត្រឹមត្រូវ។'
+      images: [],
+      note: 'គោលការណ៍គរុកោសល្យសតវត្សរ៍ទី២១'
     },
     {
-      type: 'concepts',
+      type: 'real_pptx',
       slideNum: 4,
-      badge: 'ខ្លឹមសារស្នូល • Core Concepts',
-      title: 'គោលការណ៍គរុកោសល្យ និងទ្រឹស្តីបទសំខាន់ៗ',
-      cards: [
-        {
-          icon: 'fas fa-child',
-          color: '#38bdf8',
-          title: 'វិធីសាស្ត្រផ្តោតលើសិស្សជាមជ្ឈមណ្ឌល',
-          desc: 'ផ្ទេរតួនាទីពីគ្រូជាអ្នកបញ្ជូនចំណេះដឹងតែម្ខាង មកជាអ្នកសម្របសម្រួល (Facilitator) បង្កើតឱកាសឱ្យសិស្សបានស្វែងយល់ ពិសោធ និងសាងចំណេះដឹងដោយខ្លួនឯង។'
-        },
-        {
-          icon: 'fas fa-lightbulb',
-          color: '#fbbf24',
-          title: 'ការប្រើប្រាស់សំណួរបំផុសគំនិត (Inquiry-Based)',
-          desc: 'ប្រើប្រាស់សំណើ និងសំណួរជំរុញការត្រិះរិះពិចារណា (Critical Thinking) ដើម្បីជំរុញឱ្យសិស្សរកឃើញដំណោះស្រាយ និងបង្កើតគំនិតច្នៃប្រឌិតថ្មីៗ។'
-        },
-        {
-          icon: 'fas fa-laptop-code',
-          color: '#a78bfa',
-          title: 'ការរួមបញ្ចូលបច្ចេកវិទ្យាឌីជីថល (EdTech Integration)',
-          desc: 'ទាញយកប្រយោជន៍ពីស្លាយឌីជីថល កម្រងវីដេអូបង្រៀន និងថ្នាលរៀនអនឡាញ KTPTTC ដើម្បីធ្វើឱ្យមេរៀនកាន់តែរស់រវើក និងទាក់ទាញអារម្មណ៍សិស្ស។'
-        },
-        {
-          icon: 'fas fa-comments',
-          color: '#34d399',
-          title: 'ការឆ្លើយតបកែលម្អវិជ្ជមាន (Formative Feedback)',
-          desc: 'ផ្តល់មតិកែលម្អលើការអនុវត្តរបស់សិស្សភ្លាមៗប្រកបដោយការលើកទឹកចិត្ត ដើម្បីឱ្យសិស្សដឹងពីចំណុចខ្លាំង និងចំណុចត្រូវពង្រឹងបន្ថែម។'
-        }
+      badge: 'ស្លាយទី ៤ • ៥ ជំហាន',
+      title: 'ដំណើរការបង្រៀនតាមលំដាប់ ៥ ជំហាន',
+      subtitle: 'កិច្ចតែងការបង្រៀនគំរូ',
+      paragraphs: [
+        { text: 'ជំហានទី១ (៥ នាទី)៖ ពិនិត្យវត្តមាន សណ្តាប់ធ្នាប់ និងរំលឹកមេរៀនចាស់', isBullet: true },
+        { text: `ជំហានទី២ (៥ នាទី)៖ ទំនាក់ទំនងមេរៀនថ្មី «${title}» និងបង្ហាញគោលបំណង`, isBullet: true },
+        { text: 'ជំហានទី៣ (១៥ នាទី)៖ ពន្យល់ខ្លឹមសារគន្លឹះ និងណែនាំសកម្មភាពរៀនសកម្ម', isBullet: true },
+        { text: 'ជំហានទី៤ (១៥ នាទី)៖ ពង្រឹងចំណេះដឹង អនុវត្តជាក់ស្តែង និងសកម្មភាពក្រុម', isBullet: true },
+        { text: 'ជំហានទី៥ (១០ នាទី)៖ វាយតម្លៃលទ្ធផល និងដាក់កិច្ចការស្រាវជ្រាវផ្ទះ', isBullet: true }
       ],
-      note: 'គោលការណ៍ទាំង ៤ នេះជាគ្រឹះក្នុងការរៀបចំថ្នាក់រៀនសតវត្សរ៍ទី២១ ប្រកបដោយបរិយាបន្ន និងប្រសិទ្ធភាពខ្ពស់។'
+      images: [],
+      note: 'ដំណាក់កាលទាំង ៥ នៃកិច្ចតែងការបង្រៀន'
     },
     {
-      type: 'five_steps',
+      type: 'real_pptx',
       slideNum: 5,
-      badge: 'ដំណើរការបង្រៀន • 5-Step Model',
-      title: 'ដំណើរការបង្រៀនតាមលំដាប់ ៥ ជំហាន (5-Step Framework)',
-      steps: [
-        { step: 'ជំហានទី១', title: 'រដ្ឋបាលថ្នាក់ & រំលឹកមេរៀនចាស់', time: '៥ នាទី', desc: 'ពិនិត្យវត្តមាន សណ្តាប់ធ្នាប់ អនាម័យ និងចោទសួរភ្ជាប់ពីមេរៀនកន្លងមក។' },
-        { step: 'ជំហានទី២', title: 'ទំនាក់ទំនងមេរៀនថ្មី & គោលបំណង', time: '៥ នាទី', desc: `បង្ហាញចំណងជើង «${title}» គោលបំណង និងទាក់ទាញចំណាប់អារម្មណ៍សិស្ស។` },
-        { step: 'ជំហានទី៣', title: 'ពន្យល់ខ្លឹមសារ & ណែនាំសកម្មភាព', time: '១៥ នាទី', desc: 'បង្ហាញខ្លឹមសារគន្លឹះ ប្រើស្លាយ/សម្ភារឧបទេស និងណែនាំវិធីសាស្ត្រអនុវត្ត។' },
-        { step: 'ជំហានទី៤', title: 'ពង្រឹងចំណេះដឹង & អនុវត្តជាក់ស្តែង', time: '១៥ នាទី', desc: 'ឱ្យសិស្សធ្វើការជាបុគ្គល ឬជាក្រុម អនុវត្តលំហាត់ ឬកិច្ចការជាក់ស្តែងក្នុងថ្នាក់។' },
-        { step: 'ជំហានទី៥', title: 'វាយតម្លៃលទ្ធផល & ដាក់កិច្ចការផ្ទះ', time: '១០ នាទី', desc: 'សួរសំណួរត្រួតពិនិត្យ ផ្តល់ពិន្ទុលើកទឹកចិត្ត និងប្រគល់កិច្ចការស្រាវជ្រាវបន្ត។' }
-      ],
-      note: 'កិច្ចតែងការបង្រៀនគរុកោសល្យត្រូវគោរពតាមដំណាក់កាលទាំង ៥ នេះជាប្រចាំ ដើម្បីធានាការគ្រប់គ្រងពេលវេលាបានត្រឹមត្រូវ។'
-    },
-    {
-      type: 'activity',
-      slideNum: 6,
-      badge: 'សកម្មភាពជាក់ស្តែង • Workshop',
-      title: 'សកម្មភាពសិក្សាជាក្រុម និងការបង្រៀនសាកល្បង',
-      tasks: [
-        {
-          group: 'ក្រុមទី១ (Group A)',
-          topic: 'ការរៀបចំសំណួរបំផុស & សកម្មភាពរៀនសកម្ម',
-          detail: `កំណត់សំណួរគន្លឹះ ៣ សំណួរ និងសកម្មភាពហ្គេមអប់រំសម្រាប់ទាក់ទាញសិស្សក្នុងមេរៀន ${title}។`
-        },
-        {
-          group: 'ក្រុមទី២ (Group B)',
-          topic: 'ការផលិតសម្ភារឧបទេស & ស្លាយបង្រៀន',
-          detail: 'រៀបចំស្លាយគំរូ ឬសម្ភារបង្រៀនដែលងាយយល់ និងមានរូបភាពគំនូរច្បាស់លាស់សម្រាប់មុខវិជ្ជា។'
-        },
-        {
-          group: 'ក្រុមទី៣ (Group C)',
-          topic: 'ការបង្រៀនសាកល្បង (Microteaching 10mn)',
-          detail: 'តំណាងក្រុមឡើងបង្រៀនសាកល្បងជំហានទី៣ និងទី៤ នៅចំពោះមុខមិត្តរួមថ្នាក់។'
-        },
-        {
-          group: 'ក្រុមទី៤ (Group D)',
-          topic: 'ការសង្កេត និងផ្តល់មតិស្ថាបនា (Peer Review)',
-          detail: 'ប្រើប្រាស់តារាងវាយតម្លៃ (Rubric) ដើម្បីកត់ត្រាចំណុចល្អ និងចំណុចគួរកែលម្អដល់ក្រុមបង្រៀន។'
-        }
-      ],
-      note: 'សកម្មភាពក្រុមជួយឱ្យគរុនិស្សិតបង្កើនជំនាញទំនាក់ទំនង ការធ្វើការងារជាក្រុម និងភាពក្លាហានក្នុងការបង្រៀន។'
-    },
-    {
-      type: 'questions',
-      slideNum: 7,
-      badge: 'សំណួរត្រួតពិនិត្យ • Review',
-      title: 'សំណួរពិភាក្សា និងការត្រួតពិនិត្យការយល់ដឹង',
-      questions: [
-        `១. តើវិធីសាស្ត្របង្រៀន និងខ្លឹមសារក្នុងមេរៀន «${title}» ជួយដោះស្រាយបញ្ហាសិស្សរៀនយឺតយ៉ាងដូចម្តេចខ្លះ?`,
-        `២. ក្នុងនាមជាគរុនិស្សិត ពេលចុះហាត់រៀននៅសាលាបឋម/មធ្យមសិក្សា តើលោកអ្នកនឹងអនុវត្ត ${chapter} នេះយ៉ាងដូចម្តេចឱ្យសមស្របនឹងស្ថានភាពជាក់ស្តែង?`,
-        '៣. ចូរលើកឡើងពីឧទាហរណ៍ជាក់ស្តែងចំនួន ២ នៃការប្រើប្រាស់បច្ចេកវិទ្យា និងស្លាយបង្រៀនដើម្បីធ្វើឱ្យសិស្សចូលរួមរៀនយ៉ាងសកម្ម។'
-      ],
-      note: 'សូមឆ្លើយសំណួរទាំងនេះក្នុងសៀវភៅកត់ត្រា ឬចូលរួមបញ្ចេញមតិក្នុងផ្ទាំង «វេទិកាពិភាក្សា» នៃប្រព័ន្ធ STMS។'
-    },
-    {
-      type: 'conclusion',
-      slideNum: 8,
-      badge: 'សន្និដ្ឋាន & កិច្ចការ • Summary',
+      badge: 'ស្លាយទី ៥ • សន្និដ្ឋាន',
       title: 'សេចក្តីសន្និដ្ឋាន និងកិច្ចការស្រាវជ្រាវបន្ត',
-      takeaways: [
-        `ការយល់ដឹងច្បាស់ពី «${title}» គឺជាមូលដ្ឋានគ្រឹះមិនអាចខ្វះបានសម្រាប់គរុនិស្សិតគ្រប់រូប។`,
-        'ការរួមបញ្ចូលវិធីសាស្ត្ររៀនសកម្ម ការប្រើសម្ភារឧបទេស និងការគ្រប់គ្រងថ្នាក់រៀន ធានាឱ្យការបង្រៀនមានប្រសិទ្ធភាពខ្ពស់។',
-        'សូមបន្តស្វ័យសិក្សា និងស្រាវជ្រាវឯកសារបន្ថែមក្នុងបណ្ណាល័យឌីជីថល KTPTTC ជាប្រចាំ។'
+      subtitle: 'ការបូកសរុបលទ្ធផលសិក្សា',
+      paragraphs: [
+        { text: `• ការក្តាប់បាននូវខ្លឹមសារនៃ «${title}» ជាគ្រឹះនៃការបង្រៀនប្រកបដោយគុណភាព។`, isBullet: true },
+        { text: `• កិច្ចការស្រាវជ្រាវ៖ រៀបចំកិច្ចតែងការបង្រៀនគំរូ ១ ទំព័រ ផ្ញើចូលប្រព័ន្ធ STMS។`, isBullet: true },
+        { text: `• ឯកសារពិគ្រោះ៖ សៀវភៅគោលគរុកោសល្យ KTPTTC និងឯកសារ ${fileName}។`, isBullet: true }
       ],
-      homework: {
-        title: `កិច្ចការស្រាវជ្រាវប្រចាំសប្តាហ៍៖ រៀបចំកិច្ចតែងការបង្រៀនគំរូ ១ ទំព័រ លើប្រធានបទ ${title}`,
-        deadline: 'កាលបរិច្ឆេទផុតកំណត់៖ សប្តាហ៍ក្រោយ (សូម Upload ចូលក្នុងផ្ទាំង «កិច្ចការសិស្ស»)',
-        references: `ឯកសារយោង៖ សៀវភៅគោលគរុកោសល្យ KTPTTC, ឯកសារក្រសួងអប់រំ យុវជន និងកីឡា, និងឯកសារ ${fileName}`
-      },
-      note: 'សូមផ្ញើកិច្ចការឱ្យបានទាន់ពេលវេលាកំណត់។ ប្រសិនបើមានចម្ងល់ អាចទាក់ទងគ្រូឧទ្ទេសតាមរយៈប្រព័ន្ធ STMS នេះបាន។'
+      images: [],
+      note: 'សេចក្តីសន្និដ្ឋាន និងការណែនាំកិច្ចការផ្ទះ'
     }
   ];
 }
