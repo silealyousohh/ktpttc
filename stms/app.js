@@ -2988,6 +2988,7 @@ function renderAttendanceView(container) {
         <button class="btn btn-outline" onclick="openSemesterAttendanceReportModal()"><i class="fas fa-chart-line"></i> របាយការណ៍លើប្រចាំខែ</button>
         <button class="btn btn-danger" onclick="openAutoNotificationModal()"><i class="fas fa-bell"></i> ជូនដំណឹងស្វ័យប្រវត្តិ</button>
         <button class="btn btn-primary" onclick="markAllAttendanceState('present')"><i class="fas fa-check-double"></i> វត្តមានទាំងអស់</button>
+        <button class="btn btn-outline" style="border-color:#ef4444; color:#dc2626; background:#fef2f2; font-weight:700;" onclick="confirmResetModuleAttendance()"><i class="fas fa-rotate-left"></i> Reset វត្តមាន</button>
         <button class="btn btn-success" onclick="saveAttendanceSession()"><i class="fas fa-save"></i> រក្សាទុកវត្តមាន</button>
       </div>
     </div>
@@ -10393,9 +10394,14 @@ function renderTrainerPortalView(container) {
         <div class="table-card">
           <div class="table-toolbar">
             <strong style="color:#1e3a8a;"><i class="fas fa-calendar-check" style="color:#10b981;"></i> ស្ថិតិវត្តមានគរុនិស្សិត (${currentTeacherPortalClassFilter === 'all' ? 'គ្រប់ថ្នាក់' : currentTeacherPortalClassFilter})</strong>
-            <button class="btn btn-primary" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
-              <i class="fas fa-plus"></i> ស្រង់វត្តមានឥឡូវនេះ
-            </button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn-outline" style="height:28px; padding:0 10px; font-size:0.75rem; border-color:#ef4444; color:#dc2626; background:#fef2f2; font-weight:700;" onclick="confirmResetTeacherAttendance('${myCodes[0]}', '${currentTeacherPortalClassFilter}')" title="កំណត់វត្តមានឡើងវិញ (Reset វត្តមាន)">
+                <i class="fas fa-rotate-left"></i> Reset វត្តមាន
+              </button>
+              <button class="btn btn-primary" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
+                <i class="fas fa-plus"></i> ស្រង់វត្តមានឥឡូវនេះ
+              </button>
+            </div>
           </div>
           <div style="padding:22px;">
             <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:14px;">
@@ -10984,6 +10990,22 @@ function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') 
   const totalFilteredCount = Object.values(classGroups).reduce((sum, arr) => sum + arr.length, 0);
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // Look for existing session for todayStr + currentSubject.code + selectedClass
+  const existingSession = (stmsData.attendanceSessions || []).find(sess => 
+    sess.date === todayStr &&
+    sess.subjectCode === currentSubject.code &&
+    (selectedClass === 'all' || sess.targetClass === selectedClass || sess.cohort === selectedClass)
+  );
+
+  let initPres = 0, initPerm = 0, initLate = 0, initAbs = 0;
+  eligibleStudents.forEach(t => {
+    const st = (existingSession && existingSession.records && existingSession.records[t.id]) || 'present';
+    if (st === 'present') initPres++;
+    else if (st === 'permission') initPerm++;
+    else if (st === 'late') initLate++;
+    else if (st === 'absent') initAbs++;
+  });
+
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherAttendanceModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
       <div class="stms-modal-dialog" style="max-width:920px;">
@@ -11033,9 +11055,15 @@ function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') 
                 </select>
               </div>
             </div>
-            <div>
-              <button class="btn btn-outline" style="height:32px; font-size:0.78rem; background:#ffffff; border-color:#86efac; color:#15803d; font-weight:700;" onclick="setAllAttendance('present')">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline" style="height:32px; font-size:0.78rem; background:#ffffff; border-color:#86efac; color:#15803d; font-weight:700;" onclick="setAllAttendance('present')" title="ជ្រើសរើសវត្តមានទាំងអស់">
                 <i class="fas fa-check-double" style="color:#16a34a;"></i> វត្តមានទាំងអស់
+              </button>
+              <button type="button" class="btn btn-outline" style="height:32px; font-size:0.78rem; background:#f8fafc; border-color:#cbd5e1; color:#475569; font-weight:600;" onclick="resetAttendanceTablePills()" title="កំណត់ជម្រើសគ្រប់សិស្សទៅជាវត្តមានឡើងវិញ">
+                <i class="fas fa-eraser"></i> សម្អាតជម្រើស
+              </button>
+              <button type="button" class="btn btn-outline" style="height:32px; font-size:0.78rem; background:#fff1f2; border-color:#f87171; color:#dc2626; font-weight:700;" onclick="confirmResetTeacherAttendance('${currentSubject.code}', '${selectedClass}')" title="កំណត់ត្រាវត្តមានដែលបានស្រង់ទាំងអស់ក្នុងមុខវិជ្ជា/ថ្នាក់នេះឡើងវិញ">
+                <i class="fas fa-rotate-left"></i> Reset ប្រវត្តិវត្តមាន
               </button>
             </div>
           </div>
@@ -11049,14 +11077,15 @@ function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') 
                   <th>ឈ្មោះគរុនិស្សិត</th>
                   <th>អត្តលេខ</th>
                   <th style="text-align:center;">ជ្រើសរើសស្ថានភាពវត្តមាន</th>
+                  <th style="width:65px; text-align:center;">Reset</th>
                 </tr>
               </thead>
               <tbody id="teacherAttTableBody">
                 ${Object.keys(classGroups).length === 0 ? `
-                  <tr><td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;">មិនមានគរុសិស្សនៅក្នុងថ្នាក់ដែលបានជ្រើសរើសឡើយ។</td></tr>
+                  <tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">មិនមានគរុសិស្សនៅក្នុងថ្នាក់ដែលបានជ្រើសរើសឡើយ។</td></tr>
                 ` : Object.entries(classGroups).map(([clsName, groupStudents]) => `
                   <tr class="att-group-header-row" style="background:#f0fdf4 !important; color:#166534 !important; border-top:2px solid #bbf7d0; border-bottom:2px solid #bbf7d0;">
-                    <td colspan="4" style="padding:8px 14px;">
+                    <td colspan="5" style="padding:8px 14px;">
                       <div class="att-group-title" style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-weight:700; font-size:0.88rem;">
                           <i class="fas fa-chalkboard" style="color:#16a34a; margin-right:8px;"></i> ថ្នាក់ក្រុម៖ <strong>${clsName}</strong> 
@@ -11068,7 +11097,9 @@ function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') 
                       </div>
                     </td>
                   </tr>
-                  ${groupStudents.map((t, idx) => `
+                  ${groupStudents.map((t, idx) => {
+                    const st = (existingSession && existingSession.records && existingSession.records[t.id]) || 'present';
+                    return `
                     <tr data-student-id="${t.id}" data-group-name="${clsName}">
                       <td>${idx + 1}</td>
                       <td>
@@ -11084,22 +11115,28 @@ function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') 
                       <td><code>${t.id}</code></td>
                       <td style="text-align:center;">
                         <div class="att-pill-group">
-                          <button type="button" class="att-pill-btn active present" onclick="setStudentAttendance('${t.id}', 'present', this)">
+                          <button type="button" class="att-pill-btn ${st === 'present' ? 'active present' : 'present'}" onclick="setStudentAttendance('${t.id}', 'present', this)">
                             <i class="fas fa-check"></i> វត្តមាន
                           </button>
-                          <button type="button" class="att-pill-btn permission" onclick="setStudentAttendance('${t.id}', 'permission', this)">
+                          <button type="button" class="att-pill-btn ${st === 'permission' ? 'active permission' : 'permission'}" onclick="setStudentAttendance('${t.id}', 'permission', this)">
                             <i class="fas fa-envelope-open-text"></i> ច្បាប់
                           </button>
-                          <button type="button" class="att-pill-btn late" onclick="setStudentAttendance('${t.id}', 'late', this)">
+                          <button type="button" class="att-pill-btn ${st === 'late' ? 'active late' : 'late'}" onclick="setStudentAttendance('${t.id}', 'late', this)">
                             <i class="fas fa-clock"></i> យឺត
                           </button>
-                          <button type="button" class="att-pill-btn absent" onclick="setStudentAttendance('${t.id}', 'absent', this)">
+                          <button type="button" class="att-pill-btn ${st === 'absent' ? 'active absent' : 'absent'}" onclick="setStudentAttendance('${t.id}', 'absent', this)">
                             <i class="fas fa-times"></i> ឥតច្បាប់
                           </button>
                         </div>
                       </td>
+                      <td style="text-align:center;">
+                        <button type="button" class="btn btn-outline" style="height:26px; width:26px; padding:0; border-radius:6px; border-color:#fca5a5; color:#dc2626; background:#fff5f5; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;" onclick="resetStudentRowAttendance('${t.id}', this)" title="Reset វត្តមានសិស្សនេះទៅជា វត្តមាន">
+                          <i class="fas fa-undo-alt" style="font-size:0.7rem;"></i>
+                        </button>
+                      </td>
                     </tr>
-                  `).join('')}
+                    `;
+                  }).join('')}
                 `).join('')}
               </tbody>
             </table>
@@ -11108,12 +11145,15 @@ function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') 
           <!-- Attendance Summary Counters Bar -->
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; gap:14px; font-size:0.84rem; font-weight:700;">
-              <span style="color:#15803d;"><i class="fas fa-check-circle"></i> វត្តមាន៖ <span id="attCounterPres">${totalFilteredCount}</span></span>
-              <span style="color:#b45309;"><i class="fas fa-envelope"></i> ច្បាប់៖ <span id="attCounterPerm">0</span></span>
-              <span style="color:#c2410c;"><i class="fas fa-clock"></i> យឺត៖ <span id="attCounterLate">0</span></span>
-              <span style="color:#b91c1c;"><i class="fas fa-times-circle"></i> ឥតច្បាប់៖ <span id="attCounterAbs">0</span></span>
+              <span style="color:#15803d;"><i class="fas fa-check-circle"></i> វត្តមាន៖ <span id="attCounterPres">${initPres}</span></span>
+              <span style="color:#b45309;"><i class="fas fa-envelope"></i> ច្បាប់៖ <span id="attCounterPerm">${initPerm}</span></span>
+              <span style="color:#c2410c;"><i class="fas fa-clock"></i> យឺត៖ <span id="attCounterLate">${initLate}</span></span>
+              <span style="color:#b91c1c;"><i class="fas fa-times-circle"></i> ឥតច្បាប់៖ <span id="attCounterAbs">${initAbs}</span></span>
             </div>
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button type="button" class="btn btn-outline" style="border-color:#f87171; color:#dc2626; background:#fff1f2; font-weight:700;" onclick="confirmResetTeacherAttendance('${currentSubject.code}', '${selectedClass}')">
+                <i class="fas fa-rotate-left"></i> Reset វត្តមាន
+              </button>
               <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
               <button class="btn btn-primary" onclick="saveTeacherAttendance()">
                 <i class="fas fa-save"></i> 💾 រក្សាទុកវត្តមាន
@@ -11254,10 +11294,42 @@ function saveTeacherAttendance() {
   if (!Array.isArray(stmsData.attendanceSessions)) {
     stmsData.attendanceSessions = [];
   }
-  stmsData.attendanceSessions.unshift(newSession);
 
-  // Recalculate each student's attendance summary based on all sessions
-  stmsData.trainees.forEach(t => {
+  // Check if session for exact same date + session + subject + targetClass already exists
+  const existingIdx = stmsData.attendanceSessions.findIndex(s => 
+    s.date === date && 
+    s.session === session && 
+    s.subjectCode === subjectCode && 
+    (s.targetClass === targetClass || s.cohort === targetClass)
+  );
+
+  if (existingIdx >= 0) {
+    stmsData.attendanceSessions[existingIdx].records = records;
+    stmsData.attendanceSessions[existingIdx].updatedAt = new Date().toISOString();
+  } else {
+    stmsData.attendanceSessions.unshift(newSession);
+  }
+
+  recalculateTraineeAttendanceSummaries();
+  saveData();
+  showToast(`🎉 បានស្រង់វត្តមានសិស្ស (${Object.keys(records).length} នាក់) មុខវិជ្ជា «${subj.nameKh}» ដោយជោគជ័យ!`, 'success');
+  closeStmsModal();
+  if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
+    renderView(currentView);
+  }
+}
+
+// --------------------------------------------------------------------------
+// 5.1. ATTENDANCE RESET CONTROLLER (កំណត់វត្តមានឡើងវិញ)
+// --------------------------------------------------------------------------
+
+// Recalculate Trainees' Attendance Summaries from all active sessions
+function recalculateTraineeAttendanceSummaries() {
+  if (!Array.isArray(stmsData.attendanceSessions)) {
+    stmsData.attendanceSessions = [];
+  }
+
+  (stmsData.trainees || []).forEach(t => {
     let p = 0, perm = 0, l = 0, a = 0;
     stmsData.attendanceSessions.forEach(sess => {
       const st = sess.records && sess.records[t.id];
@@ -11282,13 +11354,123 @@ function saveTeacherAttendance() {
       currentTraineeUser.attendanceSummary = { ...t.attendanceSummary };
     }
   });
+}
 
+// Confirmation Dialog before executing full attendance reset for subject/class
+function confirmResetTeacherAttendance(subjectCode, targetClass = 'all') {
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  if (currentRole === 'trainer' && !myCodes.includes(subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ លោកគ្រូ/អ្នកគ្រូ គ្មានសិទ្ធិគ្រប់គ្រងវត្តមានមុខវិជ្ជា «${subjectCode}» ឡើយ!`, 'error');
+    return;
+  }
+
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
+  const classText = targetClass === 'all' ? 'សិស្សគ្រប់ថ្នាក់' : `ថ្នាក់ «${targetClass}»`;
+
+  const msg = `⚠️ បញ្ជាក់ការកំណត់វត្តមានឡើងវិញ (Reset វត្តមាន)\n\nតើលោកគ្រូ/អ្នកគ្រូពិតជាចង់ Reset (កំណត់ឡើងវិញ) កំណត់ត្រាវត្តមានសម្រាប់ ${classText} ក្នុងមុខវិជ្ជា «${subj.nameKh}» មែនទេ?\n\n• កំណត់ត្រាវត្តមានដែលបានស្រង់កន្លងមកទាំងអស់ក្នុងមុខវិជ្ជានេះ នឹងត្រូវសម្អាតឡើងវិញជាទទេ។\n• អត្រាវត្តមានរបស់គរុនិស្សិតនឹងត្រូវគណនាឡើងវិញដោយស្វ័យប្រវត្តិ។\n• ចុច «OK» ដើម្បីបន្ត ឬ «Cancel» ដើម្បីបោះបង់។`;
+
+  if (!confirm(msg)) return;
+  executeResetTeacherAttendance(subjectCode, targetClass);
+}
+
+// Execute deletion/reset of attendance sessions and recompute metrics
+function executeResetTeacherAttendance(subjectCode, targetClass = 'all') {
+  const tr = getActiveTrainerProfile();
+  const myClasses = getTrainerAssignedClasses(tr);
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
+
+  if (!Array.isArray(stmsData.attendanceSessions)) {
+    stmsData.attendanceSessions = [];
+  }
+
+  const initialCount = stmsData.attendanceSessions.length;
+
+  stmsData.attendanceSessions = stmsData.attendanceSessions.filter(sess => {
+    // Check if session belongs to this subject
+    const matchesSubject = sess.subjectCode === subjectCode;
+    if (!matchesSubject) return true; // keep other subjects
+
+    // Check class filter
+    if (targetClass !== 'all') {
+      const sessClass = sess.targetClass || sess.className || sess.cohort;
+      if (sessClass === targetClass) {
+        return false; // remove
+      }
+      return true; // keep other classes
+    }
+
+    // If targetClass is 'all', remove all sessions for this subject
+    return false;
+  });
+
+  const removedCount = initialCount - stmsData.attendanceSessions.length;
+
+  recalculateTraineeAttendanceSummaries();
   saveData();
-  showToast(`🎉 បានស្រង់វត្តមានសិស្ស (${Object.keys(records).length} នាក់) មុខវិជ្ជា «${subj.nameKh}» ដោយជោគជ័យ!`, 'success');
-  closeStmsModal();
-  if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
+
+  showToast(`🎉 បាន Reset កំណត់ត្រាវត្តមានមុខវិជ្ជា «${subj.nameKh}» ចំនួន ${removedCount} វគ្គរួចរាល់!`, 'success');
+
+  const modalBackdrop = document.getElementById('teacherAttendanceModalBackdrop');
+  if (modalBackdrop) {
+    openTeacherAttendanceModal(subjectCode, targetClass);
+  } else if (currentView === 'trainer-portal' || currentView === 'attendance') {
     renderView(currentView);
   }
+}
+
+// Reset all selection pills in active attendance modal back to 'present'
+function resetAttendanceTablePills() {
+  const groups = document.querySelectorAll('#teacherAttTableBody .att-pill-group');
+  if (groups.length === 0) {
+    showToast('មិនមានទិន្នន័យក្នុងតារាង!', 'warning');
+    return;
+  }
+
+  groups.forEach(group => {
+    group.querySelectorAll('.att-pill-btn').forEach(b => {
+      b.classList.remove('active');
+      if (b.classList.contains('present')) {
+        b.classList.add('active');
+      }
+    });
+  });
+
+  updateAttendanceModalCounters();
+  showToast('បានកំណត់ជម្រើសគ្រប់សិស្សទៅជា «វត្តមាន» ឡើងវិញ!', 'info');
+}
+
+// Reset an individual student's attendance row back to 'present'
+function resetStudentRowAttendance(studentId, btn) {
+  const row = btn.closest('tr');
+  if (!row) return;
+
+  const t = (stmsData.trainees || []).find(x => x.id === studentId);
+  const studentName = t ? t.nameKh : 'គរុនិស្សិត';
+
+  const group = row.querySelector('.att-pill-group');
+  if (group) {
+    group.querySelectorAll('.att-pill-btn').forEach(b => b.classList.remove('active'));
+    const presBtn = group.querySelector('.att-pill-btn.present');
+    if (presBtn) presBtn.classList.add('active');
+  }
+
+  updateAttendanceModalCounters();
+  showToast(`បាន Reset វត្តមានរបស់ ${studentName} ទៅជា «វត្តមាន»`, 'info');
+}
+
+// Confirm Reset in Module 3 (Admin / General Attendance View)
+function confirmResetModuleAttendance() {
+  const cls = currentAttendanceSession.className;
+  const subjCode = currentAttendanceSession.subjectCode;
+  const date = currentAttendanceSession.date;
+
+  if (!confirm(`⚠️ បញ្ជាក់ការកំណត់វត្តមានឡើងវិញ (Reset វត្តមាន)\n\nតើលោកអ្នកពិតជាចង់កំណត់វត្តមានឡើងវិញសម្រាប់ ${cls} ក្នុងមុខវិជ្ជា ${subjCode} (កាលបរិច្ឆេទ ${date}) មែនទេ?\n\n• ទិន្នន័យស្រង់វត្តមានក្នុងតារាងបច្ចុប្បន្ន នឹងត្រូវ Reset ទៅជា «វត្តមាន» ទាំងអស់។\n• ចុច «OK» ដើម្បីបន្ត ឬ «Cancel» ដើម្បីបោះបង់។`)) {
+    return;
+  }
+
+  markAllAttendanceState('present');
+  showToast('បាន Reset កំណត់វត្តមានឡើងវិញជា «វត្តមាន» ទាំងអស់!', 'success');
 }
 
 // --------------------------------------------------------------------------
@@ -18911,5 +19093,13 @@ window.confirmResetTeacherGrades = confirmResetTeacherGrades;
 window.executeResetTeacherGrades = executeResetTeacherGrades;
 window.resetGradingTableInputsToZero = resetGradingTableInputsToZero;
 window.resetGradingRow = resetGradingRow;
+
+// Teacher Attendance Reset Functions Bindings
+window.confirmResetTeacherAttendance = confirmResetTeacherAttendance;
+window.executeResetTeacherAttendance = executeResetTeacherAttendance;
+window.resetAttendanceTablePills = resetAttendanceTablePills;
+window.resetStudentRowAttendance = resetStudentRowAttendance;
+window.confirmResetModuleAttendance = confirmResetModuleAttendance;
+window.recalculateTraineeAttendanceSummaries = recalculateTraineeAttendanceSummaries;
 
 
