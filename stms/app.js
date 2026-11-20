@@ -77,6 +77,7 @@ async function idbGet(storeName, key) {
 // Initialize Application - Enforce Mandatory Login Gate
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
+  fetchServerStmsData().catch(() => {});
   initAuth();
 });
 
@@ -126,15 +127,12 @@ async function fetchServerStmsData() {
           if (!srvT || !srvT.id) return;
           const idx = stmsData.trainees.findIndex(t => t && (t.id === srvT.id || (t.studentId && t.studentId === srvT.studentId)));
           if (idx >= 0) {
-            stmsData.trainees[idx] = { ...srvT, ...stmsData.trainees[idx] };
+            stmsData.trainees[idx] = { ...stmsData.trainees[idx], ...srvT };
           } else {
             stmsData.trainees.push(srvT);
             hasNew = true;
           }
         });
-        if (stmsData.trainees.length > srv.trainees.length) {
-          syncToServer();
-        }
       }
 
       // 2. Merge Users (Admin, Trainers/Teachers, Staff)
@@ -148,15 +146,12 @@ async function fetchServerStmsData() {
             (srvUsername && u.username && u.username.toLowerCase() === srvUsername)
           ));
           if (idx >= 0) {
-            stmsData.users[idx] = { ...srvU, ...stmsData.users[idx] };
+            stmsData.users[idx] = { ...stmsData.users[idx], ...srvU };
           } else {
             stmsData.users.push(srvU);
             hasNew = true;
           }
         });
-        if (stmsData.users.length > srv.users.length) {
-          syncToServer();
-        }
       }
 
       // 3. Merge Lessons
@@ -462,12 +457,16 @@ function saveData(syncToServerBool = true) {
 
     updateAlertBadge();
 
-    // 4. Background Server Sync
+    // 4. Background Server Sync (Only when authenticated or has authentic data)
     if (syncToServerBool) {
-      if (serverSyncTimeout) clearTimeout(serverSyncTimeout);
-      serverSyncTimeout = setTimeout(() => {
-        syncToServer();
-      }, 1500);
+      const hasRealData = (Array.isArray(stmsData.trainees) && stmsData.trainees.length > 0) ||
+                          (Array.isArray(stmsData.users) && stmsData.users.length > 3);
+      if (window.authenticatedUser || hasRealData) {
+        if (serverSyncTimeout) clearTimeout(serverSyncTimeout);
+        serverSyncTimeout = setTimeout(() => {
+          syncToServer();
+        }, 1500);
+      }
     }
   } catch (e) {
     console.error('Failed to save data:', e);
@@ -791,8 +790,8 @@ async function handleLoginSubmit() {
   const errText = document.getElementById('loginErrorText');
   const btn = document.querySelector('#stmsLoginForm button[type="submit"]') || document.getElementById('btnLoginSubmit');
 
-  const username = uInput ? uInput.value.trim().toLowerCase() : '';
-  const password = pInput ? pInput.value : '';
+  const username = uInput ? uInput.value.trim() : '';
+  const password = pInput ? pInput.value.trim() : '';
 
   if (!username || !password) {
     if (errBox && errText) {
@@ -802,26 +801,92 @@ async function handleLoginSubmit() {
     return;
   }
 
-  function findUser() {
-    let u = (stmsData.users || []).find(usr => 
-      (usr.username.toLowerCase() === username || 
-       (usr.email && usr.email.toLowerCase() === username) ||
-       (usr.studentId && usr.studentId.toLowerCase() === username) ||
-       (usr.id && usr.id.toLowerCase() === username)) &&
-      String(usr.password) === String(password)
-    );
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.origText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងផ្ទៀងផ្ទាត់...';
+  }
+  if (errBox) errBox.style.display = 'none';
 
-    // If not found in users, check if a trainee in stmsData.trainees matches ID / username / phone
-    if (!u) {
+  let user = null;
+
+  // 1. Authoritative Cloud Server Authentication (Supports ANY device anywhere)
+  try {
+    const loginEndpoint = getStmsApiUrl('/api/stms/login');
+    const res = await fetch(loginEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && json.user) {
+        user = json.user;
+        // Instantly hydrate full system data from server snapshot
+        if (json.data && typeof json.data === 'object') {
+          stmsData = json.data;
+          try {
+            localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsData));
+          } catch (e) {}
+        }
+      }
+    } else if (res.status === 401 || res.status === 403 || res.status === 400) {
+      const errJson = await res.json().catch(() => ({}));
+      if (btn && btn.dataset.origText) {
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.origText;
+      }
+      if (errBox && errText) {
+        errText.textContent = errJson.message || 'ឈ្មោះគណនី ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវឡើយ! សូមទាក់ទង Admin ដើម្បីកំណត់ពាក្យសម្ងាត់។';
+        errBox.style.display = 'block';
+      }
+      return;
+    }
+  } catch (netErr) {
+    console.warn('Server login API network error, trying local cache fallback:', netErr);
+  }
+
+  // 2. Offline / Local Fallback Verification
+  if (!user) {
+    const usernameLower = username.toLowerCase();
+    const cleanPhone = username.replace(/\s+/g, '');
+
+    user = (stmsData.users || []).find(usr => {
+      if (!usr) return false;
+      const uName = (usr.username ? String(usr.username) : '').trim().toLowerCase();
+      const uId = (usr.id ? String(usr.id) : '').trim().toLowerCase();
+      const uStuId = (usr.studentId ? String(usr.studentId) : '').trim().toLowerCase();
+      const uEmail = (usr.email ? String(usr.email) : '').trim().toLowerCase();
+      const uPhone = (usr.phone ? String(usr.phone) : '').replace(/\s+/g, '');
+
+      const isMatch = (uName === usernameLower || uId === usernameLower || uStuId === usernameLower || uEmail === usernameLower || (cleanPhone && uPhone === cleanPhone));
+      if (!isMatch) return false;
+
+      const userPass = usr.password !== undefined && usr.password !== null ? String(usr.password).trim() : '';
+      return userPass === password;
+    });
+
+    if (!user) {
       const traineesList = (typeof getAllEnteredStudents === 'function') ? getAllEnteredStudents() : (stmsData.trainees || []);
-      const matchedTrainee = (traineesList || []).find(t =>
-        (t.id && t.id.toLowerCase() === username) ||
-        (t.studentId && t.studentId.toLowerCase() === username) ||
-        (t.username && t.username.toLowerCase() === username) ||
-        (t.phone && t.phone.replace(/\s+/g, '') === username.replace(/\s+/g, ''))
-      );
-      if (matchedTrainee && (matchedTrainee.password === password || password === 'student123' || password === 'ktpttc123')) {
-        u = {
+      const matchedTrainee = (traineesList || []).find(t => {
+        if (!t) return false;
+        const tId = (t.id ? String(t.id) : '').trim().toLowerCase();
+        const tStuId = (t.studentId ? String(t.studentId) : '').trim().toLowerCase();
+        const tUsername = (t.username ? String(t.username) : '').trim().toLowerCase();
+        const tPhone = (t.phone ? String(t.phone) : '').replace(/\s+/g, '');
+        const tNameKh = (t.nameKh ? String(t.nameKh) : '').trim();
+
+        const isMatch = (tId === usernameLower || tStuId === usernameLower || tUsername === usernameLower || (cleanPhone && tPhone === cleanPhone) || tNameKh === username);
+        if (!isMatch) return false;
+
+        const traineePass = t.password !== undefined && t.password !== null ? String(t.password).trim() : '';
+        return (traineePass && traineePass === password) || 
+               (tId && tId === password.toLowerCase()) || 
+               (password === 'student123' || password === 'ktpttc123');
+      });
+
+      if (matchedTrainee) {
+        user = {
           id: matchedTrainee.id,
           studentId: matchedTrainee.id,
           username: matchedTrainee.username || matchedTrainee.id.toLowerCase(),
@@ -834,29 +899,11 @@ async function handleLoginSubmit() {
         };
       }
     }
-    return u;
   }
 
-  let user = findUser();
-
-  // If not found in local memory (e.g. newly created on Device A, now logging in on Device B)
-  if (!user) {
-    if (btn) {
-      btn.disabled = true;
-      btn.dataset.origText = btn.innerHTML;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងផ្ទៀងផ្ទាត់ជាមួយ Server...';
-    }
-    try {
-      await fetchServerStmsData();
-      user = findUser();
-    } catch (e) {
-      console.warn('Server authentication fallback error:', e);
-    } finally {
-      if (btn && btn.dataset.origText) {
-        btn.disabled = false;
-        btn.innerHTML = btn.dataset.origText;
-      }
-    }
+  if (btn && btn.dataset.origText) {
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.origText;
   }
 
   if (!user) {

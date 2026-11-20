@@ -955,6 +955,103 @@ app.post('/api/stms/sync', async (req, res) => {
   }
 });
 
+// STMS Authoritative Cross-Device Login Endpoint
+app.post('/api/stms/login', async (req, res) => {
+  try {
+    const rawUsername = (req.body && req.body.username ? String(req.body.username) : '').trim();
+    const rawPassword = (req.body && req.body.password ? String(req.body.password) : '').trim();
+
+    if (!rawUsername || !rawPassword) {
+      return res.status(400).json({ success: false, message: 'សូមបញ្ចូលឈ្មោះគណនី (Username) និងពាក្យសម្ងាត់ (Password)!' });
+    }
+
+    const usernameLower = rawUsername.toLowerCase();
+    const cleanPhone = rawUsername.replace(/\s+/g, '');
+
+    const data = await readStmsDb();
+    if (!data || typeof data !== 'object') {
+      return res.status(404).json({ success: false, message: 'ទិន្នន័យប្រព័ន្ធពុំទាន់ត្រូវបានដំឡើងរួចរាល់ឡើយ!' });
+    }
+
+    const users = Array.isArray(data.users) ? data.users : [];
+    const trainees = Array.isArray(data.trainees) ? data.trainees : [];
+
+    // 1. Search in users (Admin, Trainers/Teachers, Trainees, Staff)
+    let foundUser = users.find(u => {
+      if (!u) return false;
+      const uName = (u.username ? String(u.username) : '').trim().toLowerCase();
+      const uId = (u.id ? String(u.id) : '').trim().toLowerCase();
+      const uStuId = (u.studentId ? String(u.studentId) : '').trim().toLowerCase();
+      const uEmail = (u.email ? String(u.email) : '').trim().toLowerCase();
+      const uPhone = (u.phone ? String(u.phone) : '').replace(/\s+/g, '');
+
+      const isMatch = (uName === usernameLower || uId === usernameLower || uStuId === usernameLower || uEmail === usernameLower || (cleanPhone && uPhone === cleanPhone));
+      if (!isMatch) return false;
+
+      const userPass = u.password !== undefined && u.password !== null ? String(u.password).trim() : '';
+      return userPass === rawPassword;
+    });
+
+    // 2. If not found in users, search directly in trainees
+    if (!foundUser) {
+      const foundTrainee = trainees.find(t => {
+        if (!t) return false;
+        const tId = (t.id ? String(t.id) : '').trim().toLowerCase();
+        const tStuId = (t.studentId ? String(t.studentId) : '').trim().toLowerCase();
+        const tUsername = (t.username ? String(t.username) : '').trim().toLowerCase();
+        const tPhone = (t.phone ? String(t.phone) : '').replace(/\s+/g, '');
+        const tNameKh = (t.nameKh ? String(t.nameKh) : '').trim();
+
+        const isMatch = (tId === usernameLower || tStuId === usernameLower || tUsername === usernameLower || (cleanPhone && tPhone === cleanPhone) || tNameKh === rawUsername);
+        if (!isMatch) return false;
+
+        const traineePass = t.password !== undefined && t.password !== null ? String(t.password).trim() : '';
+        // Match traineePass, or student's own ID, or student123/ktpttc123
+        return (traineePass && traineePass === rawPassword) || 
+               (tId && tId === rawPassword.toLowerCase()) || 
+               (rawPassword === 'student123' || rawPassword === 'ktpttc123');
+      });
+
+      if (foundTrainee) {
+        foundUser = {
+          id: foundTrainee.id,
+          studentId: foundTrainee.id,
+          username: foundTrainee.username || foundTrainee.id.toLowerCase(),
+          nameKh: foundTrainee.nameKh,
+          nameEn: foundTrainee.nameEn || '',
+          role: 'trainee',
+          roleLabel: 'គរុនិស្សិត',
+          className: foundTrainee.className || '',
+          cohort: foundTrainee.cohort || '',
+          status: 'active',
+          avatar: foundTrainee.avatar || '👨‍🎓',
+          photo: foundTrainee.photo || '',
+          phone: foundTrainee.phone || '',
+          ...foundTrainee
+        };
+      }
+    }
+
+    if (!foundUser) {
+      return res.status(401).json({ success: false, message: 'ឈ្មោះគណនី ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវឡើយ! សូមទាក់ទង Admin ដើម្បីកំណត់ពាក្យសម្ងាត់។' });
+    }
+
+    if (foundUser.status === 'disabled') {
+      return res.status(403).json({ success: false, message: 'គណនីនេះត្រូវបានផ្អាកដំណើរការដោយ Admin សិក្សាធិការ!' });
+    }
+
+    // Return the authenticated user profile AND the full system data snapshot for instant hydration on new devices
+    res.json({
+      success: true,
+      user: foundUser,
+      data: data
+    });
+  } catch (err) {
+    console.error('STMS Login API error:', err);
+    res.status(500).json({ success: false, message: 'មានបញ្ហាបច្ចេកទេសក្នុងប្រព័ន្ធ Server: ' + err.message });
+  }
+});
+
 // 1. Settings API
 app.get('/api/settings', async (req, res) => {
   const settings = await readDbField('settings');
