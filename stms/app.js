@@ -3171,8 +3171,10 @@ function renderGradingView(container) {
         ${currentRole === 'admin' ? `
           <button class="btn btn-outline" onclick="openGradeWeightModal()"><i class="fas fa-sliders-h"></i> កំណត់មេគុណ</button>
           <button class="btn btn-success" onclick="publishAllSubjectScores()"><i class="fas fa-bullhorn"></i> ផ្សព្វផ្សាយពិន្ទុ</button>
+          <button class="btn btn-outline" style="border-color:#ef4444; color:#dc2626; background:#fef2f2; font-weight:700;" onclick="confirmResetTeacherGrades(currentGradingSubject, currentGradingClass)"><i class="fas fa-rotate-left"></i> Reset ពិន្ទុ</button>
         ` : `
           <button class="btn btn-success" onclick="saveTrainerScoreMatrix()"><i class="fas fa-save"></i> រក្សាទុកពិន្ទុ</button>
+          <button class="btn btn-outline" style="border-color:#ef4444; color:#dc2626; background:#fef2f2; font-weight:700;" onclick="confirmResetTeacherGrades(currentGradingSubject, currentGradingClass)"><i class="fas fa-rotate-left"></i> Reset ពិន្ទុ</button>
         `}
         <button class="btn btn-outline" onclick="window.print()"><i class="fas fa-print"></i> បោះពុម្ពតារាង</button>
       </div>
@@ -5821,18 +5823,30 @@ function openTraineeReportsModal() {
               </thead>
               <tbody>
                 ${subjects.map(s => {
-                  const sc = (t.scores && t.scores[s.code]) || { homework: 9, attendance: 10, monthly: 27, semester: 44, total: 90, grade: 'A' };
+                  const sc = (t.scores && t.scores[s.code]);
+                  if (!sc || sc.status !== 'published') {
+                    return `
+                      <tr>
+                        <td><code>${s.code}</code></td>
+                        <td><strong>${s.nameKh}</strong></td>
+                        <td>${s.credits}</td>
+                        <td colspan="6" style="text-align:center; color:#94a3b8; font-size:0.8rem; font-style:italic;">
+                          <i class="fas fa-clock" style="margin-right:4px;"></i> កំពុងស្ថិតក្នុងដំណើរការវាយតម្លៃដោយគ្រូឧទ្ទេស
+                        </td>
+                      </tr>
+                    `;
+                  }
                   return `
                     <tr>
                       <td><code>${s.code}</code></td>
                       <td><strong>${s.nameKh}</strong></td>
                       <td>${s.credits}</td>
-                      <td>${sc.homework || 10}</td>
-                      <td>${sc.attendance || 10}</td>
-                      <td>${sc.monthly || 28}</td>
-                      <td>${sc.semester || sc.final || 44}</td>
-                      <td><strong style="color:#2563eb; font-size:0.95rem;">${sc.total || 90}</strong></td>
-                      <td><span class="badge ${sc.grade==='A'?'badge-present':'badge-published'}">${sc.grade || 'A'}</span></td>
+                      <td>${sc.homework ?? '-'}</td>
+                      <td>${sc.attendance ?? '-'}</td>
+                      <td>${sc.monthly ?? '-'}</td>
+                      <td>${sc.semester ?? sc.final ?? '-'}</td>
+                      <td><strong style="color:#2563eb; font-size:0.95rem;">${sc.total ?? '-'}</strong></td>
+                      <td><span class="badge ${sc.grade==='A'?'badge-present':'badge-published'}">${sc.grade || '-'}</span></td>
                     </tr>
                   `;
                 }).join('')}
@@ -9174,7 +9188,7 @@ function renderSystemFlowView(container) {
                           <td colspan="9" style="padding:12px; color:#94a3b8; font-size:0.65rem; text-align:center;">មិនទាន់មានទិន្នន័យពិន្ទុ (រង់ចាំការបញ្ចូល)</td>
                         </tr>
                       ` : stmsData.trainees.slice(0, 5).map((t, idx) => {
-                        const sc = t.scores['PED-101'] || { homework: 9, attendance: 10, monthly: 28, semester: 45, total: 92, grade: 'A' };
+                        const sc = (t.scores && t.scores['PED-101']) || { homework: '-', attendance: '-', monthly: '-', semester: '-', total: '-', grade: '-' };
                         return `
                           <tr>
                             <td>${idx + 1}</td>
@@ -10440,6 +10454,9 @@ function renderTrainerPortalView(container) {
                     <div style="display:flex; align-items:center; gap:6px;">
                       <span class="badge ${isGraded ? 'badge-present' : 'badge-draft'}">${isGraded ? 'បានផ្សព្វផ្សាយពិន្ទុ' : 'រង់ចាំដាក់ពិន្ទុ'}</span>
                       <button class="btn btn-primary" style="height:26px; padding:0 10px; font-size:0.72rem;" onclick="openTeacherGradingModal('${s.code}', '${currentTeacherPortalClassFilter}')">ដាក់ពិន្ទុ</button>
+                      ${isGraded ? `
+                        <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem; border-color:#ef4444; color:#dc2626; background:#fef2f2; font-weight:700;" onclick="confirmResetTeacherGrades('${s.code}', '${currentTeacherPortalClassFilter}')" title="កំណត់ពិន្ទុឡើងវិញ (Reset)"><i class="fas fa-rotate-left"></i> Reset ពិន្ទុ</button>
+                      ` : ''}
                     </div>
                   </div>
                 `;
@@ -10506,70 +10523,6 @@ function renderTrainerPortalView(container) {
           </div>
         </div>
       </div>
-            </div>
-            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center; font-size:0.82rem;">
-              <div style="background:#f0fdf4; padding:10px 6px; border-radius:8px; border:1px solid #bbf7d0;">
-                <div style="font-weight:800; color:#15803d; font-size:1.15rem;">${totalPresent}</div>
-                <div style="color:#166534; font-size:0.75rem; font-weight:600;">វត្តមានសរុប</div>
-              </div>
-              <div style="background:#fffbeb; padding:10px 6px; border-radius:8px; border:1px solid #fde68a;">
-                <div style="font-weight:800; color:#b45309; font-size:1.15rem;">${totalPerm}</div>
-                <div style="color:#92400e; font-size:0.75rem; font-weight:600;">ច្បាប់</div>
-              </div>
-              <div style="background:#fff7ed; padding:10px 6px; border-radius:8px; border:1px solid #fed7aa;">
-                <div style="font-weight:800; color:#c2410c; font-size:1.15rem;">${totalLate}</div>
-                <div style="color:#9a3412; font-size:0.75rem; font-weight:600;">យឺត</div>
-              </div>
-              <div style="background:#fef2f2; padding:10px 6px; border-radius:8px; border:1px solid #fecaca;">
-                <div style="font-weight:800; color:#b91c1c; font-size:1.15rem;">${totalAbsent}</div>
-                <div style="color:#991b1b; font-size:0.75rem; font-weight:600;">ឥតច្បាប់</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Grading & Homework Status Overview (Scoped to My Subjects Only) -->
-        <div class="table-card">
-          <div class="table-toolbar">
-            <strong style="color:#1e3a8a;"><i class="fas fa-tasks" style="color:#7c3aed;"></i> ស្ថានភាពមុខវិជ្ជាទទួលបន្ទុក</strong>
-            <button class="btn btn-outline" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherGradingModal('${myCodes[0]}')">
-              <i class="fas fa-edit"></i> បញ្ចូលពិន្ទុ
-            </button>
-          </div>
-          <div style="padding:20px;">
-            <p style="font-size:0.83rem; color:#64748b; margin-bottom:12px;">
-              ស្ថានភាពកិច្ចការ និងការដាក់ពិន្ទុក្នុងមុខវិជ្ជាដែលលោកគ្រូ/អ្នកគ្រូបង្រៀន៖
-            </p>
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              ${mySubjects.map(s => {
-                const isGraded = stmsData.trainees.some(t => t.scores && t.scores[s.code] && t.scores[s.code].status === 'published');
-                const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === s.code).length;
-                const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === s.code).length;
-                return `
-                  <div style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; padding:10px 14px; border-radius:8px; font-size:0.85rem; border:1px solid #bbf7d0;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                      <i class="fas fa-check-circle" style="color:#10b981; font-size:1rem;"></i>
-                      <div>
-                        <strong style="color:#1e3a8a;">${s.nameKh}</strong>
-                        <div style="font-size:0.75rem; color:#64748b;">${hwCount} កិច្ចការ • ${lsnCount} មេរៀន • ${s.credits} ក្រេឌីត</div>
-                      </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span class="badge ${isGraded ? 'badge-present' : 'badge-draft'}">${isGraded ? 'បានផ្សព្វផ្សាយពិន្ទុ' : 'រង់ចាំដាក់ពិន្ទុ'}</span>
-                      <button class="btn btn-primary" style="height:26px; padding:0 10px; font-size:0.72rem;" onclick="openTeacherGradingModal('${s.code}')">ដាក់ពិន្ទុ</button>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-
-            <div style="margin-top:12px; font-size:0.75rem; color:#94a3b8; display:flex; align-items:center; gap:6px;">
-              <i class="fas fa-user-shield"></i> មុខវិជ្ជាផ្សេងទៀតត្រូវបានការពារសុវត្ថិភាព និងមិនបង្ហាញក្នុងផ្ទាំងនេះឡើយ។
-            </div>
-          </div>
-        </div>
-
-      </div>
 
     </div>
   `;
@@ -10624,7 +10577,7 @@ function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
-          <!-- Filters Row: Subject + Class Selector -->
+          <!-- Filters Row: Subject + Class Selector & Quick Actions -->
           <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:14px 18px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; flex-wrap:wrap; gap:14px;">
               <div style="display:flex; align-items:center; gap:8px;">
@@ -10648,8 +10601,15 @@ function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
                 </select>
               </div>
             </div>
-            <div style="font-size:0.8rem; color:#6d28d9; font-weight:600;">
-              កិច្ចការ (10%) + វត្តមាន (10%) + ប្រចាំខែ (30%) + ឆមាស (50%) = 100%
+
+            <!-- Fast Reset & Fill Helper Buttons -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline" style="border-color:#f87171; color:#dc2626; background:#fff1f2; font-weight:700; font-size:0.8rem; height:32px; padding:0 12px; display:inline-flex; align-items:center; gap:5px;" onclick="confirmResetTeacherGrades('${currentSubject.code}', '${selectedClass}')" title="កំណត់ពិន្ទុឡើងវិញទាំងអស់ (សម្អាតពិន្ទុចោល)">
+                <i class="fas fa-rotate-left"></i> Reset ពិន្ទុ
+              </button>
+              <button type="button" class="btn btn-outline" style="border-color:#cbd5e1; color:#475569; background:#ffffff; font-weight:600; font-size:0.8rem; height:32px; padding:0 10px; display:inline-flex; align-items:center; gap:5px;" onclick="resetGradingTableInputsToZero()" title="កំណត់លេខ 0 គ្រប់ប្រអប់ពិន្ទុក្នុងតារាង">
+                <i class="fas fa-eraser"></i> កំណត់ 0 ទាំងអស់
+              </button>
             </div>
           </div>
 
@@ -10666,14 +10626,15 @@ function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
                   <th style="width:90px;">ឆមាស (50)</th>
                   <th style="width:90px;">សរុប (100)</th>
                   <th style="width:80px;">និទ្ទេស</th>
+                  <th style="width:65px; text-align:center;">Reset</th>
                 </tr>
               </thead>
               <tbody id="teacherGradingTableBody">
                 ${Object.keys(classGroups).length === 0 ? `
-                  <tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">មិនមានគរុសិស្សនៅក្នុងថ្នាក់ដែលបានជ្រើសរើសឡើយ។</td></tr>
+                  <tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">មិនមានគរុសិស្សនៅក្នុងថ្នាក់ដែលបានជ្រើសរើសឡើយ។</td></tr>
                 ` : Object.entries(classGroups).map(([clsName, groupStudents]) => `
                   <tr class="grading-group-header-row" style="background:#f5f3ff !important; color:#4c1d95 !important; border-top:2px solid #ddd6fe; border-bottom:2px solid #ddd6fe;">
-                    <td colspan="8" style="padding:8px 14px;">
+                    <td colspan="9" style="padding:8px 14px;">
                       <div class="grading-group-title" style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-weight:700; font-size:0.88rem;">
                           <i class="fas fa-chalkboard" style="color:#7c3aed; margin-right:8px;"></i> ថ្នាក់ក្រុម៖ <strong>${clsName}</strong> 
@@ -10686,14 +10647,21 @@ function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
                     </td>
                   </tr>
                   ${groupStudents.map(t => {
-                    const sc = (t.scores && t.scores[currentSubject.code]) || {
-                      homework: 9,
-                      attendance: 10,
-                      monthly: 27,
-                      final: 44,
-                      total: 90,
-                      grade: 'A'
-                    };
+                    const hasSc = !!(t.scores && t.scores[currentSubject.code]);
+                    const sc = hasSc ? t.scores[currentSubject.code] : null;
+                    const hwVal = hasSc ? (sc.homework ?? '') : '';
+                    const attVal = hasSc ? (sc.attendance ?? '') : '';
+                    const monVal = hasSc ? (sc.monthly ?? '') : '';
+                    const finVal = hasSc ? (sc.final ?? sc.semester ?? '') : '';
+                    const totalVal = hasSc ? (sc.total ?? 0) : 0;
+                    const gradeVal = hasSc ? (sc.grade ?? '-') : '-';
+                    let badgeCls = 'badge-draft';
+                    if (hasSc) {
+                      if (totalVal >= 90) badgeCls = 'badge-present';
+                      else if (totalVal >= 80) badgeCls = 'badge-permission';
+                      else if (totalVal >= 50) badgeCls = 'badge-late';
+                      else badgeCls = 'badge-absent';
+                    }
                     return `
                       <tr data-student-id="${t.id}">
                         <td>
@@ -10709,22 +10677,27 @@ function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
                         </td>
                         <td><code>${t.id}</code></td>
                         <td>
-                          <input type="number" class="input-hw" min="0" max="10" step="0.5" value="${sc.homework ?? 10}" oninput="calcGradingRow(this)" />
+                          <input type="number" class="input-hw" min="0" max="10" step="0.5" value="${hwVal}" placeholder="0" oninput="calcGradingRow(this)" />
                         </td>
                         <td>
-                          <input type="number" class="input-att" min="0" max="10" step="0.5" value="${sc.attendance ?? 10}" oninput="calcGradingRow(this)" />
+                          <input type="number" class="input-att" min="0" max="10" step="0.5" value="${attVal}" placeholder="0" oninput="calcGradingRow(this)" />
                         </td>
                         <td>
-                          <input type="number" class="input-mon" min="0" max="30" step="0.5" value="${sc.monthly ?? 27}" oninput="calcGradingRow(this)" />
+                          <input type="number" class="input-mon" min="0" max="30" step="0.5" value="${monVal}" placeholder="0" oninput="calcGradingRow(this)" />
                         </td>
                         <td>
-                          <input type="number" class="input-fin" min="0" max="50" step="0.5" value="${sc.final ?? sc.semester ?? 44}" oninput="calcGradingRow(this)" />
+                          <input type="number" class="input-fin" min="0" max="50" step="0.5" value="${finVal}" placeholder="0" oninput="calcGradingRow(this)" />
                         </td>
                         <td>
-                          <strong class="cell-total" style="color:#2563eb; font-size:1rem;">${sc.total ?? 91}</strong>
+                          <strong class="cell-total" style="color:#2563eb; font-size:1rem;">${totalVal}</strong>
                         </td>
                         <td class="cell-grade">
-                          <span class="score-badge-live badge ${sc.grade === 'A' ? 'badge-present' : 'badge-published'}">${sc.grade ?? 'A'}</span>
+                          <span class="score-badge-live badge ${badgeCls}">${gradeVal}</span>
+                        </td>
+                        <td style="text-align:center;">
+                          <button type="button" class="btn btn-outline" style="height:28px; width:28px; padding:0; border-radius:6px; border-color:#fca5a5; color:#dc2626; background:#fff5f5; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;" onclick="resetGradingRow(this, '${t.id}', '${currentSubject.code}')" title="Reset ពិន្ទុគរុនិស្សិតនេះ">
+                            <i class="fas fa-undo-alt" style="font-size:0.75rem;"></i>
+                          </button>
                         </td>
                       </tr>
                     `;
@@ -10739,9 +10712,12 @@ function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
             <div style="font-size:0.8rem; color:#64748b;">
               * បង្ហាញសិស្សសរុប៖ <strong>${totalFilteredCount} នាក់</strong> • និទ្ទេស A: 90-100 • B+: 85-89 • B: 80-84 • C+: 75-79 • C: 70-74 • D: 60-69 • F: &lt;50
             </div>
-            <div style="display:flex; gap:10px;">
-              <button class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
-              <button class="btn btn-primary" onclick="saveTeacherGrades('${currentSubject.code}')">
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button type="button" class="btn btn-outline" style="border-color:#f87171; color:#dc2626; background:#fff1f2; font-weight:700;" onclick="confirmResetTeacherGrades('${currentSubject.code}', '${selectedClass}')">
+                <i class="fas fa-rotate-left"></i> Reset ពិន្ទុ
+              </button>
+              <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+              <button type="button" class="btn btn-primary" onclick="saveTeacherGrades('${currentSubject.code}')">
                 <i class="fas fa-paper-plane"></i> 💾 រក្សាទុក &amp; ផ្សព្វផ្សាយទៅកាន់សិស្ស
               </button>
             </div>
@@ -10757,7 +10733,7 @@ function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
 
 // Live Calculate Row Total & Grade in Teacher Grading Sheet
 function calcGradingRow(inputEl) {
-  const row = inputEl.closest('tr');
+  const row = inputEl.closest ? inputEl.closest('tr') : inputEl;
   if (!row) return;
 
   const hw = Math.min(10, Math.max(0, parseFloat(row.querySelector('.input-hw')?.value) || 0));
@@ -10850,6 +10826,134 @@ function saveTeacherGrades(subjectCode) {
   closeStmsModal();
   if (currentView === 'trainer-portal' || currentView === 'trainee-portal') {
     renderView(currentView);
+  }
+}
+
+// --------------------------------------------------------------------------
+// 4.1. TEACHER SCORE RESET CONTROLLER (កំណត់ពិន្ទុឡើងវិញ)
+// --------------------------------------------------------------------------
+
+// Confirmation Dialog before executing full subject/class reset
+function confirmResetTeacherGrades(subjectCode, selectedClass = 'all') {
+  const tr = getActiveTrainerProfile();
+  const myCodes = getTrainerAssignedSubjectCodes(tr);
+  if (currentRole === 'trainer' && !myCodes.includes(subjectCode)) {
+    showToast(`❌ បដិសេធសិទ្ធិ៖ លោកគ្រូ/អ្នកគ្រូ គ្មានសិទ្ធិគ្រប់គ្រងពិន្ទុលើមុខវិជ្ជា «${subjectCode}» ឡើយ!`, 'error');
+    return;
+  }
+
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
+  const classText = selectedClass === 'all' ? 'សិស្សគ្រប់ថ្នាក់' : `ថ្នាក់ «${selectedClass}»`;
+
+  const msg = `⚠️ បញ្ជាក់ការកំណត់ពិន្ទុឡើងវិញ (Reset ពិន្ទុ)\n\nតើលោកគ្រូ/អ្នកគ្រូពិតជាចង់កំណត់ពិន្ទុឡើងវិញសម្រាប់ ${classText} ក្នុងមុខវិជ្ជា «${subj.nameKh}» មែនទេ?\n\n• ពិន្ទុដែលបានបញ្ចូលទាំងអស់នឹងត្រូវបានសម្អាតឡើងវិញជាទទេ (Reset)។\n• គរុនិស្សិតនឹងឃើញស្ថានភាពកំពុងរង់ចាំការដាក់ពិន្ទុឡើងវិញ។\n• ចុច «OK» ដើម្បីបន្ត ឬ «Cancel» ដើម្បីបោះបង់។`;
+
+  if (!confirm(msg)) return;
+  executeResetTeacherGrades(subjectCode, selectedClass);
+}
+
+// Execute score deletion/reset and persist to database & cloud
+function executeResetTeacherGrades(subjectCode, selectedClass = 'all') {
+  const tr = getActiveTrainerProfile();
+  const myClasses = getTrainerAssignedClasses(tr);
+  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode) || { nameKh: subjectCode };
+
+  let resetCount = 0;
+  (stmsData.trainees || []).forEach(t => {
+    const matchesClass = selectedClass === 'all'
+      ? (currentRole === 'admin' || myClasses.includes((t.className || '').trim()))
+      : (t.className === selectedClass);
+
+    if (matchesClass && t.scores && t.scores[subjectCode]) {
+      delete t.scores[subjectCode];
+      resetCount++;
+
+      if (currentTraineeUser && currentTraineeUser.id === t.id && currentTraineeUser.scores) {
+        delete currentTraineeUser.scores[subjectCode];
+      }
+    }
+  });
+
+  saveData();
+  showToast(`🎉 បាន Reset កំណត់ពិន្ទុឡើងវិញលើមុខវិជ្ជា «${subj.nameKh}» ចំនួន ${resetCount} នាក់រួចរាល់!`, 'success');
+
+  // If grading modal is currently open, refresh it live
+  const modalBackdrop = document.getElementById('teacherGradingModalBackdrop');
+  if (modalBackdrop) {
+    openTeacherGradingModal(subjectCode, selectedClass);
+  } else if (currentView === 'trainer-portal' || currentView === 'grading') {
+    renderView(currentView);
+  }
+}
+
+// Reset all inputs in the current grading table to 0
+function resetGradingTableInputsToZero() {
+  const rows = document.querySelectorAll('#teacherGradingTableBody tr[data-student-id]');
+  if (rows.length === 0) {
+    showToast('មិនមានទិន្នន័យសិស្សក្នុងតារាង!', 'warning');
+    return;
+  }
+
+  if (!confirm(`តើលោកគ្រូ/អ្នកគ្រូចង់កំណត់ពិន្ទុគ្រប់ប្រអប់ក្នុងតារាងទៅជា 0 ទាំងអស់មែនទេ?`)) {
+    return;
+  }
+
+  rows.forEach(row => {
+    const hwInput = row.querySelector('.input-hw');
+    const attInput = row.querySelector('.input-att');
+    const monInput = row.querySelector('.input-mon');
+    const finInput = row.querySelector('.input-fin');
+
+    if (hwInput) hwInput.value = '0';
+    if (attInput) attInput.value = '0';
+    if (monInput) monInput.value = '0';
+    if (finInput) finInput.value = '0';
+
+    calcGradingRow(hwInput || row);
+  });
+
+  showToast('បានកំណត់លេខ 0 គ្រប់ប្រអប់ពិន្ទុក្នុងតារាង!', 'info');
+}
+
+// Reset individual student row score
+function resetGradingRow(btn, studentId, subjectCode) {
+  const row = btn.closest('tr');
+  if (!row) return;
+
+  const t = (stmsData.trainees || []).find(x => x.id === studentId);
+  const studentName = t ? t.nameKh : 'គរុនិស្សិត';
+
+  if (!confirm(`⚠️ តើលោកគ្រូ/អ្នកគ្រូពិតជាចង់កំណត់ពិន្ទុឡើងវិញ (Reset) សម្រាប់ «${studentName}» មែនទេ?`)) {
+    return;
+  }
+
+  // Clear input fields
+  const hwInput = row.querySelector('.input-hw');
+  const attInput = row.querySelector('.input-att');
+  const monInput = row.querySelector('.input-mon');
+  const finInput = row.querySelector('.input-fin');
+
+  if (hwInput) hwInput.value = '';
+  if (attInput) attInput.value = '';
+  if (monInput) monInput.value = '';
+  if (finInput) finInput.value = '';
+
+  const totalCell = row.querySelector('.cell-total');
+  const gradeCell = row.querySelector('.cell-grade');
+  if (totalCell) totalCell.textContent = '0';
+  if (gradeCell) {
+    gradeCell.innerHTML = `<span class="score-badge-live badge badge-draft">-</span>`;
+  }
+
+  // Delete score from trainee object if exists
+  if (t && t.scores && t.scores[subjectCode]) {
+    delete t.scores[subjectCode];
+    if (currentTraineeUser && currentTraineeUser.id === t.id && currentTraineeUser.scores) {
+      delete currentTraineeUser.scores[subjectCode];
+    }
+    saveData();
+    showToast(`បាន Reset ពិន្ទុរបស់ ${studentName} រួចរាល់!`, 'info');
+  } else {
+    showToast(`បានសម្អាតប្រអប់បញ្ចូលពិន្ទុរបស់ ${studentName} រួចរាល់!`, 'info');
   }
 }
 
@@ -18801,5 +18905,11 @@ window.scrollToAdminTimetableSection = scrollToAdminTimetableSection;
 window.handleNavbarTimetableClick = handleNavbarTimetableClick;
 window.openTeacherTimetableModal = openTeacherTimetableModal;
 window.openTraineeTimetableModal = openTraineeTimetableModal;
+
+// Teacher Grade Reset Functions Bindings
+window.confirmResetTeacherGrades = confirmResetTeacherGrades;
+window.executeResetTeacherGrades = executeResetTeacherGrades;
+window.resetGradingTableInputsToZero = resetGradingTableInputsToZero;
+window.resetGradingRow = resetGradingRow;
 
 
