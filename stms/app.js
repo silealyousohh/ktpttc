@@ -4344,10 +4344,31 @@ let KTPTTC_ALL_SUBJECTS = [
 ];
 
 function syncAllSubjects() {
-  if (Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0) {
+  const defaultSubjs = [
+    { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", credits: 3, trainer: "" },
+    { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", credits: 2, trainer: "" },
+    { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", credits: 3, trainer: "" },
+    { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", credits: 3, trainer: "" },
+    { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: "យូសុះ ស៊ីលាល" },
+    { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", credits: 2, trainer: "" },
+    { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "" },
+    { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, trainer: "" }
+  ];
+
+  if (typeof stmsData !== 'undefined' && stmsData) {
+    if (!Array.isArray(stmsData.subjects) || stmsData.subjects.length === 0) {
+      stmsData.subjects = [...defaultSubjs];
+    } else {
+      defaultSubjs.forEach(ds => {
+        const existing = stmsData.subjects.find(s => s.code === ds.code);
+        if (!existing) {
+          stmsData.subjects.push(ds);
+        } else if (!existing.trainer && ds.trainer) {
+          existing.trainer = ds.trainer;
+        }
+      });
+    }
     KTPTTC_ALL_SUBJECTS = stmsData.subjects;
-  } else if (stmsData) {
-    stmsData.subjects = [...KTPTTC_ALL_SUBJECTS];
   }
 }
 window.syncAllSubjects = syncAllSubjects;
@@ -9751,13 +9772,14 @@ function getActiveTrainerProfile() {
 
 // Helper: Get all subject codes assigned to a specific trainer
 function getTrainerAssignedSubjectCodes(tr) {
-  if (!tr) return ['PED-101'];
+  if (typeof syncAllSubjects === 'function') syncAllSubjects();
+  if (!tr) return ['ICT-105', 'PED-101'];
   const list = [];
   if (Array.isArray(tr.subjects)) {
     tr.subjects.forEach(s => { if (s && !list.includes(s)) list.push(s); });
   }
-  if (tr.subject && !list.includes(tr.subject)) {
-    list.push(tr.subject);
+  if (tr.subject && typeof tr.subject === 'string' && tr.subject.trim() && !list.includes(tr.subject.trim())) {
+    list.push(tr.subject.trim());
   }
   // Check in KTPTTC_ALL_SUBJECTS / stmsData.subjects where instructor name matches
   const allSubjs = Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0 ? stmsData.subjects : KTPTTC_ALL_SUBJECTS;
@@ -9772,7 +9794,7 @@ function getTrainerAssignedSubjectCodes(tr) {
   // Also guarantee any subject where this trainer uploaded lessons or assignments is included
   if (tr.nameKh) {
     (stmsData.lessons || []).forEach(l => {
-      if (l && l.uploadedBy === tr.nameKh && l.subjectCode && !list.includes(l.subjectCode)) {
+      if (l && (l.uploadedBy === tr.nameKh || (l.trainer && l.trainer.includes(tr.nameKh))) && l.subjectCode && !list.includes(l.subjectCode)) {
         list.push(l.subjectCode);
       }
     });
@@ -9782,8 +9804,16 @@ function getTrainerAssignedSubjectCodes(tr) {
       }
     });
   }
+  // Guarantee for Yousoh Sileal / username 1951000071
+  if (tr.nameKh && (tr.nameKh.includes('ស៊ីលាល') || tr.username === '1951000071')) {
+    if (!list.includes('ICT-105')) list.unshift('ICT-105');
+  }
   if (list.length === 0) {
-    list.push('PED-101');
+    if (allSubjs.length > 0) {
+      allSubjs.forEach(s => list.push(s.code));
+    } else {
+      list.push('ICT-105', 'PED-101');
+    }
   }
   return list;
 }
@@ -10142,7 +10172,13 @@ function renderTrainerPortalView(container) {
   const allSubjects = KTPTTC_ALL_SUBJECTS;
 
   const myCodes = getTrainerAssignedSubjectCodes(tr);
-  const mySubjects = allSubjects.filter(s => myCodes.includes(s.code));
+  let mySubjects = allSubjects.filter(s => myCodes.includes(s.code));
+  if (mySubjects.length === 0) {
+    mySubjects = allSubjects.length > 0 ? [...allSubjects] : [
+      { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: tr.nameKh || "យូសុះ ស៊ីលាល" }
+    ];
+  }
+  const defaultSubjCode = (mySubjects[0] && mySubjects[0].code) || (myCodes[0] || 'ICT-105');
   const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
 
   // Multi-Class Teaching Assignments (គ្រូម្នាក់បង្រៀនច្រើនថ្នាក់)
@@ -10278,13 +10314,13 @@ function renderTrainerPortalView(container) {
           <button class="btn-hero-action active-timetable-btn" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; border:1px solid #38bdf8; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35); display:inline-flex; align-items:center; gap:8px;" onclick="openTeacherTimetableModal()" title="មើលកាលវិភាគបង្រៀន">
             <i class="fas fa-calendar-alt"></i> កាលវិភាគ
           </button>
-          <button class="btn-hero-action primary" onclick="openTeacherHomeworkModal('${myCodes[0]}', 'create', '${currentTeacherPortalClassFilter}')">
+          <button class="btn-hero-action primary" onclick="openTeacherHomeworkModal('${defaultSubjCode}', 'create', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-plus-circle"></i> ដាក់កិច្ចការ/ប្រឡងខ្លី
           </button>
-          <button class="btn-hero-action secondary" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
+          <button class="btn-hero-action secondary" onclick="openTeacherAttendanceModal('${defaultSubjCode}', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-calendar-check"></i> ស្រង់វត្តមាន
           </button>
-          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherGradingModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
+          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherGradingModal('${defaultSubjCode}', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-calculator"></i> បញ្ចូលពិន្ទុ
           </button>
           <button class="btn-hero-action" style="background:#0d9488; color:#ffffff; border:1px solid #14b8a6; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherReportIncidentModal()">
@@ -10338,7 +10374,7 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 3. វីដេអូ & មេរៀន (Orange) -->
-        <div class="trainee-hub-card card-orange" onclick="openTeacherUploadModal('${myCodes[0]}')">
+        <div class="trainee-hub-card card-orange" onclick="openTeacherUploadModal('${defaultSubjCode}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-play-circle"></i></div>
           <div class="hub-card-title">វីដេអូ & មេរៀន</div>
@@ -10354,7 +10390,7 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 5. កិច្ចការសិស្ស (Amber) -->
-        <div class="trainee-hub-card card-amber" onclick="openTeacherHomeworkModal('${myCodes[0]}', 'create', '${currentTeacherPortalClassFilter}')">
+        <div class="trainee-hub-card card-amber" onclick="openTeacherHomeworkModal('${defaultSubjCode}', 'create', '${currentTeacherPortalClassFilter}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-tasks"></i></div>
           <div class="hub-card-title">កិច្ចការសិស្ស</div>
@@ -10362,7 +10398,7 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 6. បញ្ចូលពិន្ទុ (Purple) -->
-        <div class="trainee-hub-card card-purple" onclick="openTeacherGradingModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
+        <div class="trainee-hub-card card-purple" onclick="openTeacherGradingModal('${defaultSubjCode}', '${currentTeacherPortalClassFilter}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-calculator"></i></div>
           <div class="hub-card-title">បញ្ចូលពិន្ទុ</div>
@@ -10370,7 +10406,7 @@ function renderTrainerPortalView(container) {
         </div>
 
         <!-- 7. វត្តមានសិស្ស (Teal) -->
-        <div class="trainee-hub-card card-teal" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
+        <div class="trainee-hub-card card-teal" onclick="openTeacherAttendanceModal('${defaultSubjCode}', '${currentTeacherPortalClassFilter}')">
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-clipboard-check"></i></div>
           <div class="hub-card-title">វត្តមានសិស្ស</div>
@@ -10435,7 +10471,7 @@ function renderTrainerPortalView(container) {
         <div class="table-card">
           <div class="table-toolbar">
             <strong style="color:#1e3a8a;"><i class="fas fa-tasks" style="color:#7c3aed;"></i> ស្ថានភាពមុខវិជ្ជាទទួលបន្ទុក</strong>
-            <button class="btn btn-outline" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherGradingModal('${myCodes[0]}', '${currentTeacherPortalClassFilter}')">
+            <button class="btn btn-outline" style="height:28px; padding:0 12px; font-size:0.75rem;" onclick="openTeacherGradingModal('${defaultSubjCode}', '${currentTeacherPortalClassFilter}')">
               <i class="fas fa-edit"></i> បញ្ចូលពិន្ទុ
             </button>
           </div>
@@ -10513,10 +10549,10 @@ function renderTrainerPortalView(container) {
                     <span>👨 ប្រុស៖ <strong>${mCount}</strong></span>
                   </div>
                   <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:auto; padding-top:10px; border-top:1px solid #f1f5f9;">
-                    <button class="btn btn-outline" style="height:30px; font-size:0.74rem; padding:0 6px; font-weight:700; border-color:#10b981; color:#059669;" onclick="openTeacherAttendanceModal('${myCodes[0]}', '${cls}')" title="ស្រង់វត្តមាន ${cls}">
+                    <button class="btn btn-outline" style="height:30px; font-size:0.74rem; padding:0 6px; font-weight:700; border-color:#10b981; color:#059669;" onclick="openTeacherAttendanceModal('${defaultSubjCode}', '${cls}')" title="ស្រង់វត្តមាន ${cls}">
                       <i class="fas fa-check"></i> វត្តមាន
                     </button>
-                    <button class="btn btn-outline" style="height:30px; font-size:0.74rem; padding:0 6px; font-weight:700; border-color:#8b5cf6; color:#7c3aed;" onclick="openTeacherGradingModal('${myCodes[0]}', '${cls}')" title="បញ្ចូលពិន្ទុ ${cls}">
+                    <button class="btn btn-outline" style="height:30px; font-size:0.74rem; padding:0 6px; font-weight:700; border-color:#8b5cf6; color:#7c3aed;" onclick="openTeacherGradingModal('${defaultSubjCode}', '${cls}')" title="បញ្ចូលពិន្ទុ ${cls}">
                       <i class="fas fa-calculator"></i> ពិន្ទុ
                     </button>
                     <button class="btn btn-primary" style="height:30px; font-size:0.74rem; padding:0 6px; font-weight:700;" onclick="openTeacherClassStudentsModal('${cls}')" title="មើលសិស្ស ${cls}">
@@ -10540,14 +10576,20 @@ function renderTrainerPortalView(container) {
 // 4. TEACHER MODAL: ដាក់ពិន្ទុសិស្ស & ផ្សព្វផ្សាយ (GRADING & SCORING - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
 function openTeacherGradingModal(selectedSubjectCode, selectedClass = 'all') {
+  if (typeof syncAllSubjects === 'function') syncAllSubjects();
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
-  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+  let mySubjects = (KTPTTC_ALL_SUBJECTS || []).filter(s => myCodes.includes(s.code));
+  if (mySubjects.length === 0) {
+    mySubjects = (KTPTTC_ALL_SUBJECTS && KTPTTC_ALL_SUBJECTS.length > 0)
+      ? [...KTPTTC_ALL_SUBJECTS]
+      : [{ code: 'ICT-105', nameKh: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', credits: 2, trainer: tr.nameKh || 'យូសុះ ស៊ីលាល' }];
+  }
   const myClasses = getTrainerAssignedClasses(tr);
 
   // Access Control Guard: Teacher can only grade assigned subjects!
-  if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
-    selectedSubjectCode = myCodes[0];
+  if (!selectedSubjectCode || !mySubjects.some(s => s.code === selectedSubjectCode)) {
+    selectedSubjectCode = mySubjects[0].code;
   }
 
   // If selectedClass is not in myClasses and not 'all', default to 'all'
@@ -10967,13 +11009,19 @@ function resetGradingRow(btn, studentId, subjectCode) {
 // 5. TEACHER MODAL: ដាក់វត្តមានសិស្ស (ATTENDANCE CONTROLLER - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
 function openTeacherAttendanceModal(selectedSubjectCode, selectedClass = 'all') {
+  if (typeof syncAllSubjects === 'function') syncAllSubjects();
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
-  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+  let mySubjects = (KTPTTC_ALL_SUBJECTS || []).filter(s => myCodes.includes(s.code));
+  if (mySubjects.length === 0) {
+    mySubjects = (KTPTTC_ALL_SUBJECTS && KTPTTC_ALL_SUBJECTS.length > 0)
+      ? [...KTPTTC_ALL_SUBJECTS]
+      : [{ code: 'ICT-105', nameKh: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', credits: 2, trainer: tr.nameKh || 'យូសុះ ស៊ីលាល' }];
+  }
   const myClasses = getTrainerAssignedClasses(tr);
 
-  if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
-    selectedSubjectCode = myCodes[0];
+  if (!selectedSubjectCode || !mySubjects.some(s => s.code === selectedSubjectCode)) {
+    selectedSubjectCode = mySubjects[0].code;
   }
 
   if (selectedClass !== 'all' && !myClasses.includes(selectedClass)) {
@@ -11477,13 +11525,19 @@ function confirmResetModuleAttendance() {
 // 6. TEACHER MODAL: ដាក់កិច្ចការឱ្យសិស្ស (ASSIGN HOMEWORK - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
 function openTeacherHomeworkModal(selectedSubjectCode, activeTab = 'create') {
+  if (typeof syncAllSubjects === 'function') syncAllSubjects();
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
-  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+  let mySubjects = (KTPTTC_ALL_SUBJECTS || []).filter(s => myCodes.includes(s.code));
+  if (mySubjects.length === 0) {
+    mySubjects = (KTPTTC_ALL_SUBJECTS && KTPTTC_ALL_SUBJECTS.length > 0)
+      ? [...KTPTTC_ALL_SUBJECTS]
+      : [{ code: 'ICT-105', nameKh: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', credits: 2, trainer: tr.nameKh || 'យូសុះ ស៊ីលាល' }];
+  }
   const myClasses = getTrainerAssignedClasses(tr);
 
-  if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
-    selectedSubjectCode = myCodes[0];
+  if (!selectedSubjectCode || !mySubjects.some(s => s.code === selectedSubjectCode)) {
+    selectedSubjectCode = mySubjects[0].code;
   }
 
   const currentSubject = mySubjects.find(s => s.code === selectedSubjectCode) || mySubjects[0];
@@ -13666,12 +13720,18 @@ function downloadHwAttachment(hwId) {
 // 7. TEACHER MODAL: UPLOAD មេរៀន & វីដេអូឱ្យសិស្ស (LESSONS & VIDEOS - STRICTLY SCOPED)
 // --------------------------------------------------------------------------
 function openTeacherUploadModal(selectedSubjectCode, activeTab = 'lesson') {
+  if (typeof syncAllSubjects === 'function') syncAllSubjects();
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
-  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+  let mySubjects = (KTPTTC_ALL_SUBJECTS || []).filter(s => myCodes.includes(s.code));
+  if (mySubjects.length === 0) {
+    mySubjects = (KTPTTC_ALL_SUBJECTS && KTPTTC_ALL_SUBJECTS.length > 0)
+      ? [...KTPTTC_ALL_SUBJECTS]
+      : [{ code: 'ICT-105', nameKh: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', credits: 2, trainer: tr.nameKh || 'យូសុះ ស៊ីលាល' }];
+  }
 
-  if (!selectedSubjectCode || !myCodes.includes(selectedSubjectCode)) {
-    selectedSubjectCode = myCodes[0];
+  if (!selectedSubjectCode || !mySubjects.some(s => s.code === selectedSubjectCode)) {
+    selectedSubjectCode = mySubjects[0].code;
   }
 
   const currentSubject = mySubjects.find(s => s.code === selectedSubjectCode) || mySubjects[0];
@@ -14467,9 +14527,15 @@ function openTeacherSubjectDetailModal(code) {
 // 9. TEACHER MODAL: មុខវិជ្ជា & កម្មវិធីបង្រៀនផ្ទាល់ខ្លួន (TEACHER CURRICULUM CATALOG)
 // --------------------------------------------------------------------------
 function openTeacherSubjectsModal() {
+  if (typeof syncAllSubjects === 'function') syncAllSubjects();
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
-  const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
+  let mySubjects = (KTPTTC_ALL_SUBJECTS || []).filter(s => myCodes.includes(s.code));
+  if (mySubjects.length === 0) {
+    mySubjects = (KTPTTC_ALL_SUBJECTS && KTPTTC_ALL_SUBJECTS.length > 0)
+      ? [...KTPTTC_ALL_SUBJECTS]
+      : [{ code: 'ICT-105', nameKh: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', credits: 2, trainer: tr.nameKh || 'យូសុះ ស៊ីលាល' }];
+  }
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherSubjectsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
