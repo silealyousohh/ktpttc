@@ -4716,41 +4716,43 @@ function renderTraineePortalView(container) {
             ${avatarHtml}
           </div>
           <div class="trainee-hero-text">
-            <span class="trainee-hero-greeting">${greeting}</span>
+            <span class="trainee-hero-greeting"><i class="fas fa-graduation-cap" style="color:#60a5fa;"></i> ${greeting}</span>
             <h1 class="trainee-hero-name">${t.nameKh || 'យូសុះ ស៊ីលាល'}</h1>
             <div class="trainee-hero-badges">
-              <span class="trainee-badge-pill role"><i class="fas fa-graduation-cap"></i> ${t.roleLabel || 'គរុនិស្សិត'}</span>
-              <span class="trainee-badge-pill class"><i class="fas fa-chalkboard"></i> ${t.className || activeStream.label.split(' • ')[0]}</span>
-              <span class="trainee-badge-pill class"><i class="fas fa-id-badge"></i> ${t.id || 'ktpttc-2026-st-001'}</span>
+              <span class="trainee-badge-pill role"><i class="fas fa-user-graduate"></i> ${t.roleLabel || 'គរុនិស្សិត'}</span>
+              <span class="trainee-badge-pill class"><i class="fas fa-chalkboard"></i> ${t.className || 'បរិញ្ញាបត្រ+១'}</span>
+              <span class="trainee-badge-pill id"><i class="fas fa-id-badge"></i> ${t.id || 'ktpttc-2026-st-001'}</span>
             </div>
+            
+            ${isAdmin ? `
+              <div style="margin-top:4px; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:8px; padding:3px 10px; width:fit-content;">
+                <span style="font-size:0.75rem; color:#ffffff; font-weight:700; white-space:nowrap;"><i class="fas fa-user-graduate"></i> ជ្រើសរើសគរុនិស្សិត៖</span>
+                <select class="form-input" style="height:26px; font-size:0.76rem; padding:1px 8px; background:#ffffff; color:#0f172a; border-radius:6px; font-weight:700; cursor:pointer; border:none;" onchange="previewTraineeStudent(this.value)">
+                  ${(typeof getAllEnteredStudents === 'function' ? getAllEnteredStudents() : (stmsData.trainees || [])).map((s, idx) => `
+                    <option value="${escapeHtml(s.id)}" ${s.id === t.id ? 'selected' : ''}>
+                      ${idx + 1}. ${escapeHtml(s.nameKh)} (${escapeHtml(s.id)})
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+            ` : ''}
+
             <div class="trainee-hero-date">
-              ${khmerDate}
+              <i class="fas fa-calendar-alt" style="color:#60a5fa;"></i> ${khmerDate}
             </div>
           </div>
         </div>
         <div class="trainee-hero-actions">
-          ${isAdmin ? `
-            <div style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); border-radius:8px; padding:4px 10px; display:inline-flex; align-items:center; gap:8px;">
-              <span style="font-size:0.75rem; color:#ffffff; font-weight:700; white-space:nowrap;"><i class="fas fa-user-graduate"></i> ជ្រើសរើសគរុនិស្សិត៖</span>
-              <select class="form-input" style="height:30px; font-size:0.78rem; padding:2px 8px; background:#ffffff; color:#0f172a; border-radius:6px; font-weight:700; cursor:pointer;" onchange="previewTraineeStudent(this.value)">
-                ${(typeof getAllEnteredStudents === 'function' ? getAllEnteredStudents() : (stmsData.trainees || [])).map((s, idx) => `
-                  <option value="${escapeHtml(s.id)}" ${s.id === t.id ? 'selected' : ''}>
-                    ${idx + 1}. ${escapeHtml(s.nameKh)} (${escapeHtml(s.id)})
-                  </option>
-                `).join('')}
-              </select>
-            </div>
-          ` : ''}
-          <button class="btn-hero-action active-timetable-btn" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; border:1px solid #38bdf8; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35); display:inline-flex; align-items:center; gap:8px;" onclick="openTraineeTimetableModal()" title="មើលកាលវិភាគសិក្សា">
+          <button class="btn-hero-action btn-hero-sky" onclick="openTraineeTimetableModal()" title="មើលកាលវិភាគសិក្សា">
             <i class="fas fa-calendar-alt"></i> កាលវិភាគ
           </button>
-          <button class="btn-hero-action primary" onclick="viewTraineeCard('${t.id}')">
+          <button class="btn-hero-action btn-hero-primary" onclick="viewTraineeCard('${t.id}')">
             <i class="fas fa-id-card"></i> កាតសិស្ស
           </button>
-          <button class="btn-hero-action" style="background:#0284c7; color:#ffffff; border:1px solid #38bdf8; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTraineeOnlineClassModal()">
-            <i class="fas fa-video"></i> ថ្នាក់រៀនអនឡាញ (Zoom/Meet)
+          <button class="btn-hero-action btn-hero-emerald" onclick="openTraineeOnlineClassModal()">
+            <i class="fas fa-video"></i> ថ្នាក់រៀនអនឡាញ
           </button>
-          <button class="btn-hero-action secondary" onclick="openProfileSettingsModal()">
+          <button class="btn-hero-action btn-hero-glass" onclick="openProfileSettingsModal()">
             <i class="fas fa-user-edit"></i> កែប្រែព័ត៌មាន
           </button>
         </div>
@@ -10346,43 +10348,43 @@ function renderTrainerPortalView(container) {
             ${avatarHtml}
           </div>
           <div class="trainee-hero-text">
-            <span class="trainee-hero-greeting">${greeting}</span>
+            <span class="trainee-hero-greeting"><i class="fas fa-chalkboard-teacher" style="color:#60a5fa;"></i> ${greeting}</span>
             <h1 class="trainee-hero-name">${tr.nameKh || 'គ្រូឧទ្ទេស'}</h1>
             <div class="trainee-hero-badges">
               <span class="trainee-badge-pill role"><i class="fas fa-chalkboard-teacher"></i> ${tr.roleLabel || 'គ្រូឧទ្ទេស / មន្ត្រីបង្រៀន'}</span>
-              <span class="trainee-badge-pill class" style="background:#2563eb; color:#fff; font-weight:700;"><i class="fas fa-users-class"></i> ទទួលបន្ទុក ${myClasses.length} ថ្នាក់</span>
-              <span class="trainee-badge-pill class" style="background:#10b981; color:#fff; font-weight:700;"><i class="fas fa-book-reader"></i> ${mySubjects.map(s => s.code + ' ' + s.nameKh).join(' & ')}</span>
+              <span class="trainee-badge-pill class"><i class="fas fa-users-class"></i> ទទួលបន្ទុក ${myClasses.length} ថ្នាក់</span>
+              <span class="trainee-badge-pill subject"><i class="fas fa-book-reader"></i> ${mySubjects.map(s => s.code).join(', ')}</span>
             </div>
             
             ${(currentUser && currentUser.role === 'admin') ? `
-              <div style="margin-top:8px; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:3px 10px;">
+              <div style="margin-top:4px; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:8px; padding:3px 10px; width:fit-content;">
                 <span style="font-size:0.75rem; color:#fff; font-weight:600;"><i class="fas fa-random"></i> ប្តូរគ្រូដើម្បីសាកល្បង RBAC៖</span>
-                <select onchange="previewSpecificTrainer(this.value)" style="background:#fff; color:#1e3a8a; font-size:0.75rem; font-weight:700; border-radius:4px; padding:2px 8px; border:none; cursor:pointer;">
+                <select onchange="previewSpecificTrainer(this.value)" style="background:#fff; color:#1e3a8a; font-size:0.75rem; font-weight:700; border-radius:6px; padding:2px 8px; border:none; cursor:pointer;">
                   ${trainers.map(t => `<option value="${t.id}" ${t.id === tr.id ? 'selected' : ''}>${t.nameKh} (${t.subject || 'PED-101'})</option>`).join('')}
                 </select>
               </div>
             ` : ''}
 
-            <div class="trainee-hero-date" style="margin-top:6px;">
-              ${khmerDate}
+            <div class="trainee-hero-date">
+              <i class="fas fa-calendar-alt" style="color:#60a5fa;"></i> ${khmerDate}
             </div>
           </div>
         </div>
         <div class="trainee-hero-actions">
-          <button class="btn-hero-action active-timetable-btn" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; border:1px solid #38bdf8; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35); display:inline-flex; align-items:center; gap:8px;" onclick="openTeacherTimetableModal()" title="មើលកាលវិភាគបង្រៀន">
+          <button class="btn-hero-action btn-hero-sky" onclick="openTeacherTimetableModal()" title="មើលកាលវិភាគបង្រៀន">
             <i class="fas fa-calendar-alt"></i> កាលវិភាគ
           </button>
-          <button class="btn-hero-action primary" onclick="openTeacherHomeworkModal('${defaultSubjCode}', 'create', '${currentTeacherPortalClassFilter}')">
-            <i class="fas fa-plus-circle"></i> ដាក់កិច្ចការ/ប្រឡងខ្លី
+          <button class="btn-hero-action btn-hero-primary" onclick="openTeacherHomeworkModal('${defaultSubjCode}', 'create', '${currentTeacherPortalClassFilter}')">
+            <i class="fas fa-plus-circle"></i> ដាក់កិច្ចការ/ប្រឡង
           </button>
-          <button class="btn-hero-action secondary" onclick="openTeacherAttendanceModal('${defaultSubjCode}', '${currentTeacherPortalClassFilter}')">
+          <button class="btn-hero-action btn-hero-emerald" onclick="openTeacherAttendanceModal('${defaultSubjCode}', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-calendar-check"></i> ស្រង់វត្តមាន
           </button>
-          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherGradingModal('${defaultSubjCode}', '${currentTeacherPortalClassFilter}')">
+          <button class="btn-hero-action btn-hero-purple" onclick="openTeacherGradingModal('${defaultSubjCode}', '${currentTeacherPortalClassFilter}')">
             <i class="fas fa-calculator"></i> បញ្ចូលពិន្ទុ
           </button>
-          <button class="btn-hero-action" style="background:#0d9488; color:#ffffff; border:1px solid #14b8a6; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openTeacherReportIncidentModal()">
-            <i class="fas fa-paper-plane"></i> រាយការណ៍ជូន Admin
+          <button class="btn-hero-action btn-hero-glass" onclick="openTeacherReportIncidentModal()" title="រាយការណ៍ជូន Admin">
+            <i class="fas fa-paper-plane"></i> រាយការណ៍
           </button>
         </div>
       </div>
@@ -15001,11 +15003,8 @@ function renderAdminPortalView(container) {
   const pendingRequests = (stmsData.studentRequests || []).filter(r => r.status === 'pending');
 
   let avatarHtml = '';
-  if (admin.photo && String(admin.photo).trim() !== '') {
-    avatarHtml = `<img src="${admin.photo}" class="trainee-hero-avatar-img" alt="${admin.nameKh}" onerror="this.outerHTML='<span class=\\'trainee-hero-avatar-letter\\' style=\\'background:linear-gradient(135deg, #1e3a8a, #3b82f6);\\'>${initialLetter}</span>'" />`;
-  } else {
-    avatarHtml = `<span class="trainee-hero-avatar-letter" style="background:linear-gradient(135deg, #1e3a8a, #2563eb);">${initialLetter}</span>`;
-  }
+  const adminPhoto = (admin.photo && String(admin.photo).trim()) || 'assets/logo_ptec.svg';
+  avatarHtml = `<img src="${adminPhoto}" class="trainee-hero-avatar-img" alt="${admin.nameKh}" onerror="this.outerHTML='<span class=\\'trainee-hero-avatar-letter\\'>${initialLetter}</span>'" />`;
 
   // Subject Cards for Admin with Assigned Instructors
   let subjectsHtml = '';
@@ -15072,32 +15071,32 @@ function renderAdminPortalView(container) {
             ${avatarHtml}
           </div>
           <div class="trainee-hero-text">
-            <span class="trainee-hero-greeting">${greeting}</span>
+            <span class="trainee-hero-greeting"><i class="fas fa-shield-alt" style="color:#60a5fa;"></i> ${greeting}</span>
             <h1 class="trainee-hero-name">${admin.nameKh || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ'}</h1>
             <div class="trainee-hero-badges">
-              <span class="trainee-badge-pill role"><i class="fas fa-user-shield"></i> ${admin.roleLabel || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ / សិក្សាធិការ'}</span>
-              <span class="trainee-badge-pill class"><i class="fas fa-university"></i> សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</span>
-              <span class="trainee-badge-pill class" style="background:rgba(255,255,255,0.18);"><i class="fas fa-users-cog"></i> គ្រប់គ្រងទូទៅ &amp; សិក្សាធិការ</span>
+              <span class="trainee-badge-pill role"><i class="fas fa-user-shield"></i> ${admin.roleLabel || 'អ្នកគ្រប់គ្រងប្រព័ន្ធ'}</span>
+              <span class="trainee-badge-pill school"><i class="fas fa-university"></i> KTPTTC (ក្រចេះ)</span>
+              <span class="trainee-badge-pill status"><i class="fas fa-check-circle" style="color:#34d399;"></i> សិក្សាធិការ</span>
             </div>
             <div class="trainee-hero-date">
-              ${khmerDate}
+              <i class="fas fa-calendar-alt" style="color:#60a5fa;"></i> ${khmerDate}
             </div>
           </div>
         </div>
         <div class="trainee-hero-actions">
-          <button class="btn-hero-action active-timetable-btn" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; border:1px solid #38bdf8; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35); display:inline-flex; align-items:center; gap:8px;" onclick="scrollToAdminTimetableSection()" title="មើល និងរៀបចំកាលវិភាគ">
+          <button class="btn-hero-action btn-hero-sky" onclick="scrollToAdminTimetableSection()" title="មើល និងរៀបចំកាលវិភាគ">
             <i class="fas fa-calendar-alt"></i> កាលវិភាគ
           </button>
-          <button class="btn-hero-action primary" onclick="openAdminAddStudentModal()">
+          <button class="btn-hero-action btn-hero-primary" onclick="openAdminAddStudentModal()">
             <i class="fas fa-user-plus"></i> ចុះឈ្មោះសិស្សថ្មី
           </button>
-          <button class="btn-hero-action secondary" onclick="openAdminTeacherModal()">
+          <button class="btn-hero-action btn-hero-glass" onclick="openAdminTeacherModal()">
             <i class="fas fa-chalkboard-teacher"></i> គ្រប់គ្រងគ្រូ
           </button>
-          <button class="btn-hero-action" style="background:#059669; color:#ffffff; border:1px solid #34d399; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openAdminTeacherMonitoringModal()">
+          <button class="btn-hero-action btn-hero-emerald" onclick="openAdminTeacherMonitoringModal()">
             <i class="fas fa-user-check"></i> តាមដានគ្រូបង្រៀន
           </button>
-          <button class="btn-hero-action" style="background:rgba(255,255,255,0.18); color:#ffffff; border:1px solid rgba(255,255,255,0.3); font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;" onclick="openSystemRolesModal()" title="តារាងកំណត់សិទ្ធិ និងតួនាទី (RBAC)">
+          <button class="btn-hero-action btn-hero-glass" onclick="openSystemRolesModal()" title="តារាងកំណត់សិទ្ធិ និងតួនាទី (RBAC)">
             <i class="fas fa-user-shield"></i> សិទ្ធិ RBAC
           </button>
         </div>
