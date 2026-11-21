@@ -17226,28 +17226,128 @@ function openAdminSubjectsCatalogModal() {
   const totalCredits = subjects.reduce((sum, s) => sum + (Number(s.credits) || 0), 0);
 
   const modalHtml = `
-    <div class="stms-modal-backdrop" id="adminSubjectsCatalogModal" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:960px; width:95%; max-height:92vh;">
-        <div class="modal-header-bar" style="background:linear-gradient(135deg, #7c3aed, #6d28d9); color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
-          <div class="modal-header-title" style="color:#fff; font-size:1.15rem; display:flex; align-items:center; gap:10px;">
-            <i class="fas fa-book-reader" style="color:#fbcfe8;"></i>
-            <span>គ្រប់គ្រងមុខវិជ្ជាសិក្សា &amp; កម្មវិធីបណ្តុះបណ្តាល (Curriculum &amp; Subjects)</span>
-          </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
-        </div>
-        <div class="modal-body-scroll" style="padding:22px; max-height:78vh; overflow-y:auto;">
-          
-          <!-- Top Action Bar -->
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; background:#f8fafc; padding:12px 16px; border-radius:10px; border:1px solid #e2e8f0;">
-            <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:240px;">
-              <input type="text" id="adminSubjectSearchInput" class="form-control" style="max-width:320px; font-size:0.85rem;" placeholder="🔍 ស្វែងរកតាមកូដ ឈ្មោះ ឬគ្រូ..." oninput="filterAdminSubjectsCatalog(this.value)">
-              <div style="font-size:0.8rem; color:#64748b; font-weight:600;">
-                សរុប <strong>${subjects.length} មុខវិជ្ជា</strong> (${totalCredits} ក្រេឌីត)
-              </div>
+    <div class="stms-modal-backdrop" id="adminSubjectsCatalogModal" onclick="if(event.target===this) closeStmsModal()" style="backdrop-filter:blur(8px); background:rgba(15, 23, 42, 0.68);">
+      <div class="stms-modal-window" style="max-width:980px; width:95%; max-height:92vh; border-radius:18px; box-shadow:0 25px 65px -10px rgba(109, 40, 217, 0.35), 0 0 0 1px rgba(124, 58, 237, 0.15); overflow:hidden; background:#ffffff;">
+        
+        <!-- Header Bar -->
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #5b21b6 0%, #7c3aed 55%, #8b5cf6 100%); color:#fff; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; position:relative; overflow:hidden; border:none;">
+          <div style="position:absolute; right:-25px; top:-25px; width:130px; height:130px; border-radius:50%; background:rgba(255,255,255,0.08); pointer-events:none;"></div>
+          <div style="position:absolute; right:80px; bottom:-35px; width:90px; height:90px; border-radius:50%; background:rgba(255,255,255,0.05); pointer-events:none;"></div>
+
+          <div style="display:flex; align-items:center; gap:14px; position:relative; z-index:1;">
+            <div style="width:46px; height:46px; border-radius:13px; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.32); display:flex; align-items:center; justify-content:center; font-size:1.35rem; color:#ffffff; flex-shrink:0; box-shadow:0 4px 14px rgba(0,0,0,0.15);">
+              <i class="fas fa-book-reader"></i>
             </div>
-            <button class="btn btn-primary" onclick="openAddSubjectModal()" style="font-size:0.85rem; height:36px; padding:0 16px; display:inline-flex; align-items:center; gap:6px; background:#7c3aed; border-color:#6d28d9;">
-              <i class="fas fa-plus-circle"></i> + បន្ថែមមុខវិជ្ជាថ្មី
-            </button>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 style="color:#ffffff; font-size:1.15rem; font-weight:800; margin:0; line-height:1.3;">
+                  គ្រប់គ្រងមុខវិជ្ជាសិក្សា &amp; កម្មវិធីបណ្តុះបណ្តាល
+                </h3>
+                <span style="font-size:0.72rem; font-weight:700; color:#ffffff; background:rgba(255,255,255,0.22); border:1px solid rgba(255,255,255,0.35); padding:2px 9px; border-radius:12px; letter-spacing:0.3px;">
+                  Curriculum &amp; Subjects
+                </span>
+              </div>
+              <p style="color:#ede9fe; font-size:0.78rem; margin:3px 0 0 0; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-graduation-cap" style="color:#fde047;"></i>
+                <span>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC) • ប្រព័ន្ធគ្រប់គ្រងការបង្រៀន និងរៀន</span>
+              </p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#ffffff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.2rem; transition:all 0.2s; position:relative; z-index:1;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">&times;</button>
+        </div>
+
+        <div class="modal-body-scroll" style="padding:22px; max-height:76vh; overflow-y:auto; background:#fcfbff;">
+          
+          <!-- Top Action Bar with Clear Search & Reset Controls -->
+          <div style="background:#ffffff; border:1px solid #ede9fe; border-radius:14px; padding:16px 18px; margin-bottom:20px; display:flex; flex-direction:column; gap:12px; box-shadow:0 2px 8px rgba(124,58,237,0.04);">
+            
+            <!-- Row 1: Search Input & Quick Filter Selects -->
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+              
+              <!-- Search Box with Clear Icon -->
+              <div style="position:relative; flex:1; min-width:280px; max-width:480px; display:flex; align-items:center;">
+                <i class="fas fa-search" style="position:absolute; left:14px; color:#7c3aed; font-size:0.92rem; pointer-events:none;"></i>
+                <input type="text" id="adminSubjectSearchInput" 
+                       placeholder="ស្វែងរកតាមកូដ (ឧ. ICT-105), ឈ្មោះមុខវិជ្ជា ឬគ្រូ..." 
+                       oninput="handleAdminSubjectSearch(this.value)"
+                       style="width:100%; height:40px; padding:0 36px 0 38px; border-radius:10px; border:1.5px solid #cbd5e1; font-size:0.88rem; font-weight:500; color:#1e293b; background:#ffffff; outline:none; transition:all 0.2s; box-sizing:border-box;"
+                       onfocus="this.style.borderColor='#7c3aed'; this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.12)';"
+                       onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                <button type="button" id="adminSubjectSearchClearBtn" onclick="clearAdminSubjectSearch()" 
+                        style="display:none; position:absolute; right:10px; background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1rem; padding:4px; line-height:1;" 
+                        title="សម្អាតការស្វែងរក">
+                  <i class="fas fa-times-circle"></i>
+                </button>
+              </div>
+
+              <!-- Filter: Semester -->
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:0.8rem; font-weight:700; color:#475569; white-space:nowrap;">
+                  <i class="fas fa-calendar-alt" style="color:#7c3aed;"></i> ឆមាស៖
+                </span>
+                <select id="adminSubjectSemesterFilter" onchange="filterAdminSubjectsCatalog()" 
+                        style="height:40px; padding:0 12px; border-radius:10px; border:1.5px solid #cbd5e1; font-size:0.84rem; font-weight:600; color:#334155; background:#ffffff; outline:none; cursor:pointer;">
+                  <option value="all">ឆមាសទាំងអស់</option>
+                  <option value="ឆមាសទី ១">ឆមាសទី ១</option>
+                  <option value="ឆមាសទី ២">ឆមាសទី ២</option>
+                  <option value="ទាំងពីរឆមាស">ទាំងពីរឆមាស</option>
+                </select>
+              </div>
+
+              <!-- Filter: Category -->
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:0.8rem; font-weight:700; color:#475569; white-space:nowrap;">
+                  <i class="fas fa-layer-group" style="color:#7c3aed;"></i> ប្រភេទ៖
+                </span>
+                <select id="adminSubjectCategoryFilter" onchange="filterAdminSubjectsCatalog()" 
+                        style="height:40px; padding:0 12px; border-radius:10px; border:1.5px solid #cbd5e1; font-size:0.84rem; font-weight:600; color:#334155; background:#ffffff; outline:none; cursor:pointer;">
+                  <option value="all">ប្រភេទទាំងអស់</option>
+                  <option value="គរុកោសល្យទូទៅ">គរុកោសល្យទូទៅ</option>
+                  <option value="វិធីសាស្ត្របង្រៀនឯកទេស">វិធីសាស្ត្របង្រៀនឯកទេស</option>
+                  <option value="វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា">វិទ្យាសាស្ត្រ &amp; បច្ចេកវិទ្យា</option>
+                  <option value="ភាសា & ទំនាក់ទំនង">ភាសា &amp; ទំនាក់ទំនង</option>
+                  <option value="ស្រាវជ្រាវ & កម្មសិក្សា">ស្រាវជ្រាវ &amp; កម្មសិក្សា</option>
+                </select>
+              </div>
+
+            </div>
+
+            <!-- Row 2: Status Counters + Action Buttons -->
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding-top:10px; border-top:1px solid #f1f5f9;">
+              
+              <!-- Result Count Badge -->
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="background:#ede9fe; color:#6d28d9; border:1px solid #ddd6fe; padding:5px 14px; border-radius:20px; font-weight:700; font-size:0.82rem; display:inline-flex; align-items:center; gap:7px;">
+                  <i class="fas fa-book-open"></i>
+                  <span id="adminSubjectStatsText">សរុប <strong>${subjects.length} មុខវិជ្ជា</strong> (${totalCredits} ក្រេឌីត)</span>
+                </span>
+
+                <button type="button" id="adminSubjectResetFiltersBtn" onclick="resetAdminSubjectsFilter()" 
+                        style="display:none; font-size:0.75rem; background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:4px 10px; border-radius:14px; cursor:pointer; font-weight:700; align-items:center; gap:5px;">
+                  <i class="fas fa-redo"></i> សម្អាតតម្រង
+                </button>
+              </div>
+
+              <!-- Action Buttons: Reset Subjects + Add Subject -->
+              <div style="display:flex; align-items:center; gap:10px;">
+                <button type="button" class="btn btn-outline" onclick="confirmResetAllSubjects()" 
+                        style="font-size:0.84rem; height:38px; padding:0 14px; display:inline-flex; align-items:center; gap:6px; color:#dc2626; border:1.5px solid #fecaca; background:#ffffff; font-weight:700; border-radius:10px; cursor:pointer; transition:all 0.2s;"
+                        onmouseover="this.style.background='#fef2f2';" onmouseout="this.style.background='#ffffff';"
+                        title="កំណត់មុខវិជ្ជាទាំងអស់ឡើងវិញតាមលំនាំដើមរបស់សាលា KTPTTC">
+                  <i class="fas fa-undo-alt"></i>
+                  <span>កំណត់ឡើងវិញ (Reset Subjects)</span>
+                </button>
+
+                <button type="button" class="btn btn-primary" onclick="openAddSubjectModal()" 
+                        style="font-size:0.85rem; height:38px; padding:0 18px; display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border:none; color:#ffffff; font-weight:700; border-radius:10px; cursor:pointer; box-shadow:0 3px 10px rgba(124,58,237,0.3); transition:all 0.2s;"
+                        onmouseover="this.style.transform='translateY(-1px)';" onmouseout="this.style.transform='none';">
+                  <i class="fas fa-plus-circle"></i>
+                  <span>+ បន្ថែមមុខវិជ្ជាថ្មី</span>
+                </button>
+              </div>
+
+            </div>
+
           </div>
 
           <!-- Subject Cards Grid -->
@@ -17260,7 +17360,14 @@ function openAdminSubjectsCatalogModal() {
               const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === s.code).length;
 
               return `
-                <div class="admin-subj-card-box" data-search="${(s.code + ' ' + s.nameKh + ' ' + (s.nameEn||'') + ' ' + trnName).toLowerCase()}" style="background:#fff; border:1px solid ${th.border}; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 1px 4px rgba(0,0,0,0.04); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 1px 4px rgba(0,0,0,0.04)';">
+                <div class="admin-subj-card-box" 
+                     data-search="${(s.code + ' ' + s.nameKh + ' ' + (s.nameEn||'') + ' ' + trnName).toLowerCase()}" 
+                     data-semester="${s.semester || 'ឆមាសទី ១'}" 
+                     data-category="${s.category || 'គរុកោសល្យទូទៅ'}" 
+                     data-credits="${s.credits || 3}" 
+                     style="background:#fff; border:1px solid ${th.border}; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 1px 4px rgba(0,0,0,0.04); transition:all 0.2s;" 
+                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';" 
+                     onmouseout="this.style.transform='none'; this.style.boxShadow='0 1px 4px rgba(0,0,0,0.04)';">
                   <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <span style="font-size:0.75rem; font-weight:800; color:${th.color}; background:${th.bg}; padding:3px 9px; border-radius:6px; border:1px solid ${th.border};">
                       ${s.code}
@@ -17277,18 +17384,21 @@ function openAdminSubjectsCatalogModal() {
 
                   <div style="font-size:0.78rem; color:#475569; display:flex; flex-direction:column; gap:3px;">
                     <div><i class="fas fa-chalkboard-teacher" style="color:${th.color}; width:16px;"></i> គ្រូទទួលបន្ទុក៖ <strong>${trnName}</strong></div>
-                    <div style="font-size:0.72rem; color:#64748b;"><i class="fas fa-layer-group" style="width:16px;"></i> ${s.semester || 'ឆមាសទី ១'} • ${s.category || 'គរុកោសល្យ'}</div>
+                    <div style="font-size:0.72rem; color:#64748b;"><i class="fas fa-layer-group" style="width:16px;"></i> ${s.semester || 'ឆមាសទី ១'} • ${s.category || 'គរុកោសល្យទូទៅ'}</div>
                   </div>
 
                   <div style="margin-top:auto; padding-top:10px; border-top:1px dashed #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                    <button class="btn btn-outline" onclick="closeStmsModal(); openSubjectDetailModal('${s.code}');" style="height:26px; font-size:0.72rem; padding:0 8px; border-color:#c4b5fd; color:#6d28d9;">
+                    <button class="btn btn-outline" onclick="closeStmsModal(); openSubjectDetailModal('${s.code}');" style="height:28px; font-size:0.74rem; padding:0 10px; border-color:#c4b5fd; color:#6d28d9; border-radius:8px; font-weight:600; display:inline-flex; align-items:center; gap:5px;">
                       <i class="fas fa-list-ul"></i> មាតិកា (${lsnCount})
                     </button>
                     <div style="display:flex; gap:6px;">
-                      <button class="btn btn-outline" onclick="openAddSubjectModal('${s.code}')" style="height:26px; font-size:0.72rem; padding:0 8px;" title="កែប្រែ">
+                      <button class="btn btn-outline" onclick="openAddSubjectModal('${s.code}')" style="height:28px; font-size:0.74rem; padding:0 10px; border-radius:8px; font-weight:600; display:inline-flex; align-items:center; gap:5px;" title="កែប្រែ">
                         <i class="fas fa-edit"></i> កែប្រែ
                       </button>
-                      <button class="btn btn-outline" onclick="confirmDeleteSubject('${s.code}')" style="height:26px; font-size:0.72rem; padding:0 8px; border-color:#fca5a5; color:#ef4444;" title="លុបមុខវិជ្ជា">
+                      <button class="btn btn-outline" onclick="confirmResetSingleSubject('${s.code}')" style="height:28px; width:28px; padding:0; border-radius:8px; border-color:#fed7aa; color:#ea580c; background:#fff; display:inline-flex; align-items:center; justify-content:center;" title="Reset មុខវិជ្ជានេះទៅតាមលំនាំដើម">
+                        <i class="fas fa-undo"></i>
+                      </button>
+                      <button class="btn btn-outline" onclick="confirmDeleteSubject('${s.code}')" style="height:28px; width:28px; padding:0; border-radius:8px; border-color:#fca5a5; color:#ef4444; background:#fff; display:inline-flex; align-items:center; justify-content:center;" title="លុបមុខវិជ្ជា">
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
@@ -17299,8 +17409,12 @@ function openAdminSubjectsCatalogModal() {
           </div>
 
         </div>
-        <div class="modal-footer-bar" style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
-          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+        <div class="modal-footer-bar" style="padding:14px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+          <div style="font-size:0.78rem; color:#64748b; display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-shield-alt" style="color:#10b981;"></i>
+            <span>កម្មវិធីសិក្សាស្របតាមក្របខ័ណ្ឌគរុកោសល្យ និងវិក្រឹតការ MoEYS</span>
+          </div>
+          <button class="btn btn-outline" onclick="closeStmsModal()" style="height:36px; padding:0 18px; font-size:0.85rem; font-weight:600; border-radius:8px;">បិទ</button>
         </div>
       </div>
     </div>
@@ -17311,15 +17425,261 @@ function openAdminSubjectsCatalogModal() {
 window.openAdminSubjectsCatalogModal = openAdminSubjectsCatalogModal;
 window.openManageSubjectsModal = openAdminSubjectsCatalogModal;
 
-function filterAdminSubjectsCatalog(query) {
-  const q = (query || '').toLowerCase().trim();
+function filterAdminSubjectsCatalog() {
+  const queryInput = document.getElementById('adminSubjectSearchInput');
+  const semesterFilter = document.getElementById('adminSubjectSemesterFilter');
+  const categoryFilter = document.getElementById('adminSubjectCategoryFilter');
+  const clearBtn = document.getElementById('adminSubjectSearchClearBtn');
+  const resetFiltersBtn = document.getElementById('adminSubjectResetFiltersBtn');
+  const statsText = document.getElementById('adminSubjectStatsText');
+
+  const q = (queryInput ? queryInput.value : '').toLowerCase().trim();
+  const selectedSemester = semesterFilter ? semesterFilter.value : 'all';
+  const selectedCategory = categoryFilter ? categoryFilter.value : 'all';
+
+  if (clearBtn) {
+    clearBtn.style.display = q ? 'block' : 'none';
+  }
+
+  const isFiltered = Boolean(q || selectedSemester !== 'all' || selectedCategory !== 'all');
+  if (resetFiltersBtn) {
+    resetFiltersBtn.style.display = isFiltered ? 'inline-flex' : 'none';
+  }
+
   const items = document.querySelectorAll('#adminSubjectsGrid .admin-subj-card-box');
+  let matchedCount = 0;
+  let matchedCredits = 0;
+  const totalCount = items.length;
+
   items.forEach(el => {
     const text = el.getAttribute('data-search') || '';
-    el.style.display = text.includes(q) ? 'flex' : 'none';
+    const sem = el.getAttribute('data-semester') || '';
+    const cat = el.getAttribute('data-category') || '';
+    const cred = parseInt(el.getAttribute('data-credits'), 10) || 0;
+
+    const matchText = !q || text.includes(q);
+    const matchSem = selectedSemester === 'all' || sem.includes(selectedSemester) || sem === 'ទាំងពីរឆមាស';
+    const matchCat = selectedCategory === 'all' || cat === selectedCategory;
+
+    if (matchText && matchSem && matchCat) {
+      el.style.display = 'flex';
+      matchedCount++;
+      matchedCredits += cred;
+    } else {
+      el.style.display = 'none';
+    }
   });
+
+  // Handle empty state message
+  let noResultsBox = document.getElementById('adminSubjectsNoResults');
+  if (matchedCount === 0) {
+    if (!noResultsBox) {
+      const grid = document.getElementById('adminSubjectsGrid');
+      if (grid) {
+        grid.insertAdjacentHTML('beforeend', `
+          <div id="adminSubjectsNoResults" style="grid-column: 1 / -1; background:#ffffff; border:2px dashed #cbd5e1; border-radius:14px; padding:36px 20px; text-align:center; color:#64748b;">
+            <div style="width:52px; height:52px; border-radius:50%; background:#f1f5f9; color:#94a3b8; display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:12px;">
+              <i class="fas fa-search"></i>
+            </div>
+            <h4 style="margin:0 0 6px 0; font-size:1rem; color:#334155; font-weight:700;">មិនមានមុខវិជ្ជាត្រូវនឹងលក្ខខណ្ឌស្វែងរកឡើយ</h4>
+            <p style="margin:0 0 14px 0; font-size:0.82rem; color:#94a3b8;">សូមសាកល្បងពាក្យគន្លឹះផ្សេង ឬចុចសម្អាតតម្រងដើម្បីមើលមុខវិជ្ជាទាំងអស់</p>
+            <button type="button" class="btn btn-outline" onclick="resetAdminSubjectsFilter()" style="font-size:0.82rem; padding:6px 16px; border-radius:8px; font-weight:700; color:#7c3aed; border-color:#c4b5fd;">
+              <i class="fas fa-redo"></i> សម្អាតការស្វែងរក
+            </button>
+          </div>
+        `);
+      }
+    } else {
+      noResultsBox.style.display = 'block';
+    }
+  } else if (noResultsBox) {
+    noResultsBox.style.display = 'none';
+  }
+
+  // Update stats text
+  if (statsText) {
+    if (isFiltered) {
+      statsText.innerHTML = `បង្ហាញ <strong>${matchedCount}</strong> នៃ <strong>${totalCount} មុខវិជ្ជា</strong> (${matchedCredits} ក្រេឌីត)`;
+    } else {
+      statsText.innerHTML = `សរុប <strong>${totalCount} មុខវិជ្ជា</strong> (${matchedCredits} ក្រេឌីត)`;
+    }
+  }
 }
 window.filterAdminSubjectsCatalog = filterAdminSubjectsCatalog;
+
+function handleAdminSubjectSearch(val) {
+  filterAdminSubjectsCatalog();
+}
+window.handleAdminSubjectSearch = handleAdminSubjectSearch;
+
+function clearAdminSubjectSearch() {
+  const input = document.getElementById('adminSubjectSearchInput');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+  filterAdminSubjectsCatalog();
+}
+window.clearAdminSubjectSearch = clearAdminSubjectSearch;
+
+function resetAdminSubjectsFilter() {
+  const input = document.getElementById('adminSubjectSearchInput');
+  if (input) input.value = '';
+  const sem = document.getElementById('adminSubjectSemesterFilter');
+  if (sem) sem.value = 'all';
+  const cat = document.getElementById('adminSubjectCategoryFilter');
+  if (cat) cat.value = 'all';
+  filterAdminSubjectsCatalog();
+}
+window.resetAdminSubjectsFilter = resetAdminSubjectsFilter;
+
+// Reset All Subjects to MoEYS / KTPTTC Standards
+function confirmResetAllSubjects() {
+  const msg = `⚠️ តើលោកអ្នកពិតជាចង់កំណត់មុខវិជ្ជាសិក្សាឡើងវិញ (Reset Subjects) ទៅតាមកម្មវិធីបណ្តុះបណ្តាលគំរូដើមរបស់សាលា KTPTTC មែនទេ?\n\nមុខវិជ្ជាស្តង់ដារទាំង ៨ របស់សាលានឹងត្រូវស្ដារឡើងវិញពេញលេញ (រួមមាន កូដ, ក្រេឌីត, ឆមាស និងប្រភេទមុខវិជ្ជា)។`;
+  
+  if (!confirm(msg)) return;
+
+  const defaultSubjs = [
+    {
+      code: "PED-101",
+      nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
+      nameEn: "General Pedagogy & Teaching Methodology",
+      credits: 3,
+      semester: "ឆមាសទី ១",
+      category: "គរុកោសល្យទូទៅ",
+      trainer: "",
+      desc: "ទ្រឹស្តីគរុកោសល្យទូទៅ វិធីសាស្ត្របង្រៀនសកម្ម និងការគ្រប់គ្រងថ្នាក់រៀន"
+    },
+    {
+      code: "PSY-102",
+      nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ",
+      nameEn: "Educational Psychology & Child Development",
+      credits: 2,
+      semester: "ឆមាសទី ១",
+      category: "គរុកោសល្យទូទៅ",
+      trainer: "",
+      desc: "ចិត្តវិទ្យាគរុកោសល្យ ការយល់ដឹងពីការលូតលាស់ និងការអភិវឌ្ឍបញ្ញារបស់កុមារ"
+    },
+    {
+      code: "MTH-103",
+      nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម",
+      nameEn: "Primary Mathematics Teaching Methodology",
+      credits: 3,
+      semester: "ឆមាសទី ១",
+      category: "វិធីសាស្ត្របង្រៀនឯកទេស",
+      trainer: "",
+      desc: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យា ការប្រើប្រាស់ឧបទេស និងលំហាត់អនុវត្តកម្រិតបឋម"
+    },
+    {
+      code: "KHM-104",
+      nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង",
+      nameEn: "Khmer Language Teaching Methodology & Early Reading",
+      credits: 3,
+      semester: "ឆមាសទី ១",
+      category: "វិធីសាស្ត្របង្រៀនឯកទេស",
+      trainer: "",
+      desc: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ អំណានដំបូង ការសរសេរ និងវេយ្យាករណ៍"
+    },
+    {
+      code: "ICT-105",
+      nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)",
+      nameEn: "Information & Communication Technology in Education",
+      credits: 2,
+      semester: "ឆមាសទី ១",
+      category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា",
+      trainer: "យូសុះ ស៊ីលាល",
+      desc: "ការប្រើប្រាស់បច្ចេកវិទ្យាឌីជីថល កម្មវិធីអប់រំ និងការផលិតមាតិកាបង្រៀនអេឡិចត្រូនិច"
+    },
+    {
+      code: "RES-106",
+      nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)",
+      nameEn: "Classroom Action Research",
+      credits: 2,
+      semester: "ឆមាសទី ២",
+      category: "ស្រាវជ្រាវ & កម្មសិក្សា",
+      trainer: "",
+      desc: "វិធីសាស្ត្រស្រាវជ្រាវសកម្មភាព ការដោះស្រាយបញ្ហាក្នុងថ្នាក់ និងការសរសេររបាយការណ៍ស្រាវជ្រាវ"
+    },
+    {
+      code: "PRAC-107",
+      nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)",
+      nameEn: "Teaching Practicum in Primary Schools",
+      credits: 4,
+      semester: "ឆមាសទី ២",
+      category: "ស្រាវជ្រាវ & កម្មសិក្សា",
+      trainer: "",
+      desc: "ការចុះសង្កេត និងអនុវត្តការបង្រៀនជាក់ស្តែងនៅតាមសាលាបឋមសិក្សាគោលដៅ"
+    },
+    {
+      code: "COM-108",
+      nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍",
+      nameEn: "Information Technology & Communication",
+      credits: 2,
+      semester: "ឆមាសទី ២",
+      category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា",
+      trainer: "",
+      desc: "ជំនាញកុំព្យូទ័រជាមូលដ្ឋាន បណ្តាញអ៊ីនធឺណិត និងទំនាក់ទំនងឌីជីថល"
+    }
+  ];
+
+  stmsData.subjects = JSON.parse(JSON.stringify(defaultSubjs));
+  KTPTTC_ALL_SUBJECTS = stmsData.subjects;
+
+  // Restore primary teacher assignment for ICT-105 if teacher exists
+  const ictTeacher = (stmsData.users || []).find(u => u.nameKh && u.nameKh.includes('ស៊ីលាល'));
+  if (ictTeacher) {
+    ictTeacher.subject = 'ICT-105';
+    ictTeacher.subjectName = 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)';
+  }
+
+  saveData();
+  syncAllSubjects();
+  showToast(`🎉 បានកំណត់មុខវិជ្ជាសិក្សាឡើងវិញតាមគំរូដើម KTPTTC (៨ មុខវិជ្ជា) ដោយជោគជ័យ!`, 'success');
+  openAdminSubjectsCatalogModal();
+
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'trainers') {
+    renderTrainersView(document.getElementById('stmsContentViewport'));
+  }
+}
+window.confirmResetAllSubjects = confirmResetAllSubjects;
+
+// Reset Single Subject to Default
+function confirmResetSingleSubject(code) {
+  const defaults = {
+    "PED-101": { nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", nameEn: "General Pedagogy & Teaching Methodology", credits: 3, semester: "ឆមាសទី ១", category: "គរុកោសល្យទូទៅ", trainer: "" },
+    "PSY-102": { nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", nameEn: "Educational Psychology & Child Development", credits: 2, semester: "ឆមាសទី ១", category: "គរុកោសល្យទូទៅ", trainer: "" },
+    "MTH-103": { nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", nameEn: "Primary Mathematics Teaching Methodology", credits: 3, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", trainer: "" },
+    "KHM-104": { nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", nameEn: "Khmer Language Teaching Methodology & Early Reading", credits: 3, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", trainer: "" },
+    "ICT-105": { nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", nameEn: "Information & Communication Technology in Education", credits: 2, semester: "ឆមាសទី ១", category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា", trainer: "យូសុះ ស៊ីលាល" },
+    "RES-106": { nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", nameEn: "Classroom Action Research", credits: 2, semester: "ឆមាសទី ២", category: "ស្រាវជ្រាវ & កម្មសិក្សា", trainer: "" },
+    "PRAC-107": { nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", nameEn: "Teaching Practicum in Primary Schools", credits: 4, semester: "ឆមាសទី ២", category: "ស្រាវជ្រាវ & កម្មសិក្សា", trainer: "" },
+    "COM-108": { nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", nameEn: "Information Technology & Communication", credits: 2, semester: "ឆមាសទី ២", category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា", trainer: "" }
+  };
+
+  const def = defaults[code];
+  if (!def) {
+    showToast(`មិនមានគំរូដើមសម្រាប់មុខវិជ្ជាកូដ «${code}» ឡើយ (ជាមុខវិជ្ជាបន្ថែមផ្ទាល់ខ្លួន)`, 'warning');
+    return;
+  }
+
+  if (!confirm(`តើលោកអ្នកចង់កំណត់មុខវិជ្ជា «${code}» ឡើងវិញទៅតាមទិន្នន័យដើមរបស់សាលា KTPTTC មែនទេ?`)) return;
+
+  if (!Array.isArray(stmsData.subjects)) stmsData.subjects = [...KTPTTC_ALL_SUBJECTS];
+  const idx = stmsData.subjects.findIndex(s => s.code === code);
+  if (idx !== -1) {
+    stmsData.subjects[idx] = { code, ...def };
+  } else {
+    stmsData.subjects.push({ code, ...def });
+  }
+
+  saveData();
+  syncAllSubjects();
+  showToast(`✅ បានកំណត់មុខវិជ្ជា «${code}» ឡើងវិញរួចរាល់!`, 'success');
+  openAdminSubjectsCatalogModal();
+}
+window.confirmResetSingleSubject = confirmResetSingleSubject;
 
 // --------------------------------------------------------------------------
 // ADD / EDIT SUBJECT MODAL
