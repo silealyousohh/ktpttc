@@ -17330,105 +17330,197 @@ function openAddSubjectModal(subjectCodeToEdit = null) {
   const existing = isEdit ? KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCodeToEdit) : null;
 
   const modalHtml = `
-    <div class="stms-modal-backdrop" id="addSubjectModalBackdrop" onclick="if(event.target===this) openAdminSubjectsCatalogModal()">
-      <div class="stms-modal-window" style="max-width:620px; width:95%;">
-        <div class="modal-header-bar" style="background:#7c3aed; color:#fff; border-radius:12px 12px 0 0; padding:16px 20px;">
-          <div class="modal-header-title" style="color:#fff; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
-            <i class="fas fa-book" style="color:#fbcfe8;"></i>
-            <span>${isEdit ? 'កែប្រែព័ត៌មានមុខវិជ្ជា' : 'បន្ថែមមុខវិជ្ជាថ្មី (Add Subject)'}</span>
+    <div class="stms-modal-backdrop" id="addSubjectModalBackdrop" onclick="if(event.target===this) openAdminSubjectsCatalogModal()" style="backdrop-filter:blur(8px); background:rgba(15, 23, 42, 0.68);">
+      <div class="stms-modal-window" style="max-width:680px; width:95%; border-radius:18px; box-shadow:0 25px 65px -10px rgba(109, 40, 217, 0.35), 0 0 0 1px rgba(124, 58, 237, 0.15); overflow:hidden; background:#ffffff;">
+        
+        <!-- Modern Hero Header Bar -->
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #5b21b6 0%, #7c3aed 55%, #8b5cf6 100%); padding:18px 24px; display:flex; align-items:center; justify-content:space-between; position:relative; overflow:hidden; border:none;">
+          <div style="position:absolute; right:-25px; top:-25px; width:130px; height:130px; border-radius:50%; background:rgba(255,255,255,0.08); pointer-events:none;"></div>
+          <div style="position:absolute; right:80px; bottom:-35px; width:90px; height:90px; border-radius:50%; background:rgba(255,255,255,0.05); pointer-events:none;"></div>
+          
+          <div style="display:flex; align-items:center; gap:14px; position:relative; z-index:1;">
+            <div style="width:46px; height:46px; border-radius:13px; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.32); display:flex; align-items:center; justify-content:center; font-size:1.35rem; color:#ffffff; flex-shrink:0; box-shadow:0 4px 14px rgba(0,0,0,0.15);">
+              <i class="fas fa-book-open"></i>
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 style="color:#ffffff; font-size:1.15rem; font-weight:800; margin:0; line-height:1.3;">
+                  ${isEdit ? 'កែប្រែព័ត៌មានមុខវិជ្ជា' : 'បន្ថែមមុខវិជ្ជាថ្មី'}
+                </h3>
+                <span style="font-size:0.72rem; font-weight:700; color:#ffffff; background:rgba(255,255,255,0.22); border:1px solid rgba(255,255,255,0.35); padding:2px 9px; border-radius:12px; letter-spacing:0.3px;">
+                  ${isEdit ? 'Edit Subject' : 'Add Subject'}
+                </span>
+              </div>
+              <p style="color:#ede9fe; font-size:0.78rem; margin:3px 0 0 0; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-graduation-cap" style="color:#fde047;"></i>
+                <span>សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC) • កម្មវិធីបណ្តុះបណ្តាល</span>
+              </p>
+            </div>
           </div>
-          <button class="modal-close-icon" onclick="openAdminSubjectsCatalogModal()" style="color:#fff;">&times;</button>
+          
+          <button class="modal-close-icon" onclick="openAdminSubjectsCatalogModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#ffffff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.2rem; transition:all 0.2s; position:relative; z-index:1;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">&times;</button>
         </div>
 
-        <form onsubmit="saveSubjectModal(event, ${isEdit}, '${isEdit ? (existing ? existing.code : subjectCodeToEdit) : ''}')" style="padding:20px;">
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            
-            <div style="display:grid; grid-template-columns: 1fr 2fr; gap:12px;">
-              <div>
-                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
-                  កូដមុខវិជ្ជា (Code) <span style="color:#ef4444;">*</span>
-                </label>
-                <input type="text" id="subjCodeInput" class="form-control" value="${existing ? existing.code : ''}" placeholder="ឧ. MTH-104" style="text-transform:uppercase; font-weight:700;" ${isEdit ? 'readonly' : ''} required>
+        <!-- Form Body with Clean Grouping -->
+        <form onsubmit="saveSubjectModal(event, ${isEdit}, '${isEdit ? (existing ? existing.code : subjectCodeToEdit) : ''}')" style="margin:0; display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
+          <div style="padding:20px 24px; max-height:70vh; overflow-y:auto; display:flex; flex-direction:column; gap:14px; background:#fcfbff;">
+
+            <!-- 1. Subject Identity Card -->
+            <div style="background:#ffffff; border:1px solid #ede9fe; border-radius:14px; padding:16px 18px; box-shadow:0 2px 6px rgba(124,58,237,0.04);">
+              <div style="font-size:0.75rem; font-weight:800; color:#6d28d9; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; align-items:center; gap:7px;">
+                <i class="fas fa-id-card" style="font-size:0.88rem; color:#7c3aed;"></i>
+                <span>ព័ត៌មានអត្តសញ្ញាណមុខវិជ្ជា (Subject Identity)</span>
               </div>
 
-              <div>
-                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
-                  ឈ្មោះមុខវិជ្ជាជាខ្មែរ (Khmer Name) <span style="color:#ef4444;">*</span>
-                </label>
-                <input type="text" id="subjNameKhInput" class="form-control" value="${existing ? existing.nameKh : ''}" placeholder="ឧ. វិធីសាស្ត្របង្រៀនគណិតវិទ្យាកម្រិតខ្ពស់" required>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div style="display:grid; grid-template-columns: 1fr 2fr; gap:12px;">
+                  <!-- Subject Code -->
+                  <div>
+                    <label style="font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between;">
+                      <span>កូដមុខវិជ្ជា <span style="color:#ef4444;">*</span></span>
+                      <small style="font-size:0.68rem; color:#8b5cf6; font-weight:600;">Code</small>
+                    </label>
+                    <div style="position:relative; display:flex; align-items:center;">
+                      <i class="fas fa-barcode" style="position:absolute; left:12px; color:#8b5cf6; font-size:0.9rem; pointer-events:none;"></i>
+                      <input type="text" id="subjCodeInput" value="${existing ? existing.code : ''}" placeholder="ឧ. MTH-104" style="text-transform:uppercase; font-weight:800; letter-spacing:0.6px; color:#5b21b6; background:${isEdit ? '#f1f5f9' : '#ffffff'}; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px 9px 36px; width:100%; font-size:0.88rem; box-sizing:border-box; outline:none; transition:all 0.2s;" onfocus="this.style.borderColor='#7c3aed'; this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';" ${isEdit ? 'readonly' : ''} required>
+                    </div>
+                  </div>
+
+                  <!-- Khmer Name -->
+                  <div>
+                    <label style="font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between;">
+                      <span>ឈ្មោះមុខវិជ្ជាជាភាសាខ្មែរ <span style="color:#ef4444;">*</span></span>
+                      <small style="font-size:0.68rem; color:#64748b; font-weight:600;">Khmer Name</small>
+                    </label>
+                    <div style="position:relative; display:flex; align-items:center;">
+                      <i class="fas fa-signature" style="position:absolute; left:12px; color:#8b5cf6; font-size:0.9rem; pointer-events:none;"></i>
+                      <input type="text" id="subjNameKhInput" value="${existing ? existing.nameKh : ''}" placeholder="ឧ. វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម" style="font-weight:700; color:#0f172a; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px 9px 36px; width:100%; font-size:0.88rem; box-sizing:border-box; outline:none; transition:all 0.2s;" onfocus="this.style.borderColor='#7c3aed'; this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';" required>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- English Name -->
+                <div>
+                  <label style="font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between;">
+                    <span>ឈ្មោះមុខវិជ្ជាជាអក្សរឡាតាំង (English Name)</span>
+                    <small style="font-size:0.68rem; color:#64748b; font-weight:600;">English Name</small>
+                  </label>
+                  <div style="position:relative; display:flex; align-items:center;">
+                    <i class="fas fa-globe-asia" style="position:absolute; left:12px; color:#8b5cf6; font-size:0.9rem; pointer-events:none;"></i>
+                    <input type="text" id="subjNameEnInput" value="${existing && existing.nameEn ? existing.nameEn : ''}" placeholder="ឧ. Primary Mathematics Teaching Methodology" style="font-weight:600; color:#334155; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px 9px 36px; width:100%; font-size:0.88rem; box-sizing:border-box; outline:none; transition:all 0.2s;" onfocus="this.style.borderColor='#7c3aed'; this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
-                ឈ្មោះមុខវិជ្ជាជាអក្សរឡាតាំង (English Name)
+            <!-- 2. Curriculum & Allocation Card -->
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px 18px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+              <div style="font-size:0.75rem; font-weight:800; color:#2563eb; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; align-items:center; gap:7px;">
+                <i class="fas fa-sliders-h" style="font-size:0.88rem; color:#3b82f6;"></i>
+                <span>រចនាសម្ព័ន្ធកម្មវិធីសិក្សា &amp; ការចាត់តាំង (Curriculum &amp; Assignment)</span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div style="display:grid; grid-template-columns: 1fr 1.4fr; gap:12px;">
+                  <!-- Credits -->
+                  <div>
+                    <label style="font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between;">
+                      <span>ចំនួនក្រេឌីត <span style="color:#ef4444;">*</span></span>
+                      <small style="font-size:0.68rem; color:#2563eb; font-weight:600;">Credits</small>
+                    </label>
+                    <div style="position:relative; display:flex; align-items:center;">
+                      <i class="fas fa-award" style="position:absolute; left:12px; color:#3b82f6; font-size:0.9rem; pointer-events:none;"></i>
+                      <input type="number" id="subjCreditsInput" value="${existing ? (existing.credits || 3) : 3}" min="1" max="10" style="font-weight:800; color:#1e40af; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px 9px 36px; width:100%; font-size:0.88rem; box-sizing:border-box; outline:none; transition:all 0.2s;" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';" required>
+                    </div>
+                  </div>
+
+                  <!-- Semester -->
+                  <div>
+                    <label style="font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between;">
+                      <span>ឆមាសសិក្សា</span>
+                      <small style="font-size:0.68rem; color:#64748b; font-weight:600;">Semester</small>
+                    </label>
+                    <div style="position:relative; display:flex; align-items:center;">
+                      <i class="fas fa-calendar-alt" style="position:absolute; left:12px; color:#3b82f6; font-size:0.9rem; pointer-events:none;"></i>
+                      <select id="subjSemesterSelect" style="font-weight:700; color:#334155; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px 9px 36px; width:100%; font-size:0.88rem; box-sizing:border-box; outline:none; transition:all 0.2s; cursor:pointer;" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                        <option value="ឆមាសទី ១" ${existing && existing.semester === 'ឆមាសទី ១' ? 'selected' : ''}>ឆមាសទី ១</option>
+                        <option value="ឆមាសទី ២" ${existing && existing.semester === 'ឆមាសទី ២' ? 'selected' : ''}>ឆមាសទី ២</option>
+                        <option value="ទាំងពីរឆមាស" ${existing && existing.semester === 'ទាំងពីរឆមាស' ? 'selected' : ''}>ទាំងពីរឆមាស</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <!-- Trainer -->
+                  <div>
+                    <label style="font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between;">
+                      <span>គ្រូឧទ្ទេសទទួលបន្ទុក</span>
+                      <small style="font-size:0.68rem; color:#64748b; font-weight:600;">Trainer</small>
+                    </label>
+                    <div style="position:relative; display:flex; align-items:center;">
+                      <i class="fas fa-chalkboard-teacher" style="position:absolute; left:12px; color:#3b82f6; font-size:0.9rem; pointer-events:none;"></i>
+                      <select id="subjTrainerSelect" style="font-weight:700; color:#334155; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px 9px 36px; width:100%; font-size:0.85rem; box-sizing:border-box; outline:none; transition:all 0.2s; cursor:pointer;" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                        <option value="">-- មិនទាន់កំណត់ --</option>
+                        ${trainers.map(tr => `
+                          <option value="${tr.id}" ${existing && (existing.trainer === tr.nameKh || tr.subject === existing.code) ? 'selected' : ''}>
+                            ${tr.nameKh} (${tr.phone || '012 345 678'})
+                          </option>
+                        `).join('')}
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Category -->
+                  <div>
+                    <label style="font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between;">
+                      <span>ប្រភេទមុខវិជ្ជា</span>
+                      <small style="font-size:0.68rem; color:#64748b; font-weight:600;">Category</small>
+                    </label>
+                    <div style="position:relative; display:flex; align-items:center;">
+                      <i class="fas fa-layer-group" style="position:absolute; left:12px; color:#3b82f6; font-size:0.9rem; pointer-events:none;"></i>
+                      <select id="subjCategorySelect" style="font-weight:700; color:#334155; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px 9px 36px; width:100%; font-size:0.85rem; box-sizing:border-box; outline:none; transition:all 0.2s; cursor:pointer;" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                        <option value="គរុកោសល្យទូទៅ" ${existing && existing.category === 'គរុកោសល្យទូទៅ' ? 'selected' : ''}>គរុកោសល្យទូទៅ</option>
+                        <option value="វិធីសាស្ត្របង្រៀនឯកទេស" ${existing && existing.category === 'វិធីសាស្ត្របង្រៀនឯកទេស' ? 'selected' : ''}>វិធីសាស្ត្របង្រៀនឯកទេស</option>
+                        <option value="វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា" ${existing && existing.category === 'វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា' ? 'selected' : ''}>វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា</option>
+                        <option value="ភាសា & ទំនាក់ទំនង" ${existing && existing.category === 'ភាសា & ទំនាក់ទំនង' ? 'selected' : ''}>ភាសា & ទំនាក់ទំនង</option>
+                        <option value="ស្រាវជ្រាវ & កម្មសិក្សា" ${existing && existing.category === 'ស្រាវជ្រាវ & កម្មសិក្សា' ? 'selected' : ''}>ស្រាវជ្រាវ & កម្មសិក្សា</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Syllabus & Course Outline Card -->
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:14px 18px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+              <label style="font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;">
+                <span style="display:flex; align-items:center; gap:6px;">
+                  <i class="fas fa-align-left" style="color:#059669; font-size:0.88rem;"></i>
+                  <span>ការពិពណ៌នាសង្ខេប / មាតិកាគោលនៃមុខវិជ្ជា</span>
+                </span>
+                <small style="font-size:0.68rem; color:#64748b; font-weight:600;">Syllabus &amp; Outline</small>
               </label>
-              <input type="text" id="subjNameEnInput" class="form-control" value="${existing && existing.nameEn ? existing.nameEn : ''}" placeholder="ឧ. Advanced Mathematics Teaching Methodology">
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:12px;">
-              <div>
-                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
-                  ចំនួនក្រេឌីត (Credits) <span style="color:#ef4444;">*</span>
-                </label>
-                <input type="number" id="subjCreditsInput" class="form-control" value="${existing ? (existing.credits || 3) : 3}" min="1" max="10" required>
-              </div>
-
-              <div>
-                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
-                  ឆមាសសិក្សា (Semester)
-                </label>
-                <select id="subjSemesterSelect" class="form-control">
-                  <option value="ឆមាសទី ១" ${existing && existing.semester === 'ឆមាសទី ១' ? 'selected' : ''}>ឆមាសទី ១</option>
-                  <option value="ឆមាសទី ២" ${existing && existing.semester === 'ឆមាសទី ២' ? 'selected' : ''}>ឆមាសទី ២</option>
-                  <option value="ទាំងពីរឆមាស" ${existing && existing.semester === 'ទាំងពីរឆមាស' ? 'selected' : ''}>ទាំងពីរឆមាស</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-              <div>
-                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
-                  គ្រូឧទ្ទេសទទួលបន្ទុក (Trainer)
-                </label>
-                <select id="subjTrainerSelect" class="form-control">
-                  <option value="">-- មិនទាន់កំណត់ --</option>
-                  ${trainers.map(tr => `
-                    <option value="${tr.id}" ${existing && (existing.trainer === tr.nameKh || tr.subject === existing.code) ? 'selected' : ''}>
-                      ${tr.nameKh} (${tr.phone || '012 345 678'})
-                    </option>
-                  `).join('')}
-                </select>
-              </div>
-
-              <div>
-                <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
-                  ប្រភេទមុខវិជ្ជា (Category)
-                </label>
-                <select id="subjCategorySelect" class="form-control">
-                  <option value="គរុកោសល្យទូទៅ" ${existing && existing.category === 'គរុកោសល្យទូទៅ' ? 'selected' : ''}>គរុកោសល្យទូទៅ</option>
-                  <option value="វិធីសាស្ត្របង្រៀនឯកទេស" ${existing && existing.category === 'វិធីសាស្ត្របង្រៀនឯកទេស' ? 'selected' : ''}>វិធីសាស្ត្របង្រៀនឯកទេស</option>
-                  <option value="វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា" ${existing && existing.category === 'វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា' ? 'selected' : ''}>វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា</option>
-                  <option value="ភាសា & ទំនាក់ទំនង" ${existing && existing.category === 'ភាសា & ទំនាក់ទំនង' ? 'selected' : ''}>ភាសា & ទំនាក់ទំនង</option>
-                  <option value="ស្រាវជ្រាវ & កម្មសិក្សា" ${existing && existing.category === 'ស្រាវជ្រាវ & កម្មសិក្សា' ? 'selected' : ''}>ស្រាវជ្រាវ & កម្មសិក្សា</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label style="font-size:0.82rem; font-weight:700; color:#1e3a8a; margin-bottom:4px; display:block;">
-                ការពិពណ៌នាសង្ខេប / មាតិកាគោលនៃមុខវិជ្ជា
-              </label>
-              <textarea id="subjDescInput" class="form-control" rows="2" placeholder="បញ្ចូលគោលបំណង ឬជំពូកមាតិកាសង្ខេប...">${existing && existing.desc ? existing.desc : ''}</textarea>
+              <textarea id="subjDescInput" rows="3" placeholder="បញ្ចូលគោលបំណង មាតិកាសង្ខេប ឬលទ្ធផលរំពឹងទុកនៃការសិក្សា..." style="width:100%; min-height:75px; padding:10px 14px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; font-size:0.86rem; font-family:inherit; font-weight:500; color:#0f172a; transition:all 0.2s ease; outline:none; box-sizing:border-box; line-height:1.5; resize:vertical;" onfocus="this.style.borderColor='#059669'; this.style.boxShadow='0 0 0 3px rgba(5,150,105,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">${existing && existing.desc ? existing.desc : ''}</textarea>
             </div>
 
           </div>
 
-          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
-            <button type="button" class="btn btn-outline" onclick="openAdminSubjectsCatalogModal()">បោះបង់</button>
-            <button type="submit" class="btn btn-primary" style="background:#7c3aed; border-color:#6d28d9;">
-              <i class="fas fa-save"></i> រក្សាទុកមុខវិជ្ជា
-            </button>
+          <!-- Modern Footer Bar -->
+          <div class="modal-footer-bar" style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; border-radius:0 0 18px 18px;">
+            <div style="font-size:0.75rem; color:#64748b; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-shield-alt" style="color:#10b981; font-size:0.95rem;"></i>
+              <span>ទិន្នន័យត្រូវបានការពារ និងសមកាលកម្មដោយស្វ័យប្រវត្តិ</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button type="button" class="btn btn-outline" onclick="openAdminSubjectsCatalogModal()" style="height:38px; padding:0 18px; font-weight:700; font-size:0.85rem; border-radius:10px; border:1.5px solid #cbd5e1; color:#475569; background:#ffffff; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">
+                បោះបង់
+              </button>
+              <button type="submit" class="btn btn-primary" style="height:38px; padding:0 22px; font-weight:800; font-size:0.88rem; border-radius:10px; background:linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border:none; color:#ffffff; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(124,58,237,0.35); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 18px rgba(124,58,237,0.45)'" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 14px rgba(124,58,237,0.35)'">
+                <i class="fas fa-save"></i>
+                <span>${isEdit ? 'រក្សាទុកការកែប្រែ' : 'រក្សាទុកមុខវិជ្ជា'}</span>
+              </button>
+            </div>
           </div>
         </form>
 
