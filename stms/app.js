@@ -17229,12 +17229,286 @@ function saveAdminSubjectTeacher(subjCode) {
 }
 
 // --------------------------------------------------------------------------
-// 12. ADMIN SUBJECTS CATALOG & CURRICULUM MANAGEMENT
+// 12. ADMIN SUBJECTS CATALOG, TYPES & CURRICULUM MANAGEMENT
 // --------------------------------------------------------------------------
+
+// Get all system & custom subject categories/types
+function getAllSubjectCategories() {
+  const defaultList = [
+    'គរុកោសល្យទូទៅ',
+    'វិធីសាស្ត្របង្រៀនឯកទេស',
+    'វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា',
+    'ភាសា & ទំនាក់ទំនង',
+    'ស្រាវជ្រាវ & កម្មសិក្សា'
+  ];
+
+  const catSet = new Set(defaultList);
+
+  if (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjectCategories)) {
+    stmsData.subjectCategories.forEach(c => {
+      const name = typeof c === 'string' ? c.trim() : (c && c.name ? c.name.trim() : '');
+      if (name) catSet.add(name);
+    });
+  }
+
+  // Also include any categories currently defined on existing subjects
+  const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects))
+    ? stmsData.subjects
+    : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' ? KTPTTC_ALL_SUBJECTS : []);
+
+  allSubjs.forEach(s => {
+    if (s && s.category && typeof s.category === 'string' && s.category.trim()) {
+      catSet.add(s.category.trim());
+    }
+  });
+
+  return Array.from(catSet);
+}
+window.getAllSubjectCategories = getAllSubjectCategories;
+
+// Manage Subject Types / Categories Modal
+function openManageSubjectTypesModal() {
+  const categories = getAllSubjectCategories();
+  const subjects = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects))
+    ? stmsData.subjects
+    : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' ? KTPTTC_ALL_SUBJECTS : []);
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="manageSubjectTypesModalBackdrop" onclick="if(event.target===this) openAdminSubjectsCatalogModal()" style="backdrop-filter:blur(8px); background:rgba(15, 23, 42, 0.68);">
+      <div class="stms-modal-window" style="max-width:640px; width:95%; border-radius:18px; box-shadow:0 25px 65px -10px rgba(13, 148, 136, 0.35), 0 0 0 1px rgba(13, 148, 136, 0.15); overflow:hidden; background:#ffffff;">
+        
+        <!-- Header -->
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #14b8a6 100%); color:#ffffff; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; position:relative; overflow:hidden; border:none;">
+          <div style="position:absolute; right:-20px; top:-20px; width:110px; height:110px; border-radius:50%; background:rgba(255,255,255,0.08); pointer-events:none;"></div>
+          
+          <div style="display:flex; align-items:center; gap:14px; position:relative; z-index:1;">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem; color:#ffffff; flex-shrink:0;">
+              <i class="fas fa-tags"></i>
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 style="color:#ffffff; font-size:1.15rem; font-weight:800; margin:0; line-height:1.3;">
+                  គ្រប់គ្រងប្រភេទមុខវិជ្ជា
+                </h3>
+                <span style="font-size:0.72rem; font-weight:700; color:#ffffff; background:rgba(255,255,255,0.22); border:1px solid rgba(255,255,255,0.35); padding:2px 9px; border-radius:12px;">
+                  Subject Types
+                </span>
+              </div>
+              <p style="color:#ccfbf1; font-size:0.78rem; margin:3px 0 0 0;">
+                បង្កើត និងកំណត់ប្រភេទសម្រាប់ចាត់ថ្នាក់មុខវិជ្ជាបណ្តុះបណ្តាល
+              </p>
+            </div>
+          </div>
+          
+          <button class="modal-close-icon" onclick="openAdminSubjectsCatalogModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#ffffff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.2rem; transition:all 0.2s; position:relative; z-index:1;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">&times;</button>
+        </div>
+
+        <div style="padding:22px; max-height:72vh; overflow-y:auto; background:#fcfdfd;">
+          
+          <!-- Add New Type Card -->
+          <div style="background:#ffffff; border:1px solid #ccfbf1; border-radius:14px; padding:16px 18px; margin-bottom:18px; box-shadow:0 2px 8px rgba(13,148,136,0.05);">
+            <div style="font-size:0.8rem; font-weight:800; color:#0f766e; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-plus-circle"></i> បង្កើតប្រភេទមុខវិជ្ជាថ្មី (Create New Type)
+            </div>
+            <form onsubmit="saveNewSubjectCategoryFromModal(event)" style="display:flex; gap:10px; align-items:center;">
+              <div style="position:relative; flex:1;">
+                <i class="fas fa-layer-group" style="position:absolute; left:12px; top:12px; color:#0d9488; font-size:0.9rem;"></i>
+                <input type="text" id="newSubjectCategoryInput" placeholder="ឧ. គរុកោសល្យឌីជីថល, វិទ្យាសាស្ត្រអប់រំ..." required style="width:100%; height:40px; padding:0 14px 0 36px; border-radius:10px; border:1.5px solid #cbd5e1; font-size:0.88rem; outline:none; box-sizing:border-box; transition:all 0.2s;" onfocus="this.style.borderColor='#0d9488'; this.style.boxShadow='0 0 0 3px rgba(13,148,136,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+              </div>
+              <button type="submit" class="btn btn-primary" style="height:40px; padding:0 20px; font-weight:700; font-size:0.88rem; border-radius:10px; background:linear-gradient(135deg, #0f766e 0%, #0d9488 100%); border:none; color:#ffffff; cursor:pointer; display:inline-flex; align-items:center; gap:6px; flex-shrink:0; box-shadow:0 3px 10px rgba(13,148,136,0.25);">
+                <i class="fas fa-save"></i> បង្កើតប្រភេទ
+              </button>
+            </form>
+          </div>
+
+          <!-- Existing Types List -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:0.82rem; font-weight:800; color:#334155; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-list-check" style="color:#0d9488;"></i> បញ្ជីប្រភេទមុខវិជ្ជាសកម្ម (${categories.length} ប្រភេទ)
+            </div>
+            <button type="button" class="btn btn-outline" onclick="resetSubjectCategoriesToDefault()" style="font-size:0.75rem; height:28px; padding:0 10px; color:#dc2626; border-color:#fecaca; border-radius:8px; font-weight:700; display:inline-flex; align-items:center; gap:4px;" title="កំណត់ប្រភេទទាំងអស់ឡើងវិញតាមលំនាំដើម">
+              <i class="fas fa-undo"></i> Reset លំនាំដើម
+            </button>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            ${categories.map((cat, idx) => {
+              const count = subjects.filter(s => s && s.category === cat).length;
+              return `
+                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; transition:all 0.2s;" onmouseover="this.style.borderColor='#99f6e4'; this.style.background='#f0fdfa';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#ffffff';">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="width:30px; height:30px; border-radius:8px; background:#ccfbf1; color:#0f766e; display:flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800; flex-shrink:0;">
+                      ${idx + 1}
+                    </span>
+                    <div>
+                      <strong style="font-size:0.9rem; color:#0f172a;">${cat}</strong>
+                      <div style="font-size:0.75rem; color:#64748b;">
+                        កំពុងប្រើប្រាស់លើ <strong>${count} មុខវិជ្ជា</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <button type="button" class="btn btn-outline" onclick="editSubjectCategoryName('${cat.replace(/'/g, "\\'")}')" style="height:30px; padding:0 10px; font-size:0.75rem; border-radius:8px; color:#0d9488; border-color:#99f6e4; font-weight:600; display:inline-flex; align-items:center; gap:4px;" title="កែប្រែឈ្មោះ">
+                      <i class="fas fa-edit"></i> កែប្រែ
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="deleteSubjectCategoryName('${cat.replace(/'/g, "\\'")}')" style="height:30px; width:30px; padding:0; border-radius:8px; color:#ef4444; border-color:#fca5a5; display:inline-flex; align-items:center; justify-content:center;" title="លុបប្រភេទនេះ">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+        </div>
+
+        <div style="padding:14px 22px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+          <div style="font-size:0.76rem; color:#64748b;">
+            <i class="fas fa-info-circle" style="color:#0d9488;"></i> ប្រភេទទាំងអស់នឹងបង្ហាញដោយស្វ័យប្រវត្តិក្នុងតម្រង និងទម្រង់បង្កើតមុខវិជ្ជា
+          </div>
+          <button type="button" class="btn btn-outline" onclick="openAdminSubjectsCatalogModal()" style="height:36px; padding:0 18px; font-size:0.85rem; font-weight:600; border-radius:8px;">
+            ត្រឡប់ក្រោយ
+          </button>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+window.openManageSubjectTypesModal = openManageSubjectTypesModal;
+
+function saveNewSubjectCategoryFromModal(event) {
+  event.preventDefault();
+  const input = document.getElementById('newSubjectCategoryInput');
+  const name = input ? input.value.trim() : '';
+  if (!name) return;
+
+  if (!Array.isArray(stmsData.subjectCategories)) {
+    stmsData.subjectCategories = getAllSubjectCategories();
+  }
+
+  if (stmsData.subjectCategories.includes(name)) {
+    showToast(`ប្រភេទមុខវិជ្ជា «${name}» មានរួចហើយ!`, 'warning');
+    return;
+  }
+
+  stmsData.subjectCategories.push(name);
+  saveData(true);
+  if (typeof syncToServer === 'function') syncToServer();
+  showToast(`✅ បានបង្កើតប្រភេទមុខវិជ្ជា «${name}» ដោយជោគជ័យ!`, 'success');
+  openManageSubjectTypesModal();
+}
+window.saveNewSubjectCategoryFromModal = saveNewSubjectCategoryFromModal;
+
+function editSubjectCategoryName(oldName) {
+  const newName = prompt('កែប្រែឈ្មោះប្រភេទមុខវិជ្ជា៖', oldName);
+  if (!newName || !newName.trim() || newName.trim() === oldName) return;
+  const trimmed = newName.trim();
+
+  if (!Array.isArray(stmsData.subjectCategories)) {
+    stmsData.subjectCategories = getAllSubjectCategories();
+  }
+
+  const idx = stmsData.subjectCategories.indexOf(oldName);
+  if (idx !== -1) {
+    stmsData.subjectCategories[idx] = trimmed;
+  } else {
+    stmsData.subjectCategories.push(trimmed);
+  }
+
+  // Update in all subjects currently using oldName
+  (stmsData.subjects || []).forEach(s => {
+    if (s && s.category === oldName) {
+      s.category = trimmed;
+    }
+  });
+
+  saveData(true);
+  syncAllSubjects();
+  if (typeof syncToServer === 'function') syncToServer();
+  showToast(`✅ បានកែប្រែឈ្មោះប្រភេទទៅជា «${trimmed}» រួចរាល់!`, 'success');
+  openManageSubjectTypesModal();
+}
+window.editSubjectCategoryName = editSubjectCategoryName;
+
+function deleteSubjectCategoryName(catName) {
+  const usedCount = (stmsData.subjects || []).filter(s => s && s.category === catName).length;
+  let confirmMsg = `តើលោកអ្នកពិតជាចង់លុបប្រភេទមុខវិជ្ជា «${catName}» មែនទេ?`;
+  if (usedCount > 0) {
+    confirmMsg = `⚠️ មាន ${usedCount} មុខវិជ្ជាកំពុងប្រើប្រាស់ប្រភេទ «${catName}» នេះ!\n\nប្រសិនបើលុប មុខវិជ្ជាទាំងនោះនឹងត្រូវប្តូរប្រភេទស្វ័យប្រវត្តិទៅជា «គរុកោសល្យទូទៅ»។ តើលោកអ្នកយល់ព្រមបន្តទេ?`;
+  }
+
+  if (!confirm(confirmMsg)) return;
+
+  if (!Array.isArray(stmsData.subjectCategories)) {
+    stmsData.subjectCategories = getAllSubjectCategories();
+  }
+  stmsData.subjectCategories = stmsData.subjectCategories.filter(c => c !== catName);
+
+  // Reassign affected subjects to 'គរុកោសល្យទូទៅ'
+  (stmsData.subjects || []).forEach(s => {
+    if (s && s.category === catName) {
+      s.category = 'គរុកោសល្យទូទៅ';
+    }
+  });
+
+  saveData(true);
+  syncAllSubjects();
+  if (typeof syncToServer === 'function') syncToServer();
+  showToast(`🗑️ បានលុបប្រភេទ «${catName}» ដោយជោគជ័យ!`, 'info');
+  openManageSubjectTypesModal();
+}
+window.deleteSubjectCategoryName = deleteSubjectCategoryName;
+
+function resetSubjectCategoriesToDefault() {
+  if (!confirm('តើលោកអ្នកពិតជាចង់កំណត់ប្រភេទមុខវិជ្ជាទាំងអស់ឡើងវិញ តាមគំរូដើមរបស់ក្រសួងអប់រំ និងសាលា KTPTTC មែនទេ?')) return;
+
+  stmsData.subjectCategories = [
+    'គរុកោសល្យទូទៅ',
+    'វិធីសាស្ត្របង្រៀនឯកទេស',
+    'វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា',
+    'ភាសា & ទំនាក់ទំនង',
+    'ស្រាវជ្រាវ & កម្មសិក្សា'
+  ];
+
+  saveData(true);
+  if (typeof syncToServer === 'function') syncToServer();
+  showToast('🎉 បានកំណត់ប្រភេទមុខវិជ្ជាឡើងវិញតាមលំនាំដើមរួចរាល់!', 'success');
+  openManageSubjectTypesModal();
+}
+window.resetSubjectCategoriesToDefault = resetSubjectCategoriesToDefault;
+
+function promptQuickCreateSubjectCategory() {
+  const name = prompt('បញ្ចូលឈ្មោះប្រភេទមុខវិជ្ជាថ្មី (ឧ. គរុកោសល្យឌីជីថល)៖');
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+
+  if (!Array.isArray(stmsData.subjectCategories)) {
+    stmsData.subjectCategories = getAllSubjectCategories();
+  }
+  if (!stmsData.subjectCategories.includes(trimmed)) {
+    stmsData.subjectCategories.push(trimmed);
+    saveData(true);
+    if (typeof syncToServer === 'function') syncToServer();
+  }
+
+  const select = document.getElementById('subjCategorySelect');
+  if (select) {
+    const allCats = getAllSubjectCategories();
+    select.innerHTML = allCats.map(c => `<option value="${c}" ${c === trimmed ? 'selected' : ''}>${c}</option>`).join('');
+    select.value = trimmed;
+  }
+  showToast(`✅ បានបង្កើត និងជ្រើសរើសប្រភេទ «${trimmed}» រួចរាល់!`, 'success');
+}
+window.promptQuickCreateSubjectCategory = promptQuickCreateSubjectCategory;
+
 function openAdminSubjectsCatalogModal() {
   const subjects = KTPTTC_ALL_SUBJECTS || [];
   const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
   const totalCredits = subjects.reduce((sum, s) => sum + (Number(s.credits) || 0), 0);
+  const categories = getAllSubjectCategories();
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="adminSubjectsCatalogModal" onclick="if(event.target===this) closeStmsModal()" style="backdrop-filter:blur(8px); background:rgba(15, 23, 42, 0.68);">
@@ -17269,7 +17543,7 @@ function openAdminSubjectsCatalogModal() {
 
         <div class="modal-body-scroll" style="padding:22px; max-height:76vh; overflow-y:auto; background:#fcfbff;">
           
-          <!-- Top Action Bar with Clear Search & Reset Controls -->
+          <!-- Top Action Bar with Clear Search, Type Management & Reset Controls -->
           <div style="background:#ffffff; border:1px solid #ede9fe; border-radius:14px; padding:16px 18px; margin-bottom:20px; display:flex; flex-direction:column; gap:12px; box-shadow:0 2px 8px rgba(124,58,237,0.04);">
             
             <!-- Row 1: Search Input & Quick Filter Selects -->
@@ -17305,7 +17579,7 @@ function openAdminSubjectsCatalogModal() {
                 </select>
               </div>
 
-              <!-- Filter: Category -->
+              <!-- Filter: Category (Dynamic) -->
               <div style="display:flex; align-items:center; gap:6px;">
                 <span style="font-size:0.8rem; font-weight:700; color:#475569; white-space:nowrap;">
                   <i class="fas fa-layer-group" style="color:#7c3aed;"></i> ប្រភេទ៖
@@ -17313,11 +17587,7 @@ function openAdminSubjectsCatalogModal() {
                 <select id="adminSubjectCategoryFilter" onchange="filterAdminSubjectsCatalog()" 
                         style="height:40px; padding:0 12px; border-radius:10px; border:1.5px solid #cbd5e1; font-size:0.84rem; font-weight:600; color:#334155; background:#ffffff; outline:none; cursor:pointer;">
                   <option value="all">ប្រភេទទាំងអស់</option>
-                  <option value="គរុកោសល្យទូទៅ">គរុកោសល្យទូទៅ</option>
-                  <option value="វិធីសាស្ត្របង្រៀនឯកទេស">វិធីសាស្ត្របង្រៀនឯកទេស</option>
-                  <option value="វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា">វិទ្យាសាស្ត្រ &amp; បច្ចេកវិទ្យា</option>
-                  <option value="ភាសា & ទំនាក់ទំនង">ភាសា &amp; ទំនាក់ទំនង</option>
-                  <option value="ស្រាវជ្រាវ & កម្មសិក្សា">ស្រាវជ្រាវ &amp; កម្មសិក្សា</option>
+                  ${categories.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
               </div>
 
@@ -17339,8 +17609,16 @@ function openAdminSubjectsCatalogModal() {
                 </button>
               </div>
 
-              <!-- Action Buttons: Reset Subjects + Add Subject -->
-              <div style="display:flex; align-items:center; gap:10px;">
+              <!-- Action Buttons: Manage Types + Reset Subjects + Add Subject -->
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn btn-outline" onclick="openManageSubjectTypesModal()" 
+                        style="font-size:0.84rem; height:38px; padding:0 14px; display:inline-flex; align-items:center; gap:6px; color:#0d9488; border:1.5px solid #99f6e4; background:#ffffff; font-weight:700; border-radius:10px; cursor:pointer; transition:all 0.2s;"
+                        onmouseover="this.style.background='#f0fdfa';" onmouseout="this.style.background='#ffffff';"
+                        title="គ្រប់គ្រង និងបង្កើតប្រភេទមុខវិជ្ជាថ្មី (Manage Subject Types)">
+                  <i class="fas fa-tags"></i>
+                  <span>គ្រប់គ្រងប្រភេទ (Types)</span>
+                </button>
+
                 <button type="button" class="btn btn-outline" onclick="confirmResetAllSubjects()" 
                         style="font-size:0.84rem; height:38px; padding:0 14px; display:inline-flex; align-items:center; gap:6px; color:#dc2626; border:1.5px solid #fecaca; background:#ffffff; font-weight:700; border-radius:10px; cursor:pointer; transition:all 0.2s;"
                         onmouseover="this.style.background='#fef2f2';" onmouseout="this.style.background='#ffffff';"
@@ -17709,6 +17987,7 @@ function openAddSubjectModal(subjectCodeToEdit = null) {
   const isEdit = Boolean(subjectCodeToEdit);
   const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
   const existing = isEdit ? KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCodeToEdit) : null;
+  const categories = getAllSubjectCategories();
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="addSubjectModalBackdrop" onclick="if(event.target===this) openAdminSubjectsCatalogModal()" style="backdrop-filter:blur(8px); background:rgba(15, 23, 42, 0.68);">
@@ -17873,14 +18152,14 @@ function openAddSubjectModal(subjectCodeToEdit = null) {
                         </span>
                         <span>ប្រភេទមុខវិជ្ជា</span>
                       </span>
-                      <span style="font-size:0.68rem; color:#64748b; font-weight:700; background:#f1f5f9; border:1px solid #e2e8f0; padding:2px 7px; border-radius:6px;">Category</span>
+                      <a href="javascript:void(0)" onclick="promptQuickCreateSubjectCategory()" style="font-size:0.72rem; color:#2563eb; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:3px;">
+                        <i class="fas fa-plus-circle"></i> + ប្រភេទថ្មី
+                      </a>
                     </label>
                     <select id="subjCategorySelect" style="font-weight:700; color:#334155; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:10px 14px; width:100%; font-size:0.85rem; box-sizing:border-box; outline:none; transition:all 0.2s; cursor:pointer;" onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
-                      <option value="គរុកោសល្យទូទៅ" ${existing && existing.category === 'គរុកោសល្យទូទៅ' ? 'selected' : ''}>គរុកោសល្យទូទៅ</option>
-                      <option value="វិធីសាស្ត្របង្រៀនឯកទេស" ${existing && existing.category === 'វិធីសាស្ត្របង្រៀនឯកទេស' ? 'selected' : ''}>វិធីសាស្ត្របង្រៀនឯកទេស</option>
-                      <option value="វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា" ${existing && existing.category === 'វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា' ? 'selected' : ''}>វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា</option>
-                      <option value="ភាសា & ទំនាក់ទំនង" ${existing && existing.category === 'ភាសា & ទំនាក់ទំនង' ? 'selected' : ''}>ភាសា & ទំនាក់ទំនង</option>
-                      <option value="ស្រាវជ្រាវ & កម្មសិក្សា" ${existing && existing.category === 'ស្រាវជ្រាវ & កម្មសិក្សា' ? 'selected' : ''}>ស្រាវជ្រាវ & កម្មសិក្សា</option>
+                      ${categories.map(c => `
+                        <option value="${c}" ${existing && existing.category === c ? 'selected' : ''}>${c}</option>
+                      `).join('')}
                     </select>
                   </div>
                 </div>
