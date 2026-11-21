@@ -200,9 +200,22 @@ async function fetchServerStmsData() {
       }
 
       // 8. Merge Subjects & Syllabi
-      if (Array.isArray(srv.subjects) && srv.subjects.length > (stmsData.subjects || []).length) {
-        stmsData.subjects = srv.subjects;
-        hasNew = true;
+      if (Array.isArray(srv.subjects) && srv.subjects.length > 0) {
+        const deletedCodes = Array.isArray(stmsData.deletedSubjectCodes) ? stmsData.deletedSubjectCodes : [];
+        if (!Array.isArray(stmsData.subjects)) {
+          stmsData.subjects = srv.subjects.filter(s => s && s.code && !deletedCodes.includes(s.code));
+          hasNew = true;
+        } else {
+          srv.subjects.forEach(srvS => {
+            if (srvS && srvS.code && !deletedCodes.includes(srvS.code)) {
+              const existing = stmsData.subjects.find(s => s && s.code === srvS.code);
+              if (!existing) {
+                stmsData.subjects.push(srvS);
+                hasNew = true;
+              }
+            }
+          });
+        }
       }
       if (srv.syllabi && typeof srv.syllabi === 'object') {
         stmsData.syllabi = { ...stmsData.syllabi, ...srv.syllabi };
@@ -345,8 +358,11 @@ function loadData() {
       }
 
       // Ensure subjects, cohorts, and customClasses exist in storage
-      if (!Array.isArray(stmsData.subjects) || stmsData.subjects.length === 0) {
+      if (!Array.isArray(stmsData.subjects)) {
         stmsData.subjects = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA?.subjects || []));
+      }
+      if (Array.isArray(stmsData.deletedSubjectCodes) && Array.isArray(stmsData.subjects)) {
+        stmsData.subjects = stmsData.subjects.filter(s => s && s.code && !stmsData.deletedSubjectCodes.includes(s.code));
       }
       if (!Array.isArray(stmsData.cohorts) || stmsData.cohorts.length === 0) {
         stmsData.cohorts = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA?.cohorts || []));
@@ -4356,17 +4372,12 @@ function syncAllSubjects() {
   ];
 
   if (typeof stmsData !== 'undefined' && stmsData) {
-    if (!Array.isArray(stmsData.subjects) || stmsData.subjects.length === 0) {
+    if (!Array.isArray(stmsData.subjects)) {
       stmsData.subjects = [...defaultSubjs];
-    } else {
-      defaultSubjs.forEach(ds => {
-        const existing = stmsData.subjects.find(s => s.code === ds.code);
-        if (!existing) {
-          stmsData.subjects.push(ds);
-        } else if (!existing.trainer && ds.trainer) {
-          existing.trainer = ds.trainer;
-        }
-      });
+    }
+    // Filter out any explicitly deleted subject codes
+    if (Array.isArray(stmsData.deletedSubjectCodes) && stmsData.deletedSubjectCodes.length > 0) {
+      stmsData.subjects = stmsData.subjects.filter(s => s && s.code && !stmsData.deletedSubjectCodes.includes(s.code));
     }
     KTPTTC_ALL_SUBJECTS = stmsData.subjects;
   }
@@ -17623,6 +17634,7 @@ function confirmResetAllSubjects() {
   ];
 
   stmsData.subjects = JSON.parse(JSON.stringify(defaultSubjs));
+  stmsData.deletedSubjectCodes = [];
   KTPTTC_ALL_SUBJECTS = stmsData.subjects;
 
   // Restore primary teacher assignment for ICT-105 if teacher exists
@@ -17632,8 +17644,11 @@ function confirmResetAllSubjects() {
     ictTeacher.subjectName = 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)';
   }
 
-  saveData();
+  saveData(true);
   syncAllSubjects();
+  if (typeof syncToServer === 'function') {
+    syncToServer();
+  }
   showToast(`🎉 បានកំណត់មុខវិជ្ជាសិក្សាឡើងវិញតាមគំរូដើម KTPTTC (៨ មុខវិជ្ជា) ដោយជោគជ័យ!`, 'success');
   openAdminSubjectsCatalogModal();
 
@@ -17666,16 +17681,22 @@ function confirmResetSingleSubject(code) {
 
   if (!confirm(`តើលោកអ្នកចង់កំណត់មុខវិជ្ជា «${code}» ឡើងវិញទៅតាមទិន្នន័យដើមរបស់សាលា KTPTTC មែនទេ?`)) return;
 
-  if (!Array.isArray(stmsData.subjects)) stmsData.subjects = [...KTPTTC_ALL_SUBJECTS];
-  const idx = stmsData.subjects.findIndex(s => s.code === code);
+  if (!Array.isArray(stmsData.subjects)) stmsData.subjects = [...(KTPTTC_ALL_SUBJECTS || [])];
+  if (Array.isArray(stmsData.deletedSubjectCodes)) {
+    stmsData.deletedSubjectCodes = stmsData.deletedSubjectCodes.filter(c => c !== code);
+  }
+  const idx = stmsData.subjects.findIndex(s => s && s.code === code);
   if (idx !== -1) {
     stmsData.subjects[idx] = { code, ...def };
   } else {
     stmsData.subjects.push({ code, ...def });
   }
 
-  saveData();
+  saveData(true);
   syncAllSubjects();
+  if (typeof syncToServer === 'function') {
+    syncToServer();
+  }
   showToast(`✅ បានកំណត់មុខវិជ្ជា «${code}» ឡើងវិញរួចរាល់!`, 'success');
   openAdminSubjectsCatalogModal();
 }
@@ -17967,8 +17988,16 @@ function saveSubjectModal(event, isEdit, origCode) {
     trainer.subjectName = nameKh;
   }
 
-  saveData();
+  // If subject was previously deleted, remove from deleted list
+  if (Array.isArray(stmsData.deletedSubjectCodes)) {
+    stmsData.deletedSubjectCodes = stmsData.deletedSubjectCodes.filter(c => c !== code);
+  }
+
+  saveData(true);
   syncAllSubjects();
+  if (typeof syncToServer === 'function') {
+    syncToServer();
+  }
   showToast(`✅ បាន${isEdit ? 'កែប្រែ' : 'បន្ថែម'}មុខវិជ្ជា «${nameKh} (${code})» ដោយជោគជ័យ!`, 'success');
   openAdminSubjectsCatalogModal();
 
@@ -17982,11 +18011,11 @@ window.saveSubjectModal = saveSubjectModal;
 
 // Delete Subject
 function confirmDeleteSubject(subjectCode) {
-  const subj = (stmsData.subjects || []).find(s => s.code === subjectCode) || KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCode);
+  const subj = (stmsData.subjects || []).find(s => s && s.code === subjectCode) || (KTPTTC_ALL_SUBJECTS || []).find(s => s && s.code === subjectCode);
   const name = subj ? subj.nameKh : subjectCode;
 
-  const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === subjectCode).length;
-  const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === subjectCode).length;
+  const hwCount = (stmsData.assignments || []).filter(a => a && a.subjectCode === subjectCode).length;
+  const lsnCount = (stmsData.lessons || []).filter(l => l && l.subjectCode === subjectCode).length;
 
   let msg = `តើលោកអ្នកពិតជាចង់លុបមុខវិជ្ជា «${name} (${subjectCode})» មែនទេ?`;
   if (hwCount > 0 || lsnCount > 0) {
@@ -17995,27 +18024,43 @@ function confirmDeleteSubject(subjectCode) {
 
   if (!confirm(msg)) return;
 
-  if (Array.isArray(stmsData.subjects)) {
-    stmsData.subjects = stmsData.subjects.filter(s => s.code !== subjectCode);
+  if (!Array.isArray(stmsData.subjects)) {
+    stmsData.subjects = [...(KTPTTC_ALL_SUBJECTS || [])];
+  }
+  stmsData.subjects = stmsData.subjects.filter(s => s && s.code !== subjectCode);
+  KTPTTC_ALL_SUBJECTS = stmsData.subjects;
+
+  // Track as deleted so syncAllSubjects and fetchServerStmsData never resurrect it
+  if (!Array.isArray(stmsData.deletedSubjectCodes)) {
+    stmsData.deletedSubjectCodes = [];
+  }
+  if (!stmsData.deletedSubjectCodes.includes(subjectCode)) {
+    stmsData.deletedSubjectCodes.push(subjectCode);
   }
 
   // Unlink any teacher assigned to this subject
   (stmsData.users || []).forEach(u => {
-    if (u.role === 'trainer' && u.subject === subjectCode) {
+    if (u && u.role === 'trainer' && u.subject === subjectCode) {
       u.subject = '';
       u.subjectName = '';
     }
   });
 
-  saveData();
+  saveData(true);
   syncAllSubjects();
-  showToast(`🗑️ បានលុបមុខវិជ្ជា «${subjectCode}» ដោយជោគជ័យ!`, 'info');
+  if (typeof syncToServer === 'function') {
+    syncToServer();
+  }
+
+  showToast(`🗑️ បានលុបមុខវិជ្ជា «${name} (${subjectCode})» ដោយជោគជ័យ!`, 'info');
   openAdminSubjectsCatalogModal();
 
   if (currentView === 'admin-portal') {
     renderAdminPortalView(document.getElementById('stmsContentViewport'));
   } else if (currentView === 'trainers') {
     renderTrainersView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'trainees') {
+    renderTraineesView(document.getElementById('stmsContentViewport'));
   }
 }
 window.confirmDeleteSubject = confirmDeleteSubject;

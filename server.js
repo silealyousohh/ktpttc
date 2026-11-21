@@ -911,6 +911,12 @@ async function writeStmsDb(data) {
             mergedData.users = Array.from(userMap.values());
           }
         }
+        // Filter out any explicitly deleted subjects
+        if (Array.isArray(data.deletedSubjectCodes) && data.deletedSubjectCodes.length > 0) {
+          if (Array.isArray(mergedData.subjects)) {
+            mergedData.subjects = mergedData.subjects.filter(s => s && s.code && !data.deletedSubjectCodes.includes(s.code));
+          }
+        }
       }
     } catch (mergeErr) {
       console.warn('STMS merge warning:', mergeErr.message);
