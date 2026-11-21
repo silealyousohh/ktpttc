@@ -4327,21 +4327,16 @@ window.handleNavbarTimetableClick = handleNavbarTimetableClick;
 // ==========================================================================
 
 let TRAINEE_STREAMS = [
-  { id: 'default', label: 'ថ្នាក់ទូទៅ', cohort: 'ថ្នាក់ទូទៅ' }
+  { id: 'bachelor-sem-1', label: 'ឆមាសទី១ នៃ បរិញ្ញាបត្រ+១', semester: 'ឆមាសទី ១', cohort: 'បរិញ្ញាបត្រ+១' },
+  { id: 'bachelor-sem-2', label: 'ឆមាសទី២ នៃ បរិញ្ញាបត្រ+១', semester: 'ឆមាសទី ២', cohort: 'បរិញ្ញាបត្រ+១' }
 ];
 let currentStreamIndex = 0;
 
 function syncTraineeStreams() {
-  const classes = getAllSystemClasses();
-  if (classes.length > 0) {
-    TRAINEE_STREAMS = classes.map((cls, idx) => ({
-      id: `stream-${idx}`,
-      label: `${cls} • ឆមាសទី ១`,
-      cohort: cls
-    }));
-  } else {
-    TRAINEE_STREAMS = [{ id: 'default', label: 'ថ្នាក់ទូទៅ', cohort: 'ថ្នាក់ទូទៅ' }];
-  }
+  TRAINEE_STREAMS = [
+    { id: 'bachelor-sem-1', label: 'ឆមាសទី១ នៃ បរិញ្ញាបត្រ+១', semester: 'ឆមាសទី ១', cohort: 'បរិញ្ញាបត្រ+១' },
+    { id: 'bachelor-sem-2', label: 'ឆមាសទី២ នៃ បរិញ្ញាបត្រ+១', semester: 'ឆមាសទី ២', cohort: 'បរិញ្ញាបត្រ+១' }
+  ];
   if (currentStreamIndex >= TRAINEE_STREAMS.length) {
     currentStreamIndex = 0;
   }
@@ -4601,18 +4596,46 @@ window.previewTraineeStudent = previewTraineeStudent;
 
 function prevTraineeSemester() {
   currentStreamIndex = currentStreamIndex > 0 ? currentStreamIndex - 1 : TRAINEE_STREAMS.length - 1;
-  const area = document.getElementById('mainContentArea');
-  if (area) renderTraineePortalView(area);
+  refreshPortalSubjectsView();
 }
+window.prevTraineeSemester = prevTraineeSemester;
 
 function nextTraineeSemester() {
   currentStreamIndex = currentStreamIndex < TRAINEE_STREAMS.length - 1 ? currentStreamIndex + 1 : 0;
-  const area = document.getElementById('mainContentArea');
-  if (area) renderTraineePortalView(area);
+  refreshPortalSubjectsView();
 }
+window.nextTraineeSemester = nextTraineeSemester;
+
+function selectTraineeSemester(index) {
+  if (index >= 0 && index < TRAINEE_STREAMS.length) {
+    currentStreamIndex = index;
+    refreshPortalSubjectsView();
+  }
+}
+window.selectTraineeSemester = selectTraineeSemester;
+
+function refreshPortalSubjectsView() {
+  const area = document.getElementById('mainContentArea');
+  if (!area) return;
+  const scrollY = window.scrollY;
+  const authUser = window.authenticatedUser;
+  const curUser = window.currentUser;
+  const isAdmin = (authUser && authUser.role === 'admin') || (curUser && curUser.role === 'admin') || document.body.classList.contains('is-admin-session');
+  const isTrainer = (curUser && curUser.role === 'trainer') || (authUser && authUser.role === 'trainer');
+
+  if (isAdmin) {
+    renderAdminPortalView(area);
+  } else if (isTrainer) {
+    renderTrainerPortalView(area);
+  } else {
+    renderTraineePortalView(area);
+  }
+  window.scrollTo(0, scrollY);
+}
+window.refreshPortalSubjectsView = refreshPortalSubjectsView;
 
 function scrollToSubjectsSection() {
-  const el = document.getElementById('traineeSubjectsSection');
+  const el = document.getElementById('traineeSubjectsSection') || document.getElementById('adminSubjectsSection');
   if (el) {
     el.scrollIntoView({ behavior: 'smooth' });
   }
@@ -4630,12 +4653,8 @@ function renderTraineePortalView(container) {
   const khmerDate = getKhmerFormattedDate();
   const initialLetter = getKhmerFirstLetter(t.nameKh);
 
-  // Sync activeStream with trainee's class if possible
-  if (t.className && Array.isArray(TRAINEE_STREAMS)) {
-    const idx = TRAINEE_STREAMS.findIndex(s => s.cohort === t.className || s.label.includes(t.className));
-    if (idx !== -1) currentStreamIndex = idx;
-  }
-  const activeStream = TRAINEE_STREAMS[currentStreamIndex] || { label: t.className || 'ថ្នាក់ទូទៅ' };
+  const activeStream = TRAINEE_STREAMS[currentStreamIndex] || TRAINEE_STREAMS[0];
+  const targetSemester = activeStream.semester || (currentStreamIndex === 0 ? 'ឆមាសទី ១' : 'ឆមាសទី ២');
 
   let avatarHtml = '';
   if (t.photo && String(t.photo).trim() !== '') {
@@ -4644,25 +4663,47 @@ function renderTraineePortalView(container) {
     avatarHtml = `<span class="trainee-hero-avatar-letter">${initialLetter}</span>`;
   }
 
-  // Active 8 subjects
-  const subjects = KTPTTC_ALL_SUBJECTS;
+  // Filter subjects for the active semester of Bachelor+1
+  const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects))
+    ? stmsData.subjects
+    : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' ? KTPTTC_ALL_SUBJECTS : []);
 
-  const subjectsHtml = subjects.map(subj => {
-    const theme = getSubjectTheme(subj.code);
-    return `
-      <div class="trainee-subject-card" style="--subj-bg:${theme.bg}; --subj-border:${theme.border}; --subj-color:${theme.color};" onclick="openSubjectDetailModal('${subj.code}')" title="ចុចដើម្បីមើលមេរៀន និងលម្អិតមុខវិជ្ជា ${subj.nameKh}">
-        <div class="subj-card-icon" style="color:${theme.color};">
-          <i class="${theme.icon}"></i>
+  const filteredSubjects = allSubjs.filter(s => {
+    const sem = (s && s.semester ? String(s.semester).trim() : '');
+    if (targetSemester === 'ឆមាសទី ១') {
+      return sem === 'ឆមាសទី ១' || sem.includes('១') || !sem;
+    } else {
+      return sem === 'ឆមាសទី ២' || sem.includes('២') || sem === 'ទាំងពីរឆមាស';
+    }
+  });
+
+  let subjectsHtml = '';
+  if (filteredSubjects.length > 0) {
+    subjectsHtml = filteredSubjects.map(subj => {
+      const theme = getSubjectTheme(subj.code);
+      return `
+        <div class="trainee-subject-card" style="--subj-bg:${theme.bg}; --subj-border:${theme.border}; --subj-color:${theme.color};" onclick="openSubjectDetailModal('${subj.code}')" title="ចុចដើម្បីមើលមេរៀន និងលម្អិតមុខវិជ្ជា ${subj.nameKh}">
+          <div class="subj-card-icon" style="color:${theme.color};">
+            <i class="${theme.icon}"></i>
+          </div>
+          <div class="subj-card-name">
+            ${subj.nameKh}
+          </div>
+          <div class="subj-card-sub" style="font-size:0.8rem; color:#64748b; font-weight:600; margin-top:auto;">
+            ${subj.credits} ក្រេឌីត
+          </div>
         </div>
-        <div class="subj-card-name">
-          ${subj.nameKh}
-        </div>
-        <div class="subj-card-sub" style="font-size:0.8rem; color:#64748b; font-weight:600; margin-top:auto;">
-          ${subj.credits} ក្រេឌីត
-        </div>
+      `;
+    }).join('');
+  } else {
+    subjectsHtml = `
+      <div style="grid-column: 1 / -1; padding: 45px 20px; text-align: center; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 16px; margin: 8px 0;">
+        <div style="font-size: 2.5rem; margin-bottom: 10px; color:#94a3b8;"><i class="fas fa-book-reader"></i></div>
+        <h4 style="color: #1e3a8a; font-size: 1.05rem; font-weight: 700; margin: 0 0 6px 0;">មិនទាន់មានមុខវិជ្ជាសម្រាប់ ${targetSemester} នៅឡើយទេ</h4>
+        <p style="color: #64748b; font-size: 0.85rem; margin: 0;">មុខវិជ្ជា និងកម្មវិធីបណ្តុះបណ្តាលសម្រាប់ឆមាសនេះ នឹងត្រូវដាក់បញ្ចូលក្នុងពេលឆាប់ៗនេះ</p>
       </div>
     `;
-  }).join('');
+  }
 
   let html = `
     <div class="trainee-portal-container">
@@ -4723,7 +4764,7 @@ function renderTraineePortalView(container) {
           <div class="hub-card-pattern"></div>
           <div class="hub-card-icon"><i class="fas fa-chalkboard-teacher"></i></div>
           <div class="hub-card-title">មុខវិជ្ជា</div>
-          <div class="hub-card-sub">${subjects.length} មុខវិជ្ជា</div>
+          <div class="hub-card-sub">${allSubjs.length} មុខវិជ្ជា</div>
         </div>
 
         <!-- 2. កាលវិភាគ (Timetable - Blue) -->
@@ -4791,9 +4832,12 @@ function renderTraineePortalView(container) {
           <button class="ribbon-arrow-btn" onclick="prevTraineeSemester()" title="ឆមាសមុន">
             <i class="fas fa-chevron-left"></i>
           </button>
-          <div class="ribbon-title">
+          <div class="ribbon-title" style="display:flex; align-items:center; gap:8px;">
             <i class="fas fa-bookmark" style="opacity:0.9;"></i>
             <span>${activeStream.label}</span>
+            <span style="font-size:0.75rem; background:rgba(255,255,255,0.22); border:1px solid rgba(255,255,255,0.35); padding:2px 8px; border-radius:12px; font-family:var(--font-battambang); font-weight:700;">
+              ${filteredSubjects.length} មុខវិជ្ជា
+            </span>
           </div>
           <button class="ribbon-arrow-btn" onclick="nextTraineeSemester()" title="ឆមាសបន្ទាប់">
             <i class="fas fa-chevron-right"></i>
@@ -4899,8 +4943,11 @@ window.showModal = showModal;
 // 1. HUB MODAL: មុខវិជ្ជា (CURRICULUM & SUBJECTS CATALOG)
 // --------------------------------------------------------------------------
 function openTraineeSubjectsModal() {
-  const activeStream = TRAINEE_STREAMS[currentStreamIndex];
-  const subjects = KTPTTC_ALL_SUBJECTS;
+  const activeStream = TRAINEE_STREAMS[currentStreamIndex] || TRAINEE_STREAMS[0];
+  const subjects = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects))
+    ? stmsData.subjects
+    : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' ? KTPTTC_ALL_SUBJECTS : []);
+  const totalCreds = subjects.reduce((sum, s) => sum + (Number(s.credits) || 0), 0);
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="traineeSubjectsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -4912,7 +4959,7 @@ function openTraineeSubjectsModal() {
             </div>
             <div>
               <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">មុខវិជ្ជា & កម្មវិធីសិក្សាគរុកោសល្យ</h3>
-              <p style="color:#fbcfe8; font-size:0.82rem; margin:2px 0 0 0;">${activeStream.label} • សរុប ៨ មុខវិជ្ជា (២១ ក្រេឌីត)</p>
+              <p style="color:#fbcfe8; font-size:0.82rem; margin:2px 0 0 0;">${activeStream.label} • សរុប ${subjects.length} មុខវិជ្ជា (${totalCreds} ក្រេឌីត)</p>
             </div>
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
@@ -14933,8 +14980,21 @@ function renderAdminPortalView(container) {
   const greeting = getKhmerGreeting();
   const khmerDate = getKhmerFormattedDate();
   const initialLetter = getKhmerFirstLetter(admin.nameKh);
-  const activeStream = TRAINEE_STREAMS[currentStreamIndex];
-  const subjects = KTPTTC_ALL_SUBJECTS;
+  const activeStream = TRAINEE_STREAMS[currentStreamIndex] || TRAINEE_STREAMS[0];
+  const targetSemester = activeStream.semester || (currentStreamIndex === 0 ? 'ឆមាសទី ១' : 'ឆមាសទី ២');
+
+  const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects))
+    ? stmsData.subjects
+    : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' ? KTPTTC_ALL_SUBJECTS : []);
+
+  const filteredSubjects = allSubjs.filter(s => {
+    const sem = (s && s.semester ? String(s.semester).trim() : '');
+    if (targetSemester === 'ឆមាសទី ១') {
+      return sem === 'ឆមាសទី ១' || sem.includes('១') || !sem;
+    } else {
+      return sem === 'ឆមាសទី ២' || sem.includes('២') || sem === 'ទាំងពីរឆមាស';
+    }
+  });
 
   const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
   const trainees = stmsData.trainees || [];
@@ -14947,32 +15007,46 @@ function renderAdminPortalView(container) {
     avatarHtml = `<span class="trainee-hero-avatar-letter" style="background:linear-gradient(135deg, #1e3a8a, #2563eb);">${initialLetter}</span>`;
   }
 
-  // 8 MoEYS Subject Cards for Admin with Assigned Instructors
-  const subjectsHtml = subjects.map(subj => {
-    const theme = getSubjectTheme(subj.code);
-    const assignedTrn = trainers.find(t => t.subject === subj.code);
-    const trnName = assignedTrn ? assignedTrn.nameKh : (subj.trainer || 'មិនទាន់ចាត់តាំង');
-    const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === subj.code).length;
-    const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === subj.code).length;
+  // Subject Cards for Admin with Assigned Instructors
+  let subjectsHtml = '';
+  if (filteredSubjects.length > 0) {
+    subjectsHtml = filteredSubjects.map(subj => {
+      const theme = getSubjectTheme(subj.code);
+      const assignedTrn = trainers.find(t => t.subject === subj.code);
+      const trnName = assignedTrn ? assignedTrn.nameKh : (subj.trainer || 'មិនទាន់ចាត់តាំង');
+      const hwCount = (stmsData.assignments || []).filter(a => a.subjectCode === subj.code).length;
+      const lsnCount = (stmsData.lessons || []).filter(l => l.subjectCode === subj.code).length;
 
-    return `
-      <div class="trainee-subject-card" style="--subj-bg:${theme.bg}; --subj-border:${theme.border}; --subj-color:${theme.color};" onclick="openAdminSubjectDetailModal('${subj.code}')" title="ចុចដើម្បីចាត់ចែងគ្រូ និងពិនិត្យមេរៀន/កិច្ចការមុខវិជ្ជា ${subj.nameKh}">
-        <div class="subj-card-icon" style="color:${theme.color};">
-          <i class="${theme.icon}"></i>
+      return `
+        <div class="trainee-subject-card" style="--subj-bg:${theme.bg}; --subj-border:${theme.border}; --subj-color:${theme.color};" onclick="openAdminSubjectDetailModal('${subj.code}')" title="ចុចដើម្បីចាត់ចែងគ្រូ និងពិនិត្យមេរៀន/កិច្ចការមុខវិជ្ជា ${subj.nameKh}">
+          <div class="subj-card-icon" style="color:${theme.color};">
+            <i class="${theme.icon}"></i>
+          </div>
+          <div class="subj-card-name">
+            ${subj.nameKh}
+          </div>
+          <div style="font-size:0.75rem; color:#1e3a8a; font-weight:700; margin-top:4px; display:flex; align-items:center; gap:4px;">
+            <i class="fas fa-chalkboard-teacher" style="color:${theme.color};"></i> ${trnName}
+          </div>
+          <div style="font-size:0.72rem; color:#64748b; font-weight:600; margin-top:auto; display:flex; justify-content:space-between; width:100%; border-top:1px dashed #e2e8f0; padding-top:4px;">
+            <span>${subj.credits} ក្រេឌីត</span>
+            <span style="color:${theme.color}; font-weight:700;">${lsnCount} មេរៀន • ${hwCount} កិច្ចការ</span>
+          </div>
         </div>
-        <div class="subj-card-name">
-          ${subj.nameKh}
-        </div>
-        <div style="font-size:0.75rem; color:#1e3a8a; font-weight:700; margin-top:4px; display:flex; align-items:center; gap:4px;">
-          <i class="fas fa-chalkboard-teacher" style="color:${theme.color};"></i> ${trnName}
-        </div>
-        <div style="font-size:0.72rem; color:#64748b; font-weight:600; margin-top:auto; display:flex; justify-content:space-between; width:100%; border-top:1px dashed #e2e8f0; padding-top:4px;">
-          <span>${subj.credits} ក្រេឌីត</span>
-          <span style="color:${theme.color}; font-weight:700;">${lsnCount} មេរៀន • ${hwCount} កិច្ចការ</span>
-        </div>
+      `;
+    }).join('');
+  } else {
+    subjectsHtml = `
+      <div style="grid-column: 1 / -1; padding: 45px 20px; text-align: center; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 16px; margin: 8px 0;">
+        <div style="font-size: 2.5rem; margin-bottom: 8px; color:#94a3b8;"><i class="fas fa-folder-open"></i></div>
+        <h4 style="color: #1e3a8a; font-size: 1.05rem; font-weight: 700; margin: 0 0 6px 0;">មិនទាន់មានមុខវិជ្ជាសម្រាប់ ${targetSemester} នៅឡើយទេ</h4>
+        <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 16px 0;">លោកអ្នកអាចចុចបន្ថែមមុខវិជ្ជាថ្មីសម្រាប់ ${targetSemester} ឥឡូវនេះបាន</p>
+        <button class="btn btn-primary" onclick="openAddSubjectModal(null, '${targetSemester}')" style="font-size:0.84rem; height:36px; padding:0 16px; border-radius:8px; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fas fa-plus-circle"></i> + បន្ថែមមុខវិជ្ជា ${targetSemester}
+        </button>
       </div>
     `;
-  }).join('');
+  }
 
   // Calculate Overall Attendance Metrics
   const totalStudents = trainees.length || 1;
@@ -15106,16 +15180,19 @@ function renderAdminPortalView(container) {
             <button class="ribbon-arrow-btn" onclick="prevTraineeSemester()" title="ឆមាសមុន">
               <i class="fas fa-chevron-left"></i>
             </button>
-            <div class="ribbon-title">
+            <div class="ribbon-title" style="display:flex; align-items:center; gap:8px;">
               <i class="fas fa-bookmark" style="opacity:0.9;"></i>
-              <span>${activeStream.label} (ផ្ទាំងគ្រប់គ្រងមុខវិជ្ជា និងសាស្ត្រាចារ្យទទួលបន្ទុក)</span>
+              <span>${activeStream.label}</span>
+              <span style="font-size:0.75rem; background:rgba(255,255,255,0.22); border:1px solid rgba(255,255,255,0.35); padding:2px 8px; border-radius:12px; font-family:var(--font-battambang); font-weight:700;">
+                ${filteredSubjects.length} មុខវិជ្ជា
+              </span>
             </div>
             <button class="ribbon-arrow-btn" onclick="nextTraineeSemester()" title="ឆមាសបន្ទាប់">
               <i class="fas fa-chevron-right"></i>
             </button>
           </div>
           <div style="display:flex; gap:8px; align-items:center;">
-            <button class="btn btn-primary" onclick="openAddSubjectModal()" style="font-size:0.75rem; height:28px; padding:0 12px; background:#fff; color:#1e40af; border:1px solid #bfdbfe; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:5px;">
+            <button class="btn btn-primary" onclick="openAddSubjectModal(null, '${targetSemester}')" style="font-size:0.75rem; height:28px; padding:0 12px; background:#fff; color:#1e40af; border:1px solid #bfdbfe; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:5px;">
               <i class="fas fa-plus"></i> បន្ថែមមុខវិជ្ជា
             </button>
             <button class="btn btn-outline" onclick="openAdminSubjectsCatalogModal()" style="font-size:0.75rem; height:28px; padding:0 12px; background:rgba(255,255,255,0.22); color:#fff; border:1px solid rgba(255,255,255,0.45); font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:5px;">
@@ -17983,10 +18060,11 @@ window.confirmResetSingleSubject = confirmResetSingleSubject;
 // --------------------------------------------------------------------------
 // ADD / EDIT SUBJECT MODAL
 // --------------------------------------------------------------------------
-function openAddSubjectModal(subjectCodeToEdit = null) {
+function openAddSubjectModal(subjectCodeToEdit = null, defaultSemester = null) {
   const isEdit = Boolean(subjectCodeToEdit);
   const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
   const existing = isEdit ? KTPTTC_ALL_SUBJECTS.find(s => s.code === subjectCodeToEdit) : null;
+  const initialSemester = (existing && existing.semester) || defaultSemester || 'ឆមាសទី ១';
   const categories = getAllSubjectCategories();
 
   const modalHtml = `
@@ -18114,9 +18192,9 @@ function openAddSubjectModal(subjectCodeToEdit = null) {
                       <span style="font-size:0.68rem; color:#64748b; font-weight:700; background:#f1f5f9; border:1px solid #e2e8f0; padding:2px 7px; border-radius:6px;">Semester</span>
                     </label>
                     <select id="subjSemesterSelect" style="font-weight:700; color:#334155; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:10px 14px; width:100%; font-size:0.88rem; box-sizing:border-box; outline:none; transition:all 0.2s; cursor:pointer;" onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.15)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
-                      <option value="ឆមាសទី ១" ${existing && existing.semester === 'ឆមាសទី ១' ? 'selected' : ''}>ឆមាសទី ១</option>
-                      <option value="ឆមាសទី ២" ${existing && existing.semester === 'ឆមាសទី ២' ? 'selected' : ''}>ឆមាសទី ២</option>
-                      <option value="ទាំងពីរឆមាស" ${existing && existing.semester === 'ទាំងពីរឆមាស' ? 'selected' : ''}>ទាំងពីរឆមាស</option>
+                      <option value="ឆមាសទី ១" ${initialSemester === 'ឆមាសទី ១' ? 'selected' : ''}>ឆមាសទី ១</option>
+                      <option value="ឆមាសទី ២" ${initialSemester === 'ឆមាសទី ២' ? 'selected' : ''}>ឆមាសទី ២</option>
+                      <option value="ទាំងពីរឆមាស" ${initialSemester === 'ទាំងពីរឆមាស' ? 'selected' : ''}>ទាំងពីរឆមាស</option>
                     </select>
                   </div>
                 </div>
