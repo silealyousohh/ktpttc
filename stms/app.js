@@ -242,6 +242,17 @@ async function fetchServerStmsData() {
         stmsData.gradebookApprovals = { ...stmsData.gradebookApprovals, ...srv.gradebookApprovals };
       }
 
+      // 10. Merge Books
+      if (Array.isArray(srv.books)) {
+        if (!Array.isArray(stmsData.books)) stmsData.books = [];
+        srv.books.forEach(srvB => {
+          if (!stmsData.books.some(b => b.id === srvB.id)) {
+            stmsData.books.unshift(srvB);
+            hasNew = true;
+          }
+        });
+      }
+
       if (hasNew) {
         saveData(false);
         if (currentView) renderView(currentView);
@@ -387,6 +398,10 @@ function loadData() {
       if (!Array.isArray(stmsData.subjects)) stmsData.subjects = [];
       if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
       if (!Array.isArray(stmsData.customClasses)) stmsData.customClasses = [];
+  if (!Array.isArray(stmsData.books)) stmsData.books = [];
+  if (stmsData.books.length === 0 && typeof getInitialDigitalBooks === 'function') {
+    stmsData.books = getInitialDigitalBooks();
+  }
       if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
       if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
       if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
@@ -404,6 +419,10 @@ function loadData() {
     if (!Array.isArray(stmsData.subjects)) stmsData.subjects = [];
     if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
     if (!Array.isArray(stmsData.customClasses)) stmsData.customClasses = [];
+  if (!Array.isArray(stmsData.books)) stmsData.books = [];
+  if (stmsData.books.length === 0 && typeof getInitialDigitalBooks === 'function') {
+    stmsData.books = getInitialDigitalBooks();
+  }
     if (!Array.isArray(stmsData.lessons)) stmsData.lessons = [];
     if (!Array.isArray(stmsData.videoLessons)) stmsData.videoLessons = [];
     if (!Array.isArray(stmsData.assignments)) stmsData.assignments = [];
@@ -429,6 +448,15 @@ function loadData() {
         renderView(currentView);
       }
     }
+    if (idbData && Array.isArray(idbData.books) && idbData.books.length > (stmsData.books || []).length) {
+      if (!Array.isArray(stmsData.books)) stmsData.books = [];
+      idbData.books.forEach(idbB => {
+        if (!stmsData.books.some(b => b.id === idbB.id)) {
+          stmsData.books.unshift(idbB);
+        }
+      });
+      saveData(false);
+    }
   });
 
   // Async fetch from server
@@ -453,6 +481,13 @@ function saveData(syncToServerBool = true) {
         }
       });
     }
+    if (Array.isArray(stmsData.books)) {
+      stmsData.books.forEach(b => {
+        if (b && b.fileData && b.fileData.length > 50000) {
+          idbSet('files', b.id, b.fileData);
+        }
+      });
+    }
 
     // 2. LocalStorage Persistence with Quota Protection
     try {
@@ -473,6 +508,14 @@ function saveData(syncToServerBool = true) {
           if (a && a.fileData && a.fileData.length > 50000) {
             a.fileData = null;
             a.hasStoredFile = true;
+          }
+        });
+      }
+      if (Array.isArray(safeData.books)) {
+        safeData.books.forEach(b => {
+          if (b && b.fileData && b.fileData.length > 50000) {
+            b.fileData = null;
+            b.hasStoredFile = true;
           }
         });
       }
@@ -5489,61 +5532,200 @@ function playTraineeVideo(id) {
 // --------------------------------------------------------------------------
 // 4. HUB MODAL: សៀវភៅ & បណ្ណាល័យឌីជីថល (DIGITAL LIBRARY KTPTTC)
 // --------------------------------------------------------------------------
+
+// Global pending book file upload state
+window.pendingBookFileData = null;
+window.pendingBookCoverData = null;
+
+function getInitialDigitalBooks() {
+  return [
+    {
+      id: 'BK-001',
+      title: 'វិធីសាស្ត្របង្រៀនទូទៅ និងការគ្រប់គ្រងថ្នាក់រៀនបឋមសិក្សា',
+      author: 'ក្រសួងអប់រំ យុវជន និងកីឡា (MoEYS) & KTPTTC',
+      category: 'សៀវភៅគរុកោសល្យទូទៅ',
+      cohort: 'ទាំងអស់',
+      pages: 184,
+      fileSize: '4.8 MB',
+      fileFormat: 'PDF',
+      fileName: 'Pedagogy_General_Teaching_Methodology.pdf',
+      date: '2026-11-20',
+      uploadedBy: 'យូសុះ ស៊ីលាល (បណ្ណារក្ស)',
+      description: 'កម្រងឯកសារគោលស្តីពីទ្រឹស្តីគរុកោសល្យទំនើប វិធីសាស្ត្របង្រៀនសកម្មបែបស្ថាបនានិយម និងការគ្រប់គ្រងវិន័យវិជ្ជមានក្នុងថ្នាក់រៀន។',
+      previewText: 'ជំពូកទី ១៖ ទ្រឹស្តីនៃការរៀន និងការបង្រៀនក្នុងសតវត្សរ៍ទី២១\nការអប់រំបឋមសិក្សាគឺជាមូលដ្ឋានគ្រឹះដ៏រឹងមាំនៃការអភិវឌ្ឍធនធានមនុស្ស។ គរុនិស្សិតត្រូវក្តាប់ឱ្យបាននូវទ្រឹស្តី Cognitive Development, Constructivism, និង Multiple Intelligences ដើម្បីរៀបចំសកម្មភាពបង្រៀនឆ្លើយតបទៅនឹងភាពចម្រុះនៃសមត្ថភាពរបស់សិស្ស។'
+    },
+    {
+      id: 'BK-002',
+      title: 'សៀវភៅណែនាំគ្រូ និងកិច្ចតែងការបង្រៀនគំរូ ៥ ជំហាន',
+      author: 'នាយកដ្ឋានបណ្តុះបណ្តាល និងវិក្រឹតការ (MoEYS)',
+      category: 'សៀវភៅណែនាំគ្រូ',
+      cohort: 'បរិញ្ញាបត្រ+១',
+      pages: 120,
+      fileSize: '3.2 MB',
+      fileFormat: 'PDF',
+      fileName: 'Teachers_Guide_5Steps_LessonPlan.pdf',
+      date: '2026-11-19',
+      uploadedBy: 'គណៈកម្មការគរុកោសល្យ KTPTTC',
+      description: 'សៀវភៅណែនាំស្តីពីការរៀបចំកិច្ចតែងការបង្រៀន ៥ ជំហាន ការកំណត់វត្ថុបំណង ៣ ផ្នែក (ចំណេះដឹង បំណិន និងឥរិយាបថ) និងការវាយតម្លៃលទ្ធផលសិក្សា។',
+      previewText: 'ជំពូកទី ១៖ គោលការណ៍រៀបចំកិច្ចតែងការ ៥ ជំហាន\nជំហានទី១៖ រដ្ឋបាលថ្នាក់ និងរំលឹកមេរៀនចាស់\nជំហានទី២៖ ទំនាក់ទំនងមេរៀនថ្មី និងបង្ហាញគោលបំណង\nជំហានទី៣៖ ការបង្រៀនខ្លឹមសារថ្មីតាមវិធីសាស្ត្រសកម្ម\nជំហានទី៤៖ ការពង្រឹងពុទ្ធិ និងអនុវត្តជាក់ស្តែង\nជំហានទី៥៖ ការវាយតម្លៃ និងកិច្ចការផ្ទះ។'
+    },
+    {
+      id: 'BK-003',
+      title: 'បច្ចេកវិទ្យាព័ត៌មាន និងសារគមនាគមន៍ក្នុងការអប់រំបឋមសិក្សា (ICT in Education)',
+      author: 'សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ',
+      category: 'បច្ចេកវិទ្យាអប់រំ',
+      cohort: 'ទាំងអស់',
+      pages: 96,
+      fileSize: '5.5 MB',
+      fileFormat: 'PDF',
+      fileName: 'ICT_Primary_Education_KTPTTC.pdf',
+      date: '2026-11-18',
+      uploadedBy: 'យូសុះ ស៊ីលាល',
+      description: 'ការប្រើប្រាស់ឧបករណ៍ឌីជីថល កម្មវិធីរៀបចំស្លាយបទបង្ហាញ ការបង្កើតកម្រងសំណួរអន្តរកម្ម និងការស្វែងរកឯកសារស្រាវជ្រាវអប់រំតាមអ៊ីនធឺណិត។',
+      previewText: 'ជំពូកទី ១៖ ការធ្វើសមាហរណកម្ម ICT ក្នុងការរៀបចំការបង្រៀន\nICT មិនមែនគ្រាន់តែជាឧបករណ៍ជំនួយនោះទេ ប៉ុន្តែជាកាតាលីករដ៏មានឥទ្ធិពលក្នុងការពន្លឿនការយល់ដឹង និងជំរុញឱ្យសិស្សមានចំណាប់អារម្មណ៍កាន់តែខ្លាំងក្នុងការសិក្សា។'
+    }
+  ];
+}
+
 const KTPTTC_DIGITAL_BOOKS = [];
 
 function openTraineeLibraryModal() {
+  if (!Array.isArray(stmsData.books) || stmsData.books.length === 0) {
+    stmsData.books = getInitialDigitalBooks();
+    saveData(false);
+  }
+
+  const books = stmsData.books || [];
+
   let modalHtml = `
     <div class="stms-modal-backdrop" id="traineeLibraryModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:780px;">
-        <div class="stms-modal-header" style="background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); color:#ffffff;">
+      <div class="stms-modal-dialog" style="max-width:880px; max-height:92vh; display:flex; flex-direction:column;">
+        
+        <!-- Header -->
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); color:#ffffff; flex-shrink:0; padding:16px 22px;">
           <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+            <div style="width:42px; height:42px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.35rem; flex-shrink:0;">
               <i class="fas fa-book-open"></i>
             </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.15rem; margin:0;">បណ្ណាល័យឌីជីថលគរុកោសល្យ (Digital Library KTPTTC)</h3>
-              <p style="color:#bbf7d0; font-size:0.82rem; margin:2px 0 0 0;">កម្រងសៀវភៅគរុកោសល្យ សៀវភៅសិក្សាគោល និងឯកសារស្រាវជ្រាវ MoEYS</p>
+              <h3 style="color:#ffffff; font-size:1.18rem; margin:0; font-weight:800;">បណ្ណាល័យឌីជីថលគរុកោសល្យ (Digital Library KTPTTC)</h3>
+              <p style="color:#bbf7d0; font-size:0.82rem; margin:3px 0 0 0;">កម្រងសៀវភៅគរុកោសល្យ សៀវភៅសិក្សាគោល និងឯកសារស្រាវជ្រាវ MoEYS</p>
             </div>
           </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff;">&times;</button>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff; font-size:1.4rem; border:none; background:transparent; cursor:pointer;" title="បិទ">&times;</button>
         </div>
-        <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+
+        <!-- Body -->
+        <div class="stms-modal-body" style="padding:20px; overflow-y:auto; flex:1;">
           
-          <div style="margin-bottom:16px;">
-            <input type="text" class="form-input" placeholder="🔍 ស្វែងរកចំណងជើងសៀវភៅ អ្នកនិពន្ធ ឬមុខវិជ្ជា..." oninput="filterDigitalBooks(this.value)">
+          <!-- Filter & Upload Action Bar -->
+          <div style="display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+            <div style="flex:1; min-width:240px; position:relative;">
+              <input type="text" id="digitalBookSearchInput" class="form-input" style="width:100%; height:38px; padding-left:36px; border-radius:8px;" placeholder="🔍 ស្វែងរកចំណងជើងសៀវភៅ អ្នកនិពន្ធ ឬមុខវិជ្ជា..." oninput="filterDigitalBooks(this.value)">
+              <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
+            </div>
+            
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <select id="digitalBookCategoryFilter" class="form-select" style="height:38px; border-radius:8px; font-size:0.82rem; min-width:170px;" onchange="filterDigitalBooks(document.getElementById('digitalBookSearchInput').value)">
+                <option value="">-- ប្រភេទសៀវភៅទាំងអស់ --</option>
+                <option value="សៀវភៅគរុកោសល្យទូទៅ">សៀវភៅគរុកោសល្យទូទៅ</option>
+                <option value="វិធីសាស្ត្របង្រៀនឯកទេស">វិធីសាស្ត្របង្រៀនឯកទេស</option>
+                <option value="សៀវភៅសិក្សាគោលបឋមសិក្សា">សៀវភៅសិក្សាគោលបឋមសិក្សា</option>
+                <option value="សៀវភៅណែនាំគ្រូ">សៀវភៅណែនាំគ្រូ</option>
+                <option value="បច្ចេកវិទ្យាអប់រំ">បច្ចេកវិទ្យាអប់រំ (ICT)</option>
+                <option value="ចិត្តវិទ្យាគរុកោសល្យ">ចិត្តវិទ្យាគរុកោសល្យ</option>
+                <option value="ឯកសារស្រាវជ្រាវ">ឯកសារស្រាវជ្រាវ & សារណា</option>
+              </select>
+
+              <!-- Upload Book Button -->
+              <button class="btn btn-primary" onclick="openUploadBookModal()" style="height:38px; padding:0 16px; font-size:0.82rem; background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 10px rgba(22,163,74,0.3); cursor:pointer; white-space:nowrap;" title="ចុចដើម្បីបង្ហោះ ឬបញ្ចូលសៀវភៅថ្មី">
+                <i class="fas fa-cloud-upload-alt" style="font-size:1rem;"></i> + បង្ហោះសៀវភៅថ្មី (Upload Book)
+              </button>
+            </div>
           </div>
 
-          <div id="digitalBookList" style="display:flex; flex-direction:column; gap:12px;">
-            ${KTPTTC_DIGITAL_BOOKS.length === 0 ? `
-              <div style="text-align:center; padding:40px 20px; color:#94a3b8; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
-                <i class="fas fa-book" style="font-size:2.4rem; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
-                <div style="font-weight:600; font-size:0.95rem; color:#64748b;">មិនទាន់មានសៀវភៅក្នុងបណ្ណាល័យឌីជីថលនៅឡើយទេ</div>
-                <div style="font-size:0.8rem; margin-top:4px;">រដ្ឋបាល ឬបណ្ណារក្សអាចបញ្ចូលសៀវភៅ ឬឯកសារអេឡិចត្រូនិចក្នុងប្រព័ន្ធ</div>
-              </div>
-            ` : KTPTTC_DIGITAL_BOOKS.map(b => `
-              <div class="book-card-item" style="display:flex; gap:16px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:14px; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
-                <div style="width:58px; height:74px; border-radius:8px; background:linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); display:flex; align-items:center; justify-content:center; color:#15803d; font-size:1.8rem; flex-shrink:0; border:1px solid #86efac;">
+          <!-- Book List Container -->
+          <div id="digitalBookList" style="display:flex; flex-direction:column; gap:14px;">
+            ${books.length === 0 ? `
+              <div style="text-align:center; padding:48px 20px; color:#94a3b8; background:#f8fafc; border-radius:14px; border:2px dashed #cbd5e1;">
+                <div style="width:68px; height:68px; border-radius:50%; background:#e2e8f0; display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px; color:#64748b; font-size:2rem;">
                   <i class="fas fa-book"></i>
                 </div>
-                <div style="flex:1;">
-                  <span style="font-size:0.72rem; font-weight:700; color:#16a34a; background:#f0fdf4; padding:2px 8px; border-radius:6px;">${b.category}</span>
-                  <h4 style="margin:4px 0 3px 0; font-size:0.92rem; color:#1e293b; line-height:1.4;">${b.title}</h4>
-                  <p style="margin:0 0 4px 0; font-size:0.78rem; color:#64748b;">${b.author} • ${b.pages} ទំព័រ • ទំហំ ${b.size}</p>
+                <div style="font-weight:700; font-size:1.05rem; color:#475569;">មិនទាន់មានសៀវភៅក្នុងបណ្ណាល័យឌីជីថលនៅឡើយទេ</div>
+                <div style="font-size:0.84rem; color:#64748b; margin-top:5px;">រដ្ឋបាល គ្រូឧទ្ទេស ឬបណ្ណារក្សអាចបង្ហោះសៀវភៅ ឬឯកសារអេឡិចត្រូនិចក្នុងប្រព័ន្ធ</div>
+                <button class="btn btn-primary" onclick="openUploadBookModal()" style="margin-top:16px; height:40px; padding:0 22px; font-size:0.88rem; background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 12px rgba(22,163,74,0.35); cursor:pointer;">
+                  <i class="fas fa-cloud-upload-alt"></i> បង្ហោះសៀវភៅថ្មីឥឡូវនេះ (Upload Book)
+                </button>
+              </div>
+            ` : books.map(b => `
+              <div class="book-card-item" data-category="${escapeHtml(b.category || '')}" style="display:flex; gap:16px; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.03); transition:all 0.2s;" onmouseover="this.style.borderColor='#86efac'; this.style.boxShadow='0 4px 14px rgba(22,163,74,0.12)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.03)';">
+                
+                <!-- Book Cover / Format Thumbnail -->
+                ${b.coverUrl ? `
+                  <img src="${b.coverUrl}" style="width:64px; height:86px; border-radius:8px; object-fit:cover; flex-shrink:0; border:1px solid #cbd5e1; box-shadow:0 2px 6px rgba(0,0,0,0.1);" alt="Book Cover">
+                ` : `
+                  <div style="width:64px; height:86px; border-radius:8px; background:linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#15803d; font-size:1.85rem; flex-shrink:0; border:1px solid #86efac; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+                    <i class="fas fa-book-open"></i>
+                    <span style="font-size:0.58rem; font-weight:800; margin-top:3px; color:#166534; text-transform:uppercase;">${escapeHtml(b.fileFormat || 'PDF')}</span>
+                  </div>
+                `}
+
+                <!-- Book Metadata Details -->
+                <div style="flex:1; min-width:0;">
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+                    <span style="font-size:0.72rem; font-weight:700; color:#16a34a; background:#f0fdf4; border:1px solid #bbf7d0; padding:2px 8px; border-radius:6px;">${escapeHtml(b.category || 'សៀវភៅគរុកោសល្យ')}</span>
+                    ${b.cohort ? `<span style="font-size:0.7rem; font-weight:600; color:#0369a1; background:#e0f2fe; padding:2px 8px; border-radius:6px;">${escapeHtml(b.cohort)}</span>` : ''}
+                    <span style="font-size:0.7rem; color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:6px;">${escapeHtml(b.fileSize || '3.5 MB')}</span>
+                  </div>
+                  
+                  <h4 style="margin:2px 0 4px 0; font-size:0.96rem; color:#1e293b; line-height:1.4; font-weight:700;">${escapeHtml(b.title)}</h4>
+                  
+                  <p style="margin:0 0 5px 0; font-size:0.78rem; color:#64748b; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <span>✍️ ${escapeHtml(b.author || 'ក្រសួងអប់រំ យុវជន និងកីឡា')}</span>
+                    <span>•</span>
+                    <span>📄 ${escapeHtml(b.pages || '100')} ទំព័រ</span>
+                    <span>•</span>
+                    <span>📅 ${escapeHtml(b.date || '')}</span>
+                    ${b.uploadedBy ? `<span>• 👤 ${escapeHtml(b.uploadedBy)}</span>` : ''}
+                  </p>
+
+                  ${b.description ? `<p style="margin:0; font-size:0.78rem; color:#475569; line-height:1.45; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${escapeHtml(b.description)}</p>` : ''}
                 </div>
-                <div style="display:flex; flex-direction:column; gap:6px;">
-                  <button class="btn btn-outline" style="height:32px; padding:0 12px; font-size:0.78rem;" onclick="readTraineeBook('${b.id}')">
+
+                <!-- Action Buttons Right -->
+                <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                  <button class="btn btn-outline" style="height:32px; padding:0 12px; font-size:0.78rem; border-color:#86efac; color:#15803d; font-weight:600; display:inline-flex; align-items:center; gap:5px;" onclick="readTraineeBook('${b.id}')" title="ចុចដើម្បីអានសៀវភៅផ្ទាល់">
                     <i class="fas fa-eye"></i> អានអនឡាញ
                   </button>
-                  <button class="btn btn-primary" style="height:32px; padding:0 12px; font-size:0.78rem;" onclick="showToast('បានទាញយកសៀវភៅ «${b.title}» ជា PDF ដោយជោគជ័យ!', 'success')">
-                    <i class="fas fa-file-pdf"></i> ទាញយក
+                  <button class="btn btn-primary" style="height:32px; padding:0 12px; font-size:0.78rem; background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:600; display:inline-flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(22,163,74,0.25);" onclick="downloadDigitalBook('${b.id}')" title="ទាញយកឯកសារសៀវភៅ">
+                    <i class="fas fa-download"></i> ទាញយក
                   </button>
+                  <div style="display:flex; gap:6px; justify-content:flex-end; margin-top:2px;">
+                    <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem; color:#0284c7; border-color:#bae6fd;" onclick="openUploadBookModal('${b.id}')" title="កែប្រែព័ត៌មានសៀវភៅ">
+                      <i class="fas fa-edit"></i> កែប្រែ
+                    </button>
+                    <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem; color:#ef4444; border-color:#fecaca;" onclick="deleteDigitalBook('${b.id}')" title="លុបសៀវភៅនេះ">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
                 </div>
+
               </div>
             `).join('')}
           </div>
 
-          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
-            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+          <!-- Bottom Footer Bar -->
+          <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
+            <div style="font-size:0.84rem; color:#64748b; font-weight:600; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-book" style="color:#16a34a;"></i>
+              <span>សរុបសៀវភៅក្នុងបណ្ណាល័យ៖ <strong style="color:#15803d;">${books.length} ក្បាល</strong></span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary" onclick="openUploadBookModal()" style="height:34px; padding:0 14px; font-size:0.8rem; background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-plus-circle"></i> + បង្ហោះសៀវភៅ
+              </button>
+              <button class="btn btn-outline" onclick="closeStmsModal()" style="height:34px; padding:0 16px; font-size:0.82rem;">បិទ</button>
+            </div>
           </div>
 
         </div>
@@ -5555,66 +5737,494 @@ function openTraineeLibraryModal() {
 
 function filterDigitalBooks(q) {
   const query = (q || '').toLowerCase().trim();
+  const catFilter = document.getElementById('digitalBookCategoryFilter');
+  const selectedCat = catFilter ? catFilter.value : '';
+
   document.querySelectorAll('#digitalBookList .book-card-item').forEach(el => {
-    el.style.display = el.textContent.toLowerCase().includes(query) ? 'flex' : 'none';
+    const textMatch = !query || el.textContent.toLowerCase().includes(query);
+    const cat = el.getAttribute('data-category') || '';
+    const catMatch = !selectedCat || cat === selectedCat;
+    el.style.display = (textMatch && catMatch) ? 'flex' : 'none';
   });
 }
 
-function readTraineeBook(id) {
-  const b = KTPTTC_DIGITAL_BOOKS.find(item => item.id === id) || (stmsData.books || []).find(item => item.id === id);
-  if (!b) return showToast('រកមិនឃើញសៀវភៅនេះទេ', 'warning');
+// --------------------------------------------------------------------------
+// UPLOAD BOOK MODAL CONTROLLER (មុខងារ Upload & បញ្ចូលសៀវភៅថ្មី)
+// --------------------------------------------------------------------------
+function openUploadBookModal(editBookId = null) {
+  const bookToEdit = editBookId ? (stmsData.books || []).find(b => b.id === editBookId) : null;
+  window.pendingBookFileData = null;
+  window.pendingBookCoverData = bookToEdit && bookToEdit.coverUrl ? bookToEdit.coverUrl : null;
 
   let modalHtml = `
-    <div class="stms-modal-backdrop" id="bookReaderModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:780px;">
-        <div class="stms-modal-header" style="background:#166534; color:#ffffff;">
+    <div class="stms-modal-backdrop" id="uploadBookModalBackdrop" onclick="if(event.target===this) openTraineeLibraryModal()">
+      <div class="stms-modal-dialog" style="max-width:760px; max-height:92vh; display:flex; flex-direction:column;">
+        
+        <!-- Header -->
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); color:#ffffff; flex-shrink:0; padding:16px 20px;">
           <div style="display:flex; align-items:center; gap:12px;">
-            <i class="fas fa-book-open" style="font-size:1.3rem;"></i>
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">
+              <i class="fas ${bookToEdit ? 'fa-edit' : 'fa-cloud-upload-alt'}"></i>
+            </div>
             <div>
-              <h3 style="color:#ffffff; font-size:1.05rem; margin:0;">${b.title}</h3>
-              <p style="color:#bbf7d0; font-size:0.78rem; margin:2px 0 0 0;">${b.author} • ${b.pages} ទំព័រ</p>
+              <h3 style="color:#ffffff; font-size:1.15rem; margin:0; font-weight:800;">
+                ${bookToEdit ? 'កែប្រែព័ត៌មានសៀវភៅ (Edit Book Details)' : 'បញ្ចូល និងបង្ហោះសៀវភៅថ្មី (Upload Digital Book)'}
+              </h3>
+              <p style="color:#bbf7d0; font-size:0.8rem; margin:2px 0 0 0;">បណ្ណាល័យឌីជីថលគរុកោសល្យ KTPTTC • MoEYS Open Educational Repository</p>
             </div>
           </div>
-          <button class="modal-close-icon" onclick="openTraineeLibraryModal()" style="color:#ffffff;">&times;</button>
+          <button class="modal-close-icon" onclick="openTraineeLibraryModal()" style="color:#ffffff; font-size:1.4rem; border:none; background:transparent; cursor:pointer;" title="ត្រឡប់">&times;</button>
         </div>
-        <div class="stms-modal-body" style="padding:20px;">
+
+        <!-- Body Form -->
+        <div class="stms-modal-body" style="padding:22px; overflow-y:auto; flex:1;">
           
-          <div class="book-reader-toolbar">
-            <span><i class="fas fa-file-alt"></i> ទំព័រទី ១ នៃ ${b.pages}</span>
-            <div style="display:flex; gap:8px;">
-              <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.75rem;" onclick="showToast('ទំព័រមុន', 'info')">← មុន</button>
-              <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.75rem;" onclick="showToast('ទំព័របន្ទាប់', 'info')">បន្ទាប់ →</button>
+          <!-- Section 1: Book Identity -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:16px;">
+            <div style="font-weight:700; color:#15803d; font-size:0.92rem; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-info-circle"></i> ព័ត៌មានអត្តសញ្ញាណសៀវភៅ (BOOK IDENTITY)
             </div>
-            <button class="btn btn-primary" style="height:26px; padding:0 8px; font-size:0.75rem;" onclick="showToast('បានទាញយកសៀវភៅ PDF ពេញលេញ!', 'success')">
-              <i class="fas fa-download"></i> ទាញយក PDF
-            </button>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+              <div>
+                <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:4px; display:block;">
+                  ចំណងជើងសៀវភៅ <span style="color:#ef4444;">*</span>
+                </label>
+                <input type="text" id="bookTitleInput" class="form-input" style="width:100%;" placeholder="ឧ. វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋមសិក្សា" value="${escapeHtml(bookToEdit ? bookToEdit.title : '')}" required>
+              </div>
+
+              <div>
+                <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:4px; display:block;">
+                  អ្នកនិពន្ធ ឬស្ថាប័នបោះពុម្ព <span style="color:#ef4444;">*</span>
+                </label>
+                <input type="text" id="bookAuthorInput" class="form-input" style="width:100%;" placeholder="ឧ. ក្រសួងអប់រំ យុវជន និងកីឡា (MoEYS)" value="${escapeHtml(bookToEdit ? bookToEdit.author : 'ក្រសួងអប់រំ យុវជន និងកីឡា')}">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-top:12px;">
+              <div>
+                <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:4px; display:block;">
+                  ប្រភេទសៀវភៅ <span style="color:#ef4444;">*</span>
+                </label>
+                <select id="bookCategoryInput" class="form-select" style="width:100%;">
+                  <option value="សៀវភៅគរុកោសល្យទូទៅ" ${bookToEdit && bookToEdit.category === 'សៀវភៅគរុកោសល្យទូទៅ' ? 'selected' : ''}>សៀវភៅគរុកោសល្យទូទៅ</option>
+                  <option value="វិធីសាស្ត្របង្រៀនឯកទេស" ${bookToEdit && bookToEdit.category === 'វិធីសាស្ត្របង្រៀនឯកទេស' ? 'selected' : ''}>វិធីសាស្ត្របង្រៀនឯកទេស</option>
+                  <option value="សៀវភៅសិក្សាគោលបឋមសិក្សា" ${bookToEdit && bookToEdit.category === 'សៀវភៅសិក្សាគោលបឋមសិក្សា' ? 'selected' : ''}>សៀវភៅសិក្សាគោលបឋមសិក្សា</option>
+                  <option value="សៀវភៅណែនាំគ្រូ" ${bookToEdit && bookToEdit.category === 'សៀវភៅណែនាំគ្រូ' ? 'selected' : ''}>សៀវភៅណែនាំគ្រូ (Teacher Guide)</option>
+                  <option value="បច្ចេកវិទ្យាអប់រំ" ${bookToEdit && bookToEdit.category === 'បច្ចេកវិទ្យាអប់រំ' ? 'selected' : ''}>បច្ចេកវិទ្យាអប់រំ (ICT)</option>
+                  <option value="ចិត្តវិទ្យាគរុកោសល្យ" ${bookToEdit && bookToEdit.category === 'ចិត្តវិទ្យាគរុកោសល្យ' ? 'selected' : ''}>ចិត្តវិទ្យាគរុកោសល្យ</option>
+                  <option value="ឯកសារស្រាវជ្រាវ" ${bookToEdit && bookToEdit.category === 'ឯកសារស្រាវជ្រាវ' ? 'selected' : ''}>ឯកសារស្រាវជ្រាវ & សារណា</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:4px; display:block;">
+                  កម្រិតបណ្តុះបណ្តាលគោលដៅ
+                </label>
+                <select id="bookCohortInput" class="form-select" style="width:100%;">
+                  <option value="ទាំងអស់" ${!bookToEdit || bookToEdit.cohort === 'ទាំងអស់' ? 'selected' : ''}>ទាំងអស់ (All Cohorts)</option>
+                  <option value="បរិញ្ញាបត្រ+១" ${bookToEdit && bookToEdit.cohort === 'បរិញ្ញាបត្រ+១' ? 'selected' : ''}>បរិញ្ញាបត្រ+១ (ឆមាសទី១ & ទី២)</option>
+                  <option value="គរុសិស្ស ១២+២" ${bookToEdit && bookToEdit.cohort === 'គរុសិស្ស ១២+២' ? 'selected' : ''}>គរុសិស្ស ១២+២</option>
+                  <option value="គរុនិស្សិត ១២+៤" ${bookToEdit && bookToEdit.cohort === 'គរុនិស្សិត ១២+៤' ? 'selected' : ''}>គរុនិស្សិត ១២+៤</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:4px; display:block;">
+                  ចំនួនទំព័រ (Pages)
+                </label>
+                <input type="number" id="bookPagesInput" class="form-input" style="width:100%;" min="1" placeholder="ឧ. 150" value="${escapeHtml(bookToEdit ? bookToEdit.pages : '120')}">
+              </div>
+            </div>
           </div>
 
-          <div class="stms-book-reader">
-            <h3 style="text-align:center; color:#1e3a8a; font-family:var(--font-moul); margin-bottom:14px;">${b.title}</h3>
-            <p style="text-align:center; font-size:0.85rem; color:#64748b; margin-bottom:20px;">បោះពុម្ព និងផ្សព្វផ្សាយជាផ្លូវការដោយ៖ ${b.author}</p>
-            <hr style="border:none; border-top:1px dashed #d4d4d8; margin:16px 0;">
-            <h4 style="color:#15803d; font-size:0.95rem; margin-bottom:10px;">អារម្ភកថា</h4>
-            <p>
-              សៀវភៅនេះត្រូវបានរៀបចំឡើងជាពិសេសសម្រាប់បម្រើឱ្យការបណ្ដុះបណ្ដាលគរុសិស្ស-គរុនិស្សិតនៅសាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)។ ខ្លឹមសារត្រូវបានរៀបចំឡើងយ៉ាងក្បោះក្បាយ ស្របតាមក្របខ័ណ្ឌកម្មវិធីសិក្សាស្តង់ដារជាតិរបស់ក្រសួងអប់រំ យុវជន និងកីឡា ដោយផ្តោតសំខាន់លើវិធីសាស្ត្របង្រៀនសកម្មបែបស្ថាបនានិយម (Constructivism) ការគ្រប់គ្រងថ្នាក់រៀន ការប្រើប្រាស់សម្ភារឧបទេស និងការវាស់វែងវាយតម្លៃលទ្ធផលសិក្សារបស់សិស្សបឋមសិក្សា។
-            </p>
-            <h4 style="color:#15803d; font-size:0.95rem; margin-top:18px; margin-bottom:10px;">មាតិកាសំខាន់ៗនៃជំពូកទី ១</h4>
-            <p>
-              ${b.previewText}
-            </p>
+          <!-- Section 2: Book File & Cover Upload Dropzone -->
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:16px;">
+            <div style="font-weight:700; color:#15803d; font-size:0.92rem; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-file-upload"></i> ឯកសារសៀវភៅ & រូបភាពក្រប (FILE & COVER UPLOAD)
+            </div>
+
+            <!-- Real Book File Dropzone -->
+            <div style="margin-bottom:14px;">
+              <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:6px; display:block;">
+                ឯកសារសៀវភៅអេឡិចត្រូនិច (PDF / DOCX / EPUB) <span style="color:#ef4444;">*</span>
+              </label>
+              
+              <div id="bookFileUploadDropzone" onclick="document.getElementById('bookRealFileInput').click()" ondragover="event.preventDefault(); this.style.borderColor='#16a34a'; this.style.background='#dcfce7';" ondragleave="this.style.borderColor='#86efac'; this.style.background='#f0fdf4';" ondrop="event.preventDefault(); this.style.borderColor='#86efac'; this.style.background='#f0fdf4'; if(event.dataTransfer.files.length) { document.getElementById('bookRealFileInput').files = event.dataTransfer.files; handleBookFileSelect(document.getElementById('bookRealFileInput')); }" style="border:2px dashed #86efac; border-radius:10px; padding:20px; text-align:center; background:#f0fdf4; cursor:pointer; transition:all 0.2s;">
+                <i class="fas fa-cloud-upload-alt" style="font-size:2.2rem; color:#16a34a; margin-bottom:8px; display:block;"></i>
+                <div style="font-weight:700; color:#15803d; font-size:0.92rem;">ចុចដើម្បីជ្រើសរើសឯកសារសៀវភៅ ឬទម្លាក់ឯកសារនៅទីនេះ</div>
+                <div style="font-size:0.78rem; color:#64748b; margin-top:4px;">គាំទ្រប្រភេទឯកសារ៖ .pdf, .docx, .doc, .epub (ទំហំអតិបរមា 50 MB)</div>
+                <input type="file" id="bookRealFileInput" accept=".pdf,.doc,.docx,.epub" style="display:none;" onchange="handleBookFileSelect(this)">
+              </div>
+
+              <!-- Selected File Preview Badge -->
+              <div id="bookFileSelectedPreview" style="display:${bookToEdit && bookToEdit.fileName ? 'flex' : 'none'}; margin-top:10px; background:#ffffff; border:1px solid #86efac; border-radius:8px; padding:10px 14px; align-items:center; justify-content:space-between; box-shadow:0 2px 6px rgba(22,163,74,0.08);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <i class="fas fa-file-pdf" style="font-size:1.8rem; color:#ef4444;"></i>
+                  <div>
+                    <div id="bookSelectedFileName" style="font-weight:700; font-size:0.88rem; color:#1e293b;">${escapeHtml(bookToEdit ? bookToEdit.fileName : 'filename.pdf')}</div>
+                    <div id="bookSelectedFileSize" style="font-size:0.75rem; color:#64748b;">${escapeHtml(bookToEdit ? bookToEdit.fileSize : '3.5 MB')} • បានជ្រើសរើសរួចរាល់</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline" style="height:28px; padding:0 10px; font-size:0.75rem; color:#ef4444; border-color:#fecaca;" onclick="removeBookSelectedFile()">
+                  <i class="fas fa-trash"></i> ដកចេញ
+                </button>
+              </div>
+            </div>
+
+            <!-- Book Cover Image Upload (Optional) -->
+            <div>
+              <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:6px; display:block;">
+                រូបភាពក្របសៀវភៅ (Book Cover - មិនបង្ខំ)
+              </label>
+              <div style="display:flex; gap:14px; align-items:center;">
+                <div id="bookCoverPreviewBox" style="width:58px; height:78px; border-radius:6px; border:1px dashed #cbd5e1; background:#f8fafc; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+                  <img id="bookCoverPreviewImg" src="${bookToEdit && bookToEdit.coverUrl ? bookToEdit.coverUrl : ''}" style="width:100%; height:100%; object-fit:cover; display:${bookToEdit && bookToEdit.coverUrl ? 'block' : 'none'};" alt="Cover Preview">
+                  <i id="bookCoverPlaceholder" class="fas fa-image" style="font-size:1.4rem; color:#94a3b8; display:${bookToEdit && bookToEdit.coverUrl ? 'none' : 'block'};"></i>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-outline" style="height:32px; padding:0 12px; font-size:0.8rem; border-color:#cbd5e1; color:#334155;" onclick="document.getElementById('bookCoverInput').click()">
+                    <i class="fas fa-camera"></i> ជ្រើសរើសរូបភាពក្រប
+                  </button>
+                  <input type="file" id="bookCoverInput" accept="image/*" style="display:none;" onchange="handleBookCoverSelect(this)">
+                  <p style="font-size:0.74rem; color:#94a3b8; margin:4px 0 0 0;">ជ្រើសរើសរូបភាព JPG, PNG, ឬ WebP ដើម្បីបង្ហាញជាក្របសៀវភៅ</p>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          <div style="margin-top:18px; display:flex; justify-content:space-between;">
-            <button class="btn btn-outline" onclick="openTraineeLibraryModal()">← ត្រឡប់ទៅបណ្ណាល័យ</button>
-            <button class="btn btn-primary" onclick="closeStmsModal()">រួចរាល់</button>
+          <!-- Section 3: Summary / Abstract -->
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:16px;">
+            <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:4px; display:block;">
+              អារម្ភកថា ឬសង្ខេបមាតិកាសៀវភៅ (Abstract & Outline)
+            </label>
+            <textarea id="bookDescInput" class="form-textarea" style="width:100%; min-height:85px; padding:10px; font-size:0.85rem;" placeholder="បញ្ចូលសេចក្តីសង្ខេប គោលបំណង ឬអារម្ភកថាសង្ខេបនៃសៀវភៅ...">${escapeHtml(bookToEdit ? (bookToEdit.description || bookToEdit.previewText || '') : '')}</textarea>
           </div>
 
         </div>
+
+        <!-- Footer Actions -->
+        <div class="stms-modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+          <button type="button" class="btn btn-outline" onclick="openTraineeLibraryModal()">
+            បោះបង់
+          </button>
+          <button type="button" class="btn btn-primary" onclick="submitNewDigitalBook('${bookToEdit ? bookToEdit.id : ''}')" style="background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:700; padding:0 20px; height:38px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 10px rgba(22,163,74,0.35);">
+            <i class="fas fa-save"></i> ${bookToEdit ? 'រក្សាទុកការកែប្រែ' : 'រក្សាទុក និងបង្ហោះសៀវភៅ'}
+          </button>
+        </div>
+
       </div>
     </div>
   `;
   showModal(modalHtml);
 }
+
+function handleBookFileSelect(input) {
+  const file = input && input.files ? input.files[0] : null;
+  if (!file) return;
+
+  const validExts = ['pdf', 'doc', 'docx', 'epub'];
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!validExts.includes(ext)) {
+    showToast('សូមជ្រើសរើសឯកសារសៀវភៅជា PDF, DOCX, ឬ EPUB!', 'warning');
+    return;
+  }
+
+  if (file.size > 50 * 1024 * 1024) {
+    showToast('ឯកសារធំពេក (លើសពី 50MB)! សូមជ្រើសរើសឯកសារតូចជាងនេះ។', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    window.pendingBookFileData = {
+      name: file.name,
+      size: formatFileSize(file.size),
+      type: file.type || 'application/pdf',
+      dataUrl: e.target.result
+    };
+
+    const preview = document.getElementById('bookFileSelectedPreview');
+    const nameEl = document.getElementById('bookSelectedFileName');
+    const sizeEl = document.getElementById('bookSelectedFileSize');
+    if (nameEl) nameEl.textContent = file.name;
+    if (sizeEl) sizeEl.textContent = `${formatFileSize(file.size)} • ត្រៀមបង្ហោះរួចរាល់`;
+    if (preview) preview.style.display = 'flex';
+
+    // Auto-fill title if empty
+    const titleInput = document.getElementById('bookTitleInput');
+    if (titleInput && !titleInput.value.trim()) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[_.-]/g, ' ');
+      titleInput.value = cleanName;
+    }
+
+    showToast(`បានជ្រើសរើសឯកសារ៖ ${file.name} (${formatFileSize(file.size)})`, 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeBookSelectedFile() {
+  window.pendingBookFileData = null;
+  const input = document.getElementById('bookRealFileInput');
+  if (input) input.value = '';
+  const preview = document.getElementById('bookFileSelectedPreview');
+  if (preview) preview.style.display = 'none';
+  showToast('បានដកឯកសារចេញ', 'info');
+}
+
+function handleBookCoverSelect(input) {
+  const file = input && input.files ? input.files[0] : null;
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    window.pendingBookCoverData = e.target.result;
+    const preview = document.getElementById('bookCoverPreviewImg');
+    const placeholder = document.getElementById('bookCoverPlaceholder');
+    if (preview) {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    }
+    if (placeholder) placeholder.style.display = 'none';
+    showToast('បានផ្ទុករូបភាពក្របសៀវភៅរួចរាល់', 'info');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitNewDigitalBook(editBookId = '') {
+  const titleEl = document.getElementById('bookTitleInput');
+  const authorEl = document.getElementById('bookAuthorInput');
+  const catEl = document.getElementById('bookCategoryInput');
+  const cohortEl = document.getElementById('bookCohortInput');
+  const pagesEl = document.getElementById('bookPagesInput');
+  const descEl = document.getElementById('bookDescInput');
+
+  if (!titleEl || !titleEl.value.trim()) {
+    showToast('សូមបញ្ចូលចំណងជើងសៀវភៅ!', 'warning');
+    return;
+  }
+
+  const user = getActiveTrainerProfile() || { nameKh: 'បណ្ណារក្ស KTPTTC' };
+  const fileInfo = window.pendingBookFileData;
+
+  if (!Array.isArray(stmsData.books)) {
+    stmsData.books = [];
+  }
+
+  if (editBookId) {
+    const existingIndex = stmsData.books.findIndex(b => b.id === editBookId);
+    if (existingIndex !== -1) {
+      const b = stmsData.books[existingIndex];
+      b.title = titleEl.value.trim();
+      b.author = authorEl && authorEl.value.trim() ? authorEl.value.trim() : b.author;
+      b.category = catEl ? catEl.value : b.category;
+      b.cohort = cohortEl ? cohortEl.value : b.cohort;
+      b.pages = pagesEl && pagesEl.value ? parseInt(pagesEl.value, 10) : b.pages;
+      b.description = descEl ? descEl.value.trim() : b.description;
+      if (fileInfo) {
+        b.fileName = fileInfo.name;
+        b.fileSize = fileInfo.size;
+        b.fileFormat = fileInfo.name.split('.').pop().toUpperCase();
+        b.fileData = fileInfo.dataUrl;
+        await idbSet('files', b.id, fileInfo.dataUrl);
+      }
+      if (window.pendingBookCoverData) {
+        b.coverUrl = window.pendingBookCoverData;
+      }
+      saveData();
+      showToast(`✅ បានកែប្រែព័ត៌មានសៀវភៅ «${b.title}» ដោយជោគជ័យ!`, 'success');
+      openTraineeLibraryModal();
+      return;
+    }
+  }
+
+  const newBook = {
+    id: 'BK-' + Date.now(),
+    title: titleEl.value.trim(),
+    author: authorEl && authorEl.value.trim() ? authorEl.value.trim() : 'ក្រសួងអប់រំ យុវជន និងកីឡា',
+    category: catEl ? catEl.value : 'សៀវភៅគរុកោសល្យទូទៅ',
+    cohort: cohortEl ? cohortEl.value : 'ទាំងអស់',
+    pages: pagesEl && pagesEl.value ? parseInt(pagesEl.value, 10) : 100,
+    fileSize: fileInfo ? fileInfo.size : '3.8 MB',
+    fileFormat: fileInfo ? fileInfo.name.split('.').pop().toUpperCase() : 'PDF',
+    fileName: fileInfo ? fileInfo.name : `${titleEl.value.trim()}.pdf`,
+    fileData: fileInfo ? fileInfo.dataUrl : null,
+    coverUrl: window.pendingBookCoverData || null,
+    date: new Date().toISOString().split('T')[0],
+    uploadedBy: user.nameKh || 'បណ្ណារក្ស KTPTTC',
+    description: descEl ? descEl.value.trim() : '',
+    previewText: descEl ? descEl.value.trim() : 'សៀវភៅនេះត្រូវបានបោះពុម្ព និងផ្សព្វផ្សាយជាផ្លូវការសម្រាប់គរុសិស្ស-គរុនិស្សិត KTPTTC។'
+  };
+
+  stmsData.books.unshift(newBook);
+
+  if (fileInfo && fileInfo.dataUrl) {
+    try {
+      await idbSet('files', newBook.id, fileInfo.dataUrl);
+    } catch (e) {}
+  }
+
+  saveData();
+  window.pendingBookFileData = null;
+  window.pendingBookCoverData = null;
+
+  showToast(`✅ បានបង្ហោះសៀវភៅ «${newBook.title}» ដោយជោគជ័យ!`, 'success');
+  openTraineeLibraryModal();
+}
+
+function deleteDigitalBook(bookId) {
+  const b = (stmsData.books || []).find(x => x.id === bookId);
+  const title = b ? b.title : 'សៀវភៅនេះ';
+  if (!confirm(`តើអ្នកពិតជាចង់លុបសៀវភៅ «${title}» ចេញពីបណ្ណាល័យឌីជីថលមែនទេ?`)) return;
+
+  stmsData.books = (stmsData.books || []).filter(x => x.id !== bookId);
+  saveData();
+  showToast(`បានលុបសៀវភៅ «${title}» រួចរាល់`, 'info');
+  openTraineeLibraryModal();
+}
+
+async function downloadDigitalBook(bookId) {
+  const b = (stmsData.books || []).find(x => x.id === bookId);
+  if (!b) return showToast('រកមិនឃើញសៀវភៅទេ', 'warning');
+
+  let dataUrl = b.fileData;
+  if (!dataUrl) {
+    try {
+      dataUrl = await idbGet('files', bookId);
+      if (dataUrl) b.fileData = dataUrl;
+    } catch (e) {}
+  }
+
+  const fileName = b.fileName || `${b.title}.pdf`;
+
+  if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(`កំពុងទាញយកសៀវភៅ «${fileName}»...`, 'success');
+    return;
+  }
+
+  showToast(`បានចាប់ផ្តើមទាញយកសៀវភៅ «${b.title}» (${b.fileSize || '3.5 MB'})`, 'success');
+}
+
+async function readTraineeBook(id) {
+  const b = (stmsData.books || []).find(item => item.id === id);
+  if (!b) return showToast('រកមិនឃើញសៀវភៅនេះទេ', 'warning');
+
+  if (!b.fileData) {
+    try {
+      const dbData = await idbGet('files', id);
+      if (dbData) b.fileData = dbData;
+    } catch (e) {}
+  }
+
+  const isPdf = (b.fileName || '').toLowerCase().endsWith('.pdf') || 
+                (typeof b.fileData === 'string' && (b.fileData.includes('application/pdf') || b.fileData.startsWith('data:application/pdf')));
+
+  let modalHtml = `
+    <div class="stms-modal-backdrop" id="bookReaderModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-dialog" style="max-width:880px; max-height:92vh; display:flex; flex-direction:column;">
+        
+        <!-- Header -->
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); color:#ffffff; flex-shrink:0; padding:14px 20px;">
+          <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+            <div style="width:38px; height:38px; border-radius:8px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">
+              <i class="fas fa-book-reader"></i>
+            </div>
+            <div style="min-width:0;">
+              <h3 style="color:#ffffff; font-size:1.05rem; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700;">${escapeHtml(b.title)}</h3>
+              <p style="color:#bbf7d0; font-size:0.78rem; margin:2px 0 0 0;">${escapeHtml(b.author)} • ${escapeHtml(b.pages || '100')} ទំព័រ • ${escapeHtml(b.category || '')}</p>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <button class="btn btn-outline" style="height:30px; padding:0 12px; font-size:0.75rem; color:#ffffff; border-color:rgba(255,255,255,0.4); display:inline-flex; align-items:center; gap:5px;" onclick="downloadDigitalBook('${b.id}')">
+              <i class="fas fa-download"></i> ទាញយក
+            </button>
+            <button class="modal-close-icon" onclick="openTraineeLibraryModal()" style="color:#ffffff; font-size:1.4rem; border:none; background:transparent; cursor:pointer;" title="ត្រឡប់">&times;</button>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="stms-modal-body" style="padding:20px; overflow-y:auto; flex:1;">
+          ${(isPdf && b.fileData) ? `
+            <div style="width:100%; height:580px; border-radius:10px; overflow:hidden; border:1px solid #e2e8f0; background:#070a12; margin-bottom:16px;">
+              <iframe src="${b.fileData}#toolbar=1" style="width:100%; height:100%; border:none; background:#ffffff;"></iframe>
+            </div>
+          ` : `
+            <div class="stms-book-reader" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.02); margin-bottom:16px;">
+              <div style="display:flex; gap:20px; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap;">
+                ${b.coverUrl ? `
+                  <img src="${b.coverUrl}" style="width:110px; height:150px; border-radius:8px; object-fit:cover; border:1px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.1);" alt="Cover">
+                ` : `
+                  <div style="width:110px; height:150px; border-radius:8px; background:linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#15803d; font-size:2.8rem; border:1px solid #86efac; box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+                    <i class="fas fa-book-open"></i>
+                    <span style="font-size:0.7rem; font-weight:800; margin-top:6px; color:#166534;">${escapeHtml(b.fileFormat || 'PDF')}</span>
+                  </div>
+                `}
+                <div style="flex:1; min-width:260px;">
+                  <span style="font-size:0.75rem; font-weight:700; color:#16a34a; background:#f0fdf4; border:1px solid #bbf7d0; padding:2px 10px; border-radius:6px;">${escapeHtml(b.category)}</span>
+                  <h3 style="color:#0f172a; margin:6px 0 6px 0; font-size:1.2rem; font-weight:800; line-height:1.4;">${escapeHtml(b.title)}</h3>
+                  <p style="font-size:0.86rem; color:#64748b; margin:0 0 8px 0;">✍️ អ្នកនិពន្ធ/ស្ថាប័ន៖ <strong style="color:#1e293b;">${escapeHtml(b.author)}</strong></p>
+                  <p style="font-size:0.82rem; color:#64748b; margin:0 0 8px 0;">📄 ចំនួនទំព័រ៖ <strong>${escapeHtml(b.pages || '100')} ទំព័រ</strong> • ទំហំឯកសារ៖ <strong>${escapeHtml(b.fileSize || '3.5 MB')}</strong></p>
+                  <p style="font-size:0.82rem; color:#64748b; margin:0;">📅 កាលបរិច្ឆេទ Upload៖ <strong>${escapeHtml(b.date || '')}</strong> • បញ្ចូលដោយ៖ <strong>${escapeHtml(b.uploadedBy || 'បណ្ណារក្ស')}</strong></p>
+                </div>
+              </div>
+
+              <hr style="border:none; border-top:1px dashed #e2e8f0; margin:16px 0;">
+
+              <h4 style="color:#15803d; font-size:0.98rem; margin:0 0 10px 0; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-align-left"></i> អារម្ភកថា & សេចក្តីសង្ខេបមាតិកា
+              </h4>
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; font-size:0.88rem; color:#334155; line-height:1.7; white-space:pre-line;">
+                ${escapeHtml(b.description || b.previewText || 'សៀវភៅនេះត្រូវបានរៀបចំឡើងជាពិសេសសម្រាប់បម្រើឱ្យការបណ្ដុះបណ្ដាលគរុសិស្ស-គរុនិស្សិតនៅសាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ (KTPTTC)។')}
+              </div>
+
+              ${b.previewText && b.previewText !== b.description ? `
+                <h4 style="color:#15803d; font-size:0.98rem; margin:18px 0 10px 0; display:flex; align-items:center; gap:6px;">
+                  <i class="fas fa-bookmark"></i> ខ្លឹមសារដកស្រង់សំខាន់ៗ
+                </h4>
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:16px; font-size:0.88rem; color:#166534; line-height:1.7; white-space:pre-line;">
+                  ${escapeHtml(b.previewText)}
+                </div>
+              ` : ''}
+            </div>
+          `}
+
+          <!-- Bottom Footer Navigation -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:10px;">
+            <button class="btn btn-outline" onclick="openTraineeLibraryModal()">
+              <i class="fas fa-arrow-left"></i> ត្រឡប់ទៅបណ្ណាល័យ
+            </button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary" style="background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; display:inline-flex; align-items:center; gap:6px;" onclick="downloadDigitalBook('${b.id}')">
+                <i class="fas fa-download"></i> ទាញយកឯកសារ (${escapeHtml(b.fileSize || '3.5 MB')})
+              </button>
+              <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+  showModal(modalHtml);
+}
+
+// Window Global Exports
+window.openTraineeLibraryModal = openTraineeLibraryModal;
+window.filterDigitalBooks = filterDigitalBooks;
+window.openUploadBookModal = openUploadBookModal;
+window.handleBookFileSelect = handleBookFileSelect;
+window.removeBookSelectedFile = removeBookSelectedFile;
+window.handleBookCoverSelect = handleBookCoverSelect;
+window.submitNewDigitalBook = submitNewDigitalBook;
+window.deleteDigitalBook = deleteDigitalBook;
+window.downloadDigitalBook = downloadDigitalBook;
+window.readTraineeBook = readTraineeBook;
 
 // --------------------------------------------------------------------------
 // 5. HUB MODAL: វេទិកា & សំណើ (DISCUSSION FORUM & REQUESTS)
@@ -9717,6 +10327,10 @@ function ensureSyncedCollections() {
   if (!Array.isArray(stmsData.attendanceSessions)) stmsData.attendanceSessions = [];
   if (!Array.isArray(stmsData.cohorts)) stmsData.cohorts = [];
   if (!Array.isArray(stmsData.customClasses)) stmsData.customClasses = [];
+  if (!Array.isArray(stmsData.books)) stmsData.books = [];
+  if (stmsData.books.length === 0 && typeof getInitialDigitalBooks === 'function') {
+    stmsData.books = getInitialDigitalBooks();
+  }
 
   // Ensure default lesson 'Week01' exists so trainees can immediately view slides
   if (!stmsData.lessons.some(l => l && (l.id === 'LSN-WEEK01' || l.title === 'Week01'))) {
