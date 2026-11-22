@@ -3518,7 +3518,7 @@ function saveGradeWeights() {
 // 5. TIMETABLE & SCHEDULING MANAGEMENT (ម៉ូឌុលរៀបចំកាលវិភាគបង្រៀន)
 // ==========================================================================
 
-const DEFAULT_SYSTEM_CLASSES = (typeof window !== 'undefined' && Array.isArray(window.DEFAULT_SYSTEM_CLASSES))
+var DEFAULT_SYSTEM_CLASSES = (typeof window !== 'undefined' && Array.isArray(window.DEFAULT_SYSTEM_CLASSES))
   ? window.DEFAULT_SYSTEM_CLASSES
   : ['ថ្នាក់ ក', 'ថ្នាក់ ខ', 'ថ្នាក់ គ', 'ថ្នាក់ ឃ', 'ថ្នាក់ ង'];
 window.DEFAULT_SYSTEM_CLASSES = DEFAULT_SYSTEM_CLASSES;

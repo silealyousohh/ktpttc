@@ -4,7 +4,7 @@
  * Initial Seed Data & MoEYS Standard Configurations
  */
 
-const DEFAULT_SYSTEM_CLASSES = [
+var DEFAULT_SYSTEM_CLASSES = [
   "ថ្នាក់ ក",
   "ថ្នាក់ ខ",
   "ថ្នាក់ គ",
