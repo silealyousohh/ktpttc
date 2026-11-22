@@ -15003,7 +15003,7 @@ function renderAdminPortalView(container) {
   const pendingRequests = (stmsData.studentRequests || []).filter(r => r.status === 'pending');
 
   let avatarHtml = '';
-  const adminPhoto = (admin.photo && String(admin.photo).trim()) || 'assets/logo_ptec.svg';
+  const adminPhoto = (admin.photo && String(admin.photo).trim()) || 'assets/logo_ptec.png';
   avatarHtml = `<img src="${adminPhoto}" class="trainee-hero-avatar-img" alt="${admin.nameKh}" onerror="this.outerHTML='<span class=\\'trainee-hero-avatar-letter\\'>${initialLetter}</span>'" />`;
 
   // Subject Cards for Admin with Assigned Instructors
