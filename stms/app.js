@@ -434,6 +434,31 @@ function loadData() {
   syncAllSubjects();
   syncTraineeStreams();
 
+  // Migrate legacy class names to new official standard (ថ្នាក់ ក, ថ្នាក់ ខ, etc.)
+  if (Array.isArray(stmsData.timetables)) {
+    stmsData.timetables.forEach(tt => {
+      if (!tt) return;
+      if (tt.className === 'ថ្នាក់បឋម ១២+២ (ក្រុម ក)' || tt.className === 'ថ្នាក់បឋម ១២+២ ក្រុម ក') tt.className = 'ថ្នាក់ ក';
+      else if (tt.className === 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)' || tt.className === 'ថ្នាក់បឋម ១២+២ ក្រុម ខ') tt.className = 'ថ្នាក់ ខ';
+      else if (tt.className === 'ថ្នាក់បឋម ១២+៤') tt.className = 'ថ្នាក់ គ';
+      else if (tt.className === 'ថ្នាក់មត្តេយ្យ ១២+២') tt.className = 'ថ្នាក់ ឃ';
+      if (Array.isArray(tt.schedule)) {
+        tt.schedule.forEach(daySch => {
+          if (Array.isArray(daySch.slots)) {
+            daySch.slots.forEach(slot => {
+              if (slot && slot.className) {
+                if (slot.className === 'ថ្នាក់បឋម ១២+២ (ក្រុម ក)' || slot.className === 'ថ្នាក់បឋម ១២+២ ក្រុម ក') slot.className = 'ថ្នាក់ ក';
+                else if (slot.className === 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)' || slot.className === 'ថ្នាក់បឋម ១២+២ ក្រុម ខ') slot.className = 'ថ្នាក់ ខ';
+                else if (slot.className === 'ថ្នាក់បឋម ១២+៤') slot.className = 'ថ្នាក់ គ';
+                else if (slot.className === 'ថ្នាក់មត្តេយ្យ ១២+២') slot.className = 'ថ្នាក់ ឃ';
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
   // Async restore lessons/files from IndexedDB if any
   idbGet('appdata', 'ktpttc_stms_data_v2').then(idbData => {
     if (idbData && Array.isArray(idbData.lessons) && idbData.lessons.length > (stmsData.lessons || []).length) {
@@ -3026,7 +3051,7 @@ function deleteTraineeRecord(id) {
 // 3. ATTENDANCE MANAGEMENT VIEW (ម៉ូឌុលគ្រប់គ្រងវត្តមាន)
 // ==========================================================================
 let currentAttendanceSession = {
-  className: "ថ្នាក់បឋម ១២+២ ក្រុម ក",
+  className: "ថ្នាក់ ក",
   subjectCode: "PED-101",
   date: new Date().toISOString().split('T')[0],
   records: {}
@@ -3094,10 +3119,9 @@ function renderAttendanceView(container) {
           <div style="flex:1; min-width:180px;">
             <label class="form-label">ជ្រើសរើសថ្នាក់រៀន</label>
             <select class="form-input" onchange="changeAttendanceClass(this.value)">
-              <option value="ថ្នាក់បឋម ១២+២ ក្រុម ក" ${currentAttendanceSession.className==='ថ្នាក់បឋម ១២+២ ក្រុម ក'?'selected':''}>ថ្នាក់បឋម ១២+២ ក្រុម ក</option>
-              <option value="ថ្នាក់បឋម ១២+២ ក្រុម ខ" ${currentAttendanceSession.className==='ថ្នាក់បឋម ១២+២ ក្រុម ខ'?'selected':''}>ថ្នាក់បឋម ១២+២ ក្រុម ខ</option>
-              <option value="ថ្នាក់មត្តេយ្យ ១២+២" ${currentAttendanceSession.className==='ថ្នាក់មត្តេយ្យ ១២+២'?'selected':''}>ថ្នាក់មត្តេយ្យ ១២+២</option>
-              <option value="ថ្នាក់វិក្រឹតការ វគ្គ១" ${currentAttendanceSession.className==='ថ្នាក់វិក្រឹតការ វគ្គ១'?'selected':''}>ថ្នាក់វិក្រឹតការ វគ្គ១</option>
+              ${getAllSystemClasses().map(c => `
+                <option value="${escapeHtml(c)}" ${currentAttendanceSession.className===c?'selected':''}>${escapeHtml(c)}</option>
+              `).join('')}
             </select>
           </div>
 
@@ -3221,7 +3245,7 @@ function saveAttendanceSession() {
 // 4. SUBJECT-WISE GRADING MANAGEMENT VIEW (ម៉ូឌុលគ្រប់គ្រងពិន្ទុតាមមុខវិជ្ជា)
 // ==========================================================================
 let currentGradingSubject = "PED-101";
-let currentGradingClass = "ថ្នាក់បឋម ១២+២ ក្រុម ក";
+let currentGradingClass = "ថ្នាក់ ក";
 
 function renderGradingView(container) {
   const classTrainees = stmsData.trainees.filter(t => t.className === currentGradingClass);
@@ -3290,9 +3314,9 @@ function renderGradingView(container) {
           <div style="flex:1; min-width:200px;">
             <label class="form-label">ថ្នាក់បណ្តុះបណ្តាល</label>
             <select class="form-input" onchange="currentGradingClass=this.value; renderGradingView(document.getElementById('mainContentArea'));">
-              <option value="ថ្នាក់បឋម ១២+២ ក្រុម ក" ${currentGradingClass==='ថ្នាក់បឋម ១២+២ ក្រុម ក'?'selected':''}>ថ្នាក់បឋម ១២+២ ក្រុម ក</option>
-              <option value="ថ្នាក់បឋម ១២+២ ក្រុម ខ" ${currentGradingClass==='ថ្នាក់បឋម ១២+២ ក្រុម ខ'?'selected':''}>ថ្នាក់បឋម ១២+២ ក្រុម ខ</option>
-              <option value="ថ្នាក់មត្តេយ្យ ១២+២" ${currentGradingClass==='ថ្នាក់មត្តេយ្យ ១២+២'?'selected':''}>ថ្នាក់មត្តេយ្យ ១២+២</option>
+              ${getAllSystemClasses().map(c => `
+                <option value="${escapeHtml(c)}" ${currentGradingClass===c?'selected':''}>${escapeHtml(c)}</option>
+              `).join('')}
             </select>
           </div>
         </div>
@@ -3494,6 +3518,11 @@ function saveGradeWeights() {
 // 5. TIMETABLE & SCHEDULING MANAGEMENT (ម៉ូឌុលរៀបចំកាលវិភាគបង្រៀន)
 // ==========================================================================
 
+const DEFAULT_SYSTEM_CLASSES = (typeof window !== 'undefined' && Array.isArray(window.DEFAULT_SYSTEM_CLASSES))
+  ? window.DEFAULT_SYSTEM_CLASSES
+  : ['ថ្នាក់ ក', 'ថ្នាក់ ខ', 'ថ្នាក់ គ', 'ថ្នាក់ ឃ', 'ថ្នាក់ ង'];
+window.DEFAULT_SYSTEM_CLASSES = DEFAULT_SYSTEM_CLASSES;
+
 let currentAdminTimetableClassFilter = 'all';
 let currentAdminTimetableDayFilter = 'all';
 let currentAdminTimetableSemesterFilter = 'ឆមាសទី ១';
@@ -3585,7 +3614,7 @@ function ensureClassTimetable(className) {
   if (!Array.isArray(stmsData.timetables)) {
     stmsData.timetables = [];
   }
-  const cleanClass = (className && typeof className === 'string' && className.trim() && className !== 'all') ? className.trim() : 'ថ្នាក់បឋម ១២+២ (ក្រុម ក)';
+  const cleanClass = (className && typeof className === 'string' && className.trim() && className !== 'all') ? className.trim() : 'ថ្នាក់ ក';
   let tt = stmsData.timetables.find(t => t && t.className === cleanClass);
   
   if (!tt) {
@@ -3747,7 +3776,7 @@ function deleteTimetableSlot(slotId) {
 
 function openSelectTimetableSemesterModal(className) {
   const classes = getAllSystemClasses();
-  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const availableClasses = classes.length > 0 ? classes : DEFAULT_SYSTEM_CLASSES;
   const targetClass = (className && className !== 'all') ? className : (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0]);
 
   const modalHtml = `
@@ -3857,7 +3886,7 @@ window.openSelectTimetableSemesterModal = openSelectTimetableSemesterModal;
 
 function generateStandardTimetableTemplate(className, targetSemester = null) {
   const classes = getAllSystemClasses();
-  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const availableClasses = classes.length > 0 ? classes : DEFAULT_SYSTEM_CLASSES;
   const targetClass = (!className || className === 'all') ? availableClasses[0] : className;
   const sem = targetSemester || currentAdminTimetableSemesterFilter || 'ឆមាសទី ១';
   const effectiveSemester = (sem === 'all') ? 'ឆមាសទី ១' : sem;
@@ -4030,7 +4059,7 @@ function confirmGenerateStandardTimetable(className, chosenSemester = null) {
 
 function openResetTimetableModal(className, semester) {
   const classes = getAllSystemClasses();
-  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const availableClasses = classes.length > 0 ? classes : DEFAULT_SYSTEM_CLASSES;
   const targetClass = (className && className !== 'all') ? className : (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : 'all');
   const targetSemester = semester || currentAdminTimetableSemesterFilter || 'ឆមាសទី ១';
 
@@ -4222,7 +4251,7 @@ window.executeClearTimetableSlots = executeClearTimetableSlots;
 
 function executeResetTimetableToStandard(targetClass = 'all', targetSemester = 'all') {
   const classes = targetClass === 'all' ? getAllSystemClasses() : [targetClass];
-  if (classes.length === 0) classes.push('ថ្នាក់បឋម ១២+២ (ក្រុម ក)');
+  if (classes.length === 0) classes.push('ថ្នាក់ ក');
 
   classes.forEach(cls => {
     ensureClassTimetable(cls);
@@ -4332,7 +4361,7 @@ window.handleTimetableSlotModeChange = handleTimetableSlotModeChange;
 function openAdminAddTimetableSlotModal(defaultClass = '', defaultDay = '', defaultPeriod = '', editingSlotId = null) {
   closeStmsModal();
   const classes = getAllSystemClasses();
-  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const availableClasses = classes.length > 0 ? classes : DEFAULT_SYSTEM_CLASSES;
   const targetClass = (defaultClass && defaultClass !== 'all') ? defaultClass : (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0]);
   const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
   const subjects = KTPTTC_ALL_SUBJECTS;
@@ -4652,7 +4681,7 @@ function submitSaveTimetableSlot() {
 
 function printAdminClassTimetable(className) {
   const classes = getAllSystemClasses();
-  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const availableClasses = classes.length > 0 ? classes : DEFAULT_SYSTEM_CLASSES;
   const targetClass = (!className || className === 'all') ? (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0]) : className;
   const targetSem = currentAdminTimetableSemesterFilter || 'ឆមាសទី ១';
   const slots = getAllTimetableSlots(targetClass, 'all', targetSem);
@@ -4736,7 +4765,7 @@ function printAdminClassTimetable(className) {
 
 function renderAdminTimetableSectionHtml(isStandaloneView = false) {
   const classes = getAllSystemClasses();
-  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const availableClasses = classes.length > 0 ? classes : DEFAULT_SYSTEM_CLASSES;
   const activeClass = currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0];
   const allSlots = getAllTimetableSlots(currentAdminTimetableClassFilter, currentAdminTimetableDayFilter, currentAdminTimetableSemesterFilter);
   const totalSlotsCount = getAllTimetableSlots(currentAdminTimetableClassFilter, 'all', currentAdminTimetableSemesterFilter).length;
@@ -5032,7 +5061,7 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
 
 function renderTimetableView(container) {
   const classes = getAllSystemClasses();
-  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const availableClasses = classes.length > 0 ? classes : DEFAULT_SYSTEM_CLASSES;
   const targetClass = currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0];
 
   let html = `
@@ -5194,12 +5223,23 @@ window.syncAllSubjects = syncAllSubjects;
 function getAllSystemClasses() {
   const classSet = new Set();
   const deleted = Array.isArray(stmsData.deletedClasses) ? stmsData.deletedClasses : [];
+  const legacyPlaceholders = [
+    'ថ្នាក់បឋម ១២+២ (ក្រុម ក)',
+    'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)',
+    'ថ្នាក់បឋម ១២+៤',
+    'ថ្នាក់មត្តេយ្យ ១២+២',
+    'ថ្នាក់បឋម ១២+២ ក្រុម ក',
+    'ថ្នាក់បឋម ១២+២ ក្រុម ខ'
+  ];
   
   // 1. From Cohorts
   (stmsData.cohorts || []).forEach(c => {
     (c.classes || []).forEach(cls => {
-      if (cls && typeof cls === 'string' && cls.trim() && !deleted.includes(cls.trim())) {
-        classSet.add(cls.trim());
+      if (cls && typeof cls === 'string' && cls.trim()) {
+        const trimmed = cls.trim();
+        if (!deleted.includes(trimmed) && !legacyPlaceholders.includes(trimmed)) {
+          classSet.add(trimmed);
+        }
       }
     });
   });
@@ -5207,19 +5247,39 @@ function getAllSystemClasses() {
   // 2. From Custom Classes
   (stmsData.customClasses || []).forEach(c => {
     const name = typeof c === 'string' ? c.trim() : (c && c.name && typeof c.name === 'string' ? c.name.trim() : '');
-    if (name && !deleted.includes(name)) {
+    if (name && !deleted.includes(name) && !legacyPlaceholders.includes(name)) {
       classSet.add(name);
     }
   });
 
   // 3. From Trainees
   (stmsData.trainees || []).forEach(t => {
-    if (t.className && typeof t.className === 'string' && t.className.trim() && !deleted.includes(t.className.trim())) {
-      classSet.add(t.className.trim());
+    if (t.className && typeof t.className === 'string' && t.className.trim()) {
+      const trimmed = t.className.trim();
+      if (!deleted.includes(trimmed) && !legacyPlaceholders.includes(trimmed)) {
+        classSet.add(trimmed);
+      }
     }
   });
 
-  return Array.from(classSet);
+  // 4. Default Official System Classes (ថ្នាក់ ក, ថ្នាក់ ខ, ថ្នាក់ គ, ថ្នាក់ ឃ, ថ្នាក់ ង)
+  DEFAULT_SYSTEM_CLASSES.forEach(clsName => {
+    if (!deleted.includes(clsName)) {
+      classSet.add(clsName);
+    }
+  });
+
+  const result = Array.from(classSet);
+  result.sort((a, b) => {
+    const idxA = DEFAULT_SYSTEM_CLASSES.indexOf(a);
+    const idxB = DEFAULT_SYSTEM_CLASSES.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b, 'km');
+  });
+
+  return result.length > 0 ? result : DEFAULT_SYSTEM_CLASSES;
 }
 window.getAllSystemClasses = getAllSystemClasses;
 
@@ -17979,7 +18039,7 @@ function openAddClassModal(classToEdit = null) {
     }
   }
 
-  const defaultName = existing ? (existing.name || classToEdit) : 'ថ្នាក់បឋម ១២+២ ក្រុម ក';
+  const defaultName = existing ? (existing.name || classToEdit) : 'ថ្នាក់ ក';
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="addClassModalBackdrop" onclick="if(event.target===this) closeClassModal()">
@@ -18017,7 +18077,7 @@ function openAddClassModal(classToEdit = null) {
             </div>
             <div style="position:relative; display:flex; align-items:center;">
               <i class="fas fa-graduation-cap" style="position:absolute; left:14px; color:#64748b; font-size:1rem; pointer-events:none;"></i>
-              <input type="text" id="clsFullName" value="${defaultName}" placeholder="ឧ. ថ្នាក់បឋម ១២+២ ក្រុម ក ឬ បរិញ្ញាបត្រ+១ ក្រុម ខ" required oninput="this.dataset.autoGenerated='false'" style="width:100%; height:44px; padding-left:42px; padding-right:14px; font-size:0.95rem; font-weight:600; color:#1e293b; background:#ffffff; border:1.5px solid #94a3b8; border-radius:9px; outline:none; transition:all 0.2s; box-sizing:border-box;">
+              <input type="text" id="clsFullName" value="${defaultName}" placeholder="ឧ. ថ្នាក់ ក, ថ្នាក់ ខ ឬ ថ្នាក់ គ" required oninput="this.dataset.autoGenerated='false'" style="width:100%; height:44px; padding-left:42px; padding-right:14px; font-size:0.95rem; font-weight:600; color:#1e293b; background:#ffffff; border:1.5px solid #94a3b8; border-radius:9px; outline:none; transition:all 0.2s; box-sizing:border-box;">
             </div>
             <div style="font-size:0.75rem; color:#64748b; margin-top:6px; display:flex; align-items:center; gap:5px;">
               <i class="fas fa-info-circle" style="color:#3b82f6;"></i> ឈ្មោះដែលនឹងត្រូវបង្ហាញនៅក្នុងបញ្ជីសិស្ស តារាងពិន្ទុ និងទម្រង់ចុះឈ្មោះ
@@ -18543,7 +18603,7 @@ window.confirmDeleteCohort = confirmDeleteCohort;
 function openAdminTimetableModal(selectedClass = null, selectedSemester = null, selectedMode = null) {
   closeStmsModal();
   const classes = getAllSystemClasses();
-  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const availableClasses = classes.length > 0 ? classes : DEFAULT_SYSTEM_CLASSES;
   const targetClass = (selectedClass && selectedClass !== 'all') ? selectedClass : (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0]);
   const targetSemester = selectedSemester || currentAdminTimetableSemesterFilter || 'ឆមាសទី ១';
   const targetMode = selectedMode || currentAdminTimetableDeliveryModeFilter || 'all';

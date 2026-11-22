@@ -4,6 +4,14 @@
  * Initial Seed Data & MoEYS Standard Configurations
  */
 
+const DEFAULT_SYSTEM_CLASSES = [
+  "ថ្នាក់ ក",
+  "ថ្នាក់ ខ",
+  "ថ្នាក់ គ",
+  "ថ្នាក់ ឃ",
+  "ថ្នាក់ ង"
+];
+
 const KTPTTC_INITIAL_DATA = {
   institution: {
     nameKh: "សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ",
@@ -21,6 +29,15 @@ const KTPTTC_INITIAL_DATA = {
   ],
 
   cohorts: [],
+
+  // Official System Classes (ថ្នាក់ ក, ថ្នាក់ ខ, ថ្នាក់ គ, ថ្នាក់ ឃ, ថ្នាក់ ង)
+  classes: [
+    { id: "cls-1", name: "ថ្នាក់ ក", room: "បន្ទប់ ១០១", shift: "ព្រឹក" },
+    { id: "cls-2", name: "ថ្នាក់ ខ", room: "បន្ទប់ ១០២", shift: "ព្រឹក" },
+    { id: "cls-3", name: "ថ្នាក់ គ", room: "បន្ទប់ ១០៣", shift: "រសៀល" },
+    { id: "cls-4", name: "ថ្នាក់ ឃ", room: "បន្ទប់ ១០៤", shift: "រសៀល" },
+    { id: "cls-5", name: "ថ្នាក់ ង", room: "បន្ទប់ ១០៥", shift: "ព្រឹក" }
+  ],
 
   // Grade Weight Configurations (Module 2-C)
   gradeWeightConfig: {
@@ -192,9 +209,10 @@ const KTPTTC_INITIAL_DATA = {
 
 // Export for browser & Node
 if (typeof window !== 'undefined') {
+  window.DEFAULT_SYSTEM_CLASSES = DEFAULT_SYSTEM_CLASSES;
   window.KTPTTC_INITIAL_DATA = KTPTTC_INITIAL_DATA;
   window.KTPTTC_DEFAULT_SYLLABI = KTPTTC_INITIAL_DATA.syllabi;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = KTPTTC_INITIAL_DATA;
+  module.exports = { ...KTPTTC_INITIAL_DATA, DEFAULT_SYSTEM_CLASSES };
 }
