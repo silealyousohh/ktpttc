@@ -5663,6 +5663,15 @@ function selectLibrarySubject(code) {
 }
 window.selectLibrarySubject = selectLibrarySubject;
 
+function isStudentSession() {
+  if (currentRole === 'trainee' || currentView === 'trainee-portal') return true;
+  if (document.body && (document.body.classList.contains('role-trainee') || document.body.classList.contains('trainee-mode'))) return true;
+  const authUser = window.authenticatedUser || currentUser;
+  if (authUser && authUser.role === 'trainee') return true;
+  return false;
+}
+window.isStudentSession = isStudentSession;
+
 function openTraineeLibraryModal(initialSubjectFilter = null) {
   if (initialSubjectFilter) {
     window.activeLibrarySubjectFilter = initialSubjectFilter;
@@ -5677,6 +5686,8 @@ function openTraineeLibraryModal(initialSubjectFilter = null) {
 
   const books = stmsData.books || [];
   const activeSubj = window.activeLibrarySubjectFilter || 'ALL';
+  const isStudent = isStudentSession();
+  const canEditOrDelete = !isStudent;
 
   // Available subjects for the Subject Bar (bar មុខវិជ្ជា)
   const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0)
@@ -5838,14 +5849,16 @@ function openTraineeLibraryModal(initialSubjectFilter = null) {
                   <button class="btn btn-primary" style="height:32px; padding:0 12px; font-size:0.78rem; background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:600; display:inline-flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(22,163,74,0.25);" onclick="downloadDigitalBook('${b.id}')" title="ទាញយកឯកសារសៀវភៅ">
                     <i class="fas fa-download"></i> ទាញយក
                   </button>
-                  <div style="display:flex; gap:6px; justify-content:flex-end; margin-top:2px;">
-                    <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem; color:#0284c7; border-color:#bae6fd;" onclick="openUploadBookModal('${b.id}')" title="កែប្រែព័ត៌មានសៀវភៅ">
-                      <i class="fas fa-edit"></i> កែប្រែ
-                    </button>
-                    <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem; color:#ef4444; border-color:#fecaca;" onclick="deleteDigitalBook('${b.id}')" title="លុបសៀវភៅនេះ">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
+                  ${canEditOrDelete ? `
+                    <div style="display:flex; gap:6px; justify-content:flex-end; margin-top:2px;">
+                      <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem; color:#0284c7; border-color:#bae6fd;" onclick="openUploadBookModal('${b.id}')" title="កែប្រែព័ត៌មានសៀវភៅ">
+                        <i class="fas fa-edit"></i> កែប្រែ
+                      </button>
+                      <button class="btn btn-outline" style="height:26px; padding:0 8px; font-size:0.72rem; color:#ef4444; border-color:#fecaca;" onclick="deleteDigitalBook('${b.id}')" title="លុបសៀវភៅនេះ">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  ` : ''}
                 </div>
 
               </div>
@@ -5929,6 +5942,10 @@ function filterDigitalBooks(q) {
 // UPLOAD BOOK MODAL CONTROLLER (មុខងារ Upload & បញ្ចូលសៀវភៅថ្មី)
 // --------------------------------------------------------------------------
 function openUploadBookModal(editBookId = null) {
+  if (editBookId && isStudentSession()) {
+    showToast('⚠️ លក្ខខណ្ឌនៃការប្រើប្រាស់៖ គរុនិស្សិត (សិស្ស) មិនត្រូវបានអនុញ្ញាតឱ្យកែប្រែព័ត៌មានសៀវភៅឡើយ!', 'warning');
+    return;
+  }
   const bookToEdit = editBookId ? (stmsData.books || []).find(b => b.id === editBookId) : null;
   window.pendingBookFileData = null;
   window.pendingBookCoverData = bookToEdit && bookToEdit.coverUrl ? bookToEdit.coverUrl : null;
@@ -6196,6 +6213,10 @@ function handleBookCoverSelect(input) {
 }
 
 async function submitNewDigitalBook(editBookId = '') {
+  if (editBookId && isStudentSession()) {
+    showToast('⚠️ លក្ខខណ្ឌនៃការប្រើប្រាស់៖ គរុនិស្សិត (សិស្ស) មិនត្រូវបានអនុញ្ញាតឱ្យកែប្រែព័ត៌មានសៀវភៅឡើយ!', 'warning');
+    return;
+  }
   const titleEl = document.getElementById('bookTitleInput');
   const authorEl = document.getElementById('bookAuthorInput');
   const catEl = document.getElementById('bookCategoryInput');
@@ -6292,6 +6313,10 @@ async function submitNewDigitalBook(editBookId = '') {
 }
 
 function deleteDigitalBook(bookId) {
+  if (isStudentSession()) {
+    showToast('⚠️ លក្ខខណ្ឌនៃការប្រើប្រាស់៖ គរុនិស្សិត (សិស្ស) មិនត្រូវបានអនុញ្ញាតឱ្យលុបសៀវភៅក្នុងប្រព័ន្ធឡើយ!', 'warning');
+    return;
+  }
   const b = (stmsData.books || []).find(x => x.id === bookId);
   const title = b ? b.title : 'សៀវភៅនេះ';
   if (!confirm(`តើអ្នកពិតជាចង់លុបសៀវភៅ «${title}» ចេញពីបណ្ណាល័យឌីជីថលមែនទេ?`)) return;
