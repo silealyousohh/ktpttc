@@ -343,11 +343,19 @@ function loadData() {
           if (!u.status) u.status = 'active';
         });
 
-        // Purge mock faculty teachers (USR-TRN-002 through USR-TRN-008)
-        const mockTeacherIds = ['USR-TRN-002', 'USR-TRN-003', 'USR-TRN-004', 'USR-TRN-005', 'USR-TRN-006', 'USR-TRN-007', 'USR-TRN-008'];
-        const mockTeacherNames = ['លោកស្រី ជា រចនា', 'លោកស្រី ម៉ៅ សុភា', 'លោក គង់ វិចិត្រ', 'លោក អ៊ុំ សុវណ្ណ', 'លោក ព្រុំ សម្បត្តិ', 'លោក ព្រំ សម្បត្តិ', 'លោកស្រី នួន ចរិយា', 'លោក ឡុង វិសិដ្ឋ'];
+        // Purge mock faculty teachers (only if BOTH mock ID and mock name match)
+        const mockFacultyPairs = [
+          { id: 'USR-TRN-002', nameKh: 'លោកស្រី ជា រចនា' },
+          { id: 'USR-TRN-003', nameKh: 'លោកស្រី ម៉ៅ សុភា' },
+          { id: 'USR-TRN-004', nameKh: 'លោក គង់ វិចិត្រ' },
+          { id: 'USR-TRN-005', nameKh: 'លោក អ៊ុំ សុវណ្ណ' },
+          { id: 'USR-TRN-006', nameKh: 'លោក ព្រុំ សម្បត្តិ' },
+          { id: 'USR-TRN-006', nameKh: 'លោក ព្រំ សម្បត្តិ' },
+          { id: 'USR-TRN-007', nameKh: 'លោកស្រី នួន ចរិយា' },
+          { id: 'USR-TRN-008', nameKh: 'លោក ឡុង វិសិដ្ឋ' }
+        ];
         const prevCount = stmsData.users.length;
-        stmsData.users = stmsData.users.filter(u => !u || (!mockTeacherIds.includes(u.id) && !mockTeacherNames.includes(u.nameKh)));
+        stmsData.users = stmsData.users.filter(u => !u || !mockFacultyPairs.some(m => m.id === u.id && m.nameKh === u.nameKh));
         if (stmsData.users.length !== prevCount) {
           saveData();
         }
@@ -369,6 +377,9 @@ function loadData() {
       }
       if (!Array.isArray(stmsData.customClasses)) {
         stmsData.customClasses = [];
+      }
+      if (!Array.isArray(stmsData.deletedClasses)) {
+        stmsData.deletedClasses = [];
       }
     } else {
       stmsData = JSON.parse(JSON.stringify(window.KTPTTC_INITIAL_DATA || {}));
@@ -4381,23 +4392,30 @@ window.syncAllSubjects = syncAllSubjects;
 
 function getAllSystemClasses() {
   const classSet = new Set();
+  const deleted = Array.isArray(stmsData.deletedClasses) ? stmsData.deletedClasses : [];
   
   // 1. From Cohorts
   (stmsData.cohorts || []).forEach(c => {
     (c.classes || []).forEach(cls => {
-      if (cls && typeof cls === 'string' && cls.trim()) classSet.add(cls.trim());
+      if (cls && typeof cls === 'string' && cls.trim() && !deleted.includes(cls.trim())) {
+        classSet.add(cls.trim());
+      }
     });
   });
 
   // 2. From Custom Classes
   (stmsData.customClasses || []).forEach(c => {
-    if (typeof c === 'string' && c.trim()) classSet.add(c.trim());
-    else if (c && c.name && typeof c.name === 'string' && c.name.trim()) classSet.add(c.name.trim());
+    const name = typeof c === 'string' ? c.trim() : (c && c.name && typeof c.name === 'string' ? c.name.trim() : '');
+    if (name && !deleted.includes(name)) {
+      classSet.add(name);
+    }
   });
 
   // 3. From Trainees
   (stmsData.trainees || []).forEach(t => {
-    if (t.className && typeof t.className === 'string' && t.className.trim()) classSet.add(t.className.trim());
+    if (t.className && typeof t.className === 'string' && t.className.trim() && !deleted.includes(t.className.trim())) {
+      classSet.add(t.className.trim());
+    }
   });
 
   return Array.from(classSet);
@@ -15328,10 +15346,141 @@ function deleteAdminTeacher(userId) {
   }
 }
 
-// Add New Teacher Controller - Navigates to full standard Add Teacher Form
+function getNextTeacherId() {
+  const trainers = (stmsData.users || []).filter(u => u && u.role === 'trainer');
+  let maxNum = 0;
+  trainers.forEach(t => {
+    const m = String(t.id || '').match(/USR-TRN-(\d+)/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > maxNum) maxNum = n;
+    }
+  });
+  return `USR-TRN-${String(maxNum + 1).padStart(3, '0')}`;
+}
+window.getNextTeacherId = getNextTeacherId;
+
+// Add New Teacher Modal - Direct in-app interactive modal with option to open full page
 function openAdminAddTeacherModal() {
   closeStmsModal();
-  window.location.href = 'add-student.html?role=teacher';
+  const nextId = getNextTeacherId();
+  const subjects = stmsData.subjects || [];
+  const classes = getAllSystemClasses();
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="adminTeacherAddModal" onclick="if(event.target===this) closeStmsModal()">
+      <div class="stms-modal-window" style="max-width:720px; width:95%; max-height:92vh;">
+        <div class="modal-header-bar" style="background:linear-gradient(135deg, #1e3a8a, #2563eb); color:#fff; border-radius:12px 12px 0 0; padding:16px 22px;">
+          <div class="modal-header-title" style="color:#fff; font-size:1.15rem; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-chalkboard-teacher" style="color:#67e8f9;"></i>
+            <span>ចុះឈ្មោះគ្រូឧទ្ទេសថ្មី (Register New Teacher / Faculty)</span>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#fff;">&times;</button>
+        </div>
+        <div class="modal-body-scroll" style="padding:22px; max-height:78vh; overflow-y:auto;">
+          <form onsubmit="saveAdminTeacher(event)">
+            
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; margin-bottom:18px; font-size:0.82rem; color:#1e40af; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <div><i class="fas fa-info-circle"></i> បំពេញព័ត៌មានគ្រូឧទ្ទេសថ្មីខាងក្រោម ឬចុចបើកទម្រង់ពេញលេញ។</div>
+              <a href="add-student.html?role=teacher" style="color:#2563eb; font-weight:700; text-decoration:underline;">
+                <i class="fas fa-external-link-alt"></i> បើកទម្រង់ពេញលេញ (Full Form)
+              </a>
+            </div>
+
+            <!-- Row 1: ID & Khmer Name -->
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">អត្តលេខគ្រូឧទ្ទេស (Teacher ID)*</label>
+                <input type="text" id="trnId" class="form-input" value="${nextId}" required oninput="const u=document.getElementById('trnUsername'); if(u) u.value = this.value.trim().toLowerCase();">
+              </div>
+              <div>
+                <label class="form-label">គោត្តនាម និងនាម (ខ្មែរ)*</label>
+                <input type="text" id="trnNameKh" class="form-input" placeholder="ឧ. លោក សុខ សាន" required autofocus>
+              </div>
+            </div>
+
+            <!-- Row 2: Latin Name & Gender -->
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">ឈ្មោះជាអក្សរឡាតាំង (Latin Name)</label>
+                <input type="text" id="trnNameEn" class="form-input" placeholder="ឧ. Sok San">
+              </div>
+              <div>
+                <label class="form-label">ភេទ*</label>
+                <select id="trnGender" class="form-input" required>
+                  <option value="ប្រុស">ប្រុស (Male)</option>
+                  <option value="ស្រី">ស្រី (Female)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Row 3: Subject & Qualification -->
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">មុខវិជ្ជាទទួលបន្ទុក*</label>
+                <select id="trnSubject" class="form-input" required>
+                  ${subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="form-label">កម្រិតវប្បធម៌ / ឯកទេស</label>
+                <input type="text" id="trnQual" class="form-input" placeholder="ឧ. បរិញ្ញាបត្រ, អនុបណ្ឌិត..." value="បរិញ្ញាបត្រ">
+              </div>
+            </div>
+
+            <!-- Row 4: Assigned Classes (Multi-select Checkboxes) -->
+            <div style="margin-bottom:16px;">
+              <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fas fa-chalkboard"></i> ថ្នាក់ទទួលបន្ទុកបង្រៀន</span>
+                <span style="font-size:0.75rem; color:#64748b; font-weight:normal;">(អាចជ្រើសរើសលើសពី១)</span>
+              </label>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+                ${classes.length > 0 ? classes.map(cls => `
+                  <label style="display:inline-flex; align-items:center; gap:6px; font-size:0.82rem; cursor:pointer; background:#fff; padding:4px 10px; border-radius:6px; border:1px solid #cbd5e1;">
+                    <input type="checkbox" name="trnAssignedClass" value="${escapeHtml(cls)}" checked>
+                    <span>${escapeHtml(cls)}</span>
+                  </label>
+                `).join('') : '<span style="font-size:0.8rem; color:#94a3b8;">មិនទាន់មានថ្នាក់</span>'}
+              </div>
+            </div>
+
+            <!-- Row 5: Phone & Email -->
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">លេខទូរស័ព្ទ (Phone)*</label>
+                <input type="tel" id="trnPhone" class="form-input" placeholder="ឧ. 012 345 678" required>
+              </div>
+              <div>
+                <label class="form-label">អ៊ីមែល (Email)</label>
+                <input type="email" id="trnEmail" class="form-input" placeholder="ឧ. soksan@ktpttc.edu.kh">
+              </div>
+            </div>
+
+            <!-- Row 6: Username & Password -->
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">ឈ្មោះគណនី Login (Username)*</label>
+                <input type="text" id="trnUsername" class="form-input" value="${nextId.toLowerCase()}" required autocomplete="off">
+              </div>
+              <div>
+                <label class="form-label">ពាក្យសម្ងាត់ (Password)*</label>
+                <input type="text" id="trnPassword" class="form-input" value="ktpttc123" required autocomplete="off">
+              </div>
+            </div>
+
+            <div class="modal-footer-bar" style="padding:18px 0 0 0; background:none; border-top:1px solid #e2e8f0; margin-top:14px; display:flex; justify-content:flex-end; gap:10px;">
+              <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
+              <button type="submit" class="btn btn-primary" style="padding:0 22px;">
+                <i class="fas fa-save"></i> រក្សាទុកគ្រូឧទ្ទេសថ្មី
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 window.openAdminAddTeacherModal = openAdminAddTeacherModal;
 
@@ -15360,7 +15509,7 @@ function updateAdminTeacher(id, e) {
   const username = document.getElementById('editTrnUsername').value.trim();
   const password = document.getElementById('editTrnPassword').value.trim();
 
-  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subject);
+  const subj = (stmsData.subjects || []).find(s => s.code === subject);
 
   tr.gender = gender;
   tr.nameKh = nameKh;
@@ -15391,20 +15540,40 @@ function updateAdminTeacher(id, e) {
 // Save New Teacher
 function saveAdminTeacher(e) {
   e.preventDefault();
-  const id = document.getElementById('trnId').value;
+  const id = document.getElementById('trnId').value.trim();
   const nameKh = document.getElementById('trnNameKh').value.trim();
   const nameEn = document.getElementById('trnNameEn').value.trim();
   const gender = document.getElementById('trnGender').value;
   const dob = document.getElementById('trnDob')?.value || '1985-05-15';
   const pob = (document.getElementById('trnPob')?.value || 'ខេត្តក្រចេះ').trim();
-  const qualification = (document.getElementById('trnQual')?.value || 'អនុបណ្ឌិតគរុកោសល្យ').trim();
+  const qualification = (document.getElementById('trnQual')?.value || 'បរិញ្ញាបត្រ').trim();
   const phone = document.getElementById('trnPhone').value.trim();
   const email = document.getElementById('trnEmail').value.trim();
   const subject = document.getElementById('trnSubject').value;
-  const username = document.getElementById('trnUsername').value.trim();
+  const username = document.getElementById('trnUsername').value.trim().toLowerCase();
   const password = document.getElementById('trnPassword').value.trim();
 
-  const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subject);
+  if (!id || !nameKh || !username || !password) {
+    showToast('សូមបំពេញព័ត៌មានចាំបាច់ឱ្យបានពេញលេញ!', 'error');
+    return;
+  }
+
+  // Check unique username
+  const dupUser = (stmsData.users || []).find(u => u.username && u.username.toLowerCase() === username && u.id !== id);
+  if (dupUser) {
+    showToast(`ឈ្មោះគណនី «${username}» មានរួចហើយ! សូមប្តូរ Username ផ្សេង។`, 'error');
+    return;
+  }
+
+  const subj = (stmsData.subjects || []).find(s => s.code === subject);
+
+  // Collect checked assigned classes
+  const assignedClasses = [];
+  document.querySelectorAll('input[name="trnAssignedClass"]:checked').forEach(cb => {
+    if (cb.value && !assignedClasses.includes(cb.value.trim())) {
+      assignedClasses.push(cb.value.trim());
+    }
+  });
 
   const newTeacher = {
     id,
@@ -15422,24 +15591,35 @@ function saveAdminTeacher(e) {
     phone: phone || '012 000 000',
     subject,
     subjectName: subj ? subj.nameKh : '',
+    assignedClasses,
+    classes: assignedClasses,
     status: "active",
     avatar: gender === 'ស្រី' ? '👩‍🏫' : '👨‍🏫'
   };
 
   if (!Array.isArray(stmsData.users)) stmsData.users = [];
-  stmsData.users.push(newTeacher);
+  const existingIdx = stmsData.users.findIndex(u => u.id === id || (u.username && u.username.toLowerCase() === username));
+  if (existingIdx !== -1) {
+    stmsData.users[existingIdx] = { ...stmsData.users[existingIdx], ...newTeacher };
+  } else {
+    stmsData.users.push(newTeacher);
+  }
+
   saveData();
   closeStmsModal();
+  showToast(`🎉 បានចុះឈ្មោះគ្រូឧទ្ទេស «${nameKh}» (${id}) ដោយជោគជ័យ!`, 'success');
 
-  showToast(`🎉 បានចុះឈ្មោះគ្រូឧទ្ទេស «${nameKh}» ដោយជោគជ័យ!`, 'success');
   if (currentView === 'trainers') {
     renderTrainersView(document.getElementById('mainContentArea'));
   } else if (currentView === 'admin-portal') {
     renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'rbac') {
+    renderRBACView(document.getElementById('mainContentArea'));
   } else {
     navigateView('trainers');
   }
 }
+window.saveAdminTeacher = saveAdminTeacher;
 
 // --------------------------------------------------------------------------
 // 4. ADMIN MODAL 2: គ្រប់គ្រងគរុនិស្សិត (TRAINEE TEACHER ROSTER MANAGEMENT)
@@ -16153,6 +16333,11 @@ function saveClassModal(event, isEdit, origName) {
     stmsData.customClasses.push(classObj);
   }
 
+  // Clear from deletedClasses blacklist if re-created or renamed
+  if (Array.isArray(stmsData.deletedClasses)) {
+    stmsData.deletedClasses = stmsData.deletedClasses.filter(c => c !== name && c !== origName);
+  }
+
   // Ensure class is present in parent cohort's classes list
   if (parentCohort) {
     if (!Array.isArray(parentCohort.classes)) parentCohort.classes = [];
@@ -16178,23 +16363,59 @@ function confirmDeleteClass(className) {
 
   let msg = `តើលោកអ្នកពិតជាចង់លុបថ្នាក់ «${className}» មែនទេ?`;
   if (stuCount > 0) {
-    msg = `⚠️ ថ្នាក់ «${className}» មានគរុសិស្សចំនួន ${stuCount} នាក់កំពុងសិក្សា!\n\nប្រសិនបើលោកអ្នកលុបថ្នាក់នេះ គរុសិស្សទាំងនោះនឹងនៅតែរក្សាទុកក្នុងប្រព័ន្ធ។\nតើលោកអ្នកពិតជាចង់បន្តការលុបថ្នាក់នេះមែនទេ?`;
+    msg = `⚠️ ថ្នាក់ «${className}» មានគរុនិស្សិតចំនួន ${stuCount} នាក់កំពុងសិក្សា!\n\nតើលោកអ្នកពិតជាចង់លុបថ្នាក់នេះចេញពីប្រព័ន្ធមែនទេ? (គរុនិស្សិតទាំងអស់នឹងត្រូវបានផ្ទេរ ឬរក្សាទុកក្នុងប្រព័ន្ធដោយសុវត្ថិភាព)`;
   }
 
   if (!confirm(msg)) return;
 
-  // Remove from customClasses
+  // 1. Add to deletedClasses blacklist to prevent resurrection
+  if (!Array.isArray(stmsData.deletedClasses)) stmsData.deletedClasses = [];
+  if (!stmsData.deletedClasses.includes(className)) {
+    stmsData.deletedClasses.push(className);
+  }
+
+  // 2. Remove from customClasses
   if (Array.isArray(stmsData.customClasses)) {
     stmsData.customClasses = stmsData.customClasses.filter(c => (c.name || c) !== className);
   }
 
-  // Remove from cohorts
+  // 3. Remove from cohorts
   if (Array.isArray(stmsData.cohorts)) {
     stmsData.cohorts.forEach(c => {
       if (Array.isArray(c.classes)) {
         c.classes = c.classes.filter(cls => cls !== className);
       }
     });
+  }
+
+  // 4. Safely reassign or clear students enrolled in this deleted class
+  const remainingClasses = getAllSystemClasses().filter(c => c !== className);
+  // Smart fallback: if deleting a subgroup like 'បរិញ្ញាបត្រ+១ ក្រុម ក', merge into base class 'បរិញ្ញាបត្រ+១'
+  const fallbackClass = remainingClasses.find(c => className.startsWith(c)) || remainingClasses[0] || '';
+
+  if (Array.isArray(stmsData.trainees)) {
+    stmsData.trainees.forEach(t => {
+      if (t.className === className) {
+        t.className = fallbackClass;
+      }
+    });
+  }
+
+  // 5. Clean up trainers assigned classes
+  if (Array.isArray(stmsData.users)) {
+    stmsData.users.forEach(u => {
+      if (Array.isArray(u.assignedClasses)) {
+        u.assignedClasses = u.assignedClasses.filter(cls => cls !== className);
+      }
+      if (Array.isArray(u.classes)) {
+        u.classes = u.classes.filter(cls => cls !== className);
+      }
+    });
+  }
+
+  // 6. Clean up timetable items for this class
+  if (Array.isArray(stmsData.timetables)) {
+    stmsData.timetables = stmsData.timetables.filter(item => item.className !== className);
   }
 
   saveData();

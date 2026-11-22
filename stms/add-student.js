@@ -195,14 +195,22 @@ function saveStudentsToStorage(list) {
 // Get saved teachers array from localStorage
 function getSavedTeachers() {
   try {
-    const mockTeacherIds = ['USR-TRN-003', 'USR-TRN-004', 'USR-TRN-005', 'USR-TRN-006', 'USR-TRN-007', 'USR-TRN-008'];
-    const mockTeacherNames = ['លោកស្រី ម៉ៅ សុភា', 'លោក គង់ វិចិត្រ', 'លោក អ៊ុំ សុវណ្ណ', 'លោក ព្រុំ សម្បត្តិ', 'លោកស្រី នួន ចរិយា', 'លោក ឡុង វិសិដ្ឋ'];
+    const mockFacultyPairs = [
+      { id: 'USR-TRN-002', nameKh: 'លោកស្រី ជា រចនា' },
+      { id: 'USR-TRN-003', nameKh: 'លោកស្រី ម៉ៅ សុភា' },
+      { id: 'USR-TRN-004', nameKh: 'លោក គង់ វិចិត្រ' },
+      { id: 'USR-TRN-005', nameKh: 'លោក អ៊ុំ សុវណ្ណ' },
+      { id: 'USR-TRN-006', nameKh: 'លោក ព្រុំ សម្បត្តិ' },
+      { id: 'USR-TRN-006', nameKh: 'លោក ព្រំ សម្បត្តិ' },
+      { id: 'USR-TRN-007', nameKh: 'លោកស្រី នួន ចរិយា' },
+      { id: 'USR-TRN-008', nameKh: 'លោក ឡុង វិសិដ្ឋ' }
+    ];
 
     const rawStms = localStorage.getItem('ktpttc_stms_data_v2');
     if (rawStms) {
       const parsed = JSON.parse(rawStms);
       if (parsed && Array.isArray(parsed.users)) {
-        const cleanUsers = parsed.users.filter(u => !u || (!mockTeacherIds.includes(u.id) && !mockTeacherNames.includes(u.nameKh)));
+        const cleanUsers = parsed.users.filter(u => !u || !mockFacultyPairs.some(m => m.id === u.id && m.nameKh === u.nameKh));
         if (cleanUsers.length !== parsed.users.length) {
           parsed.users = cleanUsers;
           localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(parsed));
@@ -211,7 +219,7 @@ function getSavedTeachers() {
       }
     }
     if (window.KTPTTC_INITIAL_DATA && Array.isArray(window.KTPTTC_INITIAL_DATA.users)) {
-      return window.KTPTTC_INITIAL_DATA.users.filter(u => u && u.role === 'trainer' && !mockTeacherIds.includes(u.id) && !mockTeacherNames.includes(u.nameKh));
+      return window.KTPTTC_INITIAL_DATA.users.filter(u => u && u.role === 'trainer' && !mockFacultyPairs.some(m => m.id === u.id && m.nameKh === u.nameKh));
     }
   } catch (e) {
     console.error(e);
@@ -410,7 +418,15 @@ function initStudentIdSuggestion() {
 // Auto-suggest next Teacher ID & default Username / Email
 function initTeacherIdSuggestion() {
   const teachers = getSavedTeachers();
-  const nextNumber = teachers.length + 1;
+  let maxNum = 0;
+  teachers.forEach(t => {
+    const m = String(t.id || '').match(/USR-TRN-(\d+)/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > maxNum) maxNum = n;
+    }
+  });
+  const nextNumber = maxNum + 1;
   const idInput = document.getElementById('regTeacherId');
   const uInput = document.getElementById('regTeacherUsername');
   const emailInput = document.getElementById('regTeacherEmail');
@@ -1761,20 +1777,22 @@ window.handleSaveStudent = handleSaveStudent;
 
 // 2. SAVE TEACHER
 function handleSaveTeacher() {
-  const id = document.getElementById('regTeacherId')?.value?.trim();
+  const id = (document.getElementById('regTeacherId')?.value || '').trim();
   const subject = document.getElementById('regTeacherSubject')?.value || 'PED-101';
-  const qualification = document.getElementById('regTeacherQual')?.value?.trim() || 'អនុបណ្ឌិតគរុកោសល្យ';
-  const nameKh = document.getElementById('regTeacherNameKh')?.value?.trim();
-  const nameEn = document.getElementById('regTeacherNameEn')?.value?.trim() || '';
+  const qualification = (document.getElementById('regTeacherQual')?.value || 'អនុបណ្ឌិតគរុកោសល្យ').trim();
+  const nameKh = (document.getElementById('regTeacherNameKh')?.value || '').trim();
+  const nameEn = (document.getElementById('regTeacherNameEn')?.value || '').trim();
   const gender = document.getElementById('regTeacherGender')?.value || 'ប្រុស';
   const dob = document.getElementById('regTeacherDob')?.value || '1985-05-15';
   const age = document.getElementById('regTeacherAge')?.value || '';
-  const phone = document.getElementById('regTeacherPhone')?.value?.trim() || '';
-  const email = document.getElementById('regTeacherEmail')?.value?.trim() || `${id.toLowerCase()}@ktpttc.edu.kh`;
-  const username = (document.getElementById('regTeacherUsername')?.value || id).trim().toLowerCase();
+  const phone = (document.getElementById('regTeacherPhone')?.value || '').trim();
+  const usernameInput = (document.getElementById('regTeacherUsername')?.value || id || 'trainer').trim().toLowerCase();
+  const emailInput = (document.getElementById('regTeacherEmail')?.value || '').trim();
+  const email = emailInput || (id ? `${id.toLowerCase()}@ktpttc.edu.kh` : `${usernameInput}@ktpttc.edu.kh`);
+  const username = usernameInput;
   const password = (document.getElementById('regTeacherPassword')?.value || 'ktpttc123').trim();
-  const roleTitle = document.getElementById('regTeacherRoleTitle')?.value?.trim() || 'គ្រូឧទ្ទេសពេញម៉ោង';
-  const experience = document.getElementById('regTeacherExperience')?.value?.trim() || '';
+  const roleTitle = (document.getElementById('regTeacherRoleTitle')?.value || 'គ្រូឧទ្ទេសពេញម៉ោង').trim();
+  const experience = (document.getElementById('regTeacherExperience')?.value || '').trim();
 
   if (!id || !nameKh) {
     showToast('សូមបំពេញអត្តលេខ និងឈ្មោះគ្រូឧទ្ទេស (ខ្មែរ) ឱ្យបានគ្រប់ជ្រុងជ្រោយ!', 'error');
@@ -1876,6 +1894,7 @@ function handleSaveTeacher() {
   }
 
   localStorage.setItem('ktpttc_stms_data_v2', JSON.stringify(stmsObj));
+  syncStmsToServer(stmsObj);
 
   // Sync active session if this teacher is currently logged in
   try {
@@ -1896,14 +1915,14 @@ function handleSaveTeacher() {
 
   if (isEdit) {
     showToast(`🎉 បានកែប្រែព័ត៌មានគ្រូឧទ្ទេស «${nameKh}» ដោយជោគជ័យ!`, 'success');
-    sessionStorage.setItem('stms_target_view', 'trainers');
-    setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 1200);
   } else {
     showToast(`🎉 បានចុះឈ្មោះគ្រូឧទ្ទេស «${nameKh}» (${id}) ដោយជោគជ័យ!`, 'success');
-    resetFormForNextTeacher();
   }
+  
+  sessionStorage.setItem('stms_target_view', 'trainers');
+  setTimeout(() => {
+    window.location.href = 'index.html';
+  }, 1200);
 }
 window.handleSaveTeacher = handleSaveTeacher;
 
