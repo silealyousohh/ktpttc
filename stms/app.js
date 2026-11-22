@@ -4028,6 +4028,261 @@ function confirmGenerateStandardTimetable(className, chosenSemester = null) {
   openSelectTimetableSemesterModal(targetClass);
 }
 
+function openResetTimetableModal(className, semester) {
+  const classes = getAllSystemClasses();
+  const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
+  const targetClass = (className && className !== 'all') ? className : (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : 'all');
+  const targetSemester = semester || currentAdminTimetableSemesterFilter || 'ឆមាសទី ១';
+
+  const modalHtml = `
+    <div class="stms-modal-backdrop" id="resetTimetableModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); backdrop-filter:blur(4px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px;">
+      <div class="stms-modal-box" style="background:#ffffff; border-radius:14px; width:100%; max-width:560px; box-shadow:0 20px 40px rgba(0,0,0,0.25); overflow:hidden; animation:modalPopIn 0.25s ease-out;">
+        
+        <!-- Modal Header -->
+        <div class="stms-modal-header" style="background:linear-gradient(135deg, #b91c1c 0%, #dc2626 100%); padding:18px 22px; display:flex; justify-content:space-between; align-items:center; color:#ffffff;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.15rem; color:#ffffff;">
+              <i class="fas fa-rotate-left"></i>
+            </div>
+            <div>
+              <h3 style="color:#ffffff; font-size:1.12rem; margin:0; font-weight:800;">
+                កំណត់កាលវិភាគឡើងវិញ (Reset Timetable)
+              </h3>
+              <p style="color:#fee2e2; font-size:0.78rem; margin:2px 0 0 0;">
+                ជ្រើសរើសវិសាលភាព និងទម្រង់កំណត់កាលវិភាគឡើងវិញ
+              </p>
+            </div>
+          </div>
+          <button class="modal-close-icon" onclick="closeStmsModal()" style="color:#ffffff; border:none; background:transparent; font-size:1.4rem; cursor:pointer;" title="បិទ">&times;</button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="stms-modal-body" style="padding:20px;">
+          
+          <!-- Scope Selection: Class & Semester -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+            <div>
+              <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                <i class="fas fa-school" style="color:#dc2626;"></i> ថ្នាក់គោលដៅ (Class):
+              </label>
+              <select id="resetTimetableClassSelect" class="form-control" style="width:100%; font-size:0.82rem; height:36px; border:1px solid #cbd5e1; border-radius:8px; padding:0 8px; font-weight:600; color:#1e293b;">
+                <option value="all" ${targetClass === 'all' ? 'selected' : ''}>-- គ្រប់ថ្នាក់ទាំងអស់ (${availableClasses.length} ថ្នាក់) --</option>
+                ${availableClasses.map(c => `
+                  <option value="${escapeHtml(c)}" ${targetClass === c ? 'selected' : ''}>${escapeHtml(c)}</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                <i class="fas fa-layer-group" style="color:#dc2626;"></i> ឆមាសសិក្សា (Semester):
+              </label>
+              <select id="resetTimetableSemesterSelect" class="form-control" style="width:100%; font-size:0.82rem; height:36px; border:1px solid #cbd5e1; border-radius:8px; padding:0 8px; font-weight:600; color:#1e293b;">
+                <option value="ឆមាសទី ១" ${targetSemester === 'ឆមាសទី ១' ? 'selected' : ''}>ឆមាសទី ១ (អនឡាញ + ផ្ទាល់)</option>
+                <option value="ឆមាសទី ២" ${targetSemester === 'ឆមាសទី ២' ? 'selected' : ''}>ឆមាសទី ២ (អនុវត្ត & កម្មសិក្សា)</option>
+                <option value="all" ${targetSemester === 'all' ? 'selected' : ''}>គ្រប់ឆមាសទាំងអស់</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Reset Mode Options -->
+          <label style="display:block; font-size:0.8rem; font-weight:800; color:#1e293b; margin-bottom:8px;">
+            <i class="fas fa-sliders-h" style="color:#dc2626;"></i> ជ្រើសរើសជម្រើស Reset (Reset Mode):
+          </label>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            
+            <!-- Option 1: Reset to MoEYS Standard Template (Recommended) -->
+            <label id="cardResetModeStandard" style="display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:2px solid #2563eb; background:#eff6ff; border-radius:10px; cursor:pointer; transition:all 0.2s;" onclick="highlightResetOption('standard')">
+              <input type="radio" name="resetTimetableMode" id="resetModeStandard" value="standard_template" checked style="margin-top:4px; cursor:pointer;" onchange="highlightResetOption('standard')">
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:3px;">
+                  <span style="font-size:0.85rem; font-weight:800; color:#1e40af; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-magic" style="color:#2563eb;"></i> ស្ដារទៅកាលវិភាគគំរូដើម MoEYS KTPTTC
+                  </span>
+                  <span style="background:#dbeafe; color:#1d4ed8; font-size:0.7rem; font-weight:800; padding:2px 8px; border-radius:10px;">
+                    ណែនាំ
+                  </span>
+                </div>
+                <div style="font-size:0.76rem; color:#475569; line-height:1.5;">
+                  សម្អាតទិន្នន័យចាស់ ហើយជំនួសដោយកាលវិភាគស្តង់ដារ MoEYS KTPTTC ផ្លូវការ (សម្រាប់ឆមាសទី ១៖ ចន្ទ-សុក្រ អនឡាញ ៧ មុខវិជ្ជា និងសៅរ៍-អាទិត្យ រៀនផ្ទាល់ ១២ មុខវិជ្ជា)។
+                </div>
+              </div>
+            </label>
+
+            <!-- Option 2: Clear / Wipe All Slots -->
+            <label id="cardResetModeClear" style="display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid #e2e8f0; background:#f8fafc; border-radius:10px; cursor:pointer; transition:all 0.2s;" onclick="highlightResetOption('clear')">
+              <input type="radio" name="resetTimetableMode" id="resetModeClear" value="clear_all" style="margin-top:4px; cursor:pointer;" onchange="highlightResetOption('clear')">
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:3px;">
+                  <span style="font-size:0.85rem; font-weight:800; color:#991b1b; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-trash-alt" style="color:#dc2626;"></i> សម្អាតម៉ោងសិក្សាទាំងអស់ (Clear Slots)
+                  </span>
+                  <span style="background:#fee2e2; color:#b91c1c; font-size:0.7rem; font-weight:800; padding:2px 8px; border-radius:10px;">
+                    ទទេស្អាត
+                  </span>
+                </div>
+                <div style="font-size:0.76rem; color:#475569; line-height:1.5;">
+                  លុបម៉ោងបង្រៀនទាំងអស់ក្នុងថ្នាក់ និងឆមាសដែលបានជ្រើសរើសចោល ដើម្បីឱ្យលោកអ្នករៀបចំកាលវិភាគថ្មីពីដំបូងដោយខ្លួនឯង។
+                </div>
+              </div>
+            </label>
+
+          </div>
+
+          <!-- Warning Notice -->
+          <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:10px 14px; margin-top:14px; font-size:0.77rem; color:#be123c; display:flex; align-items:flex-start; gap:8px;">
+            <i class="fas fa-exclamation-triangle" style="font-size:0.95rem; margin-top:2px; color:#e11d48;"></i>
+            <div style="line-height:1.5;">
+              <strong>ការព្រមាន៖</strong> សកម្មភាព Reset នេះនឹងលុបកាលវិភាគចាស់ដែលកំពុងប្រើប្រាស់ក្នុងវិសាលភាពខាងលើ។ សូមពិនិត្យឱ្យបានច្បាស់លាស់មុននឹងចុចអនុវត្ត។
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="stms-modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-outline" onclick="closeStmsModal()">
+            បោះបង់
+          </button>
+          <button type="button" class="btn" onclick="submitExecuteResetTimetable()" style="background:#dc2626; border-color:#dc2626; color:#ffffff; font-weight:700; height:36px; padding:0 16px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+            <i class="fas fa-rotate-left"></i> អនុវត្តការ Reset
+          </button>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  showModal(modalHtml);
+}
+window.openResetTimetableModal = openResetTimetableModal;
+
+function highlightResetOption(mode) {
+  const cardStd = document.getElementById('cardResetModeStandard');
+  const cardClr = document.getElementById('cardResetModeClear');
+  const radioStd = document.getElementById('resetModeStandard');
+  const radioClr = document.getElementById('resetModeClear');
+
+  if (mode === 'standard') {
+    if (radioStd) radioStd.checked = true;
+    if (cardStd) {
+      cardStd.style.border = '2px solid #2563eb';
+      cardStd.style.background = '#eff6ff';
+    }
+    if (cardClr) {
+      cardClr.style.border = '1px solid #e2e8f0';
+      cardClr.style.background = '#f8fafc';
+    }
+  } else {
+    if (radioClr) radioClr.checked = true;
+    if (cardStd) {
+      cardStd.style.border = '1px solid #e2e8f0';
+      cardStd.style.background = '#f8fafc';
+    }
+    if (cardClr) {
+      cardClr.style.border = '2px solid #dc2626';
+      cardClr.style.background = '#fef2f2';
+    }
+  }
+}
+window.highlightResetOption = highlightResetOption;
+
+function executeClearTimetableSlots(targetClass = 'all', targetSemester = 'all') {
+  if (!Array.isArray(stmsData.timetables)) return 0;
+
+  let clearedCount = 0;
+  stmsData.timetables.forEach(tb => {
+    if (targetClass !== 'all' && tb.className !== targetClass) return;
+    (tb.days || []).forEach(d => {
+      if (!Array.isArray(d.slots)) return;
+      if (targetSemester === 'all') {
+        clearedCount += d.slots.length;
+        d.slots = [];
+      } else {
+        d.slots = d.slots.filter(s => {
+          const slotSem = s.semester || getSlotSemester(s);
+          if (slotSem === targetSemester) {
+            clearedCount++;
+            return false;
+          }
+          return true;
+        });
+      }
+    });
+  });
+
+  saveData(true);
+  if (typeof syncToServer === 'function') {
+    syncToServer();
+  }
+  return clearedCount;
+}
+window.executeClearTimetableSlots = executeClearTimetableSlots;
+
+function executeResetTimetableToStandard(targetClass = 'all', targetSemester = 'all') {
+  const classes = targetClass === 'all' ? getAllSystemClasses() : [targetClass];
+  if (classes.length === 0) classes.push('ថ្នាក់បឋម ១២+២ (ក្រុម ក)');
+
+  classes.forEach(cls => {
+    ensureClassTimetable(cls);
+    if (targetSemester === 'all') {
+      generateStandardTimetableTemplate(cls, 'ឆមាសទី ១');
+      generateStandardTimetableTemplate(cls, 'ឆមាសទី ២');
+    } else {
+      generateStandardTimetableTemplate(cls, targetSemester);
+    }
+  });
+
+  saveData(true);
+  if (typeof syncToServer === 'function') {
+    syncToServer();
+  }
+}
+window.executeResetTimetableToStandard = executeResetTimetableToStandard;
+
+function submitExecuteResetTimetable() {
+  const classSelect = document.getElementById('resetTimetableClassSelect');
+  const semSelect = document.getElementById('resetTimetableSemesterSelect');
+  const modeRadio = document.querySelector('input[name="resetTimetableMode"]:checked');
+
+  const targetClass = classSelect ? classSelect.value : 'all';
+  const targetSemester = semSelect ? semSelect.value : 'all';
+  const resetMode = modeRadio ? modeRadio.value : 'standard_template';
+
+  const classLabel = targetClass === 'all' ? 'គ្រប់ថ្នាក់ទាំងអស់' : `ថ្នាក់ «${targetClass}»`;
+  const semLabel = targetSemester === 'all' ? 'គ្រប់ឆមាស' : targetSemester;
+
+  if (resetMode === 'clear_all') {
+    const confirmMsg = `⚠️ បញ្ជាក់ការសម្អាតម៉ោងសិក្សា (Clear Timetable)\n\nតើលោកអ្នកពិតជាចង់សម្អាតម៉ោងសិក្សាទាំងអស់សម្រាប់ ${classLabel} ក្នុង ${semLabel} មែនទេ?\n\n• ម៉ោងសិក្សាទាំងអស់នឹងត្រូវលុបចោលជាទទេ (Empty Slots)។\n• ចុច «OK» ដើម្បីបន្ត ឬ «Cancel» ដើម្បីបោះបង់។`;
+    if (!confirm(confirmMsg)) return;
+
+    const cleared = executeClearTimetableSlots(targetClass, targetSemester);
+    closeStmsModal();
+    showToast(`🗑️ បានសម្អាតម៉ោងសិក្សា (${cleared} ម៉ោង) សម្រាប់ ${classLabel} ដោយជោគជ័យ!`, 'success');
+  } else {
+    const confirmMsg = `⚠️ បញ្ជាក់ការកំណត់ឡើងវិញ (Reset to Standard Template)\n\nតើលោកអ្នកពិតជាចង់ស្ដារកាលវិភាគទៅគំរូដើម MoEYS KTPTTC សម្រាប់ ${classLabel} ក្នុង ${semLabel} មែនទេ?\n\n• កាលវិភាគបច្ចុប្បន្ននឹងត្រូវជំនួសដោយកាលវិភាគស្តង់ដារផ្លូវការ KTPTTC។\n• ចុច «OK» ដើម្បីបន្ត ឬ «Cancel» ដើម្បីបោះបង់។`;
+    if (!confirm(confirmMsg)) return;
+
+    executeResetTimetableToStandard(targetClass, targetSemester);
+    closeStmsModal();
+    showToast(`🎉 បានកំណត់កាលវិភាគឡើងវិញទៅគំរូស្តង់ដារ MoEYS KTPTTC សម្រាប់ ${classLabel} ដោយជោគជ័យ!`, 'success');
+  }
+
+  // Refresh active view
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'timetable') {
+    renderTimetableView(document.getElementById('mainContentArea'));
+  }
+
+  const adminModal = document.getElementById('adminTimetableModal');
+  if (adminModal) {
+    openAdminTimetableModal(targetClass !== 'all' ? targetClass : currentAdminTimetableClassFilter, targetSemester !== 'all' ? targetSemester : currentAdminTimetableSemesterFilter);
+  }
+}
+window.submitExecuteResetTimetable = submitExecuteResetTimetable;
+
 function handleTimetableSubjectSelect(subjCode) {
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjCode);
   const trainerSelect = document.getElementById('ttSlotTrainer');
@@ -4530,6 +4785,9 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
           <div style="display:flex; align-items:center; gap:8px;">
             <button type="button" onclick="confirmGenerateStandardTimetable('${escapeHtml(activeClass)}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.75rem; font-weight:700; padding:4px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="បង្កើតកាលវិភាគគំរូតាមឆមាស MoEYS ដោយស្វ័យប្រវត្តិ">
               <i class="fas fa-magic"></i> បង្កើតគំរូតាមឆមាសស្វ័យប្រវត្តិ
+            </button>
+            <button type="button" onclick="openResetTimetableModal('${escapeHtml(activeClass)}', '${escapeHtml(currentAdminTimetableSemesterFilter)}')" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-size:0.75rem; font-weight:700; padding:4px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="កំណត់កាលវិភាគឡើងវិញ (Reset កាលវិភាគ)">
+              <i class="fas fa-rotate-left"></i> Reset កាលវិភាគ
             </button>
             <button type="button" onclick="printAdminClassTimetable('${escapeHtml(activeClass)}')" style="background:#f8fafc; color:#334155; border:1px solid #cbd5e1; font-size:0.75rem; font-weight:600; padding:4px 10px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
               <i class="fas fa-print"></i> បោះពុម្ព
@@ -18247,6 +18505,9 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null, 
                 <button type="button" class="btn btn-outline" onclick="confirmGenerateStandardTimetable('${escapeHtml(targetClass)}')" style="font-size:0.8rem; height:32px; color:#1d4ed8; border-color:#bfdbfe;">
                   <i class="fas fa-magic"></i> បង្កើតគំរូតាមឆមាស
                 </button>
+                <button type="button" class="btn" onclick="openResetTimetableModal('${escapeHtml(targetClass)}', '${escapeHtml(targetSemester)}')" style="font-size:0.8rem; height:32px; background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-weight:700; display:inline-flex; align-items:center; gap:5px;" title="កំណត់កាលវិភាគឡើងវិញ (Reset កាលវិភាគ)">
+                  <i class="fas fa-rotate-left"></i> Reset កាលវិភាគ
+                </button>
                 <button type="button" class="btn btn-primary" onclick="printAdminClassTimetable('${escapeHtml(targetClass)}')" style="font-size:0.8rem; height:32px;">
                   <i class="fas fa-print"></i> បោះពុម្ព
                 </button>
@@ -21923,5 +22184,13 @@ window.resetAttendanceTablePills = resetAttendanceTablePills;
 window.resetStudentRowAttendance = resetStudentRowAttendance;
 window.confirmResetModuleAttendance = confirmResetModuleAttendance;
 window.recalculateTraineeAttendanceSummaries = recalculateTraineeAttendanceSummaries;
+
+// Timetable Reset Functions Bindings
+window.openResetTimetableModal = openResetTimetableModal;
+window.highlightResetOption = highlightResetOption;
+window.executeClearTimetableSlots = executeClearTimetableSlots;
+window.executeResetTimetableToStandard = executeResetTimetableToStandard;
+window.submitExecuteResetTimetable = submitExecuteResetTimetable;
+
 
 
