@@ -3497,6 +3497,7 @@ function saveGradeWeights() {
 let currentAdminTimetableClassFilter = 'all';
 let currentAdminTimetableDayFilter = 'all';
 let currentAdminTimetableSemesterFilter = 'ឆមាសទី ១';
+let currentAdminTimetableDeliveryModeFilter = 'all'; // 'all', 'online', 'in-person'
 
 const TIMETABLE_DAYS = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍', 'អាទិត្យ'];
 
@@ -3512,12 +3513,27 @@ function getSlotSemester(slot) {
   const code = slot ? (slot.subjectCode || '') : '';
   if (['RES-106', 'PRAC-107', 'COM-108'].includes(code)) return 'ឆមាសទី ២';
   const name = (slot ? (slot.subject || '') : '').toLowerCase();
-  if (name.includes('ស្រាវជ្រាវ') || name.includes('កម្មសិក្សា') || name.includes('practicum') || name.includes('សារគមនាគមន៍')) {
+  if (name.includes('សារគមនាគមន៍')) {
     return 'ឆមាសទី ២';
   }
   return 'ឆមាសទី ១';
 }
 window.getSlotSemester = getSlotSemester;
+
+function getSlotDeliveryMode(slot) {
+  if (slot && slot.deliveryMode) return slot.deliveryMode;
+  const day = (slot ? (slot.day || slot.dayFull || '') : '').replace(/\s*\(.*?\)\s*/g, '').trim();
+  const room = (slot ? (slot.room || '') : '').toLowerCase();
+  const notes = (slot ? (slot.notes || '') : '').toLowerCase();
+  if (room.includes('អនឡាញ') || room.includes('online') || room.includes('meet') || room.includes('zoom') || notes.includes('online') || notes.includes('អនឡាញ')) {
+    return 'online';
+  }
+  if (['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(day)) {
+    return 'online';
+  }
+  return 'in-person';
+}
+window.getSlotDeliveryMode = getSlotDeliveryMode;
 
 function handleAdminTimetableClassChange(val) {
   currentAdminTimetableClassFilter = val;
@@ -3546,10 +3562,24 @@ function handleAdminTimetableSemesterChange(sem) {
   }
   const adminModal = document.getElementById('adminTimetableModal');
   if (adminModal) {
-    openAdminTimetableModal(currentAdminTimetableClassFilter);
+    openAdminTimetableModal(currentAdminTimetableClassFilter, sem);
   }
 }
 window.handleAdminTimetableSemesterChange = handleAdminTimetableSemesterChange;
+
+function handleAdminTimetableDeliveryModeChange(mode) {
+  currentAdminTimetableDeliveryModeFilter = mode;
+  if (currentView === 'admin-portal') {
+    renderAdminPortalView(document.getElementById('stmsContentViewport'));
+  } else if (currentView === 'timetable') {
+    renderTimetableView(document.getElementById('mainContentArea'));
+  }
+  const adminModal = document.getElementById('adminTimetableModal');
+  if (adminModal) {
+    openAdminTimetableModal(currentAdminTimetableClassFilter, currentAdminTimetableSemesterFilter, mode);
+  }
+}
+window.handleAdminTimetableDeliveryModeChange = handleAdminTimetableDeliveryModeChange;
 
 function ensureClassTimetable(className) {
   if (!Array.isArray(stmsData.timetables)) {
@@ -3578,10 +3608,11 @@ function ensureClassTimetable(className) {
   return tt;
 }
 
-function getAllTimetableSlots(classFilter = 'all', dayFilter = 'all', semesterFilter = null) {
+function getAllTimetableSlots(classFilter = 'all', dayFilter = 'all', semesterFilter = null, modeFilter = null) {
   if (!Array.isArray(stmsData.timetables)) return [];
   const list = [];
   const semTarget = semesterFilter !== null ? semesterFilter : (window.currentAdminTimetableSemesterFilter || 'all');
+  const modeTarget = modeFilter !== null ? modeFilter : (window.currentAdminTimetableDeliveryModeFilter || 'all');
 
   stmsData.timetables.forEach(tb => {
     if (classFilter !== 'all' && tb.className !== classFilter) return;
@@ -3593,6 +3624,10 @@ function getAllTimetableSlots(classFilter = 'all', dayFilter = 'all', semesterFi
         if (!sl) return;
         const slotSem = sl.semester || getSlotSemester(sl);
         if (semTarget !== 'all' && slotSem && slotSem !== semTarget) {
+          return;
+        }
+        const slotMode = sl.deliveryMode || getSlotDeliveryMode({ ...sl, day: dNameClean });
+        if (modeTarget !== 'all' && slotMode !== modeTarget) {
           return;
         }
 
@@ -3607,9 +3642,10 @@ function getAllTimetableSlots(classFilter = 'all', dayFilter = 'all', semesterFi
           subjectCode: sl.subjectCode || '',
           trainer: sl.trainer || 'គ្រូឧទ្ទេស',
           trainerId: sl.trainerId || '',
-          room: sl.room || tb.room || 'បន្ទប់ ១០១',
+          room: sl.room || tb.room || (slotMode === 'online' ? 'អនឡាញ (Google Meet)' : 'បន្ទប់ ១០១'),
           notes: sl.notes || '',
-          semester: slotSem
+          semester: slotSem,
+          deliveryMode: slotMode
         });
       });
     });
@@ -3716,7 +3752,7 @@ function openSelectTimetableSemesterModal(className) {
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="selectTimetableSemesterModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:680px;">
+      <div class="stms-modal-dialog" style="max-width:760px;">
         
         <div class="stms-modal-header" style="background:linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color:#ffffff; padding:16px 20px;">
           <div style="display:flex; align-items:center; gap:12px;">
@@ -3737,35 +3773,46 @@ function openSelectTimetableSemesterModal(className) {
 
         <div class="stms-modal-body" style="padding:22px;">
           <p style="font-size:0.86rem; color:#475569; margin:0 0 16px 0;">
-            សូមជ្រើសរើស <strong>ឆមាសសិក្សា</strong> ដែលលោកអ្នកចង់រៀបចំកាលវិភាគស្វ័យប្រវត្តិ។ ប្រព័ន្ធនឹងរៀបចំម៉ោងបង្រៀនពេញមួយសប្តាហ៍ទៅតាមមុខវិជ្ជាគោលនៃឆមាសនោះ៖
+            សូមជ្រើសរើស <strong>ឆមាសសិក្សា</strong> ដែលលោកអ្នកចង់រៀបចំកាលវិភាគស្វ័យប្រវត្តិ។ សម្រាប់ <strong>ឆមាសទី ១</strong> ប្រព័ន្ធនឹងបែងចែកជា ២ ផ្នែក គឺ <strong>រៀនអនឡាញ (ចន្ទ-សុក្រ)</strong> និង <strong>រៀនផ្ទាល់ (សៅរ៍-អាទិត្យ)</strong>៖
           </p>
 
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:16px;">
             
-            <!-- Option 1: Semester 1 -->
-            <div style="border:2px solid #93c5fd; background:#f0f9ff; border-radius:12px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s;" onmouseover="this.style.borderColor='#2563eb'; this.style.boxShadow='0 4px 14px rgba(37,99,235,0.15)';" onmouseout="this.style.borderColor='#93c5fd'; this.style.boxShadow='none';">
+            <!-- Option 1: Semester 1 (Blended Online + In-Person) -->
+            <div style="border:2px solid #3b82f6; background:#f0f9ff; border-radius:12px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s;" onmouseover="this.style.borderColor='#1d4ed8'; this.style.boxShadow='0 4px 16px rgba(29,78,216,0.18)';" onmouseout="this.style.borderColor='#3b82f6'; this.style.boxShadow='none';">
               <div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                   <span style="font-size:0.75rem; font-weight:800; background:#dbeafe; color:#1d4ed8; padding:3px 10px; border-radius:12px;">
-                    ឆមាសទី ១ (Semester 1)
+                    ឆមាសទី ១ (អនឡាញ & ផ្ទាល់)
                   </span>
                   <span style="font-size:0.74rem; font-weight:700; color:#0369a1;">
-                    ៥ មុខវិជ្ជាគោល
+                    ចន្ទ - អាទិត្យ
                   </span>
                 </div>
-                <h4 style="margin:0 0 8px 0; color:#1e3a8a; font-size:1rem; font-weight:700;">
-                  កម្មវិធីសិក្សា ឆមាសទី ១
+                <h4 style="margin:0 0 10px 0; color:#1e3a8a; font-size:1.02rem; font-weight:800;">
+                  កម្មវិធីសិក្សា ឆមាសទី ១ (MoEYS Blended)
                 </h4>
-                <ul style="font-size:0.78rem; color:#334155; margin:0 0 14px 0; padding-left:18px; line-height:1.6;">
-                  <li><strong>PED-101:</strong> គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន</li>
-                  <li><strong>PSY-102:</strong> ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ</li>
-                  <li><strong>MTH-103:</strong> វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម</li>
-                  <li><strong>KHM-104:</strong> វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណាន</li>
-                  <li><strong>ICT-105:</strong> បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)</li>
-                </ul>
+
+                <div style="background:#ffffff; border:1px solid #bfdbfe; border-radius:8px; padding:9px 12px; margin-bottom:8px;">
+                  <div style="font-size:0.78rem; font-weight:800; color:#1d4ed8; margin-bottom:4px; display:flex; align-items:center; gap:5px;">
+                    <i class="fas fa-globe"></i> <strong>អនឡាញ (ចន្ទ-សុក្រ) • ៧ មុខវិជ្ជា៖</strong>
+                  </div>
+                  <div style="font-size:0.75rem; color:#334155; line-height:1.5;">
+                    គរុកោសល្យ, ចិត្តវិទ្យាអប់រំ, ភាសាខ្មែរ, គណិតវិទ្យា, វិទ្យាសាស្ត្រ, សិក្សាសង្គម, ការស្រាវជ្រាវអប់រំ
+                  </div>
+                </div>
+
+                <div style="background:#ffffff; border:1px solid #bbf7d0; border-radius:8px; padding:9px 12px; margin-bottom:14px;">
+                  <div style="font-size:0.78rem; font-weight:800; color:#15803d; margin-bottom:4px; display:flex; align-items:center; gap:5px;">
+                    <i class="fas fa-chalkboard-teacher"></i> <strong>រៀនផ្ទាល់ (សៅរ៍-អាទិត្យ) • ១២ មុខវិជ្ជា៖</strong>
+                  </div>
+                  <div style="font-size:0.75rem; color:#334155; line-height:1.5;">
+                    គរុកោសល្យ, ចិត្តវិទ្យាអប់រំ, ការវាយតម្លៃការសិក្សា, ICT, ភាសាខ្មែរ, គណិត, វិទ្យាសាស្ត្រ, សិក្សាសង្គម, វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១, វិធីសាស្រ្តបង្រៀនគណិត១, កម្មសិក្សាគរុកោសល្យ១, ការស្រាវជ្រាវអប់រំ
+                  </div>
+                </div>
               </div>
-              <button type="button" class="btn btn-primary" onclick="closeStmsModal(); generateStandardTimetableTemplate('${escapeHtml(targetClass)}', 'ឆមាសទី ១')" style="width:100%; height:38px; font-size:0.84rem; background:linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); border:none; color:#fff; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;">
-                <i class="fas fa-magic"></i> បង្កើតគំរូ ឆមាសទី ១ ឥឡូវនេះ
+              <button type="button" class="btn btn-primary" onclick="closeStmsModal(); generateStandardTimetableTemplate('${escapeHtml(targetClass)}', 'ឆមាសទី ១')" style="width:100%; height:40px; font-size:0.84rem; background:linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); border:none; color:#fff; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;">
+                <i class="fas fa-magic"></i> បង្កើតគំរូ ឆមាសទី ១ (អនឡាញ + ផ្ទាល់)
               </button>
             </div>
 
@@ -3789,7 +3836,7 @@ function openSelectTimetableSemesterModal(className) {
                   <li><strong>COM-108:</strong> បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍</li>
                 </ul>
               </div>
-              <button type="button" class="btn btn-primary" onclick="closeStmsModal(); generateStandardTimetableTemplate('${escapeHtml(targetClass)}', 'ឆមាសទី ២')" style="width:100%; height:38px; font-size:0.84rem; background:linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border:none; color:#fff; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;">
+              <button type="button" class="btn btn-primary" onclick="closeStmsModal(); generateStandardTimetableTemplate('${escapeHtml(targetClass)}', 'ឆមាសទី ២')" style="width:100%; height:40px; font-size:0.84rem; background:linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border:none; color:#fff; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;">
                 <i class="fas fa-magic"></i> បង្កើតគំរូ ឆមាសទី ២ ឥឡូវនេះ
               </button>
             </div>
@@ -3825,44 +3872,64 @@ function generateStandardTimetableTemplate(className, targetSemester = null) {
     return subj && subj.trainer ? subj.trainer : (trainers[0]?.nameKh || 'យូសុះ ស៊ីលាល');
   }
 
-  // 1. Template for ឆមាសទី ១ (Semester 1) - 5 Core Subjects
+  // 1. Template for ឆមាសទី ១ (Semester 1) - Blended Model (Online Mon-Fri + In-Person Sat-Sun)
   const templateScheduleSem1 = {
+    // -------------------------------------------------------------
+    // អនឡាញ (Online - Monday to Friday) - 7 Subjects:
+    // គរុកោសល្យ, ចិត្តវិទ្យាអប់រំ, ភាសាខ្មែរ, គណិតវិទ្យា, វិទ្យាសាស្ត្រ, សិក្សាសង្គម, ការស្រាវជ្រាវអប់រំ
+    // -------------------------------------------------------------
     'ចន្ទ': [
-      { period: '07:30 - 09:00', code: 'PED-101', name: 'គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន', room: 'បន្ទប់ ១០១' },
-      { period: '09:15 - 10:45', code: 'MTH-103', name: 'វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម', room: 'បន្ទប់ ១០១' },
-      { period: '13:30 - 15:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ', room: 'បន្ទប់ ១០១' },
-      { period: '15:15 - 16:45', code: 'ICT-105', name: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', room: 'បន្ទប់កុំព្យូទ័រ' }
+      { period: '07:30 - 09:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:15 - 10:45', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:30 - 15:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:15 - 16:45', code: 'MTH-104', name: 'គណិតវិទ្យា', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
     'អង្គារ': [
-      { period: '07:30 - 09:00', code: 'KHM-104', name: 'វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង', room: 'បន្ទប់ ១០១' },
-      { period: '09:15 - 10:45', code: 'PED-101', name: 'គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន', room: 'បន្ទប់ ១០១' },
-      { period: '13:30 - 15:00', code: 'MTH-103', name: 'វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម', room: 'បន្ទប់ ១០១' },
-      { period: '15:15 - 16:45', code: 'PSY-102', name: 'ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ', room: 'បន្ទប់ ១០១' }
+      { period: '07:30 - 09:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:15 - 10:45', code: 'SOC-106', name: 'សិក្សាសង្គម', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:30 - 15:00', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:15 - 16:45', code: 'PED-101', name: 'គរុកោសល្យ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
     'ពុធ': [
-      { period: '07:30 - 09:00', code: 'MTH-103', name: 'វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម', room: 'បន្ទប់ ១០១' },
-      { period: '09:15 - 10:45', code: 'KHM-104', name: 'វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង', room: 'បន្ទប់ ១០១' },
-      { period: '13:30 - 15:00', code: 'ICT-105', name: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', room: 'បន្ទប់កុំព្យូទ័រ' },
-      { period: '15:15 - 16:45', code: 'PED-101', name: 'គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន', room: 'បន្ទប់ ១០១' }
+      { period: '07:30 - 09:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:15 - 10:45', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:30 - 15:00', code: 'MTH-104', name: 'គណិតវិទ្យា', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:15 - 16:45', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
     'ព្រហស្បតិ៍': [
-      { period: '07:30 - 09:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ', room: 'បន្ទប់ ១០១' },
-      { period: '09:15 - 10:45', code: 'MTH-103', name: 'វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម', room: 'បន្ទប់ ១០១' },
-      { period: '13:30 - 15:00', code: 'ICT-105', name: 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)', room: 'បន្ទប់កុំព្យូទ័រ' },
-      { period: '15:15 - 16:45', code: 'KHM-104', name: 'វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង', room: 'បន្ទប់ ១០១' }
+      { period: '07:30 - 09:00', code: 'SOC-106', name: 'សិក្សាសង្គម', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:15 - 10:45', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:30 - 15:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:15 - 16:45', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
     'សុក្រ': [
-      { period: '07:30 - 09:00', code: 'PED-101', name: 'គរុកោសល្យទូទៅ និងការរៀបចំកិច្ចតែងការ', room: 'បន្ទប់ ១០១' },
-      { period: '09:15 - 10:45', code: 'KHM-104', name: 'វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង', room: 'បន្ទប់ ១០១' },
-      { period: '13:30 - 15:00', code: 'ICT-105', name: 'ការអនុវត្តកម្មវិធីអប់រំឌីជីថល (ICT Lab)', room: 'បន្ទប់កុំព្យូទ័រ' },
-      { period: '15:15 - 16:45', code: 'PSY-102', name: 'សិក្ខាសាលាចិត្តវិទ្យាគរុកោសល្យ', room: 'បន្ទប់ ១០១' }
+      { period: '07:30 - 09:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:15 - 10:45', code: 'MTH-104', name: 'គណិតវិទ្យា', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:30 - 15:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:15 - 16:45', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
+
+    // -------------------------------------------------------------
+    // រៀនផ្ទាល់ (In-Person - Saturday & Sunday) - 12 Subjects:
+    // គរុកោសល្យ, ចិត្តវិទ្យាអប់រំ, ការវាយតម្លៃការសិក្សា, ICT, ភាសាខ្មែ, គណិត,
+    // វិទ្យាសាស្ត្រ, សិក្សាសង្គម, វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១, វិធីសាស្រ្តបង្រៀនគណិត១,
+    // កម្មសិក្សាគរុកោសល្យ១, ការស្រាវជ្រាវអប់រំ
+    // -------------------------------------------------------------
     'សៅរ៍': [
-      { period: '07:30 - 09:00', code: 'PED-101', name: 'ស្វ័យសិក្សា និងការស្រាវជ្រាវបណ្ណាល័យ', room: 'បណ្ណាល័យ KTPTTC' },
-      { period: '09:15 - 10:45', code: 'MTH-103', name: 'ការផលិត និងប្រើប្រាស់ឧបទេសគណិតវិទ្យា', room: 'បន្ទប់ ១០១' }
+      { period: '07:30 - 09:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '09:15 - 10:45', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '10:50 - 12:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '13:30 - 15:00', code: 'TMK-110', name: 'វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '15:15 - 16:45', code: 'TMM-111', name: 'វិធីសាស្រ្តបង្រៀនគណិត១', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '16:50 - 18:00', code: 'MTH-104', name: 'គណិត', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' }
     ],
     'អាទិត្យ': [
-      { period: '07:30 - 09:00', code: 'ICT-105', name: 'ស្វ័យសិក្សាបច្ចេកវិទ្យាព័ត៌មានវិទ្យា', room: 'បន្ទប់កុំព្យូទ័រ' }
+      { period: '07:30 - 09:00', code: 'ICT-105', name: 'ICT', room: 'បន្ទប់កុំព្យូទ័រ', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅបន្ទប់ Lab KTPTTC' },
+      { period: '09:15 - 10:45', code: 'ASM-108', name: 'ការវាយតម្លៃការសិក្សា', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '10:50 - 12:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '13:30 - 15:00', code: 'PRAC-112', name: 'កម្មសិក្សាគរុកោសល្យ១', room: 'សាលាអនុវត្តន៍', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលាអនុវត្តន៍' },
+      { period: '15:15 - 16:45', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '16:50 - 18:00', code: 'SOC-106', name: 'សិក្សាសង្គម', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' }
     ]
   };
 
@@ -3919,15 +3986,17 @@ function generateStandardTimetableTemplate(className, targetSemester = null) {
     });
 
     if (templateSchedule[dClean]) {
+      const isOnlineDay = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(dClean);
       const newSlots = templateSchedule[dClean].map((s, idx) => ({
         id: `slot-${Date.now()}-${dClean}-${idx}-${Math.floor(Math.random() * 1000)}`,
         period: s.period,
         subject: s.name,
         subjectCode: s.code,
         trainer: getTrainerForSubject(s.code),
-        room: s.room,
-        notes: `កាលវិភាគស្ដង់ដារ MoEYS (${effectiveSemester})`,
-        semester: effectiveSemester
+        room: s.room || (isOnlineDay ? 'អនឡាញ (Google Meet)' : 'បន្ទប់ ១០១'),
+        notes: s.notes || (isOnlineDay ? 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' : 'រៀនផ្ទាល់នៅសាលា (On-Campus)'),
+        semester: effectiveSemester,
+        deliveryMode: s.mode || (isOnlineDay ? 'online' : 'in-person')
       }));
       d.slots.push(...newSlots);
       d.slots.sort((a, b) => (a.period || '').localeCompare(b.period || ''));
@@ -3978,6 +4047,33 @@ function handleTimetableSubjectSelect(subjCode) {
   updateTimetableModalConflictNotice();
 }
 
+function handleTimetableSlotDayChange(day) {
+  const modeSelect = document.getElementById('ttSlotMode');
+  const roomInput = document.getElementById('ttSlotRoom');
+  const isOnlineDay = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(day);
+  if (modeSelect) {
+    modeSelect.value = isOnlineDay ? 'online' : 'in-person';
+  }
+  if (roomInput && (!roomInput.value || roomInput.value === 'បន្ទប់ ១០១' || roomInput.value.includes('អនឡាញ'))) {
+    roomInput.value = isOnlineDay ? 'អនឡាញ (Google Meet)' : 'បន្ទប់ ១០១';
+  }
+  updateTimetableModalConflictNotice();
+}
+window.handleTimetableSlotDayChange = handleTimetableSlotDayChange;
+
+function handleTimetableSlotModeChange(mode) {
+  const roomInput = document.getElementById('ttSlotRoom');
+  if (roomInput) {
+    if (mode === 'online' && (!roomInput.value || roomInput.value === 'បន្ទប់ ១០១')) {
+      roomInput.value = 'អនឡាញ (Google Meet)';
+    } else if (mode === 'in-person' && (roomInput.value.includes('អនឡាញ') || !roomInput.value)) {
+      roomInput.value = 'បន្ទប់ ១០១';
+    }
+  }
+  updateTimetableModalConflictNotice();
+}
+window.handleTimetableSlotModeChange = handleTimetableSlotModeChange;
+
 function openAdminAddTimetableSlotModal(defaultClass = '', defaultDay = '', defaultPeriod = '') {
   closeStmsModal();
   const classes = getAllSystemClasses();
@@ -4015,11 +4111,18 @@ function openAdminAddTimetableSlotModal(defaultClass = '', defaultDay = '', defa
               </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1.2fr; gap:12px; margin-bottom:14px;">
               <div>
                 <label class="form-label">ថ្ងៃនៃសប្ដាហ៍*</label>
-                <select id="ttSlotDay" class="form-input" required onchange="updateTimetableModalConflictNotice()">
+                <select id="ttSlotDay" class="form-input" required onchange="handleTimetableSlotDayChange(this.value)">
                   ${TIMETABLE_DAYS.map(d => `<option value="${d}" ${d === defaultDay ? 'selected' : ''}>${d}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="form-label">ទម្រង់បង្រៀន (Mode)*</label>
+                <select id="ttSlotMode" class="form-input" required onchange="handleTimetableSlotModeChange(this.value)">
+                  <option value="online">🌐 អនឡាញ (Online)</option>
+                  <option value="in-person">🏫 រៀនផ្ទាល់ (In-Person)</option>
                 </select>
               </div>
               <div>
@@ -4074,6 +4177,13 @@ function openAdminAddTimetableSlotModal(defaultClass = '', defaultDay = '', defa
   `;
 
   document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const activeDay = defaultDay || document.getElementById('ttSlotDay')?.value || 'ចន្ទ';
+  const isOnlineDay = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(activeDay);
+  const modeEl = document.getElementById('ttSlotMode');
+  if (modeEl) modeEl.value = isOnlineDay ? 'online' : 'in-person';
+  const roomEl = document.getElementById('ttSlotRoom');
+  if (roomEl) roomEl.value = isOnlineDay ? 'អនឡាញ (Google Meet)' : 'បន្ទប់ ១០១';
 
   const subjEl = document.getElementById('ttSlotSubject');
   if (subjEl) handleTimetableSubjectSelect(subjEl.value);
@@ -4135,6 +4245,8 @@ function openAdminEditTimetableSlotModal(slotId) {
     if (semSelect) semSelect.value = slot.semester || getSlotSemester(slot);
     const daySelect = document.getElementById('ttSlotDay');
     if (daySelect) daySelect.value = dayName;
+    const modeSelect = document.getElementById('ttSlotMode');
+    if (modeSelect) modeSelect.value = slot.deliveryMode || getSlotDeliveryMode({ ...slot, day: dayName });
     const periodSelect = document.getElementById('ttSlotPeriod');
     if (periodSelect) {
       if (['07:30 - 09:00', '09:15 - 10:45', '13:30 - 15:00', '15:15 - 16:45'].includes(slot.period)) {
@@ -4170,6 +4282,8 @@ function submitSaveTimetableSlot() {
   const className = document.getElementById('ttSlotClass')?.value;
   const semester = document.getElementById('ttSlotSemester')?.value || currentAdminTimetableSemesterFilter || 'ឆមាសទី ១';
   const day = document.getElementById('ttSlotDay')?.value;
+  const dClean = day.replace(/\s*\(.*?\)\s*/g, '').trim();
+  const deliveryMode = document.getElementById('ttSlotMode')?.value || (['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(dClean) ? 'online' : 'in-person');
   let period = document.getElementById('ttSlotPeriod')?.value;
   if (period === 'custom') {
     period = document.getElementById('ttSlotPeriodCustom')?.value || '07:30 - 09:00';
@@ -4182,7 +4296,6 @@ function submitSaveTimetableSlot() {
   const notes = document.getElementById('ttSlotNotes')?.value || '';
 
   const tt = ensureClassTimetable(className);
-  const dClean = day.replace(/\s*\(.*?\)\s*/g, '').trim();
   let targetDay = tt.days.find(d => d && d.day.replace(/\s*\(.*?\)\s*/g, '').trim() === dClean);
   if (!targetDay) {
     targetDay = { day: dClean, slots: [] };
@@ -4202,6 +4315,7 @@ function submitSaveTimetableSlot() {
   const newSlot = {
     id: id || `slot-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     semester: semester.trim(),
+    deliveryMode: deliveryMode,
     period: period.trim(),
     subject: subject.trim(),
     subjectCode: subjCode || '',
@@ -4398,6 +4512,19 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
                 ${tab.label}
               </button>
             `).join('')}
+
+            <span style="font-size:0.8rem; font-weight:700; color:#475569; margin-left:12px; margin-right:4px;">
+              <i class="fas fa-satellite-dish"></i> ទម្រង់៖
+            </span>
+            <button type="button" class="timetable-pill-tab ${currentAdminTimetableDeliveryModeFilter === 'all' ? 'active' : ''}" onclick="handleAdminTimetableDeliveryModeChange('all')">
+              ទម្រង់ទាំងអស់
+            </button>
+            <button type="button" class="timetable-pill-tab ${currentAdminTimetableDeliveryModeFilter === 'online' ? 'active' : ''}" onclick="handleAdminTimetableDeliveryModeChange('online')">
+              🌐 អនឡាញ (ចន្ទ-សុក្រ)
+            </button>
+            <button type="button" class="timetable-pill-tab ${currentAdminTimetableDeliveryModeFilter === 'in-person' ? 'active' : ''}" onclick="handleAdminTimetableDeliveryModeChange('in-person')">
+              🏫 រៀនផ្ទាល់ (សៅរ៍-អាទិត្យ)
+            </button>
           </div>
 
           <div style="display:flex; align-items:center; gap:8px;">
@@ -4426,12 +4553,21 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
 
           <div class="timetable-matrix-grid">
             ${(() => {
-              const daysToRender = currentAdminTimetableDayFilter === 'all' ? TIMETABLE_DAYS : [currentAdminTimetableDayFilter];
+              let daysToRender = currentAdminTimetableDayFilter === 'all' ? TIMETABLE_DAYS : [currentAdminTimetableDayFilter];
+              if (currentAdminTimetableDeliveryModeFilter === 'online') {
+                daysToRender = daysToRender.filter(d => ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(d));
+              } else if (currentAdminTimetableDeliveryModeFilter === 'in-person') {
+                daysToRender = daysToRender.filter(d => ['សៅរ៍', 'អាទិត្យ'].includes(d));
+              }
               const todayIndex = new Date().getDay(); // 0 is Sunday, 1 is Monday...
               const dayIndexMap = { 'ចន្ទ': 1, 'អង្គារ': 2, 'ពុធ': 3, 'ព្រហស្បតិ៍': 4, 'សុក្រ': 5, 'សៅរ៍': 6, 'អាទិត្យ': 0 };
 
               return daysToRender.map(day => {
                 const isToday = dayIndexMap[day] === todayIndex;
+                const isOnlineDay = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(day);
+                const dayModeBadge = isOnlineDay 
+                  ? `<span style="font-size:0.62rem; background:#dbeafe; color:#1d4ed8; padding:1px 6px; border-radius:10px; font-weight:700; margin-left:4px; display:inline-flex; align-items:center; gap:2px;"><i class="fas fa-globe"></i> អនឡាញ</span>`
+                  : `<span style="font-size:0.62rem; background:#dcfce7; color:#15803d; padding:1px 6px; border-radius:10px; font-weight:700; margin-left:4px; display:inline-flex; align-items:center; gap:2px;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
                 const daySlots = allSlots.filter(s => s.day === day || s.dayFull.includes(day));
                 
                 // Track rendered slots to also show non-standard slots if any
@@ -4440,7 +4576,10 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
                 return `
                   <div class="timetable-day-column">
                     <div class="timetable-day-header ${isToday ? 'today' : ''}">
-                      <span>${day}</span>
+                      <div style="display:flex; align-items:center; gap:4px;">
+                        <span>${day}</span>
+                        ${dayModeBadge}
+                      </div>
                       <span style="font-size:0.7rem; font-weight:600; opacity:0.9;">
                         ${isToday ? 'ថ្ងៃនេះ' : ''} (${daySlots.length} ម៉ោង)
                       </span>
@@ -4453,11 +4592,19 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
                         if (matchedSlot) {
                           renderedSlotIds.add(matchedSlot.id);
                           const theme = getSubjectTheme(matchedSlot.subjectCode);
+                          const slotMode = matchedSlot.deliveryMode || getSlotDeliveryMode(matchedSlot);
+                          const slotModeBadge = slotMode === 'online'
+                            ? `<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px;"><i class="fas fa-globe"></i> អនឡាញ</span>`
+                            : `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
+
                           return `
                             <div class="timetable-slot-card" style="border-left-color:${theme.color};">
                               <div class="timetable-slot-period">
                                 <span><i class="far fa-clock"></i> ${matchedSlot.period}</span>
-                                <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(matchedSlot.room)}</span>
+                                <div style="display:flex; gap:3px; align-items:center;">
+                                  ${slotModeBadge}
+                                  <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(matchedSlot.room)}</span>
+                                </div>
                               </div>
                               <div class="timetable-slot-subject" title="${escapeHtml(matchedSlot.subject)}">
                                 <span style="background:${theme.bg}; color:${theme.color}; border:1px solid ${theme.border}; font-size:0.68rem; font-weight:700; padding:1px 5px; border-radius:4px; margin-right:3px;">
@@ -4500,10 +4647,20 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
                       <!-- Any Non-standard custom slots for this day -->
                       ${daySlots.filter(s => !renderedSlotIds.has(s.id)).map(cs => {
                         const theme = getSubjectTheme(cs.subjectCode);
+                        const slotMode = cs.deliveryMode || getSlotDeliveryMode(cs);
+                        const slotModeBadge = slotMode === 'online'
+                          ? `<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px;"><i class="fas fa-globe"></i> អនឡាញ</span>`
+                          : `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
+
                         return `
                           <div class="timetable-slot-card" style="border-left-color:${theme.color};">
                             <div class="timetable-slot-period">
                               <span><i class="far fa-clock"></i> ${cs.period}</span>
+                              <div style="display:flex; gap:3px; align-items:center;">
+                                ${slotModeBadge}
+                                <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(cs.room)}</span>
+                              </div>
+                            </div>
                               <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(cs.room)}</span>
                             </div>
                             <div class="timetable-slot-subject">
@@ -4637,31 +4794,60 @@ function syncTraineeStreams() {
 window.syncTraineeStreams = syncTraineeStreams;
 
 let KTPTTC_ALL_SUBJECTS = [
-  { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", credits: 3, trainer: "" },
-  { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", credits: 2, trainer: "" },
-  { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", credits: 3, trainer: "" },
-  { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", credits: 3, trainer: "" },
-  { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: "" },
-  { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", credits: 2, trainer: "" },
-  { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "" },
-  { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, trainer: "" }
+  // ឆមាសទី ១ (Sem 1 Blended: Online Mon-Fri, In-Person Sat-Sun)
+  { code: "PED-101", nameKh: "គរុកោសល្យ", credits: 3, semester: "ឆមាសទី ១", category: "គរុកោសល្យទូទៅ", mode: "ទាំងពីរ", trainer: "", desc: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀនសកម្ម" },
+  { code: "PSY-102", nameKh: "ចិត្តវិទ្យាអប់រំ", credits: 2, semester: "ឆមាសទី ១", category: "គរុកោសល្យទូទៅ", mode: "ទាំងពីរ", trainer: "", desc: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ" },
+  { code: "KHM-103", nameKh: "ភាសាខ្មែរ", credits: 2, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ទាំងពីរ", trainer: "", desc: "ភាសាខ្មែរ និងអក្សរសាស្ត្រ" },
+  { code: "MTH-104", nameKh: "គណិតវិទ្យា", credits: 2, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ទាំងពីរ", trainer: "", desc: "គណិតវិទ្យាមូលដ្ឋាន និងអនុវត្ត" },
+  { code: "SCI-105", nameKh: "វិទ្យាសាស្ត្រ", credits: 2, semester: "ឆមាសទី ១", category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា", mode: "ទាំងពីរ", trainer: "", desc: "វិទ្យាសាស្ត្រទូទៅ និងការពិសោធន៍" },
+  { code: "SOC-106", nameKh: "សិក្សាសង្គម", credits: 2, semester: "ឆមាសទី ១", category: "វិទ្យាសាស្ត្រសង្គម", mode: "ទាំងពីរ", trainer: "", desc: "សិក្សាសង្គម ប្រវត្តិវិទ្យា និងភូមិវិទ្យា" },
+  { code: "RES-107", nameKh: "ការស្រាវជ្រាវអប់រំ", credits: 2, semester: "ឆមាសទី ១", category: "ការស្រាវជ្រាវ & អនុវត្ត", mode: "ទាំងពីរ", trainer: "", desc: "វិធីសាស្ត្រស្រាវជ្រាវអប់រំ និងការប្រមូលទិន្នន័យ" },
+  { code: "ASM-108", nameKh: "ការវាយតម្លៃការសិក្សា", credits: 2, semester: "ឆមាសទី ១", category: "ការវាស់វែង និងវាយតម្លៃ", mode: "ផ្ទាល់", trainer: "", desc: "ការវាស់វែង ការវាយតម្លៃលទ្ធផលសិក្សា និងការបង្កើតតេស្ត" },
+  { code: "ICT-105", nameKh: "ICT", credits: 2, semester: "ឆមាសទី ១", category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា", mode: "ផ្ទាល់", trainer: "យូសុះ ស៊ីលាល", desc: "បច្ចេកវិទ្យាព័ត៌មាន និងសារគមនាគមន៍ក្នុងការអប់រំ" },
+  { code: "TMK-110", nameKh: "វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១", credits: 3, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ផ្ទាល់", trainer: "", desc: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ អំណាន និងសំណេរដំបូង (កម្រិត ១)" },
+  { code: "TMM-111", nameKh: "វិធីសាស្រ្តបង្រៀនគណិត១", credits: 3, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ផ្ទាល់", trainer: "", desc: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យា និងការប្រើប្រាស់ឧបទេស (កម្រិត ១)" },
+  { code: "PRAC-112", nameKh: "កម្មសិក្សាគរុកោសល្យ១", credits: 4, semester: "ឆមាសទី ១", category: "ការស្រាវជ្រាវ & អនុវត្ត", mode: "ផ្ទាល់", trainer: "", desc: "ការចុះសង្កេត និងអនុវត្តការបង្រៀនជាក់ស្តែងនៅសាលាបឋមសិក្សា" },
+
+  // ឆមាសទី ២ & Legacy Support
+  { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន", credits: 2, semester: "ឆមាសទី ២", category: "ការស្រាវជ្រាវ & អនុវត្ត", mode: "ផ្ទាល់", trainer: "", desc: "Action Research in Classroom" },
+  { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម", credits: 4, semester: "ឆមាសទី ២", category: "ការស្រាវជ្រាវ & អនុវត្ត", mode: "ផ្ទាល់", trainer: "", desc: "Practicum Phase 2" },
+  { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, semester: "ឆមាសទី ២", category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា", mode: "ផ្ទាល់", trainer: "", desc: "ICT & Educational Communications" },
+  { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម (Legacy)", credits: 3, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ទាំងពីរ", trainer: "" },
+  { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង (Legacy)", credits: 3, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ទាំងពីរ", trainer: "" }
 ];
 
 function syncAllSubjects() {
   const defaultSubjs = [
-    { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", credits: 3, trainer: "" },
-    { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", credits: 2, trainer: "" },
-    { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", credits: 3, trainer: "" },
-    { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", credits: 3, trainer: "" },
-    { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: "យូសុះ ស៊ីលាល" },
-    { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", credits: 2, trainer: "" },
-    { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "" },
-    { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, trainer: "" }
+    { code: "PED-101", nameKh: "គរុកោសល្យ", credits: 3, semester: "ឆមាសទី ១", category: "គរុកោសល្យទូទៅ", mode: "ទាំងពីរ", trainer: "", desc: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀនសកម្ម" },
+    { code: "PSY-102", nameKh: "ចិត្តវិទ្យាអប់រំ", credits: 2, semester: "ឆមាសទី ១", category: "គរុកោសល្យទូទៅ", mode: "ទាំងពីរ", trainer: "", desc: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ" },
+    { code: "KHM-103", nameKh: "ភាសាខ្មែរ", credits: 2, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ទាំងពីរ", trainer: "", desc: "ភាសាខ្មែរ និងអក្សរសាស្ត្រ" },
+    { code: "MTH-104", nameKh: "គណិតវិទ្យា", credits: 2, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ទាំងពីរ", trainer: "", desc: "គណិតវិទ្យាមូលដ្ឋាន និងអនុវត្ត" },
+    { code: "SCI-105", nameKh: "វិទ្យាសាស្ត្រ", credits: 2, semester: "ឆមាសទី ១", category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា", mode: "ទាំងពីរ", trainer: "", desc: "វិទ្យាសាស្ត្រទូទៅ និងការពិសោធន៍" },
+    { code: "SOC-106", nameKh: "សិក្សាសង្គម", credits: 2, semester: "ឆមាសទី ១", category: "វិទ្យាសាស្ត្រសង្គម", mode: "ទាំងពីរ", trainer: "", desc: "សិក្សាសង្គម ប្រវត្តិវិទ្យា និងភូមិវិទ្យា" },
+    { code: "RES-107", nameKh: "ការស្រាវជ្រាវអប់រំ", credits: 2, semester: "ឆមាសទី ១", category: "ការស្រាវជ្រាវ & អនុវត្ត", mode: "ទាំងពីរ", trainer: "", desc: "វិធីសាស្ត្រស្រាវជ្រាវអប់រំ និងការប្រមូលទិន្នន័យ" },
+    { code: "ASM-108", nameKh: "ការវាយតម្លៃការសិក្សា", credits: 2, semester: "ឆមាសទី ១", category: "ការវាស់វែង និងវាយតម្លៃ", mode: "ផ្ទាល់", trainer: "", desc: "ការវាស់វែង ការវាយតម្លៃលទ្ធផលសិក្សា និងការបង្កើតតេស្ត" },
+    { code: "ICT-105", nameKh: "ICT", credits: 2, semester: "ឆមាសទី ១", category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា", mode: "ផ្ទាល់", trainer: "យូសុះ ស៊ីលាល", desc: "បច្ចេកវិទ្យាព័ត៌មាន និងសារគមនាគមន៍ក្នុងការអប់រំ" },
+    { code: "TMK-110", nameKh: "វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១", credits: 3, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ផ្ទាល់", trainer: "", desc: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ អំណាន និងសំណេរដំបូង (កម្រិត ១)" },
+    { code: "TMM-111", nameKh: "វិធីសាស្រ្តបង្រៀនគណិត១", credits: 3, semester: "ឆមាសទី ១", category: "វិធីសាស្ត្របង្រៀនឯកទេស", mode: "ផ្ទាល់", trainer: "", desc: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យា និងការប្រើប្រាស់ឧបទេស (កម្រិត ១)" },
+    { code: "PRAC-112", nameKh: "កម្មសិក្សាគរុកោសល្យ១", credits: 4, semester: "ឆមាសទី ១", category: "ការស្រាវជ្រាវ & អនុវត្ត", mode: "ផ្ទាល់", trainer: "", desc: "ការចុះសង្កេត និងអនុវត្តការបង្រៀនជាក់ស្តែងនៅសាលាបឋមសិក្សា" },
+    { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន", credits: 2, semester: "ឆមាសទី ២", category: "ការស្រាវជ្រាវ & អនុវត្ត", mode: "ផ្ទាល់", trainer: "" },
+    { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម", credits: 4, semester: "ឆមាសទី ២", category: "ការស្រាវជ្រាវ & អនុវត្ត", mode: "ផ្ទាល់", trainer: "" },
+    { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, semester: "ឆមាសទី ២", category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា", mode: "ផ្ទាល់", trainer: "" }
   ];
 
   if (typeof stmsData !== 'undefined' && stmsData) {
-    if (!Array.isArray(stmsData.subjects)) {
-      stmsData.subjects = [...defaultSubjs];
+    if (!Array.isArray(stmsData.subjects) || stmsData.subjects.length === 0) {
+      stmsData.subjects = defaultSubjs.map(s => ({ ...s }));
+    } else {
+      defaultSubjs.forEach(ds => {
+        const existing = stmsData.subjects.find(s => s && s.code === ds.code);
+        if (!existing) {
+          stmsData.subjects.push({ ...ds });
+        } else {
+          if (!existing.mode && ds.mode) existing.mode = ds.mode;
+          if (!existing.semester && ds.semester) existing.semester = ds.semester;
+        }
+      });
     }
     // Filter out any explicitly deleted subject codes
     if (Array.isArray(stmsData.deletedSubjectCodes) && stmsData.deletedSubjectCodes.length > 0) {
@@ -4735,11 +4921,23 @@ function getKhmerFirstLetter(name) {
 
 function getSubjectTheme(code) {
   const themes = {
+    // ឆមាសទី ១ (Sem 1 Blended)
     'PED-101': { bg: '#fff1f2', border: '#fecdd3', color: '#e11d48', icon: 'fas fa-chalkboard-teacher', label: 'គរុកោសល្យ' },
-    'PSY-102': { bg: '#ecfeff', border: '#a5f3fc', color: '#0891b2', icon: 'fas fa-brain', label: 'ចិត្តវិទ្យា' },
+    'PSY-102': { bg: '#ecfeff', border: '#a5f3fc', color: '#0891b2', icon: 'fas fa-brain', label: 'ចិត្តវិទ្យាអប់រំ' },
+    'KHM-103': { bg: '#fff7ed', border: '#fed7aa', color: '#ea580c', icon: 'fas fa-book-reader', label: 'ភាសាខ្មែរ' },
+    'MTH-104': { bg: '#eff6ff', border: '#bfdbfe', color: '#2563eb', icon: 'fas fa-calculator', label: 'គណិតវិទ្យា' },
+    'SCI-105': { bg: '#f0fdf4', border: '#bbf7d0', color: '#16a34a', icon: 'fas fa-flask', label: 'វិទ្យាសាស្ត្រ' },
+    'SOC-106': { bg: '#fefce8', border: '#fef08a', color: '#ca8a04', icon: 'fas fa-globe-asia', label: 'សិក្សាសង្គម' },
+    'RES-107': { bg: '#fffbeb', border: '#fde68a', color: '#d97706', icon: 'fas fa-search', label: 'ការស្រាវជ្រាវអប់រំ' },
+    'ASM-108': { bg: '#fdf2f8', border: '#fbcfe8', color: '#db2777', icon: 'fas fa-clipboard-check', label: 'ការវាយតម្លៃការសិក្សា' },
+    'ICT-105': { bg: '#faf5ff', border: '#e9d5ff', color: '#9333ea', icon: 'fas fa-laptop-code', label: 'ICT' },
+    'TMK-110': { bg: '#fff1f2', border: '#ffe4e6', color: '#be123c', icon: 'fas fa-pen-fancy', label: 'វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១' },
+    'TMM-111': { bg: '#eff6ff', border: '#dbeafe', color: '#1d4ed8', icon: 'fas fa-shapes', label: 'វិធីសាស្រ្តបង្រៀនគណិត១' },
+    'PRAC-112': { bg: '#ecfdf5', border: '#a7f3d0', color: '#059669', icon: 'fas fa-school', label: 'កម្មសិក្សាគរុកោសល្យ១' },
+
+    // ឆមាសទី ២ & Legacy Support
     'MTH-103': { bg: '#eff6ff', border: '#bfdbfe', color: '#2563eb', icon: 'fas fa-calculator', label: 'គណិតវិទ្យា' },
     'KHM-104': { bg: '#fff7ed', border: '#fed7aa', color: '#ea580c', icon: 'fas fa-book-reader', label: 'ភាសាខ្មែរ' },
-    'ICT-105': { bg: '#faf5ff', border: '#e9d5ff', color: '#9333ea', icon: 'fas fa-laptop-code', label: 'បច្ចេកវិទ្យា ICT' },
     'RES-106': { bg: '#fffbeb', border: '#fde68a', color: '#d97706', icon: 'fas fa-feather-alt', label: 'ការស្រាវជ្រាវ' },
     'PRAC-107': { bg: '#f0fdf4', border: '#bbf7d0', color: '#16a34a', icon: 'fas fa-school', label: 'កម្មសិក្សា' },
     'COM-108': { bg: '#f0f9ff', border: '#bae6fd', color: '#0284c7', icon: 'fas fa-book-bookmark', label: 'សារគមនាគមន៍' }
@@ -5314,19 +5512,20 @@ function filterSubjectCatalog(query) {
 // --------------------------------------------------------------------------
 // 2. HUB MODAL: ថ្នាក់ & កាលវិភាគសិក្សា (CLASS & TIMETABLE)
 // --------------------------------------------------------------------------
-function openTraineeTimetableModal(selectedSemester = null) {
+function openTraineeTimetableModal(selectedSemester = null, selectedMode = null) {
   const activeStream = TRAINEE_STREAMS[currentStreamIndex];
   const profile = getActiveTraineeProfile();
   const targetClass = profile.className || activeStream.cohort || 'all';
   const targetSem = selectedSemester || (activeStream && activeStream.semester ? (activeStream.semester.includes('ឆមាសទី២') ? 'ឆមាសទី ២' : 'ឆមាសទី ១') : 'ឆមាសទី ១');
-  let mySlots = getAllTimetableSlots(targetClass, 'all', targetSem);
+  const targetMode = selectedMode || 'all';
+  let mySlots = getAllTimetableSlots(targetClass, 'all', targetSem, targetMode);
   if (mySlots.length === 0 && targetClass !== 'all') {
-    mySlots = getAllTimetableSlots('all', 'all', targetSem);
+    mySlots = getAllTimetableSlots('all', 'all', targetSem, targetMode);
   }
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="traineeTimetableModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:840px;">
+      <div class="stms-modal-dialog" style="max-width:880px;">
         <div class="stms-modal-header" style="background:linear-gradient(135deg, #0369a1 0%, #0284c7 100%); color:#ffffff;">
           <div style="display:flex; align-items:center; gap:12px;">
             <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
@@ -5341,20 +5540,34 @@ function openTraineeTimetableModal(selectedSemester = null) {
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
-          <!-- Semester Filter Tabs -->
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; flex-wrap:wrap; gap:10px;">
-            <div style="display:flex; align-items:center; gap:6px;">
+          <!-- Semester & Delivery Mode Filter Tabs -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:#f8fafc; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
               <span style="font-size:0.8rem; font-weight:700; color:#1e3a8a;"><i class="fas fa-layer-group"></i> ឆមាសសិក្សា៖</span>
-              <button type="button" class="timetable-pill-tab ${targetSem === 'ឆមាសទី ១' ? 'active' : ''}" onclick="openTraineeTimetableModal('ឆមាសទី ១')">
-                ឆមាសទី ១ (៥ មុខវិជ្ជាស្នូល)
+              <button type="button" class="timetable-pill-tab ${targetSem === 'ឆមាសទី ១' ? 'active' : ''}" onclick="openTraineeTimetableModal('ឆមាសទី ១', '${escapeHtml(targetMode)}')">
+                ឆមាសទី ១
               </button>
-              <button type="button" class="timetable-pill-tab ${targetSem === 'ឆមាសទី ២' ? 'active' : ''}" onclick="openTraineeTimetableModal('ឆមាសទី ២')">
-                ឆមាសទី ២ (៣ មុខវិជ្ជាអនុវត្ត)
+              <button type="button" class="timetable-pill-tab ${targetSem === 'ឆមាសទី ២' ? 'active' : ''}" onclick="openTraineeTimetableModal('ឆមាសទី ២', '${escapeHtml(targetMode)}')">
+                ឆមាសទី ២
               </button>
-              <button type="button" class="timetable-pill-tab ${targetSem === 'all' ? 'active' : ''}" onclick="openTraineeTimetableModal('all')">
+              <button type="button" class="timetable-pill-tab ${targetSem === 'all' ? 'active' : ''}" onclick="openTraineeTimetableModal('all', '${escapeHtml(targetMode)}')">
                 គ្រប់ឆមាស
               </button>
             </div>
+
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span style="font-size:0.8rem; font-weight:700; color:#475569;"><i class="fas fa-satellite-dish"></i> ទម្រង់៖</span>
+              <button type="button" class="timetable-pill-tab ${targetMode === 'all' ? 'active' : ''}" onclick="openTraineeTimetableModal('${escapeHtml(targetSem)}', 'all')">
+                ទម្រង់ទាំងអស់
+              </button>
+              <button type="button" class="timetable-pill-tab ${targetMode === 'online' ? 'active' : ''}" onclick="openTraineeTimetableModal('${escapeHtml(targetSem)}', 'online')">
+                🌐 អនឡាញ (ចន្ទ-សុក្រ)
+              </button>
+              <button type="button" class="timetable-pill-tab ${targetMode === 'in-person' ? 'active' : ''}" onclick="openTraineeTimetableModal('${escapeHtml(targetSem)}', 'in-person')">
+                🏫 រៀនផ្ទាល់ (សៅរ៍-អាទិត្យ)
+              </button>
+            </div>
+
             <button class="btn btn-primary" onclick="showToast('កំពុងរៀបចំទម្រង់បោះពុម្ពកាលវិភាគ...', 'info'); setTimeout(()=>window.print(), 300);" style="height:30px; font-size:0.75rem;">
               <i class="fas fa-print"></i> បោះពុម្ព
             </button>
@@ -5373,23 +5586,32 @@ function openTraineeTimetableModal(selectedSemester = null) {
                 <tr>
                   <th style="width:100px; text-align:center;">ថ្ងៃ</th>
                   <th style="width:140px; text-align:center;">ម៉ោង</th>
+                  <th style="width:90px; text-align:center;">ទម្រង់</th>
                   <th>មុខវិជ្ជាគរុកោសល្យ</th>
                   <th>គ្រូឧទ្ទេសទទួលបន្ទុក</th>
                   <th style="width:110px; text-align:center;">បន្ទប់រៀន</th>
                 </tr>
               </thead>
               <tbody>
-                ${mySlots.length > 0 ? mySlots.map(sl => `
+                ${mySlots.length > 0 ? mySlots.map(sl => {
+                  const slotMode = sl.deliveryMode || getSlotDeliveryMode(sl);
+                  const modeBadge = slotMode === 'online'
+                    ? `<span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700;"><i class="fas fa-globe"></i> អនឡាញ</span>`
+                    : `<span class="badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.72rem; font-weight:700;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
+
+                  return `
+                    <tr>
+                      <td style="text-align:center; font-weight:700; background:#f8fafc;">${sl.day}</td>
+                      <td style="text-align:center; font-weight:700;">${sl.period}</td>
+                      <td style="text-align:center;">${modeBadge}</td>
+                      <td><strong style="color:#1e3a8a;">${escapeHtml(sl.subject)}</strong></td>
+                      <td>${escapeHtml(sl.trainer)}</td>
+                      <td style="text-align:center;"><span class="badge badge-published">${escapeHtml(sl.room)}</span></td>
+                    </tr>
+                  `;
+                }).join('') : `
                   <tr>
-                    <td style="text-align:center; font-weight:700; background:#f8fafc;">${sl.day}</td>
-                    <td style="text-align:center; font-weight:700;">${sl.period}</td>
-                    <td><strong style="color:#1e3a8a;">${escapeHtml(sl.subject)}</strong></td>
-                    <td>${escapeHtml(sl.trainer)}</td>
-                    <td style="text-align:center;"><span class="badge badge-published">${escapeHtml(sl.room)}</span></td>
-                  </tr>
-                `).join('') : `
-                  <tr>
-                    <td colspan="5" style="text-align:center; padding:36px; color:#94a3b8;">
+                    <td colspan="6" style="text-align:center; padding:36px; color:#94a3b8;">
                       <i class="fas fa-calendar-times" style="font-size:2rem; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
                       មិនទាន់មានកាលវិភាគបង្រៀននៅឡើយទេ
                     </td>
@@ -15955,17 +16177,18 @@ function openTeacherSubjectsModal() {
 // --------------------------------------------------------------------------
 // 10. TEACHER TIMETABLE MODAL (TEACHING SCHEDULE)
 // --------------------------------------------------------------------------
-function openTeacherTimetableModal(selectedSemester = null) {
+function openTeacherTimetableModal(selectedSemester = null, selectedMode = null) {
   const tr = getActiveTrainerProfile();
   const myCodes = getTrainerAssignedSubjectCodes(tr);
   const mySubjects = KTPTTC_ALL_SUBJECTS.filter(s => myCodes.includes(s.code));
   const activeSem = selectedSemester || 'all';
-  const allSlots = getAllTimetableSlots('all', 'all', activeSem);
+  const activeMode = selectedMode || 'all';
+  const allSlots = getAllTimetableSlots('all', 'all', activeSem, activeMode);
   const mySlots = allSlots.filter(s => s.trainer && (s.trainer === tr.nameKh || s.trainer.includes(tr.nameKh) || tr.nameKh.includes(s.trainer)));
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="teacherTimetableModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-dialog" style="max-width:850px;">
+      <div class="stms-modal-dialog" style="max-width:880px;">
         <div class="stms-modal-header" style="background:linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); color:#ffffff;">
           <div style="display:flex; align-items:center; gap:12px;">
             <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
@@ -15980,20 +16203,34 @@ function openTeacherTimetableModal(selectedSemester = null) {
         </div>
         <div class="stms-modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
           
-          <!-- Semester Tabs for Teacher -->
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; flex-wrap:wrap; gap:10px;">
-            <div style="display:flex; align-items:center; gap:6px;">
+          <!-- Semester & Delivery Mode Tabs for Teacher -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:#f8fafc; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
               <span style="font-size:0.8rem; font-weight:700; color:#1e40af;"><i class="fas fa-layer-group"></i> ឆមាសបង្រៀន៖</span>
-              <button type="button" class="timetable-pill-tab ${activeSem === 'ឆមាសទី ១' ? 'active' : ''}" onclick="openTeacherTimetableModal('ឆមាសទី ១')">
+              <button type="button" class="timetable-pill-tab ${activeSem === 'ឆមាសទី ១' ? 'active' : ''}" onclick="openTeacherTimetableModal('ឆមាសទី ១', '${escapeHtml(activeMode)}')">
                 ឆមាសទី ១
               </button>
-              <button type="button" class="timetable-pill-tab ${activeSem === 'ឆមាសទី ២' ? 'active' : ''}" onclick="openTeacherTimetableModal('ឆមាសទី ២')">
+              <button type="button" class="timetable-pill-tab ${activeSem === 'ឆមាសទី ២' ? 'active' : ''}" onclick="openTeacherTimetableModal('ឆមាសទី ២', '${escapeHtml(activeMode)}')">
                 ឆមាសទី ២
               </button>
-              <button type="button" class="timetable-pill-tab ${activeSem === 'all' ? 'active' : ''}" onclick="openTeacherTimetableModal('all')">
+              <button type="button" class="timetable-pill-tab ${activeSem === 'all' ? 'active' : ''}" onclick="openTeacherTimetableModal('all', '${escapeHtml(activeMode)}')">
                 គ្រប់ឆមាស
               </button>
             </div>
+
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span style="font-size:0.8rem; font-weight:700; color:#475569;"><i class="fas fa-satellite-dish"></i> ទម្រង់៖</span>
+              <button type="button" class="timetable-pill-tab ${activeMode === 'all' ? 'active' : ''}" onclick="openTeacherTimetableModal('${escapeHtml(activeSem)}', 'all')">
+                ទម្រង់ទាំងអស់
+              </button>
+              <button type="button" class="timetable-pill-tab ${activeMode === 'online' ? 'active' : ''}" onclick="openTeacherTimetableModal('${escapeHtml(activeSem)}', 'online')">
+                🌐 អនឡាញ (ចន្ទ-សុក្រ)
+              </button>
+              <button type="button" class="timetable-pill-tab ${activeMode === 'in-person' ? 'active' : ''}" onclick="openTeacherTimetableModal('${escapeHtml(activeSem)}', 'in-person')">
+                🏫 រៀនផ្ទាល់ (សៅរ៍-អាទិត្យ)
+              </button>
+            </div>
+
             <button class="btn btn-primary" onclick="showToast('កំពុងបើកទម្រង់បោះពុម្ពកាលវិភាគបង្រៀន...', 'info'); setTimeout(()=>window.print(), 300);" style="height:30px; font-size:0.75rem;">
               <i class="fas fa-print"></i> បោះពុម្ព
             </button>
@@ -16012,23 +16249,32 @@ function openTeacherTimetableModal(selectedSemester = null) {
                 <tr>
                   <th style="width:90px; text-align:center;">ថ្ងៃសិក្សា</th>
                   <th style="width:130px; text-align:center;">ម៉ោងបង្រៀន</th>
+                  <th style="width:90px; text-align:center;">ទម្រង់</th>
                   <th>មុខវិជ្ជាគរុកោសល្យ</th>
                   <th>ថ្នាក់រៀន</th>
                   <th style="width:110px; text-align:center;">បន្ទប់រៀន</th>
                 </tr>
               </thead>
               <tbody>
-                ${mySlots.length > 0 ? mySlots.map(sl => `
+                ${mySlots.length > 0 ? mySlots.map(sl => {
+                  const slotMode = sl.deliveryMode || getSlotDeliveryMode(sl);
+                  const modeBadge = slotMode === 'online'
+                    ? `<span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700;"><i class="fas fa-globe"></i> អនឡាញ</span>`
+                    : `<span class="badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.72rem; font-weight:700;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
+
+                  return `
+                    <tr>
+                      <td style="text-align:center; font-weight:700; background:#f8fafc;">${sl.day}</td>
+                      <td style="text-align:center; font-weight:700;">${sl.period}</td>
+                      <td style="text-align:center;">${modeBadge}</td>
+                      <td><strong style="color:#1e3a8a;">${escapeHtml(sl.subject)}</strong></td>
+                      <td><span class="badge" style="background:#eff6ff; color:#1d4ed8; font-weight:700;">${escapeHtml(sl.className)}</span></td>
+                      <td style="text-align:center;"><span class="badge badge-published">${escapeHtml(sl.room)}</span></td>
+                    </tr>
+                  `;
+                }).join('') : `
                   <tr>
-                    <td style="text-align:center; font-weight:700; background:#f8fafc;">${sl.day}</td>
-                    <td style="text-align:center; font-weight:700;">${sl.period}</td>
-                    <td><strong style="color:#1e3a8a;">${escapeHtml(sl.subject)}</strong></td>
-                    <td><span class="badge" style="background:#eff6ff; color:#1d4ed8; font-weight:700;">${escapeHtml(sl.className)}</span></td>
-                    <td style="text-align:center;"><span class="badge badge-published">${escapeHtml(sl.room)}</span></td>
-                  </tr>
-                `).join('') : `
-                  <tr>
-                    <td colspan="5" style="text-align:center; padding:35px; color:#94a3b8;">
+                    <td colspan="6" style="text-align:center; padding:35px; color:#94a3b8;">
                       <i class="fas fa-calendar-times" style="font-size:2rem; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
                       មិនទាន់មានម៉ោងបង្រៀនដែល Admin បានចាត់តាំងជូនលោកគ្រូ/អ្នកគ្រូនៅឡើយទេ
                     </td>
@@ -16582,7 +16828,7 @@ function renderAdminPortalView(container) {
               <div style="background:#eff6ff; padding:14px; border-radius:8px; border:1px solid #bfdbfe;">
                 <div style="font-size:0.75rem; color:#1e40af; font-weight:600;">គ្រូឧទ្ទេសសរុប (Faculty)</div>
                 <div style="font-size:1.6rem; font-weight:800; color:#1d4ed8; margin:4px 0;">${trainers.length} នាក់</div>
-                <div style="font-size:0.72rem; color:#3b82f6;">៨ មុខវិជ្ជាស្នូល MoEYS</div>
+                <div style="font-size:0.72rem; color:#3b82f6;">កម្មវិធីសិក្សា MoEYS KTPTTC</div>
               </div>
               <div style="background:#f5f3ff; padding:14px; border-radius:8px; border:1px solid #ddd6fe;">
                 <div style="font-size:0.75rem; color:#5b21b6; font-weight:600;">គរុនិស្សិតសរុប (Trainees)</div>
@@ -17961,17 +18207,18 @@ window.confirmDeleteCohort = confirmDeleteCohort;
 // --------------------------------------------------------------------------
 // 6. ADMIN MODAL 4: កាលវិភាគមេ (MASTER TIMETABLE)
 // --------------------------------------------------------------------------
-function openAdminTimetableModal(selectedClass = null, selectedSemester = null) {
+function openAdminTimetableModal(selectedClass = null, selectedSemester = null, selectedMode = null) {
   closeStmsModal();
   const classes = getAllSystemClasses();
   const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
   const targetClass = (selectedClass && selectedClass !== 'all') ? selectedClass : (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0]);
   const targetSemester = selectedSemester || currentAdminTimetableSemesterFilter || 'ឆមាសទី ១';
-  const slots = getAllTimetableSlots(targetClass, 'all', targetSemester);
+  const targetMode = selectedMode || currentAdminTimetableDeliveryModeFilter || 'all';
+  const slots = getAllTimetableSlots(targetClass, 'all', targetSemester, targetMode);
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="adminTimetableModal" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:1050px; width:95%; max-height:92vh;">
+      <div class="stms-modal-window" style="max-width:1080px; width:95%; max-height:92vh;">
         <div class="modal-header-bar" style="background:linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color:#ffffff; padding:16px 22px;">
           <div class="modal-header-title" style="color:#ffffff; font-size:1.15rem; display:flex; align-items:center; gap:10px;">
             <i class="fas fa-calendar-alt" style="color:#fde047;"></i>
@@ -17987,7 +18234,7 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null) 
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <span style="font-size:0.8rem; font-weight:700; color:#1e3a8a;"><i class="fas fa-school"></i> ជ្រើសរើសថ្នាក់៖</span>
                 ${availableClasses.map(c => `
-                  <button type="button" class="btn ${c === targetClass ? 'btn-primary' : 'btn-outline'}" style="font-size:0.78rem; height:32px; padding:0 12px;" onclick="openAdminTimetableModal('${escapeHtml(c)}', '${escapeHtml(targetSemester)}')">
+                  <button type="button" class="btn ${c === targetClass ? 'btn-primary' : 'btn-outline'}" style="font-size:0.78rem; height:32px; padding:0 12px;" onclick="openAdminTimetableModal('${escapeHtml(c)}', '${escapeHtml(targetSemester)}', '${escapeHtml(targetMode)}')">
                     ${escapeHtml(c)}
                   </button>
                 `).join('')}
@@ -18006,18 +18253,33 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null) 
               </div>
             </div>
 
-            <!-- Semester Tabs -->
-            <div style="display:flex; align-items:center; gap:8px; padding-top:8px; border-top:1px solid #e2e8f0;">
-              <span style="font-size:0.8rem; font-weight:700; color:#475569;"><i class="fas fa-layer-group"></i> ឆមាសសិក្សា៖</span>
-              <button type="button" class="timetable-pill-tab ${targetSemester === 'ឆមាសទី ១' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', 'ឆមាសទី ១')">
-                ឆមាសទី ១ (៥ មុខវិជ្ជាស្នូល)
-              </button>
-              <button type="button" class="timetable-pill-tab ${targetSemester === 'ឆមាសទី ២' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', 'ឆមាសទី ២')">
-                ឆមាសទី ២ (៣ មុខវិជ្ជាអនុវត្ត)
-              </button>
-              <button type="button" class="timetable-pill-tab ${targetSemester === 'all' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', 'all')">
-                គ្រប់ឆមាស
-              </button>
+            <!-- Semester & Delivery Mode Tabs -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-top:8px; border-top:1px solid #e2e8f0;">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span style="font-size:0.8rem; font-weight:700; color:#475569;"><i class="fas fa-layer-group"></i> ឆមាសសិក្សា៖</span>
+                <button type="button" class="timetable-pill-tab ${targetSemester === 'ឆមាសទី ១' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', 'ឆមាសទី ១', '${escapeHtml(targetMode)}')">
+                  ឆមាសទី ១
+                </button>
+                <button type="button" class="timetable-pill-tab ${targetSemester === 'ឆមាសទី ២' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', 'ឆមាសទី ២', '${escapeHtml(targetMode)}')">
+                  ឆមាសទី ២
+                </button>
+                <button type="button" class="timetable-pill-tab ${targetSemester === 'all' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', 'all', '${escapeHtml(targetMode)}')">
+                  គ្រប់ឆមាស
+                </button>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span style="font-size:0.8rem; font-weight:700; color:#475569;"><i class="fas fa-satellite-dish"></i> ទម្រង់៖</span>
+                <button type="button" class="timetable-pill-tab ${targetMode === 'all' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', '${escapeHtml(targetSemester)}', 'all')">
+                  ទម្រង់ទាំងអស់
+                </button>
+                <button type="button" class="timetable-pill-tab ${targetMode === 'online' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', '${escapeHtml(targetSemester)}', 'online')">
+                  🌐 អនឡាញ (ចន្ទ-សុក្រ)
+                </button>
+                <button type="button" class="timetable-pill-tab ${targetMode === 'in-person' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', '${escapeHtml(targetSemester)}', 'in-person')">
+                  🏫 រៀនផ្ទាល់ (សៅរ៍-អាទិត្យ)
+                </button>
+              </div>
             </div>
           </div>
 
@@ -18028,6 +18290,7 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null) 
                 <tr>
                   <th style="padding:10px; text-align:center; width:80px;">ថ្ងៃ</th>
                   <th style="padding:10px; text-align:center; width:130px;">ម៉ោងសិក្សា</th>
+                  <th style="padding:10px; text-align:center; width:95px;">ទម្រង់</th>
                   <th style="padding:10px;">មុខវិជ្ជា MoEYS</th>
                   <th style="padding:10px;">សាស្ត្រាចារ្យទទួលបន្ទុក</th>
                   <th style="padding:10px; text-align:center; width:110px;">បន្ទប់រៀន</th>
@@ -18040,7 +18303,7 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null) 
                   if (slots.length === 0) {
                     return `
                       <tr>
-                        <td colspan="7" style="text-align:center; padding:45px 20px; color:#94a3b8;">
+                        <td colspan="8" style="text-align:center; padding:45px 20px; color:#94a3b8;">
                           <i class="fas fa-calendar-times" style="font-size:2.4rem; color:#cbd5e1; margin-bottom:10px; display:block;"></i>
                           <div style="font-size:1rem; font-weight:700; color:#1e3a8a; margin-bottom:6px;">មិនទាន់មានកាលវិភាគបង្រៀនសម្រាប់ «${escapeHtml(targetClass)}» (${escapeHtml(targetSemester === 'all' ? 'គ្រប់ឆមាស' : targetSemester)}) នៅឡើយទេ</div>
                           <p style="font-size:0.82rem; color:#64748b; margin-bottom:14px;">ចុចប៊ូតុងខាងក្រោមដើម្បីបង្កើតកាលវិភាគគំរូ ឬបន្ថែមម៉ោងបង្រៀនដោយផ្ទាល់</p>
@@ -18050,13 +18313,20 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null) 
                       </tr>
                     `;
                   }
-                  return TIMETABLE_DAYS.map(day => {
+                  let daysToIterate = TIMETABLE_DAYS;
+                  if (targetMode === 'online') {
+                    daysToIterate = daysToIterate.filter(d => ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(d));
+                  } else if (targetMode === 'in-person') {
+                    daysToIterate = daysToIterate.filter(d => ['សៅរ៍', 'អាទិត្យ'].includes(d));
+                  }
+
+                  return daysToIterate.map(day => {
                     const daySlots = slots.filter(s => s.day === day || s.dayFull.includes(day));
                     if (daySlots.length === 0) {
                       return `
                         <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
                           <td style="padding:10px; text-align:center; font-weight:700; background:#f8fafc;">${day}</td>
-                          <td colspan="5" style="padding:10px; text-align:center; color:#94a3b8; font-size:0.8rem;">គ្មានម៉ោងសិក្សា / ស្វ័យសិក្សា</td>
+                          <td colspan="6" style="padding:10px; text-align:center; color:#94a3b8; font-size:0.8rem;">គ្មានម៉ោងសិក្សា / ស្វ័យសិក្សា</td>
                           <td style="padding:10px; text-align:center;">
                             <button class="btn btn-outline" style="height:26px; font-size:0.72rem; padding:0 8px;" onclick="openAdminAddTimetableSlotModal('${escapeHtml(targetClass)}', '${day}')" title="បន្ថែមម៉ោង"><i class="fas fa-plus"></i></button>
                           </td>
@@ -18065,10 +18335,16 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null) 
                     }
                     return daySlots.map((sl, idx) => {
                       const theme = getSubjectTheme(sl.subjectCode);
+                      const slotMode = sl.deliveryMode || getSlotDeliveryMode(sl);
+                      const modeBadge = slotMode === 'online'
+                        ? `<span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700;"><i class="fas fa-globe"></i> អនឡាញ</span>`
+                        : `<span class="badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.72rem; font-weight:700;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
+
                       return `
                         <tr style="border-bottom:1px solid #f1f5f9;">
                           ${idx === 0 ? `<td rowspan="${daySlots.length}" style="padding:10px; text-align:center; font-weight:800; background:#f8fafc; color:#1e3a8a; vertical-align:middle; border-right:1px solid #e2e8f0;">${day}</td>` : ''}
                           <td style="padding:10px; text-align:center; font-weight:700; font-size:0.82rem;">${sl.period}</td>
+                          <td style="padding:10px; text-align:center;">${modeBadge}</td>
                           <td style="padding:10px;">
                             <div style="display:flex; align-items:center; gap:6px;">
                               <span style="background:${theme.bg}; color:${theme.color}; border:1px solid ${theme.border}; font-size:0.72rem; font-weight:700; padding:2px 6px; border-radius:4px;">${sl.subjectCode || 'MOEYS'}</span>
@@ -19426,88 +19702,173 @@ window.resetAdminSubjectsFilter = resetAdminSubjectsFilter;
 
 // Reset All Subjects to MoEYS / KTPTTC Standards
 function confirmResetAllSubjects() {
-  const msg = `⚠️ តើលោកអ្នកពិតជាចង់កំណត់មុខវិជ្ជាសិក្សាឡើងវិញ (Reset Subjects) ទៅតាមកម្មវិធីបណ្តុះបណ្តាលគំរូដើមរបស់សាលា KTPTTC មែនទេ?\n\nមុខវិជ្ជាស្តង់ដារទាំង ៨ របស់សាលានឹងត្រូវស្ដារឡើងវិញពេញលេញ (រួមមាន កូដ, ក្រេឌីត, ឆមាស និងប្រភេទមុខវិជ្ជា)។`;
+  const msg = `⚠️ តើលោកអ្នកពិតជាចង់កំណត់មុខវិជ្ជាសិក្សាឡើងវិញ (Reset Subjects) ទៅតាមកម្មវិធីបណ្តុះបណ្តាលគំរូដើមរបស់សាលា KTPTTC មែនទេ?\n\nមុខវិជ្ជាស្តង់ដារ MoEYS KTPTTC នឹងត្រូវស្ដារឡើងវិញពេញលេញ (ឆមាសទី១: ៧ មុខវិជ្ជាអនឡាញ + ១២ មុខវិជ្ជាផ្ទាល់, ឆមាសទី២: ៣ មុខវិជ្ជាអនុវត្ត)។`;
   
   if (!confirm(msg)) return;
 
   const defaultSubjs = [
     {
       code: "PED-101",
-      nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន",
-      nameEn: "General Pedagogy & Teaching Methodology",
+      nameKh: "គរុកោសល្យ",
+      nameEn: "Pedagogy",
       credits: 3,
       semester: "ឆមាសទី ១",
       category: "គរុកោសល្យទូទៅ",
+      mode: "ទាំងពីរ",
       trainer: "",
-      desc: "ទ្រឹស្តីគរុកោសល្យទូទៅ វិធីសាស្ត្របង្រៀនសកម្ម និងការគ្រប់គ្រងថ្នាក់រៀន"
+      desc: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀនសកម្ម"
     },
     {
       code: "PSY-102",
-      nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ",
-      nameEn: "Educational Psychology & Child Development",
+      nameKh: "ចិត្តវិទ្យាអប់រំ",
+      nameEn: "Educational Psychology",
       credits: 2,
       semester: "ឆមាសទី ១",
       category: "គរុកោសល្យទូទៅ",
+      mode: "ទាំងពីរ",
       trainer: "",
-      desc: "ចិត្តវិទ្យាគរុកោសល្យ ការយល់ដឹងពីការលូតលាស់ និងការអភិវឌ្ឍបញ្ញារបស់កុមារ"
+      desc: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ"
     },
     {
-      code: "MTH-103",
-      nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម",
-      nameEn: "Primary Mathematics Teaching Methodology",
-      credits: 3,
+      code: "KHM-103",
+      nameKh: "ភាសាខ្មែរ",
+      nameEn: "Khmer Language",
+      credits: 2,
       semester: "ឆមាសទី ១",
       category: "វិធីសាស្ត្របង្រៀនឯកទេស",
+      mode: "ទាំងពីរ",
       trainer: "",
-      desc: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យា ការប្រើប្រាស់ឧបទេស និងលំហាត់អនុវត្តកម្រិតបឋម"
+      desc: "ភាសាខ្មែរ និងអក្សរសាស្ត្រ"
     },
     {
-      code: "KHM-104",
-      nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង",
-      nameEn: "Khmer Language Teaching Methodology & Early Reading",
-      credits: 3,
+      code: "MTH-104",
+      nameKh: "គណិតវិទ្យា",
+      nameEn: "Mathematics",
+      credits: 2,
       semester: "ឆមាសទី ១",
       category: "វិធីសាស្ត្របង្រៀនឯកទេស",
+      mode: "ទាំងពីរ",
       trainer: "",
-      desc: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ អំណានដំបូង ការសរសេរ និងវេយ្យាករណ៍"
+      desc: "គណិតវិទ្យាមូលដ្ឋាន និងអនុវត្ត"
     },
     {
-      code: "ICT-105",
-      nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)",
-      nameEn: "Information & Communication Technology in Education",
+      code: "SCI-105",
+      nameKh: "វិទ្យាសាស្ត្រ",
+      nameEn: "Science",
       credits: 2,
       semester: "ឆមាសទី ១",
       category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា",
+      mode: "ទាំងពីរ",
+      trainer: "",
+      desc: "វិទ្យាសាស្ត្រទូទៅ និងការពិសោធន៍"
+    },
+    {
+      code: "SOC-106",
+      nameKh: "សិក្សាសង្គម",
+      nameEn: "Social Studies",
+      credits: 2,
+      semester: "ឆមាសទី ១",
+      category: "វិទ្យាសាស្ត្រសង្គម",
+      mode: "ទាំងពីរ",
+      trainer: "",
+      desc: "សិក្សាសង្គម ប្រវត្តិវិទ្យា និងភូមិវិទ្យា"
+    },
+    {
+      code: "RES-107",
+      nameKh: "ការស្រាវជ្រាវអប់រំ",
+      nameEn: "Educational Research",
+      credits: 2,
+      semester: "ឆមាសទី ១",
+      category: "ការស្រាវជ្រាវ & អនុវត្ត",
+      mode: "ទាំងពីរ",
+      trainer: "",
+      desc: "វិធីសាស្ត្រស្រាវជ្រាវអប់រំ និងការប្រមូលទិន្នន័យ"
+    },
+    {
+      code: "ASM-108",
+      nameKh: "ការវាយតម្លៃការសិក្សា",
+      nameEn: "Learning Assessment",
+      credits: 2,
+      semester: "ឆមាសទី ១",
+      category: "ការវាស់វែង និងវាយតម្លៃ",
+      mode: "ផ្ទាល់",
+      trainer: "",
+      desc: "ការវាស់វែង ការវាយតម្លៃលទ្ធផលសិក្សា និងការបង្កើតតេស្ត"
+    },
+    {
+      code: "ICT-105",
+      nameKh: "ICT",
+      nameEn: "ICT in Education",
+      credits: 2,
+      semester: "ឆមាសទី ១",
+      category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា",
+      mode: "ផ្ទាល់",
       trainer: "យូសុះ ស៊ីលាល",
-      desc: "ការប្រើប្រាស់បច្ចេកវិទ្យាឌីជីថល កម្មវិធីអប់រំ និងការផលិតមាតិកាបង្រៀនអេឡិចត្រូនិច"
+      desc: "បច្ចេកវិទ្យាព័ត៌មាន និងសារគមនាគមន៍ក្នុងការអប់រំ"
+    },
+    {
+      code: "TMK-110",
+      nameKh: "វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១",
+      nameEn: "Khmer Teaching Methodology 1",
+      credits: 3,
+      semester: "ឆមាសទី ១",
+      category: "វិធីសាស្ត្របង្រៀនឯកទេស",
+      mode: "ផ្ទាល់",
+      trainer: "",
+      desc: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ អំណាន និងសំណេរដំបូង (កម្រិត ១)"
+    },
+    {
+      code: "TMM-111",
+      nameKh: "វិធីសាស្រ្តបង្រៀនគណិត១",
+      nameEn: "Mathematics Teaching Methodology 1",
+      credits: 3,
+      semester: "ឆមាសទី ១",
+      category: "វិធីសាស្ត្របង្រៀនឯកទេស",
+      mode: "ផ្ទាល់",
+      trainer: "",
+      desc: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យា និងការប្រើប្រាស់ឧបទេស (កម្រិត ១)"
+    },
+    {
+      code: "PRAC-112",
+      nameKh: "កម្មសិក្សាគរុកោសល្យ១",
+      nameEn: "Teaching Practicum 1",
+      credits: 4,
+      semester: "ឆមាសទី ១",
+      category: "ការស្រាវជ្រាវ & អនុវត្ត",
+      mode: "ផ្ទាល់",
+      trainer: "",
+      desc: "ការចុះសង្កេត និងអនុវត្តការបង្រៀនជាក់ស្តែងនៅសាលាបឋមសិក្សា"
     },
     {
       code: "RES-106",
-      nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)",
+      nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន",
       nameEn: "Classroom Action Research",
       credits: 2,
       semester: "ឆមាសទី ២",
-      category: "ស្រាវជ្រាវ & កម្មសិក្សា",
+      category: "ការស្រាវជ្រាវ & អនុវត្ត",
+      mode: "ផ្ទាល់",
       trainer: "",
       desc: "វិធីសាស្ត្រស្រាវជ្រាវសកម្មភាព ការដោះស្រាយបញ្ហាក្នុងថ្នាក់ និងការសរសេររបាយការណ៍ស្រាវជ្រាវ"
     },
     {
       code: "PRAC-107",
-      nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)",
-      nameEn: "Teaching Practicum in Primary Schools",
+      nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម",
+      nameEn: "Teaching Practicum 2",
       credits: 4,
       semester: "ឆមាសទី ២",
-      category: "ស្រាវជ្រាវ & កម្មសិក្សា",
+      category: "ការស្រាវជ្រាវ & អនុវត្ត",
+      mode: "ផ្ទាល់",
       trainer: "",
       desc: "ការចុះសង្កេត និងអនុវត្តការបង្រៀនជាក់ស្តែងនៅតាមសាលាបឋមសិក្សាគោលដៅ"
     },
     {
       code: "COM-108",
       nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍",
-      nameEn: "Information Technology & Communication",
+      nameEn: "IT & Educational Communication",
       credits: 2,
       semester: "ឆមាសទី ២",
       category: "វិទ្យាសាស្ត្រ & បច្ចេកវិទ្យា",
+      mode: "ផ្ទាល់",
       trainer: "",
       desc: "ជំនាញកុំព្យូទ័រជាមូលដ្ឋាន បណ្តាញអ៊ីនធឺណិត និងទំនាក់ទំនងឌីជីថល"
     }
@@ -19521,7 +19882,7 @@ function confirmResetAllSubjects() {
   const ictTeacher = (stmsData.users || []).find(u => u.nameKh && u.nameKh.includes('ស៊ីលាល'));
   if (ictTeacher) {
     ictTeacher.subject = 'ICT-105';
-    ictTeacher.subjectName = 'បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)';
+    ictTeacher.subjectName = 'ICT';
   }
 
   saveData(true);
@@ -19529,7 +19890,7 @@ function confirmResetAllSubjects() {
   if (typeof syncToServer === 'function') {
     syncToServer();
   }
-  showToast(`🎉 បានកំណត់មុខវិជ្ជាសិក្សាឡើងវិញតាមគំរូដើម KTPTTC (៨ មុខវិជ្ជា) ដោយជោគជ័យ!`, 'success');
+  showToast(`🎉 បានកំណត់មុខវិជ្ជាសិក្សាឡើងវិញតាមគំរូដើម MoEYS KTPTTC ដោយជោគជ័យ!`, 'success');
   openAdminSubjectsCatalogModal();
 
   if (currentView === 'admin-portal') {

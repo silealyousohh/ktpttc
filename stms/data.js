@@ -31,13 +31,18 @@ const KTPTTC_INITIAL_DATA = {
   },
 
   subjects: [
-    { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ និងវិធីសាស្ត្របង្រៀន", credits: 3, trainer: "" },
-    { code: "PSY-102", nameKh: "ចិត្តវិទ្យាគរុកោសល្យ និងការអភិវឌ្ឍកុមារ", credits: 2, trainer: "" },
-    { code: "MTH-103", nameKh: "វិធីសាស្ត្របង្រៀនគណិតវិទ្យាបឋម", credits: 3, trainer: "" },
-    { code: "KHM-104", nameKh: "វិធីសាស្ត្របង្រៀនភាសាខ្មែរ និងអំណានដំបូង", credits: 3, trainer: "" },
-    { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មានក្នុងការអប់រំ (ICT)", credits: 2, trainer: "" },
-    { code: "RES-106", nameKh: "ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)", credits: 2, trainer: "" },
-    { code: "PRAC-107", nameKh: "ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)", credits: 4, trainer: "" },
+    { code: "PED-101", nameKh: "គរុកោសល្យ", credits: 3, trainer: "", mode: "ទាំងពីរ" },
+    { code: "PSY-102", nameKh: "ចិត្តវិទ្យាអប់រំ", credits: 2, trainer: "", mode: "ទាំងពីរ" },
+    { code: "KHM-103", nameKh: "ភាសាខ្មែរ", credits: 2, trainer: "", mode: "ទាំងពីរ" },
+    { code: "MTH-104", nameKh: "គណិតវិទ្យា", credits: 2, trainer: "", mode: "ទាំងពីរ" },
+    { code: "SCI-105", nameKh: "វិទ្យាសាស្ត្រ", credits: 2, trainer: "", mode: "ទាំងពីរ" },
+    { code: "SOC-106", nameKh: "សិក្សាសង្គម", credits: 2, trainer: "", mode: "ទាំងពីរ" },
+    { code: "RES-107", nameKh: "ការស្រាវជ្រាវអប់រំ", credits: 2, trainer: "", mode: "ទាំងពីរ" },
+    { code: "ASM-108", nameKh: "ការវាយតម្លៃការសិក្សា", credits: 2, trainer: "", mode: "ផ្ទាល់" },
+    { code: "ICT-105", nameKh: "ICT", credits: 2, trainer: "យូសុះ ស៊ីលាល", mode: "ផ្ទាល់" },
+    { code: "TMK-110", nameKh: "វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១", credits: 3, trainer: "", mode: "ផ្ទាល់" },
+    { code: "TMM-111", nameKh: "វិធីសាស្រ្តបង្រៀនគណិត១", credits: 3, trainer: "", mode: "ផ្ទាល់" },
+    { code: "PRAC-112", nameKh: "កម្មសិក្សាគរុកោសល្យ១", credits: 4, trainer: "", mode: "ផ្ទាល់" },
     { code: "COM-108", nameKh: "បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍", credits: 2, trainer: "" }
   ],
 
