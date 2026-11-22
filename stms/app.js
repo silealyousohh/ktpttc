@@ -9760,7 +9760,7 @@ function ensureSyncedCollections() {
   const beforeTeacherCount = stmsData.users.length;
   stmsData.users = stmsData.users.filter(u => {
     if (!u) return false;
-    const isMock = mockTeacherIds.includes(u.id) || mockTeacherNames.includes(u.nameKh);
+    const isMock = mockTeacherIds.includes(u.id) && mockTeacherNames.includes(u.nameKh);
     return !isMock;
   });
   if (stmsData.users.length !== beforeTeacherCount) {
@@ -12606,7 +12606,22 @@ async function renderContinuousPdf(pdfDoc, containerId, zoomScale = 1.0) {
 }
 
 async function tryParsePptxWithJSZip(fileData, lesson) {
-  if (!window.JSZip || !fileData) return null;
+  if (!fileData) return null;
+
+  // 1. Primary: Use dedicated high-fidelity PPTXViewer engine if available
+  if (window.PPTXViewer && typeof window.PPTXViewer.parse === 'function') {
+    try {
+      const parsedSlides = await window.PPTXViewer.parse(fileData, { lesson: lesson });
+      if (parsedSlides && parsedSlides.length > 0) {
+        return parsedSlides;
+      }
+    } catch (viewerErr) {
+      console.warn('PPTXViewer engine error, attempting fallback parser:', viewerErr);
+    }
+  }
+
+  // 2. Secondary: Fallback basic JSZip parser
+  if (!window.JSZip) return null;
   try {
     const rawData = getPdfDataAsUint8Array(fileData);
     if (!rawData) return null;
@@ -12677,6 +12692,14 @@ async function tryParsePptxWithJSZip(fileData, lesson) {
 }
 
 function renderActiveSlide(slide, index, total, theme, l) {
+  // 1. High-Fidelity Rendered PPTX Slide Engine (pptx.js)
+  if (slide && (slide.type === 'pptx_rendered' || (slide.elements && slide.elements.length > 0))) {
+    if (window.PPTXViewer && typeof window.PPTXViewer.renderSlide === 'function') {
+      const zoomScale = window.activeSlideViewerState ? (window.activeSlideViewerState.zoomScale || 1.0) : 1.0;
+      return window.PPTXViewer.renderSlide(slide, { zoom: zoomScale, theme: theme, lesson: l });
+    }
+  }
+
   const isIvory = theme === 'ivory';
   const isEmerald = theme === 'emerald';
   const headerSubColor = isIvory ? '#64748b' : isEmerald ? '#a7f3d0' : '#93c5fd';
@@ -13192,7 +13215,7 @@ async function openLessonSlideViewerModal(lessonId) {
     slides: slides,
     currentSlide: 1,
     totalSlides: slides.length,
-    theme: (isPdf && pdfDoc) ? 'cinema' : 'blue',
+    theme: (isPdf && pdfDoc) || (slides[0] && slides[0].type === 'pptx_rendered') ? 'cinema' : 'blue',
     mode: 'deck',
     pdfDoc: pdfDoc,
     zoomScale: 1.0,
@@ -13264,9 +13287,9 @@ async function openLessonSlideViewerModal(lessonId) {
         <div style="padding:14px 18px; background:#070a12; flex:1; display:flex; flex-direction:column; gap:10px; min-height:0;">
           
           <!-- Slide Deck Presentation Canvas -->
-          <div id="slideViewerStage" class="slide-deck-stage theme-${(isPdf && pdfDoc) ? 'cinema' : 'blue'}">
+          <div id="slideViewerStage" class="slide-deck-stage theme-${(isPdf && pdfDoc) || (slides[0] && slides[0].type === 'pptx_rendered') ? 'cinema' : 'blue'}">
             <div id="slideViewerContent" style="height:100%; display:flex; flex-direction:column;">
-              ${renderActiveSlide(slides[0], 1, slides.length, (isPdf && pdfDoc) ? 'cinema' : 'blue', l)}
+              ${renderActiveSlide(slides[0], 1, slides.length, (isPdf && pdfDoc) || (slides[0] && slides[0].type === 'pptx_rendered') ? 'cinema' : 'blue', l)}
             </div>
           </div>
 
