@@ -4723,16 +4723,6 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
               </select>
             </div>
 
-            <!-- Semester Selector -->
-            <div style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.25);">
-              <span style="font-size:0.75rem; font-weight:700; color:#e0f2fe; white-space:nowrap;"><i class="fas fa-layer-group"></i> ឆមាស៖</span>
-              <select onchange="handleAdminTimetableSemesterChange(this.value)" style="background:#ffffff; color:#0f172a; border:none; border-radius:6px; font-size:0.8rem; font-weight:700; height:30px; padding:0 8px; cursor:pointer;">
-                <option value="ឆមាសទី ១" ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ១' ? 'selected' : ''}>ឆមាសទី ១ (៥ មុខវិជ្ជាស្នូល)</option>
-                <option value="ឆមាសទី ២" ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ២' ? 'selected' : ''}>ឆមាសទី ២ (៣ មុខវិជ្ជាអនុវត្ត)</option>
-                <option value="all" ${currentAdminTimetableSemesterFilter === 'all' ? 'selected' : ''}>គ្រប់ឆមាសទាំងអស់</option>
-              </select>
-            </div>
-
             <button type="button" class="btn" onclick="openAdminAddTimetableSlotModal('${escapeHtml(activeClass)}')" style="background:#10b981; color:#ffffff; border:1px solid #34d399; font-size:0.78rem; font-weight:700; height:32px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
               <i class="fas fa-plus-circle"></i> បន្ថែមម៉ោងបង្រៀន
             </button>
@@ -4743,56 +4733,84 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
           </div>
         </div>
 
-        <!-- Filter Toolbar -->
-        <div style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-            <span style="font-size:0.8rem; font-weight:700; color:#475569; margin-right:4px;">
-              <i class="fas fa-layer-group"></i> ឆមាស៖
-            </span>
-            <button type="button" class="timetable-pill-tab ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ១' ? 'active' : ''}" onclick="handleAdminTimetableSemesterChange('ឆមាសទី ១')">
-              ឆមាសទី ១
-            </button>
-            <button type="button" class="timetable-pill-tab ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ២' ? 'active' : ''}" onclick="handleAdminTimetableSemesterChange('ឆមាសទី ២')">
-              ឆមាសទី ២
-            </button>
-            <button type="button" class="timetable-pill-tab ${currentAdminTimetableSemesterFilter === 'all' ? 'active' : ''}" onclick="handleAdminTimetableSemesterChange('all')">
-              គ្រប់ឆមាស
-            </button>
-
-            <span style="font-size:0.8rem; font-weight:700; color:#475569; margin-left:12px; margin-right:4px;">
-              <i class="fas fa-filter"></i> ថ្ងៃ៖
-            </span>
-            ${dayTabs.map(tab => `
-              <button type="button" class="timetable-pill-tab ${currentAdminTimetableDayFilter === tab.id ? 'active' : ''}" onclick="handleAdminTimetableDayChange('${tab.id}')">
-                ${tab.label}
+        <!-- Filter Toolbar - Tier 1: Semester, Delivery Mode & Actions -->
+        <div style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          
+          <!-- Left: Grouped Filter Controls -->
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            
+            <!-- Semester Pill Group -->
+            <div style="display:inline-flex; align-items:center; gap:4px; background:#ffffff; padding:3px 6px; border-radius:8px; border:1px solid #cbd5e1; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+              <span style="font-size:0.75rem; font-weight:800; color:#334155; padding:0 4px; display:inline-flex; align-items:center; gap:4px;">
+                <i class="fas fa-layer-group" style="color:#2563eb;"></i> ឆមាស៖
+              </span>
+              <button type="button" class="timetable-pill-tab ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ១' ? 'active' : ''}" onclick="handleAdminTimetableSemesterChange('ឆមាសទី ១')">
+                ឆមាសទី ១
               </button>
-            `).join('')}
+              <button type="button" class="timetable-pill-tab ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ២' ? 'active' : ''}" onclick="handleAdminTimetableSemesterChange('ឆមាសទី ២')">
+                ឆមាសទី ២
+              </button>
+              <button type="button" class="timetable-pill-tab ${currentAdminTimetableSemesterFilter === 'all' ? 'active' : ''}" onclick="handleAdminTimetableSemesterChange('all')">
+                គ្រប់ឆមាស
+              </button>
+            </div>
 
-            <span style="font-size:0.8rem; font-weight:700; color:#475569; margin-left:12px; margin-right:4px;">
-              <i class="fas fa-satellite-dish"></i> ទម្រង់៖
-            </span>
-            <button type="button" class="timetable-pill-tab ${currentAdminTimetableDeliveryModeFilter === 'all' ? 'active' : ''}" onclick="handleAdminTimetableDeliveryModeChange('all')">
-              ទម្រង់ទាំងអស់
-            </button>
-            <button type="button" class="timetable-pill-tab ${currentAdminTimetableDeliveryModeFilter === 'online' ? 'active' : ''}" onclick="handleAdminTimetableDeliveryModeChange('online')">
-              🌐 អនឡាញ (ចន្ទ-សុក្រ)
-            </button>
-            <button type="button" class="timetable-pill-tab ${currentAdminTimetableDeliveryModeFilter === 'in-person' ? 'active' : ''}" onclick="handleAdminTimetableDeliveryModeChange('in-person')">
-              🏫 រៀនផ្ទាល់ (សៅរ៍-អាទិត្យ)
-            </button>
+            <!-- Delivery Mode Pill Group -->
+            <div style="display:inline-flex; align-items:center; gap:4px; background:#ffffff; padding:3px 6px; border-radius:8px; border:1px solid #cbd5e1; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+              <span style="font-size:0.75rem; font-weight:800; color:#334155; padding:0 4px; display:inline-flex; align-items:center; gap:4px;">
+                <i class="fas fa-satellite-dish" style="color:#0284c7;"></i> ទម្រង់៖
+              </span>
+              <button type="button" class="timetable-pill-tab ${currentAdminTimetableDeliveryModeFilter === 'all' ? 'active' : ''}" onclick="handleAdminTimetableDeliveryModeChange('all')">
+                ទម្រង់ទាំងអស់
+              </button>
+              <button type="button" class="timetable-pill-tab ${currentAdminTimetableDeliveryModeFilter === 'online' ? 'active' : ''}" onclick="handleAdminTimetableDeliveryModeChange('online')">
+                🌐 អនឡាញ (ចន្ទ-សុក្រ)
+              </button>
+              <button type="button" class="timetable-pill-tab ${currentAdminTimetableDeliveryModeFilter === 'in-person' ? 'active' : ''}" onclick="handleAdminTimetableDeliveryModeChange('in-person')">
+                🏫 រៀនផ្ទាល់ (សៅរ៍-អាទិត្យ)
+              </button>
+            </div>
+
           </div>
 
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" onclick="confirmGenerateStandardTimetable('${escapeHtml(activeClass)}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.75rem; font-weight:700; padding:4px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="បង្កើតកាលវិភាគគំរូតាមឆមាស MoEYS ដោយស្វ័យប្រវត្តិ">
-              <i class="fas fa-magic"></i> បង្កើតគំរូតាមឆមាសស្វ័យប្រវត្តិ
+          <!-- Right: Action Buttons Group (Clean & Evenly Spaced) -->
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button type="button" onclick="confirmGenerateStandardTimetable('${escapeHtml(activeClass)}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.76rem; font-weight:700; height:32px; padding:0 12px; border-radius:7px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s;" title="បង្កើតកាលវិភាគគំរូតាមឆមាស MoEYS ដោយស្វ័យប្រវត្តិ">
+              <i class="fas fa-wand-magic-sparkles"></i> បង្កើតគំរូតាមឆមាស
             </button>
-            <button type="button" onclick="openResetTimetableModal('${escapeHtml(activeClass)}', '${escapeHtml(currentAdminTimetableSemesterFilter)}')" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-size:0.75rem; font-weight:700; padding:4px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="កំណត់កាលវិភាគឡើងវិញ (Reset កាលវិភាគ)">
+            <button type="button" onclick="openResetTimetableModal('${escapeHtml(activeClass)}', '${escapeHtml(currentAdminTimetableSemesterFilter)}')" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-size:0.76rem; font-weight:700; height:32px; padding:0 12px; border-radius:7px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s;" title="កំណត់កាលវិភាគឡើងវិញ (Reset កាលវិភាគ)">
               <i class="fas fa-rotate-left"></i> Reset កាលវិភាគ
             </button>
-            <button type="button" onclick="printAdminClassTimetable('${escapeHtml(activeClass)}')" style="background:#f8fafc; color:#334155; border:1px solid #cbd5e1; font-size:0.75rem; font-weight:600; padding:4px 10px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+            <button type="button" onclick="printAdminClassTimetable('${escapeHtml(activeClass)}')" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; font-size:0.76rem; font-weight:600; height:32px; padding:0 11px; border-radius:7px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:all 0.15s;" title="បោះពុម្ពកាលវិភាគ">
               <i class="fas fa-print"></i> បោះពុម្ព
             </button>
           </div>
+
+        </div>
+
+        <!-- Filter Toolbar - Tier 2: Dedicated Days Strip -->
+        <div style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:8px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          
+          <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+            <span style="font-size:0.76rem; font-weight:800; color:#475569; margin-right:4px; display:inline-flex; align-items:center; gap:5px;">
+              <i class="far fa-calendar-check" style="color:#2563eb;"></i> ថ្ងៃក្នុងសប្តាហ៍៖
+            </span>
+            ${dayTabs.map(tab => `
+              <button type="button" class="timetable-pill-tab ${currentAdminTimetableDayFilter === tab.id ? 'active' : ''}" onclick="handleAdminTimetableDayChange('${tab.id}')" style="height:28px; font-size:0.74rem; padding:0 9px;">
+                ${tab.label}
+              </button>
+            `).join('')}
+          </div>
+
+          <div style="font-size:0.74rem; color:#64748b; font-weight:600; display:flex; align-items:center; gap:6px;">
+            <span style="background:#f1f5f9; padding:3px 10px; border-radius:12px; border:1px solid #e2e8f0; display:inline-flex; align-items:center; gap:4px;">
+              <i class="fas fa-info-circle" style="color:#0284c7;"></i>
+              <span>${escapeHtml(activeClass)}</span> • 
+              <span>${currentAdminTimetableSemesterFilter === 'all' ? 'គ្រប់ឆមាស' : currentAdminTimetableSemesterFilter}</span> • 
+              <strong style="color:#1e3a8a;">${totalSlotsCount} ម៉ោង</strong>
+            </span>
+          </div>
+
         </div>
 
         <!-- Timetable Body / Matrix Grid -->
@@ -18515,9 +18533,12 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null, 
             </div>
 
             <!-- Semester & Delivery Mode Tabs -->
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-top:8px; border-top:1px solid #e2e8f0;">
-              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                <span style="font-size:0.8rem; font-weight:700; color:#475569;"><i class="fas fa-layer-group"></i> ឆមាសសិក្សា៖</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-top:10px; border-top:1px solid #e2e8f0;">
+              
+              <div style="display:inline-flex; align-items:center; gap:4px; background:#ffffff; padding:3px 6px; border-radius:8px; border:1px solid #cbd5e1; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                <span style="font-size:0.75rem; font-weight:800; color:#334155; padding:0 4px; display:inline-flex; align-items:center; gap:4px;">
+                  <i class="fas fa-layer-group" style="color:#2563eb;"></i> ឆមាសសិក្សា៖
+                </span>
                 <button type="button" class="timetable-pill-tab ${targetSemester === 'ឆមាសទី ១' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', 'ឆមាសទី ១', '${escapeHtml(targetMode)}')">
                   ឆមាសទី ១
                 </button>
@@ -18529,8 +18550,10 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null, 
                 </button>
               </div>
 
-              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                <span style="font-size:0.8rem; font-weight:700; color:#475569;"><i class="fas fa-satellite-dish"></i> ទម្រង់៖</span>
+              <div style="display:inline-flex; align-items:center; gap:4px; background:#ffffff; padding:3px 6px; border-radius:8px; border:1px solid #cbd5e1; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                <span style="font-size:0.75rem; font-weight:800; color:#334155; padding:0 4px; display:inline-flex; align-items:center; gap:4px;">
+                  <i class="fas fa-satellite-dish" style="color:#0284c7;"></i> ទម្រង់៖
+                </span>
                 <button type="button" class="timetable-pill-tab ${targetMode === 'all' ? 'active' : ''}" onclick="openAdminTimetableModal('${escapeHtml(targetClass)}', '${escapeHtml(targetSemester)}', 'all')">
                   ទម្រង់ទាំងអស់
                 </button>
@@ -18541,6 +18564,7 @@ function openAdminTimetableModal(selectedClass = null, selectedSemester = null, 
                   🏫 រៀនផ្ទាល់ (សៅរ៍-អាទិត្យ)
                 </button>
               </div>
+
             </div>
           </div>
 
