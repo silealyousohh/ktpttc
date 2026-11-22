@@ -7173,7 +7173,7 @@ function renderRBACView(container) {
 
     <!-- Interactive Summary Metrics Cards (Click to filter by role) -->
     <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:20px;">
-      <div class="rbac-metric-card ${currentRbacRoleFilter === 'all' ? 'active active-all' : ''}" onclick="setRbacRoleFilter('all')" title="ចុចដើម្បីមើលគណនីទាំងអស់">
+      <div class="rbac-metric-card ${currentRbacRoleFilter === 'all' ? 'active active-all' : ''}" onclick="setRbacRoleFilter('all')">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div style="font-size:0.75rem; color:#64748b; font-weight:600;">គណនីសរុប (Total Users)</div>
           ${currentRbacRoleFilter === 'all' ? '<span class="badge" style="background:#dbeafe; color:#1d4ed8; font-size:0.65rem; padding:1px 6px;">កំពុងមើល</span>' : ''}
@@ -7182,7 +7182,7 @@ function renderRBACView(container) {
         <div style="font-size:0.72rem; color:#64748b; margin-top:2px;"><i class="fas fa-layer-group"></i> រួមបញ្ចូលគ្រប់តួនាទី</div>
       </div>
 
-      <div class="rbac-metric-card ${currentRbacRoleFilter === 'admin' ? 'active active-admin' : ''}" onclick="setRbacRoleFilter('admin')" title="ចុចដើម្បីចម្រាញ់យកតែ Admin">
+      <div class="rbac-metric-card ${currentRbacRoleFilter === 'admin' ? 'active active-admin' : ''}" onclick="setRbacRoleFilter('admin')">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div style="font-size:0.75rem; color:#64748b; font-weight:600;">អ្នកគ្រប់គ្រង (Admins)</div>
           ${currentRbacRoleFilter === 'admin' ? '<span class="badge" style="background:#dbeafe; color:#1d4ed8; font-size:0.65rem; padding:1px 6px;">កំពុងមើល</span>' : ''}
@@ -7191,7 +7191,7 @@ function renderRBACView(container) {
         <div style="font-size:0.72rem; color:#2563eb; margin-top:2px;"><i class="fas fa-user-shield"></i> System Controller</div>
       </div>
 
-      <div class="rbac-metric-card ${currentRbacRoleFilter === 'trainer' ? 'active active-trainer' : ''}" onclick="setRbacRoleFilter('trainer')" title="ចុចដើម្បីចម្រាញ់យកតែគ្រូបង្រៀន">
+      <div class="rbac-metric-card ${currentRbacRoleFilter === 'trainer' ? 'active active-trainer' : ''}" onclick="setRbacRoleFilter('trainer')">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div style="font-size:0.75rem; color:#64748b; font-weight:600;">គ្រូឧទ្ទេស (Trainers)</div>
           ${currentRbacRoleFilter === 'trainer' ? '<span class="badge" style="background:#dcfce7; color:#15803d; font-size:0.65rem; padding:1px 6px;">កំពុងមើល</span>' : ''}
@@ -7200,37 +7200,13 @@ function renderRBACView(container) {
         <div style="font-size:0.72rem; color:#10b981; margin-top:2px;"><i class="fas fa-chalkboard-teacher"></i> Faculty &amp; Teaching</div>
       </div>
 
-      <div class="rbac-metric-card ${currentRbacRoleFilter === 'trainee' ? 'active active-trainee' : ''}" onclick="setRbacRoleFilter('trainee')" title="ចុចដើម្បីចម្រាញ់យកតែគរុនិស្សិត">
+      <div class="rbac-metric-card ${currentRbacRoleFilter === 'trainee' ? 'active active-trainee' : ''}" onclick="setRbacRoleFilter('trainee')">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div style="font-size:0.75rem; color:#64748b; font-weight:600;">គរុនិស្សិត (Trainees)</div>
           ${currentRbacRoleFilter === 'trainee' ? '<span class="badge" style="background:#fef3c7; color:#b45309; font-size:0.65rem; padding:1px 6px;">កំពុងមើល</span>' : ''}
         </div>
         <div style="font-size:1.45rem; font-weight:800; color:#d97706; margin-top:4px;">${traineeCount} នាក់</div>
         <div style="font-size:0.72rem; color:#d97706; margin-top:2px;"><i class="fas fa-user-graduate"></i> Students &amp; Learners</div>
-      </div>
-    </div>
-
-    <!-- 3 Big Role Category Cards (Exact Match to User's Mockup Design) -->
-    <div class="rbac-big-cards-grid">
-      <!-- 1. Admin Card (Pink Pastel with Cyan/Blue text) -->
-      <div class="rbac-big-card card-admin ${currentRbacRoleFilter === 'admin' ? 'active' : ''}" onclick="setRbacRoleFilter('admin')" title="ចុចដើម្បីមើល និងគ្រប់គ្រង គណនី Admin">
-        <span class="rbac-big-card-indicator"><i class="fas fa-check-circle"></i> កំពុងមើល</span>
-        <div class="rbac-big-card-title">គណនី Admin</div>
-        <div class="rbac-big-card-meta"><i class="fas fa-user-shield"></i> ${adminCount} គណនី</div>
-      </div>
-
-      <!-- 2. Teacher Card (Light Sky Blue Pastel with Blue text) -->
-      <div class="rbac-big-card card-trainer ${currentRbacRoleFilter === 'trainer' ? 'active' : ''}" onclick="setRbacRoleFilter('trainer')" title="ចុចដើម្បីមើល និងគ្រប់គ្រង គណនីគ្រូបង្រៀន">
-        <span class="rbac-big-card-indicator"><i class="fas fa-check-circle"></i> កំពុងមើល</span>
-        <div class="rbac-big-card-title">គណនីគ្រូបង្រៀន</div>
-        <div class="rbac-big-card-meta"><i class="fas fa-chalkboard-teacher"></i> ${trainerCount} គណនី</div>
-      </div>
-
-      <!-- 3. Trainee Card (Light Mint Green Pastel with Teal/Green text) -->
-      <div class="rbac-big-card card-trainee ${currentRbacRoleFilter === 'trainee' ? 'active' : ''}" onclick="setRbacRoleFilter('trainee')" title="ចុចដើម្បីមើល និងគ្រប់គ្រង គណនីគរុនិស្សិត">
-        <span class="rbac-big-card-indicator"><i class="fas fa-check-circle"></i> កំពុងមើល</span>
-        <div class="rbac-big-card-title">គណនីគរុនិស្សិត</div>
-        <div class="rbac-big-card-meta"><i class="fas fa-user-graduate"></i> ${traineeCount} គណនី</div>
       </div>
     </div>
 
