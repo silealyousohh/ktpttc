@@ -5589,13 +5589,115 @@ function getInitialDigitalBooks() {
 
 const KTPTTC_DIGITAL_BOOKS = [];
 
-function openTraineeLibraryModal() {
+window.activeLibrarySubjectFilter = 'ALL';
+
+function getBookSubjectInfo(b) {
+  if (!b) return { code: 'PED-101', nameKh: 'គរុកោសល្យទូទៅ' };
+
+  // 1. Explicit subject code if stored
+  if (b.subjectCode) {
+    const all = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects))
+      ? stmsData.subjects
+      : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' ? KTPTTC_ALL_SUBJECTS : []);
+    const match = all.find(s => s && s.code === b.subjectCode);
+    if (match) return { code: match.code, nameKh: match.nameKh };
+    return { code: b.subjectCode, nameKh: b.subjectName || b.subjectCode };
+  }
+
+  // 2. Intelligent inference based on title, category, description, and fileName
+  const fullText = `${b.title || ''} ${b.category || ''} ${b.description || ''} ${b.fileName || ''}`.toLowerCase();
+
+  if (fullText.includes('zoom') || fullText.includes('ict') || fullText.includes('បច្ចេកវិទ្យា') || fullText.includes('កុំព្យូទ័រ') || fullText.includes('software') || fullText.includes('ឌីជីថល')) {
+    return { code: 'ICT-105', nameKh: 'បច្ចេកវិទ្យាព័ត៌មាន (ICT)' };
+  }
+  if (fullText.includes('គណិត') || fullText.includes('លេខ') || fullText.includes('math')) {
+    return { code: 'MTH-103', nameKh: 'វិធីសាស្ត្របង្រៀនគណិតវិទ្យា' };
+  }
+  if (fullText.includes('ភាសាខ្មែរ') || fullText.includes('អំណាន') || fullText.includes('តែងសេចក្តី') || fullText.includes('អក្សរ') || fullText.includes('khmer')) {
+    return { code: 'KHM-104', nameKh: 'វិធីសាស្ត្របង្រៀនភាសាខ្មែរ' };
+  }
+  if (fullText.includes('ចិត្តវិទ្យា') || fullText.includes('ការអភិវឌ្ឍកុមារ') || fullText.includes('psychology')) {
+    return { code: 'PSY-102', nameKh: 'ចិត្តវិទ្យាគរុកោសល្យ' };
+  }
+  if (fullText.includes('ស្រាវជ្រាវ') || fullText.includes('សារណា') || fullText.includes('research')) {
+    return { code: 'RES-106', nameKh: 'ការស្រាវជ្រាវសកម្មភាព' };
+  }
+  if (fullText.includes('កម្មសិក្សា') || fullText.includes('practicum')) {
+    return { code: 'PRAC-107', nameKh: 'កម្មសិក្សាគរុកោសល្យ' };
+  }
+  if (fullText.includes('វិទ្យាសាស្ត្រ') || fullText.includes('science')) {
+    return { code: 'SCI-109', nameKh: 'វិទ្យាសាស្ត្រពិត' };
+  }
+  if (fullText.includes('សង្គម') || fullText.includes('social')) {
+    return { code: 'SOC-110', nameKh: 'សិក្សាសង្គម' };
+  }
+  if (fullText.includes('កិច្ចតែងការ') || fullText.includes('គរុកោសល្យ') || fullText.includes('បង្រៀន') || fullText.includes('pedagogy') || fullText.includes('៥ ជំហាន')) {
+    return { code: 'PED-101', nameKh: 'គរុកោសល្យទូទៅ' };
+  }
+
+  return { code: 'PED-101', nameKh: 'គរុកោសល្យទូទៅ' };
+}
+window.getBookSubjectInfo = getBookSubjectInfo;
+
+function selectLibrarySubject(code) {
+  window.activeLibrarySubjectFilter = code;
+
+  // Update pill styles
+  document.querySelectorAll('#digitalLibrarySubjectBar .lib-subj-pill').forEach(btn => {
+    const isAct = btn.getAttribute('data-code') === code;
+    if (isAct) {
+      btn.style.background = 'linear-gradient(135deg, #15803d 0%, #16a34a 100%)';
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = '#15803d';
+      btn.style.boxShadow = '0 3px 10px rgba(22,163,74,0.3)';
+    } else {
+      btn.style.background = '#ffffff';
+      btn.style.color = '#334155';
+      btn.style.borderColor = '#cbd5e1';
+      btn.style.boxShadow = 'none';
+    }
+  });
+
+  const searchInput = document.getElementById('digitalBookSearchInput');
+  filterDigitalBooks(searchInput ? searchInput.value : '');
+}
+window.selectLibrarySubject = selectLibrarySubject;
+
+function openTraineeLibraryModal(initialSubjectFilter = null) {
+  if (initialSubjectFilter) {
+    window.activeLibrarySubjectFilter = initialSubjectFilter;
+  } else if (!window.activeLibrarySubjectFilter) {
+    window.activeLibrarySubjectFilter = 'ALL';
+  }
+
   if (!Array.isArray(stmsData.books) || stmsData.books.length === 0) {
     stmsData.books = getInitialDigitalBooks();
     saveData(false);
   }
 
   const books = stmsData.books || [];
+  const activeSubj = window.activeLibrarySubjectFilter || 'ALL';
+
+  // Available subjects for the Subject Bar (bar មុខវិជ្ជា)
+  const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0)
+    ? stmsData.subjects
+    : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' && KTPTTC_ALL_SUBJECTS.length > 0 ? KTPTTC_ALL_SUBJECTS : [
+      { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ" },
+      { code: "PSY-102", nameKh: "ចិត្តវិទ្យាអប់រំ" },
+      { code: "MTH-103", nameKh: "គណិតវិទ្យា" },
+      { code: "KHM-104", nameKh: "ភាសាខ្មែរ" },
+      { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មាន (ICT)" },
+      { code: "RES-106", nameKh: "ការស្រាវជ្រាវ" },
+      { code: "PRAC-107", nameKh: "កម្មសិក្សាគរុកោសល្យ" },
+      { code: "COM-108", nameKh: "ព័ត៌មានវិទ្យា" }
+    ]);
+
+  // Compute book counts per subject
+  const subjectCounts = {};
+  books.forEach(b => {
+    const sInfo = getBookSubjectInfo(b);
+    subjectCounts[sInfo.code] = (subjectCounts[sInfo.code] || 0) + 1;
+  });
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="traineeLibraryModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -5619,7 +5721,7 @@ function openTraineeLibraryModal() {
         <div class="stms-modal-body" style="padding:20px; overflow-y:auto; flex:1;">
           
           <!-- Filter & Upload Action Bar -->
-          <div style="display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+          <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
             <div style="flex:1; min-width:240px; position:relative;">
               <input type="text" id="digitalBookSearchInput" class="form-input" style="width:100%; height:38px; padding-left:36px; border-radius:8px;" placeholder="🔍 ស្វែងរកចំណងជើងសៀវភៅ អ្នកនិពន្ធ ឬមុខវិជ្ជា..." oninput="filterDigitalBooks(this.value)">
               <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
@@ -5644,6 +5746,36 @@ function openTraineeLibraryModal() {
             </div>
           </div>
 
+          <!-- Subject Navigation Bar (bar មុខវិជ្ជា សម្រាប់សិស្ស & គ្រូ) -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+              <span style="font-size:0.82rem; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-th-large" style="color:#16a34a;"></i> ជ្រើសរើសតាមមុខវិជ្ជា (Subject Filter):
+              </span>
+              <span id="subjectFilterCountBadge" style="font-size:0.75rem; color:#64748b; font-weight:600;">
+                បង្ហាញ៖ <strong style="color:#15803d;">${books.length}</strong> សៀវភៅ
+              </span>
+            </div>
+            
+            <div id="digitalLibrarySubjectBar" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin;" class="custom-horizontal-scrollbar">
+              <!-- All Subjects Pill -->
+              <button type="button" class="lib-subj-pill" data-code="ALL" onclick="selectLibrarySubject('ALL')" style="height:32px; padding:0 14px; font-size:0.78rem; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; transition:all 0.2s; ${activeSubj === 'ALL' ? 'background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); color:#ffffff; border:1px solid #15803d; font-weight:700; box-shadow:0 3px 10px rgba(22,163,74,0.3);' : 'background:#ffffff; color:#334155; border:1px solid #cbd5e1; font-weight:600;'}">
+                <i class="fas fa-layer-group"></i> ទាំងអស់ (${books.length})
+              </button>
+
+              ${allSubjs.map(s => {
+                const isAct = activeSubj === s.code;
+                const count = subjectCounts[s.code] || 0;
+                return `
+                  <button type="button" class="lib-subj-pill" data-code="${escapeHtml(s.code)}" onclick="selectLibrarySubject('${escapeHtml(s.code)}')" style="height:32px; padding:0 12px; font-size:0.78rem; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; transition:all 0.2s; ${isAct ? 'background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); color:#ffffff; border:1px solid #15803d; font-weight:700; box-shadow:0 3px 10px rgba(22,163,74,0.3);' : 'background:#ffffff; color:#334155; border:1px solid #cbd5e1; font-weight:600;'}">
+                    <span>${escapeHtml(s.nameKh)}</span>
+                    <span style="font-size:0.7rem; padding:1px 6px; border-radius:10px; ${isAct ? 'background:rgba(255,255,255,0.25); color:#ffffff;' : 'background:#f1f5f9; color:#64748b; font-weight:700;'}">${count}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
           <!-- Book List Container -->
           <div id="digitalBookList" style="display:flex; flex-direction:column; gap:14px;">
             ${books.length === 0 ? `
@@ -5657,8 +5789,11 @@ function openTraineeLibraryModal() {
                   <i class="fas fa-cloud-upload-alt"></i> បង្ហោះសៀវភៅថ្មីឥឡូវនេះ (Upload Book)
                 </button>
               </div>
-            ` : books.map(b => `
-              <div class="book-card-item" data-category="${escapeHtml(b.category || '')}" style="display:flex; gap:16px; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.03); transition:all 0.2s;" onmouseover="this.style.borderColor='#86efac'; this.style.boxShadow='0 4px 14px rgba(22,163,74,0.12)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.03)';">
+            ` : books.map(b => {
+              const sInfo = getBookSubjectInfo(b);
+              const isMatchSubj = (activeSubj === 'ALL') || (sInfo.code === activeSubj);
+              return `
+              <div class="book-card-item" data-category="${escapeHtml(b.category || '')}" data-subject-code="${escapeHtml(sInfo.code)}" style="display:${isMatchSubj ? 'flex' : 'none'}; gap:16px; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.03); transition:all 0.2s;" onmouseover="this.style.borderColor='#86efac'; this.style.boxShadow='0 4px 14px rgba(22,163,74,0.12)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.03)';">
                 
                 <!-- Book Cover / Format Thumbnail -->
                 ${b.coverUrl ? `
@@ -5674,6 +5809,9 @@ function openTraineeLibraryModal() {
                 <div style="flex:1; min-width:0;">
                   <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
                     <span style="font-size:0.72rem; font-weight:700; color:#16a34a; background:#f0fdf4; border:1px solid #bbf7d0; padding:2px 8px; border-radius:6px;">${escapeHtml(b.category || 'សៀវភៅគរុកោសល្យ')}</span>
+                    <span style="font-size:0.72rem; font-weight:700; color:#0f766e; background:#ccfbf1; border:1px solid #99f6e4; padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" title="មុខវិជ្ជាពាក់ព័ន្ធ">
+                      <i class="fas fa-book"></i> ${escapeHtml(sInfo.nameKh)}
+                    </span>
                     ${b.cohort ? `<span style="font-size:0.7rem; font-weight:600; color:#0369a1; background:#e0f2fe; padding:2px 8px; border-radius:6px;">${escapeHtml(b.cohort)}</span>` : ''}
                     <span style="font-size:0.7rem; color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:6px;">${escapeHtml(b.fileSize || '3.5 MB')}</span>
                   </div>
@@ -5711,7 +5849,7 @@ function openTraineeLibraryModal() {
                 </div>
 
               </div>
-            `).join('')}
+            `; }).join('')}
           </div>
 
           <!-- Bottom Footer Bar -->
@@ -5739,13 +5877,52 @@ function filterDigitalBooks(q) {
   const query = (q || '').toLowerCase().trim();
   const catFilter = document.getElementById('digitalBookCategoryFilter');
   const selectedCat = catFilter ? catFilter.value : '';
+  const activeSubj = window.activeLibrarySubjectFilter || 'ALL';
 
+  let visibleCount = 0;
   document.querySelectorAll('#digitalBookList .book-card-item').forEach(el => {
     const textMatch = !query || el.textContent.toLowerCase().includes(query);
     const cat = el.getAttribute('data-category') || '';
     const catMatch = !selectedCat || cat === selectedCat;
-    el.style.display = (textMatch && catMatch) ? 'flex' : 'none';
+    const subjCode = el.getAttribute('data-subject-code') || '';
+    const subjMatch = (activeSubj === 'ALL') || (subjCode === activeSubj);
+
+    if (textMatch && catMatch && subjMatch) {
+      el.style.display = 'flex';
+      visibleCount++;
+    } else {
+      el.style.display = 'none';
+    }
   });
+
+  const countBadge = document.getElementById('subjectFilterCountBadge');
+  if (countBadge) {
+    countBadge.innerHTML = `បង្ហាញ៖ <strong style="color:#15803d;">${visibleCount}</strong> សៀវភៅ`;
+  }
+
+  // Handle empty state if no books match
+  let noMatchEl = document.getElementById('digitalLibraryNoMatch');
+  if (visibleCount === 0) {
+    if (!noMatchEl) {
+      noMatchEl = document.createElement('div');
+      noMatchEl.id = 'digitalLibraryNoMatch';
+      noMatchEl.style.cssText = 'text-align:center; padding:36px 18px; color:#64748b; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1; margin-top:8px;';
+      noMatchEl.innerHTML = `
+        <div style="font-size:1.8rem; color:#94a3b8; margin-bottom:8px;"><i class="fas fa-search-minus"></i></div>
+        <div style="font-weight:700; color:#334155; font-size:0.95rem;">មិនមានសៀវភៅត្រូវនឹងលក្ខខណ្ឌស្វែងរក ឬមុខវិជ្ជានេះទេ</div>
+        <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">អ្នកអាចជ្រើសរើសមុខវិជ្ជាផ្សេង ឬចុច «ទាំងអស់» ដើម្បីបង្ហាញសៀវភៅឡើងវិញ</div>
+        <button class="btn btn-outline" onclick="selectLibrarySubject('ALL')" style="margin-top:12px; height:32px; font-size:0.8rem; border-color:#86efac; color:#15803d;">
+          <i class="fas fa-undo"></i> បង្ហាញសៀវភៅទាំងអស់
+        </button>
+      `;
+      const listContainer = document.getElementById('digitalBookList');
+      if (listContainer) listContainer.appendChild(noMatchEl);
+    } else {
+      noMatchEl.style.display = 'block';
+    }
+  } else if (noMatchEl) {
+    noMatchEl.style.display = 'none';
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -5755,6 +5932,19 @@ function openUploadBookModal(editBookId = null) {
   const bookToEdit = editBookId ? (stmsData.books || []).find(b => b.id === editBookId) : null;
   window.pendingBookFileData = null;
   window.pendingBookCoverData = bookToEdit && bookToEdit.coverUrl ? bookToEdit.coverUrl : null;
+
+  const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0)
+    ? stmsData.subjects
+    : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' && KTPTTC_ALL_SUBJECTS.length > 0 ? KTPTTC_ALL_SUBJECTS : [
+      { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ" },
+      { code: "PSY-102", nameKh: "ចិត្តវិទ្យាអប់រំ" },
+      { code: "MTH-103", nameKh: "គណិតវិទ្យា" },
+      { code: "KHM-104", nameKh: "ភាសាខ្មែរ" },
+      { code: "ICT-105", nameKh: "បច្ចេកវិទ្យាព័ត៌មាន (ICT)" },
+      { code: "RES-106", nameKh: "ការស្រាវជ្រាវ" },
+      { code: "PRAC-107", nameKh: "កម្មសិក្សាគរុកោសល្យ" },
+      { code: "COM-108", nameKh: "ព័ត៌មានវិទ្យា" }
+    ]);
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="uploadBookModalBackdrop" onclick="if(event.target===this) openTraineeLibraryModal()">
@@ -5814,6 +6004,20 @@ function openUploadBookModal(editBookId = null) {
                   <option value="បច្ចេកវិទ្យាអប់រំ" ${bookToEdit && bookToEdit.category === 'បច្ចេកវិទ្យាអប់រំ' ? 'selected' : ''}>បច្ចេកវិទ្យាអប់រំ (ICT)</option>
                   <option value="ចិត្តវិទ្យាគរុកោសល្យ" ${bookToEdit && bookToEdit.category === 'ចិត្តវិទ្យាគរុកោសល្យ' ? 'selected' : ''}>ចិត្តវិទ្យាគរុកោសល្យ</option>
                   <option value="ឯកសារស្រាវជ្រាវ" ${bookToEdit && bookToEdit.category === 'ឯកសារស្រាវជ្រាវ' ? 'selected' : ''}>ឯកសារស្រាវជ្រាវ & សារណា</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:4px; display:block;">
+                  មុខវិជ្ជាពាក់ព័ន្ធ (Related Subject) <span style="color:#ef4444;">*</span>
+                </label>
+                <select id="bookSubjectInput" class="form-select" style="width:100%;">
+                  <option value="">-- ជ្រើសរើសមុខវិជ្ជា (ឬទូទៅ) --</option>
+                  ${allSubjs.map(s => {
+                    const inferredCode = bookToEdit ? getBookSubjectInfo(bookToEdit).code : '';
+                    const isSel = bookToEdit && (bookToEdit.subjectCode === s.code || (!bookToEdit.subjectCode && inferredCode === s.code));
+                    return `<option value="${escapeHtml(s.code)}" ${isSel ? 'selected' : ''}>[${escapeHtml(s.code)}] ${escapeHtml(s.nameKh)}</option>`;
+                  }).join('')}
                 </select>
               </div>
 
@@ -5995,6 +6199,7 @@ async function submitNewDigitalBook(editBookId = '') {
   const titleEl = document.getElementById('bookTitleInput');
   const authorEl = document.getElementById('bookAuthorInput');
   const catEl = document.getElementById('bookCategoryInput');
+  const subjEl = document.getElementById('bookSubjectInput');
   const cohortEl = document.getElementById('bookCohortInput');
   const pagesEl = document.getElementById('bookPagesInput');
   const descEl = document.getElementById('bookDescInput');
@@ -6002,6 +6207,16 @@ async function submitNewDigitalBook(editBookId = '') {
   if (!titleEl || !titleEl.value.trim()) {
     showToast('សូមបញ្ចូលចំណងជើងសៀវភៅ!', 'warning');
     return;
+  }
+
+  const selectedSubjectCode = subjEl ? subjEl.value : '';
+  let selectedSubjectName = '';
+  if (selectedSubjectCode) {
+    const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects))
+      ? stmsData.subjects
+      : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' ? KTPTTC_ALL_SUBJECTS : []);
+    const found = allSubjs.find(s => s && s.code === selectedSubjectCode);
+    if (found) selectedSubjectName = found.nameKh;
   }
 
   const user = getActiveTrainerProfile() || { nameKh: 'បណ្ណារក្ស KTPTTC' };
@@ -6018,6 +6233,8 @@ async function submitNewDigitalBook(editBookId = '') {
       b.title = titleEl.value.trim();
       b.author = authorEl && authorEl.value.trim() ? authorEl.value.trim() : b.author;
       b.category = catEl ? catEl.value : b.category;
+      b.subjectCode = selectedSubjectCode;
+      b.subjectName = selectedSubjectName;
       b.cohort = cohortEl ? cohortEl.value : b.cohort;
       b.pages = pagesEl && pagesEl.value ? parseInt(pagesEl.value, 10) : b.pages;
       b.description = descEl ? descEl.value.trim() : b.description;
@@ -6043,6 +6260,8 @@ async function submitNewDigitalBook(editBookId = '') {
     title: titleEl.value.trim(),
     author: authorEl && authorEl.value.trim() ? authorEl.value.trim() : 'ក្រសួងអប់រំ យុវជន និងកីឡា',
     category: catEl ? catEl.value : 'សៀវភៅគរុកោសល្យទូទៅ',
+    subjectCode: selectedSubjectCode,
+    subjectName: selectedSubjectName,
     cohort: cohortEl ? cohortEl.value : 'ទាំងអស់',
     pages: pagesEl && pagesEl.value ? parseInt(pagesEl.value, 10) : 100,
     fileSize: fileInfo ? fileInfo.size : '3.8 MB',
@@ -7340,6 +7559,9 @@ function openSubjectDetailModal(code) {
 
           <!-- Quick Actions: Syllabus & Video Lessons -->
           <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeStmsModal(); openTraineeLibraryModal('${subj.code}');" style="color:#15803d; border-color:#86efac; display:inline-flex; align-items:center; gap:5px;" title="មើលសៀវភៅ និងឯកសារសម្រាប់មុខវិជ្ជា ${subj.nameKh}">
+              <i class="fas fa-book-open"></i> សៀវភៅមុខវិជ្ជានេះ
+            </button>
             <button class="btn btn-outline" onclick="closeStmsModal(); openTraineeLessonsModal();">
               <i class="fas fa-play-circle" style="color:#ea580c;"></i> មើលវីដេអូបង្រៀន
             </button>
