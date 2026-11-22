@@ -4329,100 +4329,157 @@ function handleTimetableSlotModeChange(mode) {
 }
 window.handleTimetableSlotModeChange = handleTimetableSlotModeChange;
 
-function openAdminAddTimetableSlotModal(defaultClass = '', defaultDay = '', defaultPeriod = '') {
+function openAdminAddTimetableSlotModal(defaultClass = '', defaultDay = '', defaultPeriod = '', editingSlotId = null) {
   closeStmsModal();
   const classes = getAllSystemClasses();
   const availableClasses = classes.length > 0 ? classes : ['ថ្នាក់បឋម ១២+២ (ក្រុម ក)', 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)', 'ថ្នាក់បឋម ១២+៤', 'ថ្នាក់មត្តេយ្យ ១២+២'];
   const targetClass = (defaultClass && defaultClass !== 'all') ? defaultClass : (currentAdminTimetableClassFilter !== 'all' ? currentAdminTimetableClassFilter : availableClasses[0]);
   const trainers = (stmsData.users || []).filter(u => u.role === 'trainer');
   const subjects = KTPTTC_ALL_SUBJECTS;
+  const isEdit = !!editingSlotId;
 
   const modalHtml = `
-    <div class="stms-modal-backdrop" id="addTimetableSlotModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:550px;">
-        <div class="modal-header-bar" style="background:linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color:#ffffff;">
-          <div class="modal-header-title">
-            <i class="fas fa-calendar-plus"></i> ចាត់តាំងម៉ោងបង្រៀនថ្មី (Add Timetable Slot)
+    <div class="stms-modal-backdrop" id="addTimetableSlotModalBackdrop" onclick="if(event.target===this) closeStmsModal()" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.72); backdrop-filter:blur(6px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px;">
+      <div class="stms-modal-window" style="background:#ffffff; border-radius:16px; width:100%; max-width:620px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35); overflow:hidden; border:1px solid #e2e8f0; animation:modalPopIn 0.22s ease-out; display:flex; flex-direction:column; max-height:92vh;">
+        
+        <!-- Premium Modal Header -->
+        <div style="background:linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #0284c7 100%); padding:18px 24px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:42px; height:42px; border-radius:12px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.25rem; color:#ffffff; box-shadow:inset 0 1px 1px rgba(255,255,255,0.4);">
+              <i class="${isEdit ? 'fas fa-calendar-check' : 'fas fa-calendar-plus'}"></i>
+            </div>
+            <div>
+              <h3 style="margin:0; font-size:1.12rem; font-weight:800; color:#ffffff; letter-spacing:-0.2px;">
+                ${isEdit ? 'កែសម្រួលម៉ោងបង្រៀន (Edit Timetable Slot)' : 'ចាត់តាំងម៉ោងបង្រៀនថ្មី (Add Timetable Slot)'}
+              </h3>
+              <p style="margin:2px 0 0 0; font-size:0.78rem; color:#dbeafe;">
+                ${isEdit ? 'កែប្រែព័ត៌មានកាលវិភាគ គ្រូឧទ្ទេស និងបន្ទប់សិក្សា' : 'កំណត់ថ្នាក់រៀន ឆមាស ពេលវេលា និងមុខវិជ្ជាបង្រៀន MoEYS'}
+              </p>
+            </div>
           </div>
-          <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
+          <button type="button" onclick="closeStmsModal()" style="width:34px; height:34px; border-radius:8px; background:rgba(255,255,255,0.18); border:none; color:#ffffff; font-size:1.3rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'" title="បិទ">&times;</button>
         </div>
-        <div class="modal-body-scroll" style="padding:20px;">
+
+        <!-- Scrollable Form Body -->
+        <div class="modal-body-scroll" style="padding:20px 24px; overflow-y:auto; flex:1;">
           <form id="addTimetableSlotForm" onsubmit="event.preventDefault(); submitSaveTimetableSlot();">
-            <input type="hidden" id="ttSlotId" value="">
+            <input type="hidden" id="ttSlotId" value="${escapeHtml(editingSlotId || '')}">
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
-              <div>
-                <label class="form-label">ថ្នាក់រៀន (Class / Cohort)*</label>
-                <select id="ttSlotClass" class="form-input" required onchange="updateTimetableModalConflictNotice()">
-                  ${availableClasses.map(c => `<option value="${escapeHtml(c)}" ${c === targetClass ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
-                </select>
+            <!-- Section 1: Class & Semester -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; margin-bottom:14px;">
+              <div style="font-size:0.78rem; font-weight:800; color:#1e3a8a; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-layer-group" style="color:#2563eb;"></i> ព័ត៌មានថ្នាក់ និងឆមាស (Class & Semester)
               </div>
-              <div>
-                <label class="form-label">ឆមាសសិក្សា (Semester)*</label>
-                <select id="ttSlotSemester" class="form-input" required>
-                  <option value="ឆមាសទី ១" ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ១' ? 'selected' : ''}>ឆមាសទី ១</option>
-                  <option value="ឆមាសទី ២" ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ២' ? 'selected' : ''}>ឆមាសទី ២</option>
-                </select>
+              <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:12px;">
+                <div>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                    <i class="fas fa-school" style="color:#2563eb;"></i> ថ្នាក់រៀន (Class / Cohort)*
+                  </label>
+                  <select id="ttSlotClass" class="form-input" style="height:38px; border-radius:8px; border:1px solid #cbd5e1; font-weight:600; font-size:0.82rem; background:#ffffff; color:#1e293b;" required onchange="updateTimetableModalConflictNotice()">
+                    ${availableClasses.map(c => `<option value="${escapeHtml(c)}" ${c === targetClass ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                    <i class="fas fa-calendar-alt" style="color:#2563eb;"></i> ឆមាសសិក្សា (Semester)*
+                  </label>
+                  <select id="ttSlotSemester" class="form-input" style="height:38px; border-radius:8px; border:1px solid #cbd5e1; font-weight:600; font-size:0.82rem; background:#ffffff; color:#1e293b;" required>
+                    <option value="ឆមាសទី ១" ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ១' ? 'selected' : ''}>ឆមាសទី ១ (អនឡាញ + ផ្ទាល់)</option>
+                    <option value="ឆមាសទី ២" ${currentAdminTimetableSemesterFilter === 'ឆមាសទី ២' ? 'selected' : ''}>ឆមាសទី ២ (អនុវត្ត & ស្រាវជ្រាវ)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1.2fr; gap:12px; margin-bottom:14px;">
-              <div>
-                <label class="form-label">ថ្ងៃនៃសប្ដាហ៍*</label>
-                <select id="ttSlotDay" class="form-input" required onchange="handleTimetableSlotDayChange(this.value)">
-                  ${TIMETABLE_DAYS.map(d => `<option value="${d}" ${d === defaultDay ? 'selected' : ''}>${d}</option>`).join('')}
-                </select>
+            <!-- Section 2: Day, Mode & Period -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; margin-bottom:14px;">
+              <div style="font-size:0.78rem; font-weight:800; color:#1e3a8a; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                <i class="far fa-clock" style="color:#2563eb;"></i> ពេលវេលា និងទម្រង់សិក្សា (Schedule & Mode)
               </div>
-              <div>
-                <label class="form-label">ទម្រង់បង្រៀន (Mode)*</label>
-                <select id="ttSlotMode" class="form-input" required onchange="handleTimetableSlotModeChange(this.value)">
-                  <option value="online">🌐 អនឡាញ (Online)</option>
-                  <option value="in-person">🏫 រៀនផ្ទាល់ (In-Person)</option>
-                </select>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:10px;">
+                <div>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                    <i class="far fa-calendar-check" style="color:#2563eb;"></i> ថ្ងៃនៃសប្ដាហ៍ (Day)*
+                  </label>
+                  <select id="ttSlotDay" class="form-input" style="height:38px; border-radius:8px; border:1px solid #cbd5e1; font-weight:600; font-size:0.82rem; background:#ffffff; color:#1e293b;" required onchange="handleTimetableSlotDayChange(this.value)">
+                    ${TIMETABLE_DAYS.map(d => `<option value="${d}" ${d === defaultDay ? 'selected' : ''}>${d}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                    <i class="fas fa-satellite-dish" style="color:#0284c7;"></i> ទម្រង់បង្រៀន (Mode)*
+                  </label>
+                  <select id="ttSlotMode" class="form-input" style="height:38px; border-radius:8px; border:1px solid #cbd5e1; font-weight:600; font-size:0.82rem; background:#ffffff; color:#1e293b;" required onchange="handleTimetableSlotModeChange(this.value)">
+                    <option value="online">🌐 អនឡាញ (Online)</option>
+                    <option value="in-person">🏫 រៀនផ្ទាល់ (On-Campus)</option>
+                  </select>
+                </div>
               </div>
+
+              <!-- Dedicated Full-width Period Selector to ensure no text truncation -->
               <div>
-                <label class="form-label">ម៉ោងសិក្សា (Period)*</label>
-                <select id="ttSlotPeriod" class="form-input" required onchange="updateTimetableModalConflictNotice()">
+                <label style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                  <i class="fas fa-stopwatch" style="color:#2563eb;"></i> ម៉ោងសិក្សា (Period / Time)*
+                </label>
+                <select id="ttSlotPeriod" class="form-input" style="height:38px; border-radius:8px; border:1px solid #cbd5e1; font-weight:600; font-size:0.82rem; background:#ffffff; color:#1e293b;" required onchange="updateTimetableModalConflictNotice()">
                   ${STANDARD_PERIODS.map(p => `<option value="${p.time}" ${p.time === defaultPeriod ? 'selected' : ''}>${p.label}</option>`).join('')}
-                  <option value="custom">ម៉ោងផ្សេងៗ (Custom)...</option>
+                  <option value="custom">ម៉ោងផ្សេងៗ (Custom Time)...</option>
                 </select>
-                <input type="text" id="ttSlotPeriodCustom" class="form-input" placeholder="ឧ. ០៨:០០ - ០៩:៣០" style="display:none; margin-top:6px;">
+                <input type="text" id="ttSlotPeriodCustom" class="form-input" placeholder="ឧ. ០៨:០០ - ០៩:៣០" style="display:none; margin-top:8px; height:38px; border-radius:8px; border:1px solid #cbd5e1;">
               </div>
             </div>
 
-            <div style="margin-bottom:14px;">
-              <label class="form-label">មុខវិជ្ជា MoEYS (Subject)*</label>
-              <select id="ttSlotSubject" class="form-input" required onchange="handleTimetableSubjectSelect(this.value)">
-                ${subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh} (${s.credits} ក្រេឌីត)</option>`).join('')}
-              </select>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
-              <div>
-                <label class="form-label">គ្រូឧទ្ទេសទទួលបន្ទុក (Instructor)*</label>
-                <select id="ttSlotTrainer" class="form-input" required onchange="updateTimetableModalConflictNotice()">
-                  ${trainers.map(t => `<option value="${escapeHtml(t.nameKh)}">${escapeHtml(t.nameKh)} (${escapeHtml(t.subject || 'គ្រូឧទ្ទេស')})</option>`).join('')}
-                  ${trainers.length === 0 ? `<option value="យូសុះ ស៊ីលាល">យូសុះ ស៊ីលាល</option>` : ''}
+            <!-- Section 3: Subject & Trainer Details -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; margin-bottom:14px;">
+              <div style="font-size:0.78rem; font-weight:800; color:#1e3a8a; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-graduation-cap" style="color:#2563eb;"></i> មុខវិជ្ជា និងសាស្ត្រាចារ្យទទួលបន្ទុក (Subject & Trainer)
+              </div>
+              <div style="margin-bottom:10px;">
+                <label style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                  <i class="fas fa-book" style="color:#2563eb;"></i> មុខវិជ្ជា MoEYS (Subject)*
+                </label>
+                <select id="ttSlotSubject" class="form-input" style="height:38px; border-radius:8px; border:1px solid #cbd5e1; font-weight:600; font-size:0.82rem; background:#ffffff; color:#1e293b;" required onchange="handleTimetableSubjectSelect(this.value)">
+                  ${subjects.map(s => `<option value="${s.code}">${s.code} - ${s.nameKh} (${s.credits} ក្រេឌីត)</option>`).join('')}
                 </select>
               </div>
-              <div>
-                <label class="form-label">បន្ទប់សិក្សា (Room)*</label>
-                <input type="text" id="ttSlotRoom" class="form-input" value="បន្ទប់ ១០១" required oninput="updateTimetableModalConflictNotice()">
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                    <i class="fas fa-chalkboard-teacher" style="color:#2563eb;"></i> គ្រូឧទ្ទេសទទួលបន្ទុក*
+                  </label>
+                  <select id="ttSlotTrainer" class="form-input" style="height:38px; border-radius:8px; border:1px solid #cbd5e1; font-weight:600; font-size:0.82rem; background:#ffffff; color:#1e293b;" required onchange="updateTimetableModalConflictNotice()">
+                    ${trainers.map(t => `<option value="${escapeHtml(t.nameKh)}">${escapeHtml(t.nameKh)} (${escapeHtml(t.subject || 'គ្រូឧទ្ទេស')})</option>`).join('')}
+                    ${trainers.length === 0 ? `<option value="យូសុះ ស៊ីលាល">យូសុះ ស៊ីលាល</option>` : ''}
+                  </select>
+                </div>
+                <div>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                    <i class="fas fa-door-open" style="color:#2563eb;"></i> បន្ទប់សិក្សា (Room / Link)*
+                  </label>
+                  <input type="text" id="ttSlotRoom" class="form-input" value="បន្ទប់ ១០១" style="height:38px; border-radius:8px; border:1px solid #cbd5e1; font-weight:600; font-size:0.82rem; background:#ffffff;" required oninput="updateTimetableModalConflictNotice()">
+                </div>
               </div>
             </div>
 
-            <div style="margin-bottom:14px;">
-              <label class="form-label">កំណត់សម្គាល់បន្ថែម (Notes)</label>
-              <input type="text" id="ttSlotNotes" class="form-input" placeholder="ឧ. ទ្រឹស្តី / ការចុះអនុវត្តន៍ / ក្នុងបន្ទប់កុំព្យូទ័រ">
+            <!-- Section 4: Notes -->
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; margin-bottom:14px;">
+              <label style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:5px;">
+                <i class="fas fa-comment-alt" style="color:#64748b;"></i> កំណត់សម្គាល់បន្ថែម (Notes)
+              </label>
+              <input type="text" id="ttSlotNotes" class="form-input" style="height:38px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.82rem; background:#ffffff;" placeholder="ឧ. ទ្រឹស្ដី / ការចុះអនុវត្តន៍ / ក្នុងបន្ទប់កុំព្យូទ័រ">
             </div>
 
             <!-- Conflict Detection Warning Banner -->
-            <div id="timetableConflictNotice" style="display:none; margin-bottom:16px;"></div>
+            <div id="timetableConflictNotice" style="display:none; margin-bottom:14px; background:#fff7ed; border:1px solid #ffedd5; border-radius:10px; padding:10px 14px; font-size:0.78rem; color:#9a3412;"></div>
 
-            <div class="modal-footer-bar" style="padding:10px 0 0 0; background:none; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-              <button type="button" class="btn btn-outline" onclick="closeStmsModal()">បោះបង់</button>
-              <button type="submit" class="btn btn-primary" style="background:#0284c7; border-color:#0284c7;">
-                <i class="fas fa-save"></i> រក្សាទុកម៉ោងបង្រៀន
+            <!-- Form Action Footer Bar inside scroll or fixed -->
+            <div style="padding:14px 0 4px 0; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+              <button type="button" class="btn btn-outline" onclick="closeStmsModal()" style="height:38px; padding:0 16px; font-size:0.82rem; font-weight:600; border-radius:8px; cursor:pointer;">
+                បោះបង់
+              </button>
+              <button type="submit" class="btn btn-primary" style="height:38px; padding:0 20px; font-size:0.84rem; font-weight:700; border-radius:8px; background:linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); border:none; color:#ffffff; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(37,99,235,0.25); cursor:pointer;">
+                <i class="fas fa-save"></i> ${isEdit ? 'ធ្វើបច្ចុប្បន្នភាពម៉ោងបង្រៀន' : 'រក្សាទុកម៉ោងបង្រៀន'}
               </button>
             </div>
           </form>
@@ -4436,12 +4493,12 @@ function openAdminAddTimetableSlotModal(defaultClass = '', defaultDay = '', defa
   const activeDay = defaultDay || document.getElementById('ttSlotDay')?.value || 'ចន្ទ';
   const isOnlineDay = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(activeDay);
   const modeEl = document.getElementById('ttSlotMode');
-  if (modeEl) modeEl.value = isOnlineDay ? 'online' : 'in-person';
+  if (modeEl && !isEdit) modeEl.value = isOnlineDay ? 'online' : 'in-person';
   const roomEl = document.getElementById('ttSlotRoom');
-  if (roomEl) roomEl.value = isOnlineDay ? 'អនឡាញ (Google Meet)' : 'បន្ទប់ ១០១';
+  if (roomEl && !isEdit) roomEl.value = isOnlineDay ? 'អនឡាញ (Google Meet)' : 'បន្ទប់ ១០១';
 
   const subjEl = document.getElementById('ttSlotSubject');
-  if (subjEl) handleTimetableSubjectSelect(subjEl.value);
+  if (subjEl && !isEdit) handleTimetableSubjectSelect(subjEl.value);
 }
 
 
@@ -4489,7 +4546,7 @@ function openAdminEditTimetableSlotModal(slotId) {
   }
 
   const { slot, className, dayName } = found;
-  openAdminAddTimetableSlotModal(className, dayName, slot.period);
+  openAdminAddTimetableSlotModal(className, dayName, slot.period, slot.id);
 
   setTimeout(() => {
     const idInput = document.getElementById('ttSlotId');
