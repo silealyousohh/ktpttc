@@ -5672,10 +5672,40 @@ function isStudentSession() {
 }
 window.isStudentSession = isStudentSession;
 
+function isTeacherSession() {
+  if (currentRole === 'trainer' || currentView === 'trainer-portal') return true;
+  if (document.body && (document.body.classList.contains('role-trainer') || document.body.classList.contains('trainer-mode'))) return true;
+  const authUser = window.authenticatedUser || currentUser;
+  if (authUser && authUser.role === 'trainer') return true;
+  return false;
+}
+window.isTeacherSession = isTeacherSession;
+
 function openTraineeLibraryModal(initialSubjectFilter = null) {
+  const isTeacher = isTeacherSession();
+  const isStudent = isStudentSession();
+  const canEditOrDelete = !isStudent;
+
+  let teacherAssignedCodes = [];
+  let teacherProfile = null;
+  if (isTeacher) {
+    teacherProfile = (typeof getActiveTrainerProfile === 'function') ? getActiveTrainerProfile() : null;
+    teacherAssignedCodes = (typeof getTrainerAssignedSubjectCodes === 'function') 
+      ? getTrainerAssignedSubjectCodes(teacherProfile) 
+      : (teacherProfile && teacherProfile.subject ? [teacherProfile.subject] : ['ICT-105']);
+    if (!Array.isArray(teacherAssignedCodes) || teacherAssignedCodes.length === 0) {
+      teacherAssignedCodes = ['ICT-105'];
+    }
+  }
+
   if (initialSubjectFilter) {
     window.activeLibrarySubjectFilter = initialSubjectFilter;
   } else if (!window.activeLibrarySubjectFilter) {
+    window.activeLibrarySubjectFilter = 'ALL';
+  }
+
+  // If teacher and active filter is a specific code not in teacherAssignedCodes, reset to ALL
+  if (isTeacher && window.activeLibrarySubjectFilter !== 'ALL' && !teacherAssignedCodes.includes(window.activeLibrarySubjectFilter)) {
     window.activeLibrarySubjectFilter = 'ALL';
   }
 
@@ -5684,13 +5714,20 @@ function openTraineeLibraryModal(initialSubjectFilter = null) {
     saveData(false);
   }
 
-  const books = stmsData.books || [];
+  let books = stmsData.books || [];
+
+  // If teacher: strictly filter books to ONLY those taught by this teacher!
+  if (isTeacher) {
+    books = books.filter(b => {
+      const sInfo = getBookSubjectInfo(b);
+      return teacherAssignedCodes.includes(sInfo.code);
+    });
+  }
+
   const activeSubj = window.activeLibrarySubjectFilter || 'ALL';
-  const isStudent = isStudentSession();
-  const canEditOrDelete = !isStudent;
 
   // Available subjects for the Subject Bar (bar មុខវិជ្ជា)
-  const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0)
+  let allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0)
     ? stmsData.subjects
     : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' && KTPTTC_ALL_SUBJECTS.length > 0 ? KTPTTC_ALL_SUBJECTS : [
       { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ" },
@@ -5703,7 +5740,12 @@ function openTraineeLibraryModal(initialSubjectFilter = null) {
       { code: "COM-108", nameKh: "ព័ត៌មានវិទ្យា" }
     ]);
 
-  // Compute book counts per subject
+  // If teacher: show ONLY their taught subjects in the Subject Bar!
+  if (isTeacher) {
+    allSubjs = allSubjs.filter(s => teacherAssignedCodes.includes(s.code));
+  }
+
+  // Compute book counts per subject (over the allowed books)
   const subjectCounts = {};
   books.forEach(b => {
     const sInfo = getBookSubjectInfo(b);
@@ -5731,6 +5773,28 @@ function openTraineeLibraryModal(initialSubjectFilter = null) {
         <!-- Body -->
         <div class="stms-modal-body" style="padding:20px; overflow-y:auto; flex:1;">
           
+          <!-- Teacher Subject Scope Notice (លក្ខខណ្ឌគ្រូឧទ្ទេស៖ មើល និង Upload តែមុខវិជ្ជាបង្រៀន) -->
+          ${isTeacher ? `
+            <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1px solid #86efac; border-radius:10px; padding:10px 14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(22,163,74,0.06);">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#16a34a; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                  <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div>
+                  <div style="font-weight:700; color:#14532d; font-size:0.86rem;">
+                    សិទ្ធិគ្រូឧទ្ទេស៖ ${escapeHtml(teacherProfile ? teacherProfile.nameKh : 'គ្រូឧទ្ទេស')}
+                  </div>
+                  <div style="font-size:0.75rem; color:#15803d; margin-top:1px;">
+                    ប្រព័ន្ធអនុញ្ញាតឱ្យមើល និង Upload សៀវភៅបានតែចំពោះមុខវិជ្ជាដែលលោកគ្រូ-អ្នកគ្រូបង្រៀនប៉ុណ្ណោះ
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${allSubjs.map(s => `<span class="badge" style="background:#ffffff; color:#15803d; font-weight:700; font-size:0.74rem; border:1px solid #86efac; padding:3px 10px; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.04);"><i class="fas fa-check-circle" style="color:#16a34a;"></i> ${escapeHtml(s.nameKh)} (${escapeHtml(s.code)})</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+
           <!-- Filter & Upload Action Bar -->
           <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
             <div style="flex:1; min-width:240px; position:relative;">
@@ -5751,9 +5815,11 @@ function openTraineeLibraryModal(initialSubjectFilter = null) {
               </select>
 
               <!-- Upload Book Button -->
+              ${!isStudent ? `
               <button class="btn btn-primary" onclick="openUploadBookModal()" style="height:38px; padding:0 16px; font-size:0.82rem; background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 10px rgba(22,163,74,0.3); cursor:pointer; white-space:nowrap;" title="ចុចដើម្បីបង្ហោះ ឬបញ្ចូលសៀវភៅថ្មី">
                 <i class="fas fa-cloud-upload-alt" style="font-size:1rem;"></i> + បង្ហោះសៀវភៅថ្មី (Upload Book)
               </button>
+              ` : ''}
             </div>
           </div>
 
@@ -5794,11 +5860,17 @@ function openTraineeLibraryModal(initialSubjectFilter = null) {
                 <div style="width:68px; height:68px; border-radius:50%; background:#e2e8f0; display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px; color:#64748b; font-size:2rem;">
                   <i class="fas fa-book"></i>
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#475569;">មិនទាន់មានសៀវភៅក្នុងបណ្ណាល័យឌីជីថលនៅឡើយទេ</div>
-                <div style="font-size:0.84rem; color:#64748b; margin-top:5px;">រដ្ឋបាល គ្រូឧទ្ទេស ឬបណ្ណារក្សអាចបង្ហោះសៀវភៅ ឬឯកសារអេឡិចត្រូនិចក្នុងប្រព័ន្ធ</div>
-                <button class="btn btn-primary" onclick="openUploadBookModal()" style="margin-top:16px; height:40px; padding:0 22px; font-size:0.88rem; background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 12px rgba(22,163,74,0.35); cursor:pointer;">
-                  <i class="fas fa-cloud-upload-alt"></i> បង្ហោះសៀវភៅថ្មីឥឡូវនេះ (Upload Book)
-                </button>
+                <div style="font-weight:700; font-size:1.05rem; color:#475569;">
+                  ${isTeacher ? 'មិនទាន់មានសៀវភៅសម្រាប់មុខវិជ្ជាដែលលោកគ្រូ-អ្នកគ្រូបង្រៀននៅឡើយទេ' : 'មិនទាន់មានសៀវភៅក្នុងបណ្ណាល័យឌីជីថលនៅឡើយទេ'}
+                </div>
+                <div style="font-size:0.84rem; color:#64748b; margin-top:5px;">
+                  ${isTeacher ? 'លោកគ្រូ-អ្នកគ្រូអាចចុចប៊ូតុងខាងក្រោមដើម្បី Upload សៀវភៅថ្មីសម្រាប់មុខវិជ្ជារបស់ខ្លួន' : 'រដ្ឋបាល គ្រូឧទ្ទេស ឬបណ្ណារក្សអាចបង្ហោះសៀវភៅ ឬឯកសារអេឡិចត្រូនិចក្នុងប្រព័ន្ធ'}
+                </div>
+                ${!isStudent ? `
+                  <button class="btn btn-primary" onclick="openUploadBookModal()" style="margin-top:16px; height:40px; padding:0 22px; font-size:0.88rem; background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 12px rgba(22,163,74,0.35); cursor:pointer;">
+                    <i class="fas fa-cloud-upload-alt"></i> បង្ហោះសៀវភៅថ្មីឥឡូវនេះ (Upload Book)
+                  </button>
+                ` : ''}
               </div>
             ` : books.map(b => {
               const sInfo = getBookSubjectInfo(b);
@@ -5872,9 +5944,11 @@ function openTraineeLibraryModal(initialSubjectFilter = null) {
               <span>សរុបសៀវភៅក្នុងបណ្ណាល័យ៖ <strong style="color:#15803d;">${books.length} ក្បាល</strong></span>
             </div>
             <div style="display:flex; gap:8px;">
+              ${!isStudent ? `
               <button class="btn btn-primary" onclick="openUploadBookModal()" style="height:34px; padding:0 14px; font-size:0.8rem; background:linear-gradient(135deg, #15803d 0%, #16a34a 100%); border:none; color:#ffffff; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
                 <i class="fas fa-plus-circle"></i> + បង្ហោះសៀវភៅ
               </button>
+              ` : ''}
               <button class="btn btn-outline" onclick="closeStmsModal()" style="height:34px; padding:0 16px; font-size:0.82rem;">បិទ</button>
             </div>
           </div>
@@ -5946,11 +6020,32 @@ function openUploadBookModal(editBookId = null) {
     showToast('⚠️ លក្ខខណ្ឌនៃការប្រើប្រាស់៖ គរុនិស្សិត (សិស្ស) មិនត្រូវបានអនុញ្ញាតឱ្យកែប្រែព័ត៌មានសៀវភៅឡើយ!', 'warning');
     return;
   }
+  const isTeacher = isTeacherSession();
+  let teacherAssignedCodes = [];
+  let teacherProfile = null;
+  if (isTeacher) {
+    teacherProfile = (typeof getActiveTrainerProfile === 'function') ? getActiveTrainerProfile() : null;
+    teacherAssignedCodes = (typeof getTrainerAssignedSubjectCodes === 'function') 
+      ? getTrainerAssignedSubjectCodes(teacherProfile) 
+      : (teacherProfile && teacherProfile.subject ? [teacherProfile.subject] : ['ICT-105']);
+    if (!Array.isArray(teacherAssignedCodes) || teacherAssignedCodes.length === 0) {
+      teacherAssignedCodes = ['ICT-105'];
+    }
+  }
+
   const bookToEdit = editBookId ? (stmsData.books || []).find(b => b.id === editBookId) : null;
+  if (bookToEdit && isTeacher) {
+    const bSubjInfo = getBookSubjectInfo(bookToEdit);
+    if (!teacherAssignedCodes.includes(bSubjInfo.code)) {
+      showToast('🔒 បដិសេធសិទ្ធិ៖ លោកគ្រូ-អ្នកគ្រូអាចកែប្រែបានតែសៀវភៅនៃមុខវិជ្ជាដែលខ្លួនបង្រៀនប៉ុណ្ណោះ!', 'warning');
+      return;
+    }
+  }
+
   window.pendingBookFileData = null;
   window.pendingBookCoverData = bookToEdit && bookToEdit.coverUrl ? bookToEdit.coverUrl : null;
 
-  const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0)
+  let allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects) && stmsData.subjects.length > 0)
     ? stmsData.subjects
     : (typeof KTPTTC_ALL_SUBJECTS !== 'undefined' && KTPTTC_ALL_SUBJECTS.length > 0 ? KTPTTC_ALL_SUBJECTS : [
       { code: "PED-101", nameKh: "គរុកោសល្យទូទៅ" },
@@ -5962,6 +6057,10 @@ function openUploadBookModal(editBookId = null) {
       { code: "PRAC-107", nameKh: "កម្មសិក្សាគរុកោសល្យ" },
       { code: "COM-108", nameKh: "ព័ត៌មានវិទ្យា" }
     ]);
+
+  if (isTeacher) {
+    allSubjs = allSubjs.filter(s => teacherAssignedCodes.includes(s.code));
+  }
 
   let modalHtml = `
     <div class="stms-modal-backdrop" id="uploadBookModalBackdrop" onclick="if(event.target===this) openTraineeLibraryModal()">
@@ -6025,17 +6124,23 @@ function openUploadBookModal(editBookId = null) {
               </div>
 
               <div>
-                <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:4px; display:block;">
-                  មុខវិជ្ជាពាក់ព័ន្ធ (Related Subject) <span style="color:#ef4444;">*</span>
+                <label class="form-label" style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between;">
+                  <span>មុខវិជ្ជាពាក់ព័ន្ធ (Related Subject) <span style="color:#ef4444;">*</span></span>
+                  ${isTeacher ? `<span style="font-size:0.75rem; color:#15803d; font-weight:700;"><i class="fas fa-lock"></i> មុខវិជ្ជាបង្រៀន</span>` : ''}
                 </label>
-                <select id="bookSubjectInput" class="form-select" style="width:100%;">
-                  <option value="">-- ជ្រើសរើសមុខវិជ្ជា (ឬទូទៅ) --</option>
+                <select id="bookSubjectInput" class="form-select" style="width:100%;" required>
+                  ${(!isTeacher || allSubjs.length !== 1) ? '<option value="">-- ជ្រើសរើសមុខវិជ្ជា --</option>' : ''}
                   ${allSubjs.map(s => {
                     const inferredCode = bookToEdit ? getBookSubjectInfo(bookToEdit).code : '';
-                    const isSel = bookToEdit && (bookToEdit.subjectCode === s.code || (!bookToEdit.subjectCode && inferredCode === s.code));
+                    const isSel = (bookToEdit && (bookToEdit.subjectCode === s.code || (!bookToEdit.subjectCode && inferredCode === s.code))) || (isTeacher && allSubjs.length === 1);
                     return `<option value="${escapeHtml(s.code)}" ${isSel ? 'selected' : ''}>[${escapeHtml(s.code)}] ${escapeHtml(s.nameKh)}</option>`;
                   }).join('')}
                 </select>
+                ${isTeacher ? `
+                  <p style="font-size:0.74rem; color:#15803d; margin:4px 0 0 0;">
+                    <i class="fas fa-info-circle"></i> លោកគ្រូ-អ្នកគ្រូអាចជ្រើសរើស និង Upload សៀវភៅសម្រាប់តែមុខវិជ្ជាដែលខ្លួនបង្រៀនប៉ុណ្ណោះ
+                  </p>
+                ` : ''}
               </div>
 
               <div>
@@ -6217,6 +6322,19 @@ async function submitNewDigitalBook(editBookId = '') {
     showToast('⚠️ លក្ខខណ្ឌនៃការប្រើប្រាស់៖ គរុនិស្សិត (សិស្ស) មិនត្រូវបានអនុញ្ញាតឱ្យកែប្រែព័ត៌មានសៀវភៅឡើយ!', 'warning');
     return;
   }
+  const isTeacher = isTeacherSession();
+  let teacherAssignedCodes = [];
+  let teacherProfile = null;
+  if (isTeacher) {
+    teacherProfile = (typeof getActiveTrainerProfile === 'function') ? getActiveTrainerProfile() : null;
+    teacherAssignedCodes = (typeof getTrainerAssignedSubjectCodes === 'function') 
+      ? getTrainerAssignedSubjectCodes(teacherProfile) 
+      : (teacherProfile && teacherProfile.subject ? [teacherProfile.subject] : ['ICT-105']);
+    if (!Array.isArray(teacherAssignedCodes) || teacherAssignedCodes.length === 0) {
+      teacherAssignedCodes = ['ICT-105'];
+    }
+  }
+
   const titleEl = document.getElementById('bookTitleInput');
   const authorEl = document.getElementById('bookAuthorInput');
   const catEl = document.getElementById('bookCategoryInput');
@@ -6231,6 +6349,17 @@ async function submitNewDigitalBook(editBookId = '') {
   }
 
   const selectedSubjectCode = subjEl ? subjEl.value : '';
+  if (isTeacher) {
+    if (!selectedSubjectCode) {
+      showToast('⚠️ សូមជ្រើសរើសមុខវិជ្ជាដែលលោកគ្រូ-អ្នកគ្រូបង្រៀន!', 'warning');
+      return;
+    }
+    if (!teacherAssignedCodes.includes(selectedSubjectCode)) {
+      showToast('🔒 បដិសេធសិទ្ធិ៖ លោកគ្រូ-អ្នកគ្រូអាច Upload ឬកែប្រែសៀវភៅបានតែចំពោះមុខវិជ្ជាដែលខ្លួនបង្រៀនប៉ុណ្ណោះ!', 'warning');
+      return;
+    }
+  }
+
   let selectedSubjectName = '';
   if (selectedSubjectCode) {
     const allSubjs = (typeof stmsData !== 'undefined' && stmsData && Array.isArray(stmsData.subjects))
@@ -6240,7 +6369,7 @@ async function submitNewDigitalBook(editBookId = '') {
     if (found) selectedSubjectName = found.nameKh;
   }
 
-  const user = getActiveTrainerProfile() || { nameKh: 'បណ្ណារក្ស KTPTTC' };
+  const user = (isTeacher && teacherProfile) ? teacherProfile : (getActiveTrainerProfile() || { nameKh: 'បណ្ណារក្ស KTPTTC' });
   const fileInfo = window.pendingBookFileData;
 
   if (!Array.isArray(stmsData.books)) {
@@ -6251,6 +6380,13 @@ async function submitNewDigitalBook(editBookId = '') {
     const existingIndex = stmsData.books.findIndex(b => b.id === editBookId);
     if (existingIndex !== -1) {
       const b = stmsData.books[existingIndex];
+      if (isTeacher) {
+        const origSubj = getBookSubjectInfo(b);
+        if (!teacherAssignedCodes.includes(origSubj.code)) {
+          showToast('🔒 បដិសេធសិទ្ធិ៖ លោកគ្រូ-អ្នកគ្រូមិនអាចកែប្រែសៀវភៅនៃមុខវិជ្ជាផ្សេងបានទេ!', 'warning');
+          return;
+        }
+      }
       b.title = titleEl.value.trim();
       b.author = authorEl && authorEl.value.trim() ? authorEl.value.trim() : b.author;
       b.category = catEl ? catEl.value : b.category;
@@ -6318,7 +6454,24 @@ function deleteDigitalBook(bookId) {
     return;
   }
   const b = (stmsData.books || []).find(x => x.id === bookId);
-  const title = b ? b.title : 'សៀវភៅនេះ';
+  if (!b) return;
+
+  if (isTeacherSession()) {
+    const teacherProfile = (typeof getActiveTrainerProfile === 'function') ? getActiveTrainerProfile() : null;
+    let teacherAssignedCodes = (typeof getTrainerAssignedSubjectCodes === 'function')
+      ? getTrainerAssignedSubjectCodes(teacherProfile)
+      : (teacherProfile && teacherProfile.subject ? [teacherProfile.subject] : ['ICT-105']);
+    if (!Array.isArray(teacherAssignedCodes) || teacherAssignedCodes.length === 0) {
+      teacherAssignedCodes = ['ICT-105'];
+    }
+    const sInfo = getBookSubjectInfo(b);
+    if (!teacherAssignedCodes.includes(sInfo.code)) {
+      showToast('🔒 បដិសេធសិទ្ធិ៖ លោកគ្រូ-អ្នកគ្រូអាចលុបបានតែសៀវភៅនៃមុខវិជ្ជាដែលខ្លួនបង្រៀនប៉ុណ្ណោះ!', 'warning');
+      return;
+    }
+  }
+
+  const title = b.title || 'សៀវភៅនេះ';
   if (!confirm(`តើអ្នកពិតជាចង់លុបសៀវភៅ «${title}» ចេញពីបណ្ណាល័យឌីជីថលមែនទេ?`)) return;
 
   stmsData.books = (stmsData.books || []).filter(x => x.id !== bookId);
