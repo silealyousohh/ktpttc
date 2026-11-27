@@ -865,6 +865,337 @@ body:has(.admin-portal-container) .stms-content-viewport {
   pointer-events: none;
 }
 
+/* Shared Internal Layout Classes for Single & A4 Batch ID Cards */
+.trainee-id-card {
+  box-sizing: border-box;
+  font-family: 'Kantumruy Pro', 'Inter', sans-serif;
+}
+
+.trainee-id-card .id-card-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  padding-bottom: 8px;
+}
+
+.trainee-id-card .id-card-logo {
+  width: 38px;
+  height: 38px;
+  background: #ffffff;
+  border-radius: 50%;
+  padding: 2px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.trainee-id-card .id-card-org-kh {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #93c5fd;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+}
+
+.trainee-id-card .id-card-org-en {
+  font-size: 0.62rem;
+  color: #cbd5e1;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
+}
+
+.trainee-id-card .id-card-badge {
+  font-size: 0.6rem;
+  color: #38bdf8;
+  font-weight: 700;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.trainee-id-card .id-card-body {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin: 8px 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.trainee-id-card .id-card-photo-box {
+  width: 75px;
+  height: 90px;
+  background: #0f172a;
+  border: 2px solid #38bdf8;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.trainee-id-card .id-card-info {
+  text-align: left;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  flex: 1;
+  min-width: 0;
+}
+
+.trainee-id-card .id-card-name-kh {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trainee-id-card .id-card-name-en {
+  font-size: 0.7rem;
+  color: #93c5fd;
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trainee-id-card .id-card-meta {
+  font-size: 0.74rem;
+  color: #e2e8f0;
+  line-height: 1.42;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trainee-id-card .id-card-code {
+  color: #38bdf8;
+  font-weight: 800;
+  font-size: 0.82rem;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.trainee-id-card .id-card-ftr {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  padding-top: 6px;
+}
+
+.trainee-id-card .id-card-validity {
+  font-size: 0.61rem;
+  color: #94a3b8;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.trainee-id-card .id-card-barcode {
+  font-family: monospace;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: #38bdf8;
+  font-size: 0.8rem;
+  line-height: 1.15;
+}
+
+.trainee-id-card .id-card-verified {
+  font-size: 0.56rem;
+  color: #64748b;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+/* 10 Cards per A4 Variant (2 cols x 5 rows, 88mm x 51mm each) */
+.trainee-id-card.id-card-a4-item {
+  width: 88mm;
+  height: 51mm;
+  padding: 2.8mm 3.4mm;
+  border-radius: 2.5mm;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  flex-shrink: 0;
+}
+
+.trainee-id-card.id-card-a4-item .card-watermark {
+  font-size: 6.5rem;
+  right: -12px;
+  bottom: -14px;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-hdr {
+  gap: 7px;
+  padding-bottom: 4px;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-logo {
+  width: 28px;
+  height: 28px;
+  padding: 1.5px;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-org-kh {
+  font-size: 0.66rem;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-org-en {
+  font-size: 0.52rem;
+  letter-spacing: 0.25px;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-badge {
+  font-size: 0.5rem;
+  padding: 1px 4px;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-body {
+  gap: 9px;
+  margin: 4px 0;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-photo-box {
+  width: 56px;
+  height: 68px;
+  border-width: 1.5px;
+  border-radius: 5px;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-info {
+  font-size: 0.66rem;
+  line-height: 1.32;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-name-kh {
+  font-size: 0.86rem;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-name-en {
+  font-size: 0.59rem;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-meta {
+  font-size: 0.63rem;
+  line-height: 1.34;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-code {
+  font-size: 0.68rem;
+  padding: 0 4px;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-ftr {
+  padding-top: 3px;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-validity {
+  font-size: 0.53rem;
+  line-height: 1.25;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-barcode {
+  font-size: 0.68rem;
+  letter-spacing: 1.4px;
+}
+
+.trainee-id-card.id-card-a4-item .id-card-verified {
+  font-size: 0.48rem;
+}
+
+/* Batch Modal A4 Page Preview */
+.id-cards-a4-preview-scroll {
+  overflow-x: auto;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 16px 12px;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+
+.id-cards-a4-sheet-preview {
+  width: fit-content;
+  min-width: 192mm;
+  background: #ffffff;
+  margin: 0 auto 18px auto;
+  padding: 6mm 6mm 7mm 6mm;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.14);
+}
+
+.id-cards-a4-sheet-preview:last-child {
+  margin-bottom: 0;
+}
+
+.id-cards-a4-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4mm;
+  padding-bottom: 2mm;
+  border-bottom: 1px dashed #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.id-cards-a4-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 88mm);
+  gap: 3mm 4mm;
+  justify-content: center;
+}
+
+.id-card-a4-slot {
+  position: relative;
+  width: 88mm;
+  height: 51mm;
+  box-sizing: border-box;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.id-card-a4-slot.is-deselected {
+  opacity: 0.35;
+  filter: grayscale(0.75);
+}
+
+.with-cut-lines .id-card-a4-slot {
+  outline: 0.3mm dashed #94a3b8;
+  outline-offset: 1.2mm;
+}
+
+.id-card-select-toggle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.id-card-select-toggle input {
+  margin: 0;
+  cursor: pointer;
+}
+
 /* Form Controls */
 .form-grid-2 {
   display: grid;
@@ -2380,6 +2711,15 @@ body:has(.admin-portal-container) .stms-content-viewport {
   color: #ffffff;
 }
 
+.id-cards-a4-print-only-sheet {
+  display: none;
+}
+
+@page a4IdCardSheet {
+  size: A4 portrait;
+  margin: 8mm;
+}
+
 @media print {
   body * {
     visibility: hidden;
@@ -2391,8 +2731,6 @@ body:has(.admin-portal-container) .stms-content-viewport {
   .trainee-id-card *,
   #printableCard,
   #printableCard *,
-  .batch-id-cards-grid,
-  .batch-id-cards-grid *,
   .printable-timetable-sheet,
   .printable-timetable-sheet * {
     visibility: visible;
@@ -2411,16 +2749,62 @@ body:has(.admin-portal-container) .stms-content-viewport {
     print-color-adjust: exact !important;
   }
 
-  .trainee-id-card,
   #printableCard {
     position: absolute;
     left: 50%;
     top: 50px;
     transform: translateX(-50%);
+  }
+
+  .trainee-id-card,
+  #printableCard {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     box-shadow: none !important;
     border: 1px solid #1e3a8a !important;
+  }
+
+  /* Multi-Page 10 Cards per A4 Print Sheet */
+  body.printing-a4-id-cards > *:not(#batchIdCardsPrintSheet) {
+    display: none !important;
+  }
+
+  body.printing-a4-id-cards #batchIdCardsPrintSheet,
+  body.printing-a4-id-cards #batchIdCardsPrintSheet * {
+    visibility: visible !important;
+  }
+
+  body.printing-a4-id-cards #batchIdCardsPrintSheet {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    page: a4IdCardSheet;
+  }
+
+  .id-cards-a4-page-print {
+    display: grid !important;
+    grid-template-columns: repeat(2, 88mm) !important;
+    grid-template-rows: repeat(5, 51mm) !important;
+    gap: 3mm 4mm !important;
+    justify-content: center !important;
+    align-content: start !important;
+    width: 100% !important;
+    padding: 1.5mm 0 !important;
+    box-sizing: border-box !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .id-cards-a4-page-print:not(:last-child) {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .no-print {
+    display: none !important;
   }
 
   .roster-card {

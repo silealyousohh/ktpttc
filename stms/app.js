@@ -1954,6 +1954,9 @@ function renderTraineesView(container) {
           <button class="btn btn-outline" onclick="viewTraineeCard()" style="font-size:0.85rem; height:36px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; border-color:#2563eb; color:#1d4ed8; font-weight:700;">
             <i class="fas fa-id-card"></i> ប័ណ្ណសម្គាល់ខ្លួន (ID Cards)
           </button>
+          <button class="btn btn-primary" onclick="openBatchIdCardsModal(currentRosterClassFilter)" style="font-size:0.85rem; height:36px; padding:0 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; background:#0284c7; border-color:#0284c7; font-weight:700;">
+            <i class="fas fa-th"></i> បោះពុម្ពប័ណ្ណ 10/A4
+          </button>
           <button class="roster-btn-print" onclick="exportOrPrintRoster()">
             <i class="fas fa-print"></i> ទម្រង់បោះពុម្ព និង ទាញយក
           </button>
@@ -2774,11 +2777,6 @@ function viewTraineeCard(id = null) {
   const prevStudent = currentIndex > 0 ? allStudents[currentIndex - 1] : null;
   const nextStudent = currentIndex < allStudents.length - 1 ? allStudents[currentIndex + 1] : null;
 
-  const photo = getUserPhoto(t) || t.photo || '';
-  const photoHtml = photo 
-    ? `<img src="${photo}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:2.2rem;\\'>${t.avatar || (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}</div>'">` 
-    : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:2.2rem;">${t.avatar || (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}</div>`;
-
   const modalHtml = `
     <div class="stms-modal-backdrop" id="cardModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
       <div class="stms-modal-window" style="max-width:540px; text-align:center;">
@@ -2823,55 +2821,7 @@ function viewTraineeCard(id = null) {
 
           <!-- Printable Digital Trainee Card -->
           <div style="display:flex; justify-content:center; margin:10px 0 15px 0;">
-            <div class="trainee-id-card" id="printableCard">
-              <i class="fas fa-school card-watermark"></i>
-              
-              <!-- Card Header -->
-              <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.22); padding-bottom:8px;">
-                <img src="assets/ktpttc-logo.png" style="width:38px; height:38px; background:#fff; border-radius:50%; padding:2px; flex-shrink:0;" onerror="this.src='assets/logo.png'">
-                <div style="text-align:left; flex:1;">
-                  <div style="font-size:0.75rem; font-weight:800; color:#93c5fd; letter-spacing:-0.2px;">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
-                  <div style="font-size:0.62rem; color:#cbd5e1; font-weight:600; letter-spacing:0.5px;">KRATIE PROVINCIAL TEACHER TRAINING CENTER</div>
-                </div>
-                <div style="font-size:0.6rem; color:#38bdf8; font-weight:700; border:1px solid rgba(56,189,248,0.4); padding:2px 6px; border-radius:4px; text-transform:uppercase;">
-                  STUDENT ID
-                </div>
-              </div>
-
-              <!-- Card Body -->
-              <div style="display:flex; gap:14px; align-items:center; margin:10px 0;">
-                <div style="width:75px; height:90px; background:#0f172a; border:2px solid #38bdf8; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
-                  ${photoHtml}
-                </div>
-                <div style="text-align:left; font-size:0.82rem; line-height:1.6; flex:1;">
-                  <div style="font-size:1.05rem; font-weight:800; color:#ffffff;">${escapeHtml(t.nameKh)}</div>
-                  ${t.nameEn ? `<div style="font-size:0.72rem; color:#93c5fd; font-weight:600; text-transform:uppercase;">${escapeHtml(t.nameEn)}</div>` : ''}
-                  <div style="font-size:0.75rem; color:#e2e8f0; margin-top:2px;">
-                    ភេទ៖ <strong>${escapeHtml(t.gender || 'ប្រុស')}</strong> | កើត៖ <strong>${escapeHtml(t.dob || '-')}</strong>
-                  </div>
-                  <div style="font-size:0.78rem; color:#f8fafc;">
-                    អត្តលេខ៖ <code style="color:#38bdf8; font-weight:800; font-size:0.85rem; background:rgba(15,23,42,0.6); padding:1px 6px; border-radius:4px;">${escapeHtml(t.id)}</code>
-                  </div>
-                  <div style="font-size:0.75rem; color:#cbd5e1;">
-                    ថ្នាក់៖ <strong>${escapeHtml(t.className || t.cohort || 'គរុនិស្សិត')}</strong>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Card Footer Barcode -->
-              <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid rgba(255,255,255,0.22); padding-top:6px;">
-                <div style="font-size:0.62rem; color:#94a3b8; text-align:left; line-height:1.4;">
-                  <div>ឆ្នាំសិក្សា៖ ២០២៦-២០២៧</div>
-                  <div>សុពលភាព៖ ៣១ សីហា ២០២៧</div>
-                </div>
-                <div style="text-align:right;">
-                  <div style="font-family:monospace; letter-spacing:2px; font-weight:700; color:#38bdf8; font-size:0.82rem;">
-                    *${escapeHtml(t.id)}*
-                  </div>
-                  <div style="font-size:0.58rem; color:#64748b; text-transform:uppercase;">KTPTTC PMS VERIFIED</div>
-                </div>
-              </div>
-            </div>
+            ${renderTraineeIdCardHtml(t, { variant: 'single', cardId: 'printableCard' })}
           </div>
 
         </div>
@@ -2885,7 +2835,7 @@ function viewTraineeCard(id = null) {
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-success" style="font-size:0.82rem; height:34px;" onclick="openBatchIdCardsModal('${escapeHtml(t.className || '')}')">
-              <i class="fas fa-layer-group"></i> បោះពុម្ពប័ណ្ណទាំងថ្នាក់ (${escapeHtml(t.className || 'ទាំងអស់')})
+              <i class="fas fa-layer-group"></i> បោះពុម្ព 10 ប័ណ្ណ/A4 (${escapeHtml(t.className || 'ទាំងអស់')})
             </button>
             <button class="btn btn-primary" style="font-size:0.82rem; height:34px;" onclick="window.print()">
               <i class="fas fa-print"></i> បោះពុម្ពប័ណ្ណនេះ
@@ -2904,95 +2854,299 @@ function viewTraineeCard(id = null) {
 }
 window.viewTraineeCard = viewTraineeCard;
 
-// Batch Print ID Cards Modal for a specific Class or All Students
-function openBatchIdCardsModal(className = '') {
-  closeStmsModal();
+// Shared ID card markup renderer used for both single card modal and 10-per-A4 batch sheets.
+function renderTraineeIdCardHtml(t, options = {}) {
+  const variant = options.variant || 'single';
+  const cardIdAttr = options.cardId ? ` id="${escapeHtml(options.cardId)}"` : '';
+  const variantClass = variant === 'a4' ? ' id-card-a4-item' : '';
+  const photo = getUserPhoto(t) || t.photo || '';
+  const avatarFallback = escapeHtml(t.avatar || (t.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓'));
+  const iconSize = variant === 'a4' ? '1.7rem' : '2.2rem';
+
+  const photoHtml = photo
+    ? `<img src="${escapeHtml(photo)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';"><div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:${iconSize};">${avatarFallback}</div>`
+    : `<div style="display:flex; width:100%; height:100%; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:${iconSize};">${avatarFallback}</div>`;
+
+  return `
+    <div class="trainee-id-card${variantClass}"${cardIdAttr}>
+      <i class="fas fa-school card-watermark"></i>
+
+      <div class="id-card-hdr">
+        <img src="assets/ktpttc-logo.png" class="id-card-logo" onerror="this.src='assets/logo.png'">
+        <div style="text-align:left; flex:1; min-width:0;">
+          <div class="id-card-org-kh">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
+          <div class="id-card-org-en">KRATIE PROVINCIAL TEACHER TRAINING CENTER</div>
+        </div>
+        <div class="id-card-badge">STUDENT ID</div>
+      </div>
+
+      <div class="id-card-body">
+        <div class="id-card-photo-box">${photoHtml}</div>
+        <div class="id-card-info">
+          <div class="id-card-name-kh">${escapeHtml(t.nameKh)}</div>
+          ${t.nameEn ? `<div class="id-card-name-en">${escapeHtml(t.nameEn)}</div>` : ''}
+          <div class="id-card-meta">
+            ភេទ៖ <strong>${escapeHtml(t.gender || 'ប្រុស')}</strong> | កើត៖ <strong>${escapeHtml(t.dob || '-')}</strong>
+          </div>
+          <div class="id-card-meta">
+            អត្តលេខ៖ <code class="id-card-code">${escapeHtml(t.id)}</code>
+          </div>
+          <div class="id-card-meta">
+            ថ្នាក់៖ <strong>${escapeHtml(t.className || t.cohort || 'គរុនិស្សិត')}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="id-card-ftr">
+        <div class="id-card-validity">
+          <div>ឆ្នាំសិក្សា៖ ២០២៦-២០២៧</div>
+          <div>សុពលភាព៖ ៣១ សីហា ២០២៧</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="id-card-barcode">*${escapeHtml(t.id)}*</div>
+          <div class="id-card-verified">KTPTTC PMS VERIFIED</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+const ID_CARDS_PER_A4_PAGE = 10;
+let batchIdCardFilterClass = 'all';
+let batchIdCardSelectedIds = null; // null indicates all filtered trainees are selected
+let batchIdCardShowCutLines = true;
+
+function chunkArrayForA4(items, chunkSize = ID_CARDS_PER_A4_PAGE) {
+  const pages = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    pages.push(items.slice(i, i + chunkSize));
+  }
+  return pages;
+}
+
+function getBatchFilteredAndSelectedStudents(className = batchIdCardFilterClass) {
   const allStudents = getAllEnteredStudents();
-  let filtered = allStudents;
-  if (className && className !== 'all') {
-    filtered = allStudents.filter(s => s.className === className || s.cohort === className);
+  const filtered = (className && className !== 'all')
+    ? allStudents.filter(s => s.className === className || s.cohort === className)
+    : allStudents;
+  const selected = batchIdCardSelectedIds === null
+    ? filtered
+    : filtered.filter(s => batchIdCardSelectedIds.has(s.id));
+  return { allStudents, filtered, selected };
+}
+
+function updateBatchIdCardStatsUI() {
+  const { filtered, selected } = getBatchFilteredAndSelectedStudents();
+  const pagesCount = Math.ceil(selected.length / ID_CARDS_PER_A4_PAGE);
+  const selectedEl = document.getElementById('batchCardSelectedCount');
+  const pagesEl = document.getElementById('batchCardPageCount');
+  const printBtn = document.getElementById('batchCardPrintBtn');
+  const printBtnFooter = document.getElementById('batchCardPrintBtnFooter');
+
+  if (selectedEl) {
+    selectedEl.textContent = `${selected.length} / ${filtered.length} ប័ណ្ណ`;
+  }
+  if (pagesEl) {
+    pagesEl.textContent = `${pagesCount} ទំព័រ A4`;
+  }
+  const btnText = `បោះពុម្ព 10 ប័ណ្ណ/A4 (${selected.length} ប័ណ្ណ • ${pagesCount} A4)`;
+  [printBtn, printBtnFooter].forEach(btn => {
+    if (!btn) return;
+    btn.disabled = selected.length === 0;
+    const labelSpan = btn.querySelector('.batch-print-btn-text');
+    if (labelSpan) labelSpan.textContent = btnText;
+  });
+}
+
+function toggleBatchIdCardStudent(studentId, checkboxEl) {
+  const { filtered } = getBatchFilteredAndSelectedStudents();
+  if (batchIdCardSelectedIds === null) {
+    batchIdCardSelectedIds = new Set(filtered.map(s => s.id));
+  }
+  if (checkboxEl && checkboxEl.checked) {
+    batchIdCardSelectedIds.add(studentId);
+  } else {
+    batchIdCardSelectedIds.delete(studentId);
+  }
+  const slot = checkboxEl ? checkboxEl.closest('.id-card-a4-slot') : null;
+  if (slot) {
+    slot.classList.toggle('is-deselected', !(checkboxEl && checkboxEl.checked));
+  }
+  updateBatchIdCardStatsUI();
+}
+window.toggleBatchIdCardStudent = toggleBatchIdCardStudent;
+
+function selectAllBatchIdCards(selectAll) {
+  batchIdCardSelectedIds = selectAll ? null : new Set();
+  openBatchIdCardsModal(batchIdCardFilterClass, true);
+}
+window.selectAllBatchIdCards = selectAllBatchIdCards;
+
+function toggleBatchCutLines(checked) {
+  batchIdCardShowCutLines = !!checked;
+  const scrollWrap = document.getElementById('batchCardsPreviewScroll');
+  if (scrollWrap) {
+    scrollWrap.classList.toggle('with-cut-lines', batchIdCardShowCutLines);
+  }
+}
+window.toggleBatchCutLines = toggleBatchCutLines;
+
+function cleanupBatchIdCardsPrint() {
+  if (document.body) {
+    document.body.classList.remove('printing-a4-id-cards');
+  }
+  const sheet = document.getElementById('batchIdCardsPrintSheet');
+  if (sheet) sheet.remove();
+}
+
+function printBatchIdCardsA4(studentsOverride = null, cutLinesOverride = null) {
+  const { selected } = getBatchFilteredAndSelectedStudents();
+  const targetStudents = Array.isArray(studentsOverride) ? studentsOverride : selected;
+  if (targetStudents.length === 0) {
+    showToast('សូមជ្រើសរើសប័ណ្ណគរុនិស្សិតយ៉ាងតិច ១ មុននឹងបោះពុម្ព!', 'warning');
+    return null;
   }
 
-  const distinctClasses = Array.from(new Set(allStudents.map(s => s.className).filter(Boolean)));
+  const useCutLines = cutLinesOverride !== null ? !!cutLinesOverride : batchIdCardShowCutLines;
+  const pages = chunkArrayForA4(targetStudents, ID_CARDS_PER_A4_PAGE);
+
+  cleanupBatchIdCardsPrint();
+
+  const sheet = document.createElement('div');
+  sheet.id = 'batchIdCardsPrintSheet';
+  sheet.className = 'id-cards-a4-print-only-sheet' + (useCutLines ? ' with-cut-lines' : '');
+  sheet.innerHTML = pages.map((pageCards, pageIdx) => `
+    <div class="id-cards-a4-page-print" data-a4-page="${pageIdx + 1}">
+      ${pageCards.map(s => renderTraineeIdCardHtml(s, { variant: 'a4' })).join('')}
+    </div>
+  `).join('');
+
+  document.body.appendChild(sheet);
+  document.body.classList.add('printing-a4-id-cards');
+
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('afterprint', cleanupBatchIdCardsPrint, { once: true });
+  }
+
+  showToast(`កំពុងរៀបចំបោះពុម្ព ${targetStudents.length} ប័ណ្ណ (${pages.length} ទំព័រ A4 • ១០ ប័ណ្ណ/ទំព័រ)...`, 'info');
+  setTimeout(() => {
+    window.print();
+  }, 250);
+
+  return { sheet, pageCount: pages.length, cardCount: targetStudents.length };
+}
+window.printBatchIdCardsA4 = printBatchIdCardsA4;
+
+// Batch Print ID Cards Modal (10 Cards per A4 Page: 2 columns x 5 rows)
+function openBatchIdCardsModal(className = '', preserveSelection = false) {
+  cleanupBatchIdCardsPrint();
+  closeStmsModal();
+
+  batchIdCardFilterClass = className || 'all';
+  if (!preserveSelection) {
+    batchIdCardSelectedIds = null;
+  }
+
+  const { allStudents, filtered, selected } = getBatchFilteredAndSelectedStudents(batchIdCardFilterClass);
+  const systemClasses = typeof getAllSystemClasses === 'function' ? getAllSystemClasses() : [];
+  const distinctClasses = Array.from(new Set([
+    ...systemClasses,
+    ...allStudents.map(s => s.className).filter(Boolean)
+  ]));
+
+  const previewPages = chunkArrayForA4(filtered, ID_CARDS_PER_A4_PAGE);
+  const selectedPagesCount = Math.ceil(selected.length / ID_CARDS_PER_A4_PAGE);
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="batchCardsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:980px; width:95%;">
+      <div class="stms-modal-window" style="max-width:1040px; width:96%;">
         
         <div class="modal-header-bar">
           <div class="modal-header-title">
-            <i class="fas fa-id-card-alt"></i> បោះពុម្ពប័ណ្ណសម្គាល់ខ្លួនគរុនិស្សិតជាក្រុម (Batch Print ID Cards)
+            <i class="fas fa-id-card-alt"></i> បោះពុម្ពប័ណ្ណសម្គាល់ខ្លួនគរុនិស្សិត (១០ ប័ណ្ណ / ១ ទំព័រ A4)
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
         </div>
 
-        <div class="modal-body-scroll" style="padding:20px;">
+        <div class="modal-body-scroll" style="padding:18px 20px;">
           
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; background:#f8fafc; padding:12px 16px; border-radius:8px; border:1px solid #e2e8f0;">
-            <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px; background:#f8fafc; padding:12px 16px; border-radius:10px; border:1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <span style="font-size:0.85rem; font-weight:700; color:#1e3a8a;"><i class="fas fa-filter"></i> ថ្នាក់រៀន៖</span>
               <select class="form-input" style="height:36px; font-size:0.85rem; width:auto; min-width:200px;" onchange="openBatchIdCardsModal(this.value)">
-                <option value="all" ${!className || className === 'all' ? 'selected' : ''}>គ្រប់ថ្នាក់ទាំងអស់ (${allStudents.length} នាក់)</option>
+                <option value="all" ${batchIdCardFilterClass === 'all' ? 'selected' : ''}>គ្រប់ថ្នាក់ទាំងអស់ (${allStudents.length} នាក់)</option>
                 ${distinctClasses.map(c => `
-                  <option value="${escapeHtml(c)}" ${c === className ? 'selected' : ''}>${escapeHtml(c)} (${allStudents.filter(s => s.className === c).length} នាក់)</option>
+                  <option value="${escapeHtml(c)}" ${c === batchIdCardFilterClass ? 'selected' : ''}>${escapeHtml(c)} (${allStudents.filter(s => s.className === c || s.cohort === c).length} នាក់)</option>
                 `).join('')}
               </select>
+              <button class="btn btn-outline" style="height:34px; padding:0 10px; font-size:0.8rem;" onclick="selectAllBatchIdCards(true)">
+                <i class="fas fa-check-double"></i> ជ្រើសទាំងអស់
+              </button>
+              <button class="btn btn-outline" style="height:34px; padding:0 10px; font-size:0.8rem;" onclick="selectAllBatchIdCards(false)">
+                <i class="fas fa-times"></i> ដកចេញទាំងអស់
+              </button>
+              <label style="display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; color:#334155; font-weight:600; cursor:pointer; padding:4px 8px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px;">
+                <input type="checkbox" ${batchIdCardShowCutLines ? 'checked' : ''} onchange="toggleBatchCutLines(this.checked)">
+                បន្ទាត់កាត់ (Cut Lines)
+              </label>
             </div>
-            <div style="display:flex; gap:8px;">
-              <button class="btn btn-primary" onclick="window.print()">
-                <i class="fas fa-print"></i> បោះពុម្ពប័ណ្ណទាំងអស់ (${filtered.length} ប័ណ្ណ)
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:0.78rem; font-weight:700; color:#0f172a; background:#e0f2fe; border:1px solid #bae6fd; padding:5px 10px; border-radius:6px;">
+                <i class="fas fa-file-alt" style="color:#0284c7;"></i>
+                <span id="batchCardSelectedCount">${selected.length} / ${filtered.length} ប័ណ្ណ</span> •
+                <span id="batchCardPageCount">${selectedPagesCount} ទំព័រ A4</span> (2 × 5)
+              </span>
+              <button class="btn btn-primary" id="batchCardPrintBtn" onclick="printBatchIdCardsA4()" ${selected.length === 0 ? 'disabled' : ''}>
+                <i class="fas fa-print"></i> <span class="batch-print-btn-text">បោះពុម្ព 10 ប័ណ្ណ/A4 (${selected.length} ប័ណ្ណ • ${selectedPagesCount} A4)</span>
               </button>
             </div>
           </div>
 
-          <!-- Cards Grid for A4 Print (Grid layout) -->
-          <div class="batch-id-cards-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px;">
-            ${filtered.map(s => {
-              const photo = getUserPhoto(s) || s.photo || '';
-              const photoHtml = photo 
-                ? `<img src="${photo}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:2rem;\\'>${s.avatar || (s.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}</div>'">` 
-                : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#94a3b8; font-size:2rem;">${s.avatar || (s.gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓')}</div>`;
-
-              return `
-                <div class="trainee-id-card" style="box-shadow:0 4px 12px rgba(0,0,0,0.15); margin:0 auto; page-break-inside:avoid;">
-                  <i class="fas fa-school card-watermark"></i>
-                  <div style="display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:6px;">
-                    <img src="assets/ktpttc-logo.png" style="width:32px; height:32px; background:#fff; border-radius:50%; padding:2px;" onerror="this.src='assets/logo.png'">
-                    <div style="text-align:left; flex:1;">
-                      <div style="font-size:0.7rem; font-weight:800; color:#93c5fd;">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
-                      <div style="font-size:0.58rem; color:#cbd5e1;">TRAINEE TEACHER IDENTITY CARD</div>
-                    </div>
-                  </div>
-                  <div style="display:flex; gap:10px; align-items:center; margin:8px 0;">
-                    <div style="width:68px; height:80px; background:#0f172a; border:2px solid #38bdf8; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
-                      ${photoHtml}
-                    </div>
-                    <div style="text-align:left; font-size:0.78rem; line-height:1.5; flex:1;">
-                      <div style="font-size:0.95rem; font-weight:800; color:#ffffff;">${escapeHtml(s.nameKh)}</div>
-                      ${s.nameEn ? `<div style="font-size:0.68rem; color:#93c5fd; text-transform:uppercase;">${escapeHtml(s.nameEn)}</div>` : ''}
-                      <div>ភេទ៖ ${escapeHtml(s.gender || 'ប្រុស')} | កើត៖ ${escapeHtml(s.dob || '-')}</div>
-                      <div>អត្តលេខ៖ <code style="color:#38bdf8; font-weight:700;">${escapeHtml(s.id)}</code></div>
-                      <div>ថ្នាក់៖ ${escapeHtml(s.className || 'ទូទៅ')}</div>
-                    </div>
-                  </div>
-                  <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid rgba(255,255,255,0.2); padding-top:4px;">
-                    <div style="font-size:0.6rem; color:#94a3b8; text-align:left;">
-                      ឆ្នាំសិក្សា ២០២៦-២០២៧ | សុពលភាព ៣១/០៨/២០២៧
-                    </div>
-                    <div style="font-family:monospace; font-weight:700; color:#38bdf8; font-size:0.75rem;">
-                      *${escapeHtml(s.id)}*
-                    </div>
-                  </div>
+          <div class="id-cards-a4-preview-scroll${batchIdCardShowCutLines ? ' with-cut-lines' : ''}" id="batchCardsPreviewScroll">
+            ${previewPages.length === 0 ? `
+              <div style="text-align:center; padding:40px 20px; color:#64748b; background:#ffffff; border-radius:8px;">
+                <i class="fas fa-id-card" style="font-size:2.4rem; color:#cbd5e1; margin-bottom:10px; display:block;"></i>
+                <div style="font-weight:700; color:#334155;">មិនមានគរុនិស្សិតនៅក្នុងថ្នាក់នេះទេ</div>
+                <div style="font-size:0.82rem; margin-top:4px;">សូមជ្រើសរើស «គ្រប់ថ្នាក់ទាំងអស់» ឬថ្នាក់ផ្សេងទៀត។</div>
+              </div>
+            ` : previewPages.map((pageCards, pageIdx) => `
+              <div class="id-cards-a4-sheet-preview">
+                <div class="id-cards-a4-page-header">
+                  <span><i class="fas fa-file"></i> ទំព័រ A4 ទី ${pageIdx + 1} / ${previewPages.length} (ខ្នាត A4 Portrait • 88mm × 51mm)</span>
+                  <span style="background:#eff6ff; border:1px solid #bfdbfe; padding:2px 8px; border-radius:999px; font-size:0.72rem;">
+                    ${pageCards.length} / ${ID_CARDS_PER_A4_PAGE} ប័ណ្ណ
+                  </span>
                 </div>
-              `;
-            }).join('')}
+                <div class="id-cards-a4-grid">
+                  ${pageCards.map(s => {
+                    const isChecked = batchIdCardSelectedIds === null || batchIdCardSelectedIds.has(s.id);
+                    return `
+                      <div class="id-card-a4-slot${isChecked ? '' : ' is-deselected'}">
+                        <label class="id-card-select-toggle no-print" title="ជ្រើសរើស / មិនជ្រើសរើសប័ណ្ណនេះ">
+                          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleBatchIdCardStudent('${escapeHtml(s.id)}', this)">
+                          <span>ជ្រើស</span>
+                        </label>
+                        ${renderTraineeIdCardHtml(s, { variant: 'a4' })}
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `).join('')}
           </div>
 
         </div>
 
-        <div class="modal-footer-bar">
-          <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
-          <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> បោះពុម្ពឥឡូវនេះ</button>
+        <div class="modal-footer-bar" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:0.78rem; color:#64748b;">
+            <i class="fas fa-info-circle" style="color:#0284c7;"></i> គន្លឹះ៖ ពេលបោះពុម្ព សូមជ្រើសរើសក្រដាស <strong>A4</strong> និងបើក <strong>Background graphics</strong> ដើម្បីបង្ហាញពណ៌ផ្ទៃកាតច្បាស់ស្អាត។
+          </span>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
+            <button class="btn btn-primary" id="batchCardPrintBtnFooter" onclick="printBatchIdCardsA4()" ${selected.length === 0 ? 'disabled' : ''}>
+              <i class="fas fa-print"></i> <span class="batch-print-btn-text">បោះពុម្ព 10 ប័ណ្ណ/A4 (${selected.length} ប័ណ្ណ • ${selectedPagesCount} A4)</span>
+            </button>
+          </div>
         </div>
 
       </div>
