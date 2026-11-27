@@ -475,41 +475,92 @@ function initTeacherIdSuggestion() {
 // DYNAMIC CLASS & SUBJECT LOADERS WITH QUICK CREATION MODALS
 // --------------------------------------------------------------------------
 
+function getOfficialClassOptions() {
+  return (typeof window !== 'undefined' && Array.isArray(window.DEFAULT_SYSTEM_CLASSES) && window.DEFAULT_SYSTEM_CLASSES.length > 0)
+    ? window.DEFAULT_SYSTEM_CLASSES
+    : ['ថ្នាក់ ក', 'ថ្នាក់ ខ', 'ថ្នាក់ គ', 'ថ្នាក់ ឃ', 'ថ្នាក់ ង'];
+}
+
+function normalizeGroupToClass(val) {
+  const s = String(val || '').trim();
+  const map = {
+    'ក្រុម ក': 'ថ្នាក់ ក',
+    'ក្រុម ខ': 'ថ្នាក់ ខ',
+    'ក្រុម គ': 'ថ្នាក់ គ',
+    'ក្រុម ឃ': 'ថ្នាក់ ឃ',
+    'ក្រុម ង': 'ថ្នាក់ ង',
+    'ក្រុម ១': 'ថ្នាក់ ក',
+    'ក្រុម ២': 'ថ្នាក់ ខ',
+    'ក្រុម ៣': 'ថ្នាក់ គ'
+  };
+  if (map[s]) return map[s];
+  for (const [oldGr, newCls] of Object.entries(map)) {
+    if (s.includes(oldGr) || s.includes(newCls)) return newCls;
+  }
+  return 'ថ្នាក់ ក';
+}
+
+function collectSystemClassesFromStorage() {
+  const official = getOfficialClassOptions();
+  const legacyPlaceholders = [
+    'ថ្នាក់បឋម ១២+២ (ក្រុម ក)',
+    'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)',
+    'ថ្នាក់បឋម ១២+៤',
+    'ថ្នាក់មត្តេយ្យ ១២+២',
+    'ថ្នាក់បឋម ១២+២ ក្រុម ក',
+    'ថ្នាក់បឋម ១២+២ ក្រុម ខ'
+  ];
+  const set = new Set();
+  let deleted = [];
+  try {
+    const raw = localStorage.getItem('ktpttc_stms_data_v2');
+    if (raw) {
+      const data = JSON.parse(raw);
+      deleted = Array.isArray(data.deletedClasses) ? data.deletedClasses : [];
+      (data.cohorts || []).forEach(c => {
+        (c.classes || []).forEach(cls => {
+          const t = cls && String(cls).trim();
+          if (t && !deleted.includes(t) && !legacyPlaceholders.includes(t)) set.add(t);
+        });
+      });
+      (data.customClasses || []).forEach(c => {
+        const name = typeof c === 'string' ? c.trim() : (c?.name ? String(c.name).trim() : '');
+        if (name && !deleted.includes(name) && !legacyPlaceholders.includes(name)) set.add(name);
+      });
+      (data.trainees || []).forEach(t => {
+        const cn = t.className && String(t.className).trim();
+        if (cn && !deleted.includes(cn) && !legacyPlaceholders.includes(cn)) set.add(cn);
+      });
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  official.forEach(cls => {
+    if (!deleted.includes(cls)) set.add(cls);
+  });
+  const result = Array.from(set);
+  result.sort((a, b) => {
+    const idxA = official.indexOf(a);
+    const idxB = official.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b, 'km');
+  });
+  return result.length > 0 ? result : official;
+}
+
 // Populate Dynamic Classes from Storage
 function populateDynamicClasses(selectedClass = null) {
   const sel = document.getElementById('classSelector');
   const classInput = document.getElementById('regClass');
   const groupInput = document.getElementById('regGroup');
 
-  let classList = [];
-  try {
-    const raw = localStorage.getItem('ktpttc_stms_data_v2');
-    if (raw) {
-      const data = JSON.parse(raw);
-      const set = new Set();
-      (data.cohorts || []).forEach(c => {
-        (c.classes || []).forEach(cls => { if (cls) set.add(cls.trim()); });
-      });
-      (data.customClasses || []).forEach(c => {
-        const name = typeof c === 'string' ? c : c?.name;
-        if (name) set.add(name.trim());
-      });
-      (data.trainees || []).forEach(t => {
-        if (t.className) set.add(t.className.trim());
-      });
-      classList = Array.from(set);
-    }
-  } catch (e) {
-    console.error(e);
-  }
+  const classList = collectSystemClassesFromStorage();
 
   if (sel) {
-    if (classList.length === 0) {
-      sel.innerHTML = '<option value="">-- សូមចុចប៊ូតុង + ដើម្បីបន្ថែមថ្នាក់រៀន --</option>';
-    } else {
-      const currentVal = selectedClass || sel.value || classList[0];
-      sel.innerHTML = classList.map(cls => `<option value="${cls}" ${cls === currentVal ? 'selected' : ''}>${cls}</option>`).join('');
-    }
+    const currentVal = selectedClass || sel.value || classList[0];
+    sel.innerHTML = classList.map(cls => `<option value="${cls}" ${cls === currentVal ? 'selected' : ''}>${cls}</option>`).join('');
   }
 
   // Also ensure regClass has matching options
@@ -519,11 +570,11 @@ function populateDynamicClasses(selectedClass = null) {
     classInput.innerHTML = gradeLevels.map(gl => `<option value="${gl}" ${gl === currentGVal ? 'selected' : ''}>${gl}</option>`).join('');
   }
 
-  // Also ensure regGroup has standard groups
+  // Also ensure regGroup has standard classes (ថ្នាក់ ក .. ថ្នាក់ ង)
   if (groupInput) {
-    const groups = ['ក្រុម ក', 'ក្រុម ខ', 'ក្រុម គ', 'ក្រុម ឃ', 'ក្រុម ង', 'ក្រុម ១', 'ក្រុម ២', 'ក្រុម ៣'];
-    const currentGrVal = groupInput.value;
-    groupInput.innerHTML = groups.map(gr => `<option value="${gr}" ${gr === currentGrVal ? 'selected' : ''}>${gr}</option>`).join('');
+    const classes = getOfficialClassOptions();
+    const currentGrVal = normalizeGroupToClass(groupInput.value);
+    groupInput.innerHTML = classes.map(gr => `<option value="${gr}" ${gr === currentGrVal ? 'selected' : ''}>${gr}</option>`).join('');
   }
 
   if (selectedClass) {
@@ -553,31 +604,7 @@ function populateTeacherClassCheckboxes(selectedClasses = null) {
   }
 
   // Extract all available system classes
-  let classList = [];
-  try {
-    const raw = localStorage.getItem('ktpttc_stms_data_v2');
-    if (raw) {
-      const data = JSON.parse(raw);
-      const set = new Set();
-      (data.cohorts || []).forEach(c => {
-        (c.classes || []).forEach(cls => { if (cls) set.add(cls.trim()); });
-      });
-      (data.customClasses || []).forEach(c => {
-        const name = typeof c === 'string' ? c : c?.name;
-        if (name) set.add(name.trim());
-      });
-      (data.trainees || []).forEach(t => {
-        if (t.className) set.add(t.className.trim());
-      });
-      classList = Array.from(set);
-    }
-  } catch (e) {
-    console.error(e);
-  }
-
-  if (classList.length === 0) {
-    classList = ['១២+២ ក្រុម ក', '១២+២ ក្រុម ខ', '១២+៤ ជំនាន់ទី១ ក្រុម ក', '១២+៤ ជំនាន់ទី១ ក្រុម ខ'];
-  }
+  const classList = collectSystemClassesFromStorage();
 
   // If nothing is currently selected, select all by default so new teachers teach all classes
   const isAllNew = currentSelected.length === 0;
@@ -625,22 +652,15 @@ window.selectAllTeacherClasses = selectAllTeacherClasses;
 function syncClassInputFromSelected(val) {
   const classInput = document.getElementById('regClass');
   const groupInput = document.getElementById('regGroup');
-  if (classInput) {
+  if (classInput && val) {
     if (val.includes('១២+៤')) classInput.value = '១២+៤';
     else if (val.includes('បរិញ្ញា')) classInput.value = 'បរិញ្ញាបត្រ+១';
     else if (val.includes('មត្តេយ្យ')) classInput.value = '១២+២ (មត្តេយ្យ)';
     else if (val.includes('វិក្រឹត')) classInput.value = 'វិក្រឹតការ';
-    else classInput.value = '១២+២';
+    else if (val.includes('១២+២')) classInput.value = '១២+២';
   }
   if (groupInput) {
-    if (val.includes('ក្រុម ខ')) groupInput.value = 'ក្រុម ខ';
-    else if (val.includes('ក្រុម គ')) groupInput.value = 'ក្រុម គ';
-    else if (val.includes('ក្រុម ឃ')) groupInput.value = 'ក្រុម ឃ';
-    else if (val.includes('ក្រុម ង')) groupInput.value = 'ក្រុម ង';
-    else if (val.includes('ក្រុម ១')) groupInput.value = 'ក្រុម ១';
-    else if (val.includes('ក្រុម ២')) groupInput.value = 'ក្រុម ២';
-    else if (val.includes('ក្រុម ៣')) groupInput.value = 'ក្រុម ៣';
-    else groupInput.value = 'ក្រុម ក';
+    groupInput.value = normalizeGroupToClass(val);
   }
 }
 
@@ -771,14 +791,14 @@ function openQuickAddClassModal() {
             </div>
             <div style="position:relative; display:flex; align-items:center;">
               <i class="fas fa-graduation-cap" style="position:absolute; left:14px; color:#64748b; font-size:1rem; pointer-events:none;"></i>
-              <input type="text" id="quickClassName" value="ថ្នាក់បឋម ១២+២ ក្រុម ក" placeholder="ឧ. ថ្នាក់បឋម ១២+២ ក្រុម ក ឬ បរិញ្ញាបត្រ+១ ក្រុម ខ" required oninput="this.dataset.autoGenerated='false'" style="width:100%; height:44px; padding-left:42px; padding-right:14px; font-size:0.95rem; font-weight:600; color:#1e293b; background:#ffffff; border:1.5px solid #94a3b8; border-radius:9px; outline:none; transition:all 0.2s; box-sizing:border-box;">
+              <input type="text" id="quickClassName" value="ថ្នាក់ ក" placeholder="ឧ. ថ្នាក់ ក, ថ្នាក់ ខ ឬ បរិញ្ញាបត្រ+១ ថ្នាក់ ក" required oninput="this.dataset.autoGenerated='false'" style="width:100%; height:44px; padding-left:42px; padding-right:14px; font-size:0.95rem; font-weight:600; color:#1e293b; background:#ffffff; border:1.5px solid #94a3b8; border-radius:9px; outline:none; transition:all 0.2s; box-sizing:border-box;">
             </div>
             <div style="font-size:0.75rem; color:#64748b; margin-top:6px; display:flex; align-items:center; gap:5px;">
               <i class="fas fa-info-circle" style="color:#3b82f6;"></i> ឈ្មោះដែលនឹងត្រូវបង្ហាញនៅក្នុងបញ្ជីសិស្ស តារាងពិន្ទុ និងទម្រង់ចុះឈ្មោះ
             </div>
           </div>
 
-          <!-- Grid: Grade Level & Group -->
+          <!-- Grid: Grade Level & Class -->
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
               <label style="font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
@@ -797,18 +817,11 @@ function openQuickAddClassModal() {
 
             <div>
               <label style="font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-                <i class="fas fa-users" style="color:#0284c7;"></i> ក្រុម (Group)
+                <i class="fas fa-users" style="color:#0284c7;"></i> ថ្នាក់ (Class)
               </label>
               <div style="position:relative; display:flex; align-items:center;">
                 <select id="quickClassGroup" onchange="autoSuggestQuickClassName(false)" style="height:42px; width:100%; padding:0 12px; border-radius:9px; border:1.5px solid #cbd5e1; font-size:0.88rem; font-weight:500; color:#1e293b; background:#ffffff; outline:none; box-sizing:border-box; cursor:pointer;">
-                  <option value="ក្រុម ក">ក្រុម ក</option>
-                  <option value="ក្រុម ខ">ក្រុម ខ</option>
-                  <option value="ក្រុម គ">ក្រុម គ</option>
-                  <option value="ក្រុម ឃ">ក្រុម ឃ</option>
-                  <option value="ក្រុម ង">ក្រុម ង</option>
-                  <option value="ក្រុម ១">ក្រុម ១</option>
-                  <option value="ក្រុម ២">ក្រុម ២</option>
-                  <option value="ក្រុម ៣">ក្រុម ៣</option>
+                  ${getOfficialClassOptions().map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -1132,13 +1145,13 @@ function checkEditMode() {
   }
 
   const classVal = s.classGrade || (s.className && s.className.includes('១២+៤') ? '១២+៤' : s.className && s.className.includes('បរិញ្ញា') ? 'បរិញ្ញាបត្រ+១' : '១២+២');
-  const groupVal = s.group || (s.className && s.className.includes('ក្រុម ខ') ? 'ក្រុម ខ' : s.className && s.className.includes('ក្រុម គ') ? 'ក្រុម គ' : s.className && s.className.includes('ក្រុម ឃ') ? 'ក្រុម ឃ' : s.className && s.className.includes('ក្រុម ង') ? 'ក្រុម ង' : s.className && s.className.includes('ក្រុម ១') ? 'ក្រុម ១' : s.className && s.className.includes('ក្រុម ២') ? 'ក្រុម ២' : 'ក្រុម ក');
+  const groupVal = normalizeGroupToClass(s.group || s.className);
 
   if (document.getElementById('regClass')) document.getElementById('regClass').value = classVal;
   if (document.getElementById('regGroup')) document.getElementById('regGroup').value = groupVal;
 
   const sel = document.getElementById('classSelector');
-  if (sel) sel.value = `${classVal} ${groupVal}`;
+  if (sel) sel.value = (s.className && Array.from(sel.options).some(o => o.value === s.className)) ? s.className : groupVal;
 
   if (document.getElementById('regNameKh')) document.getElementById('regNameKh').value = s.nameKh || '';
   if (document.getElementById('regNameEn')) document.getElementById('regNameEn').value = s.nameEn || '';
@@ -1549,8 +1562,8 @@ window.handleUnifiedSave = handleUnifiedSave;
 function handleSaveStudent() {
   const id = document.getElementById('regStuId')?.value?.trim();
   const classGrade = document.getElementById('regClass')?.value || '១២+២';
-  const group = document.getElementById('regGroup')?.value || 'ក្រុម ក';
-  const className = `${classGrade} ${group}`.trim();
+  const group = document.getElementById('regGroup')?.value || 'ថ្នាក់ ក';
+  const className = group || classGrade;
   const nameKh = document.getElementById('regNameKh')?.value?.trim();
   const nameEn = document.getElementById('regNameEn')?.value?.trim() || '';
   const gender = document.getElementById('regGender')?.value || 'ប្រុស';
@@ -1685,9 +1698,9 @@ function handleSaveStudent() {
             if (foundCohort) return foundCohort.nameKh;
           }
         } catch (e) {}
-        return className;
+        return classGrade || className;
       })(),
-      trainingType: className.includes('១២+៤') ? "12+4" : className.includes('បរិញ្ញា') ? "បរិញ្ញាបត្រ+១" : "12+2 (បឋមសិក្សា)",
+      trainingType: (classGrade + ' ' + className).includes('១២+៤') ? "12+4" : (classGrade + ' ' + className).includes('បរិញ្ញា') ? "បរិញ្ញាបត្រ+១" : "12+2 (បឋមសិក្សា)",
       status: "កំពុងសិក្សា",
       avatar: gender === 'ស្រី' ? '👩‍🎓' : '👨‍🎓',
       photo: currentPhotoData || '',
@@ -1954,9 +1967,9 @@ function resetFormForNextStudent(nextRoll) {
   const classInput = document.getElementById('regClass');
   if (classInput) classInput.value = '១២+២';
   const groupInput = document.getElementById('regGroup');
-  if (groupInput) groupInput.value = 'ក្រុម ក';
+  if (groupInput) groupInput.value = 'ថ្នាក់ ក';
   const sel = document.getElementById('classSelector');
-  if (sel) sel.value = '១២+២ ក្រុម ក';
+  if (sel) sel.value = 'ថ្នាក់ ក';
 
   currentPhotoData = '';
   const img = document.getElementById('photoPreviewImg');
@@ -2146,7 +2159,7 @@ function downloadExcelTemplate() {
     const headers = [
       'អត្តលេខ',
       'ថ្នាក់ទី',
-      'ក្រុម',
+      'ថ្នាក់',
       'ឈ្មោះសិស្ស_ខ្មែរ',
       'ឈ្មោះជាឡាតាំង',
       'ភេទ',
@@ -2166,7 +2179,7 @@ function downloadExcelTemplate() {
     const sampleRow1 = [
       'KTPTTC-2026-12P2-001',
       '១២+២',
-      'ក្រុម ក',
+      'ថ្នាក់ ក',
       'កែវ វិសាល',
       'Keo Visal',
       'ប្រុស',
@@ -2186,7 +2199,7 @@ function downloadExcelTemplate() {
     const sampleRow2 = [
       'KTPTTC-2026-12P2-002',
       '១២+២',
-      'ក្រុម ក',
+      'ថ្នាក់ ក',
       'ចាន់ ធីតា',
       'Chan Thida',
       'ស្រី',
@@ -2380,7 +2393,7 @@ function handleExcelImport(input) {
 
           let id = cleanCols[0] || `KTPTTC-2026-12P2-${String(nextRoll).padStart(3, '0')}`;
           let classGrade = cleanCols[1] || '១២+២';
-          let group = cleanCols[2] || 'ក្រុម ក';
+          let group = cleanCols[2] || 'ថ្នាក់ ក';
           let nameKh = cleanCols[3];
           let nameEn = cleanCols[4] || '';
           let genderRaw = cleanCols[5] || '';
@@ -2397,9 +2410,11 @@ function handleExcelImport(input) {
           let motherJob = cleanCols[16] || '';
 
           // Support shifting if group col was omitted
-          if (group && !group.includes('ក្រុម') && !nameKh) {
+          if (group && !group.includes('ក្រុម') && !group.includes('ថ្នាក់') && !nameKh) {
             nameKh = group;
-            group = 'ក្រុម ក';
+            group = 'ថ្នាក់ ក';
+          } else {
+            group = normalizeGroupToClass(group);
           }
           if (!nameKh && cleanCols[2]) {
             nameKh = cleanCols[2];
@@ -2409,11 +2424,13 @@ function handleExcelImport(input) {
 
           const gender = (genderRaw.includes('ស្រី') || genderRaw.toLowerCase().includes('female') || genderRaw.toLowerCase() === 'f') ? 'ស្រី' : 'ប្រុស';
           const dob = parseExcelDate(dobRaw) || '2005-01-01';
-          const className = `${classGrade} ${group}`.trim();
+          const className = group || classGrade;
 
           const studentRecord = {
             id,
             roll: nextRoll++,
+            classGrade,
+            group,
             className,
             nameKh,
             nameEn,

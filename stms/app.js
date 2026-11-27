@@ -254,6 +254,7 @@ async function fetchServerStmsData() {
         });
       }
 
+      normalizeLegacyTraineeClasses(stmsData);
       if (hasNew) {
         saveData(false);
         if (currentView) renderView(currentView);
@@ -437,6 +438,7 @@ function loadData() {
 
   // Migrate legacy class names and periods to official standards
   normalizeTimetablesData(stmsData.timetables);
+  normalizeLegacyTraineeClasses(stmsData);
 
   // Async restore lessons/files from IndexedDB if any
   idbGet('appdata', 'ktpttc_stms_data_v2').then(idbData => {
@@ -3599,6 +3601,26 @@ function normalizeTimetablesData(timetables) {
         }
       });
     });
+  });
+}
+
+function normalizeLegacyTraineeClasses(data) {
+  if (!data || !Array.isArray(data.trainees)) return;
+  const legacyGroupMap = {
+    'ក្រុម ក': 'ថ្នាក់ ក',
+    'ក្រុម ខ': 'ថ្នាក់ ខ',
+    'ក្រុម គ': 'ថ្នាក់ គ',
+    'ក្រុម ឃ': 'ថ្នាក់ ឃ',
+    'ក្រុម ង': 'ថ្នាក់ ង'
+  };
+  data.trainees.forEach(t => {
+    if (!t) return;
+    if (t.group && legacyGroupMap[t.group]) {
+      t.group = legacyGroupMap[t.group];
+    }
+    if ((!t.className || !t.className.trim()) && t.group && DEFAULT_SYSTEM_CLASSES.includes(t.group)) {
+      t.className = t.group;
+    }
   });
 }
 
@@ -11832,7 +11854,7 @@ function getTrainerAssignedClasses(tr) {
   // 3. Fallback: If no classes specifically limited, return all existing classes so the teacher is not locked out
   if (assigned.length === 0) {
     const allCls = typeof getAllSystemClasses === 'function' ? getAllSystemClasses() : [];
-    return allCls.length > 0 ? allCls : ['១២+២ ក្រុម ក', '១២+២ ក្រុម ខ'];
+    return allCls.length > 0 ? allCls : DEFAULT_SYSTEM_CLASSES;
   }
   return assigned;
 }
@@ -18068,10 +18090,15 @@ function openAddClassModal(classToEdit = null) {
   if (isEdit) {
     existing = (stmsData.customClasses || []).find(c => (c.name || c) === classToEdit);
     if (!existing) {
+      const normalizedGrp = (classToEdit.includes('ថ្នាក់ ខ') || classToEdit.includes('ក្រុម ខ')) ? 'ថ្នាក់ ខ'
+        : (classToEdit.includes('ថ្នាក់ គ') || classToEdit.includes('ក្រុម គ')) ? 'ថ្នាក់ គ'
+        : (classToEdit.includes('ថ្នាក់ ឃ') || classToEdit.includes('ក្រុម ឃ')) ? 'ថ្នាក់ ឃ'
+        : (classToEdit.includes('ថ្នាក់ ង') || classToEdit.includes('ក្រុម ង')) ? 'ថ្នាក់ ង'
+        : 'ថ្នាក់ ក';
       existing = {
         name: classToEdit,
         gradeLevel: classToEdit.includes('១២+៤') ? '១២+៤ (បឋមសិក្សា)' : classToEdit.includes('បរិញ្ញា') ? 'បរិញ្ញាបត្រ+១' : '១២+២ (បឋមសិក្សា)',
-        group: classToEdit.includes('ក្រុម ខ') ? 'ក្រុម ខ' : classToEdit.includes('ក្រុម គ') ? 'ក្រុម គ' : classToEdit.includes('ក្រុម ឃ') ? 'ក្រុម ឃ' : 'ក្រុម ក',
+        group: normalizedGrp,
         room: 'បន្ទប់ ១០១',
         capacity: 35
       };
@@ -18143,18 +18170,11 @@ function openAddClassModal(classToEdit = null) {
 
             <div>
               <label style="font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-                <i class="fas fa-users" style="color:#0284c7;"></i> ក្រុម (Group)
+                <i class="fas fa-users" style="color:#0284c7;"></i> ថ្នាក់ (Class)
               </label>
               <div style="position:relative; display:flex; align-items:center;">
                 <select id="clsGroup" onchange="autoSuggestClassName(false)" style="height:42px; width:100%; padding:0 12px; border-radius:9px; border:1.5px solid #cbd5e1; font-size:0.88rem; font-weight:500; color:#1e293b; background:#ffffff; outline:none; box-sizing:border-box; cursor:pointer;">
-                  <option value="ក្រុម ក" ${existing && existing.group === 'ក្រុម ក' ? 'selected' : ''}>ក្រុម ក</option>
-                  <option value="ក្រុម ខ" ${existing && existing.group === 'ក្រុម ខ' ? 'selected' : ''}>ក្រុម ខ</option>
-                  <option value="ក្រុម គ" ${existing && existing.group === 'ក្រុម គ' ? 'selected' : ''}>ក្រុម គ</option>
-                  <option value="ក្រុម ឃ" ${existing && existing.group === 'ក្រុម ឃ' ? 'selected' : ''}>ក្រុម ឃ</option>
-                  <option value="ក្រុម ង" ${existing && existing.group === 'ក្រុម ង' ? 'selected' : ''}>ក្រុម ង</option>
-                  <option value="ក្រុម ១" ${existing && existing.group === 'ក្រុម ១' ? 'selected' : ''}>ក្រុម ១</option>
-                  <option value="ក្រុម ២" ${existing && existing.group === 'ក្រុម ២' ? 'selected' : ''}>ក្រុម ២</option>
-                  <option value="ក្រុម ៣" ${existing && existing.group === 'ក្រុម ៣' ? 'selected' : ''}>ក្រុម ៣</option>
+                  ${DEFAULT_SYSTEM_CLASSES.map(c => `<option value="${escapeHtml(c)}" ${existing && existing.group === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
                 </select>
               </div>
             </div>
