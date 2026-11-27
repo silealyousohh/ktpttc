@@ -224,6 +224,7 @@ async function fetchServerStmsData() {
       // 9. Merge Timetables, Attendance, Reports
       if (Array.isArray(srv.timetables) && srv.timetables.length > 0) {
         stmsData.timetables = srv.timetables;
+        normalizeTimetablesData(stmsData.timetables);
         hasNew = true;
       }
       if (Array.isArray(srv.attendanceSessions) && srv.attendanceSessions.length > (stmsData.attendanceSessions || []).length) {
@@ -434,30 +435,8 @@ function loadData() {
   syncAllSubjects();
   syncTraineeStreams();
 
-  // Migrate legacy class names to new official standard (ថ្នាក់ ក, ថ្នាក់ ខ, etc.)
-  if (Array.isArray(stmsData.timetables)) {
-    stmsData.timetables.forEach(tt => {
-      if (!tt) return;
-      if (tt.className === 'ថ្នាក់បឋម ១២+២ (ក្រុម ក)' || tt.className === 'ថ្នាក់បឋម ១២+២ ក្រុម ក') tt.className = 'ថ្នាក់ ក';
-      else if (tt.className === 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)' || tt.className === 'ថ្នាក់បឋម ១២+២ ក្រុម ខ') tt.className = 'ថ្នាក់ ខ';
-      else if (tt.className === 'ថ្នាក់បឋម ១២+៤') tt.className = 'ថ្នាក់ គ';
-      else if (tt.className === 'ថ្នាក់មត្តេយ្យ ១២+២') tt.className = 'ថ្នាក់ ឃ';
-      if (Array.isArray(tt.schedule)) {
-        tt.schedule.forEach(daySch => {
-          if (Array.isArray(daySch.slots)) {
-            daySch.slots.forEach(slot => {
-              if (slot && slot.className) {
-                if (slot.className === 'ថ្នាក់បឋម ១២+២ (ក្រុម ក)' || slot.className === 'ថ្នាក់បឋម ១២+២ ក្រុម ក') slot.className = 'ថ្នាក់ ក';
-                else if (slot.className === 'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)' || slot.className === 'ថ្នាក់បឋម ១២+២ ក្រុម ខ') slot.className = 'ថ្នាក់ ខ';
-                else if (slot.className === 'ថ្នាក់បឋម ១២+៤') slot.className = 'ថ្នាក់ គ';
-                else if (slot.className === 'ថ្នាក់មត្តេយ្យ ១២+២') slot.className = 'ថ្នាក់ ឃ';
-              }
-            });
-          }
-        });
-      }
-    });
-  }
+  // Migrate legacy class names and periods to official standards
+  normalizeTimetablesData(stmsData.timetables);
 
   // Async restore lessons/files from IndexedDB if any
   idbGet('appdata', 'ktpttc_stms_data_v2').then(idbData => {
@@ -1710,21 +1689,21 @@ function renderDashboardView(container) {
                 <strong style="color:#0f172a; font-size:0.83rem;">គរុកោសល្យទូទៅ</strong>
                 <div style="font-size:0.74rem; color:#64748b;">បន្ទប់ ១០១ &bull; គ្រូឧទ្ទេសជំនាញ</div>
               </div>
-              <span style="font-size:0.75rem; font-weight:700; color:#2563eb; background:#eff6ff; padding:2px 8px; border-radius:4px;">07:30 - 09:00</span>
+              <span style="font-size:0.75rem; font-weight:700; color:#2563eb; background:#eff6ff; padding:2px 8px; border-radius:4px;">07:00 - 09:00</span>
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #10b981; border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
               <div>
                 <strong style="color:#0f172a; font-size:0.83rem;">គណិតវិទ្យា</strong>
                 <div style="font-size:0.74rem; color:#64748b;">បន្ទប់ ១០១ &bull; គ្រូឧទ្ទេសជំនាញ</div>
               </div>
-              <span style="font-size:0.75rem; font-weight:700; color:#10b981; background:#ecfdf5; padding:2px 8px; border-radius:4px;">09:15 - 10:45</span>
+              <span style="font-size:0.75rem; font-weight:700; color:#10b981; background:#ecfdf5; padding:2px 8px; border-radius:4px;">09:00 - 11:00</span>
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #f59e0b; border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
               <div>
                 <strong style="color:#0f172a; font-size:0.83rem;">ភាសាខ្មែរ</strong>
                 <div style="font-size:0.74rem; color:#64748b;">បន្ទប់ ១០១ &bull; គ្រូឧទ្ទេសជំនាញ</div>
               </div>
-              <span style="font-size:0.75rem; font-weight:700; color:#d97706; background:#fffbeb; padding:2px 8px; border-radius:4px;">13:30 - 15:00</span>
+              <span style="font-size:0.75rem; font-weight:700; color:#d97706; background:#fffbeb; padding:2px 8px; border-radius:4px;">13:00 - 15:00</span>
             </div>
           </div>
         </div>
@@ -3531,11 +3510,97 @@ let currentAdminTimetableDeliveryModeFilter = 'all'; // 'all', 'online', 'in-per
 const TIMETABLE_DAYS = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍', 'អាទិត្យ'];
 
 const STANDARD_PERIODS = [
-  { id: 'p1', time: '07:30 - 09:00', label: '០៧:៣០ - ០៩:០០ (ព្រឹក ម៉ោង ១)', shift: 'ព្រឹក' },
-  { id: 'p2', time: '09:15 - 10:45', label: '០៩:១៥ - ១០:៤៥ (ព្រឹក ម៉ោង ២)', shift: 'ព្រឹក' },
-  { id: 'p3', time: '13:30 - 15:00', label: '១៣:៣០ - ១៥:០០ (រសៀល ម៉ោង ៣)', shift: 'រសៀល' },
-  { id: 'p4', time: '15:15 - 16:45', label: '១៥:១៥ - ១៦:៤៥ (រសៀល ម៉ោង ៤)', shift: 'រសៀល' }
+  { id: 'p1', time: '07:00 - 09:00', label: '០៧:០០ - ០៩:០០ (ព្រឹក ម៉ោង ១)', shift: 'ព្រឹក' },
+  { id: 'p2', time: '09:00 - 11:00', label: '០៩:០០ - ១១:០០ (ព្រឹក ម៉ោង ២)', shift: 'ព្រឹក' },
+  { id: 'p3', time: '13:00 - 15:00', label: '១៣:០០ - ១៥:០០ (រសៀល ម៉ោង ៣)', shift: 'រសៀល' },
+  { id: 'p4', time: '15:00 - 17:00', label: '១៥:០០ - ១៧:០០ (រសៀល ម៉ោង ៤)', shift: 'រសៀល' }
 ];
+
+function parsePeriodRange(periodStr) {
+  if (!periodStr || typeof periodStr !== 'string') return null;
+  const ascii = periodStr.replace(/[០-៩]/g, ch => '0123456789'['០១២៣៤៥៦៧៨៩'.indexOf(ch)]);
+  const matches = ascii.match(/(\d{1,2}):(\d{2})/g);
+  if (!matches || matches.length === 0) return null;
+  const toMin = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(n => parseInt(n, 10));
+    return h * 60 + m;
+  };
+  const startMin = toMin(matches[0]);
+  const endMin = matches[1] ? toMin(matches[1]) : startMin + 60;
+  return { startMin, endMin };
+}
+
+function periodsOverlap(pA, pB) {
+  const aClean = (pA || '').trim();
+  const bClean = (pB || '').trim();
+  if (!aClean || !bClean) return false;
+  if (aClean === bClean) return true;
+  const rA = parsePeriodRange(aClean);
+  const rB = parsePeriodRange(bClean);
+  if (rA && rB) {
+    return rA.startMin < rB.endMin && rA.endMin > rB.startMin;
+  }
+  return aClean.slice(0, 5) === bClean.slice(0, 5);
+}
+
+function getPeriodShift(periodStr) {
+  const r = parsePeriodRange(periodStr);
+  if (r) return r.startMin < 12 * 60 ? 'ព្រឹក' : 'រសៀល';
+  return 'ម៉ោងសិក្សា';
+}
+
+function normalizeTimetablesData(timetables) {
+  if (!Array.isArray(timetables)) return;
+  const legacyClassMap = {
+    'ថ្នាក់បឋម ១២+២ (ក្រុម ក)': 'ថ្នាក់ ក',
+    'ថ្នាក់បឋម ១២+២ ក្រុម ក': 'ថ្នាក់ ក',
+    'ថ្នាក់បឋម ១២+២ (ក្រុម ខ)': 'ថ្នាក់ ខ',
+    'ថ្នាក់បឋម ១២+២ ក្រុម ខ': 'ថ្នាក់ ខ',
+    'ថ្នាក់បឋម ១២+៤': 'ថ្នាក់ គ',
+    'ថ្នាក់មត្តេយ្យ ១២+២': 'ថ្នាក់ ឃ'
+  };
+  const legacyPeriodMap = {
+    '07:30 - 09:00': '07:00 - 09:00',
+    '09:15 - 10:45': '09:00 - 11:00',
+    '13:30 - 15:00': '13:00 - 15:00',
+    '15:15 - 16:45': '15:00 - 17:00'
+  };
+
+  timetables.forEach(tt => {
+    if (!tt) return;
+    if (tt.className && legacyClassMap[tt.className]) {
+      tt.className = legacyClassMap[tt.className];
+    }
+    const dayLists = [
+      ...(Array.isArray(tt.days) ? tt.days : []),
+      ...(Array.isArray(tt.schedule) ? tt.schedule : [])
+    ];
+    dayLists.forEach(dayEntry => {
+      if (!dayEntry || !Array.isArray(dayEntry.slots)) return;
+      const hasLateMorning = dayEntry.slots.some(s => s && s.period === '10:50 - 12:00');
+      const hasLateAfternoon = dayEntry.slots.some(s => s && s.period === '16:50 - 18:00');
+      dayEntry.slots.forEach(slot => {
+        if (!slot) return;
+        if (slot.className && legacyClassMap[slot.className]) {
+          slot.className = legacyClassMap[slot.className];
+        }
+        if (slot.period) {
+          if (hasLateMorning && slot.period === '09:15 - 10:45') {
+            slot.period = '09:00 - 10:00';
+          } else if (slot.period === '10:50 - 12:00') {
+            slot.period = '10:00 - 11:00';
+          } else if (hasLateAfternoon && slot.period === '15:15 - 16:45') {
+            slot.period = '15:00 - 16:00';
+          } else if (slot.period === '16:50 - 18:00') {
+            slot.period = '16:00 - 17:00';
+          } else if (legacyPeriodMap[slot.period]) {
+            slot.period = legacyPeriodMap[slot.period];
+          }
+        }
+      });
+    });
+  });
+}
 
 function getSlotSemester(slot) {
   if (slot && slot.semester) return slot.semester;
@@ -3666,7 +3731,7 @@ function getAllTimetableSlots(classFilter = 'all', dayFilter = 'all', semesterFi
           className: tb.className || 'ថ្នាក់រៀន',
           day: dNameClean,
           dayFull: d.day,
-          period: sl.period || '07:30 - 09:00',
+          period: sl.period || '07:00 - 09:00',
           subject: sl.subject || 'មុខវិជ្ជា',
           subjectCode: sl.subjectCode || '',
           trainer: sl.trainer || 'គ្រូឧទ្ទេស',
@@ -3726,7 +3791,7 @@ function checkTimetableConflict(day, period, trainerName, roomName, excludeSlotI
         if (excludeSlotId && (sl.id === excludeSlotId || sl._id === excludeSlotId)) return;
         
         const slPeriod = (sl.period || '').trim();
-        if (slPeriod === pClean || slPeriod.slice(0, 5) === pClean.slice(0, 5)) {
+        if (periodsOverlap(slPeriod, pClean)) {
           if (trClean && sl.trainer && sl.trainer.trim() === trClean) {
             conflictInfo.hasConflict = true;
             conflictInfo.trainerConflict = true;
@@ -3908,34 +3973,34 @@ function generateStandardTimetableTemplate(className, targetSemester = null) {
     // គរុកោសល្យ, ចិត្តវិទ្យាអប់រំ, ភាសាខ្មែរ, គណិតវិទ្យា, វិទ្យាសាស្ត្រ, សិក្សាសង្គម, ការស្រាវជ្រាវអប់រំ
     // -------------------------------------------------------------
     'ចន្ទ': [
-      { period: '07:30 - 09:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '09:15 - 10:45', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '13:30 - 15:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '15:15 - 16:45', code: 'MTH-104', name: 'គណិតវិទ្យា', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
+      { period: '07:00 - 09:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:00 - 11:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:00 - 15:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:00 - 17:00', code: 'MTH-104', name: 'គណិតវិទ្យា', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
     'អង្គារ': [
-      { period: '07:30 - 09:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '09:15 - 10:45', code: 'SOC-106', name: 'សិក្សាសង្គម', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '13:30 - 15:00', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '15:15 - 16:45', code: 'PED-101', name: 'គរុកោសល្យ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
+      { period: '07:00 - 09:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:00 - 11:00', code: 'SOC-106', name: 'សិក្សាសង្គម', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:00 - 15:00', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:00 - 17:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
     'ពុធ': [
-      { period: '07:30 - 09:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '09:15 - 10:45', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '13:30 - 15:00', code: 'MTH-104', name: 'គណិតវិទ្យា', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '15:15 - 16:45', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
+      { period: '07:00 - 09:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:00 - 11:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:00 - 15:00', code: 'MTH-104', name: 'គណិតវិទ្យា', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:00 - 17:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
     'ព្រហស្បតិ៍': [
-      { period: '07:30 - 09:00', code: 'SOC-106', name: 'សិក្សាសង្គម', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '09:15 - 10:45', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '13:30 - 15:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '15:15 - 16:45', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
+      { period: '07:00 - 09:00', code: 'SOC-106', name: 'សិក្សាសង្គម', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:00 - 11:00', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:00 - 15:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:00 - 17:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
     'សុក្រ': [
-      { period: '07:30 - 09:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '09:15 - 10:45', code: 'MTH-104', name: 'គណិតវិទ្យា', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '13:30 - 15:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
-      { period: '15:15 - 16:45', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
+      { period: '07:00 - 09:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '09:00 - 11:00', code: 'MTH-104', name: 'គណិតវិទ្យា', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '13:00 - 15:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' },
+      { period: '15:00 - 17:00', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'អនឡាញ (Google Meet)', mode: 'online', notes: 'បង្រៀនអនឡាញ (ចន្ទ-សុក្រ)' }
     ],
 
     // -------------------------------------------------------------
@@ -3945,61 +4010,61 @@ function generateStandardTimetableTemplate(className, targetSemester = null) {
     // កម្មសិក្សាគរុកោសល្យ១, ការស្រាវជ្រាវអប់រំ
     // -------------------------------------------------------------
     'សៅរ៍': [
-      { period: '07:30 - 09:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
-      { period: '09:15 - 10:45', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
-      { period: '10:50 - 12:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
-      { period: '13:30 - 15:00', code: 'TMK-110', name: 'វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
-      { period: '15:15 - 16:45', code: 'TMM-111', name: 'វិធីសាស្រ្តបង្រៀនគណិត១', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
-      { period: '16:50 - 18:00', code: 'MTH-104', name: 'គណិត', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' }
+      { period: '07:00 - 09:00', code: 'PED-101', name: 'គរុកោសល្យ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '09:00 - 10:00', code: 'PSY-102', name: 'ចិត្តវិទ្យាអប់រំ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '10:00 - 11:00', code: 'KHM-103', name: 'ភាសាខ្មែរ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '13:00 - 15:00', code: 'TMK-110', name: 'វិធីសាស្រ្តបង្រៀនភាសាខ្មែរ១', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '15:00 - 16:00', code: 'TMM-111', name: 'វិធីសាស្រ្តបង្រៀនគណិត១', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '16:00 - 17:00', code: 'MTH-104', name: 'គណិត', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' }
     ],
     'អាទិត្យ': [
-      { period: '07:30 - 09:00', code: 'ICT-105', name: 'ICT', room: 'បន្ទប់កុំព្យូទ័រ', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅបន្ទប់ Lab KTPTTC' },
-      { period: '09:15 - 10:45', code: 'ASM-108', name: 'ការវាយតម្លៃការសិក្សា', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
-      { period: '10:50 - 12:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
-      { period: '13:30 - 15:00', code: 'PRAC-112', name: 'កម្មសិក្សាគរុកោសល្យ១', room: 'សាលាអនុវត្តន៍', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលាអនុវត្តន៍' },
-      { period: '15:15 - 16:45', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
-      { period: '16:50 - 18:00', code: 'SOC-106', name: 'សិក្សាសង្គម', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' }
+      { period: '07:00 - 09:00', code: 'ICT-105', name: 'ICT', room: 'បន្ទប់កុំព្យូទ័រ', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅបន្ទប់ Lab KTPTTC' },
+      { period: '09:00 - 10:00', code: 'ASM-108', name: 'ការវាយតម្លៃការសិក្សា', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '10:00 - 11:00', code: 'SCI-105', name: 'វិទ្យាសាស្ត្រ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '13:00 - 15:00', code: 'PRAC-112', name: 'កម្មសិក្សាគរុកោសល្យ១', room: 'សាលាអនុវត្តន៍', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលាអនុវត្តន៍' },
+      { period: '15:00 - 16:00', code: 'RES-107', name: 'ការស្រាវជ្រាវអប់រំ', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' },
+      { period: '16:00 - 17:00', code: 'SOC-106', name: 'សិក្សាសង្គម', room: 'បន្ទប់ ១០១', mode: 'in-person', notes: 'រៀនផ្ទាល់នៅសាលា (On-Campus)' }
     ]
   };
 
   // 2. Template for ឆមាសទី ២ (Semester 2) - Practicum & Research Subjects
   const templateScheduleSem2 = {
     'ចន្ទ': [
-      { period: '07:30 - 09:00', code: 'RES-106', name: 'ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)', room: 'បន្ទប់ ១០១' },
-      { period: '09:15 - 10:45', code: 'COM-108', name: 'បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍', room: 'បន្ទប់កុំព្យូទ័រ' },
-      { period: '13:30 - 15:00', code: 'PRAC-107', name: 'ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)', room: 'សាលាអនុវត្តន៍' },
-      { period: '15:15 - 16:45', code: 'PRAC-107', name: 'ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)', room: 'សាលាអនុវត្តន៍' }
+      { period: '07:00 - 09:00', code: 'RES-106', name: 'ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន (Action Research)', room: 'បន្ទប់ ១០១' },
+      { period: '09:00 - 11:00', code: 'COM-108', name: 'បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍', room: 'បន្ទប់កុំព្យូទ័រ' },
+      { period: '13:00 - 15:00', code: 'PRAC-107', name: 'ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)', room: 'សាលាអនុវត្តន៍' },
+      { period: '15:00 - 17:00', code: 'PRAC-107', name: 'ការចុះកម្មសិក្សាគរុកោសល្យនៅសាលាបឋម (Practicum)', room: 'សាលាអនុវត្តន៍' }
     ],
     'អង្គារ': [
-      { period: '07:30 - 09:00', code: 'PRAC-107', name: 'ការសង្កេត និងបង្រៀនសាកល្បងនៅសាលាបឋម', room: 'សាលាអនុវត្តន៍' },
-      { period: '09:15 - 10:45', code: 'PRAC-107', name: 'ការសង្កេត និងបង្រៀនសាកល្បងនៅសាលាបឋម', room: 'សាលាអនុវត្តន៍' },
-      { period: '13:30 - 15:00', code: 'RES-106', name: 'ការប្រមូលទិន្នន័យស្រាវជ្រាវក្នុងថ្នាក់រៀន', room: 'បន្ទប់ ១០១' },
-      { period: '15:15 - 16:45', code: 'COM-108', name: 'ការផលិតមាតិកាឌីជីថល និងសារគមនាគមន៍', room: 'បន្ទប់កុំព្យូទ័រ' }
+      { period: '07:00 - 09:00', code: 'PRAC-107', name: 'ការសង្កេត និងបង្រៀនសាកល្បងនៅសាលាបឋម', room: 'សាលាអនុវត្តន៍' },
+      { period: '09:00 - 11:00', code: 'PRAC-107', name: 'ការសង្កេត និងបង្រៀនសាកល្បងនៅសាលាបឋម', room: 'សាលាអនុវត្តន៍' },
+      { period: '13:00 - 15:00', code: 'RES-106', name: 'ការប្រមូលទិន្នន័យស្រាវជ្រាវក្នុងថ្នាក់រៀន', room: 'បន្ទប់ ១០១' },
+      { period: '15:00 - 17:00', code: 'COM-108', name: 'ការផលិតមាតិកាឌីជីថល និងសារគមនាគមន៍', room: 'បន្ទប់កុំព្យូទ័រ' }
     ],
     'ពុធ': [
-      { period: '07:30 - 09:00', code: 'COM-108', name: 'បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍', room: 'បន្ទប់កុំព្យូទ័រ' },
-      { period: '09:15 - 10:45', code: 'RES-106', name: 'ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន', room: 'បន្ទប់ ១០១' },
-      { period: '13:30 - 15:00', code: 'PRAC-107', name: 'សិក្ខាសាលាគរុកោសល្យ និងឆ្លុះបញ្ចាំងការបង្រៀន', room: 'សាលប្រជុំ' },
-      { period: '15:15 - 16:45', code: 'PRAC-107', name: 'ការកែលម្អកិច្ចតែងការ និងវិធីសាស្ត្របង្រៀន', room: 'បន្ទប់ ១០១' }
+      { period: '07:00 - 09:00', code: 'COM-108', name: 'បច្ចេកវិទ្យាព័ត៌មានវិទ្យា និងសារគមនាគមន៍', room: 'បន្ទប់កុំព្យូទ័រ' },
+      { period: '09:00 - 11:00', code: 'RES-106', name: 'ការស្រាវជ្រាវសកម្មភាពក្នុងថ្នាក់រៀន', room: 'បន្ទប់ ១០១' },
+      { period: '13:00 - 15:00', code: 'PRAC-107', name: 'សិក្ខាសាលាគរុកោសល្យ និងឆ្លុះបញ្ចាំងការបង្រៀន', room: 'សាលប្រជុំ' },
+      { period: '15:00 - 17:00', code: 'PRAC-107', name: 'ការកែលម្អកិច្ចតែងការ និងវិធីសាស្ត្របង្រៀន', room: 'បន្ទប់ ១០១' }
     ],
     'ព្រហស្បតិ៍': [
-      { period: '07:30 - 09:00', code: 'PRAC-107', name: 'ការបង្រៀនជាក់ស្តែងនៅសាលាបឋមសិក្សា', room: 'សាលាអនុវត្តន៍' },
-      { period: '09:15 - 10:45', code: 'PRAC-107', name: 'ការបង្រៀនជាក់ស្តែងនៅសាលាបឋមសិក្សា', room: 'សាលាអនុវត្តន៍' },
-      { period: '13:30 - 15:00', code: 'RES-106', name: 'ការវិភាគទិន្នន័យ និងរបកគំហើញស្រាវជ្រាវ', room: 'បន្ទប់ ១០១' },
-      { period: '15:15 - 16:45', code: 'COM-108', name: 'ជំនាញទំនាក់ទំនង និងបច្ចេកវិទ្យាព័ត៌មាន', room: 'បន្ទប់កុំព្យូទ័រ' }
+      { period: '07:00 - 09:00', code: 'PRAC-107', name: 'ការបង្រៀនជាក់ស្តែងនៅសាលាបឋមសិក្សា', room: 'សាលាអនុវត្តន៍' },
+      { period: '09:00 - 11:00', code: 'PRAC-107', name: 'ការបង្រៀនជាក់ស្តែងនៅសាលាបឋមសិក្សា', room: 'សាលាអនុវត្តន៍' },
+      { period: '13:00 - 15:00', code: 'RES-106', name: 'ការវិភាគទិន្នន័យ និងរបកគំហើញស្រាវជ្រាវ', room: 'បន្ទប់ ១០១' },
+      { period: '15:00 - 17:00', code: 'COM-108', name: 'ជំនាញទំនាក់ទំនង និងបច្ចេកវិទ្យាព័ត៌មាន', room: 'បន្ទប់កុំព្យូទ័រ' }
     ],
     'សុក្រ': [
-      { period: '07:30 - 09:00', code: 'PRAC-107', name: 'ការបូកសរុប និងវាយតម្លៃកម្មសិក្សាប្រចាំសប្តាហ៍', room: 'សាលប្រជុំ' },
-      { period: '09:15 - 10:45', code: 'PRAC-107', name: 'ការពិភាក្សាជាមួយគ្រូណែនាំគរុកោសល្យ', room: 'បន្ទប់ ១០១' },
-      { period: '13:30 - 15:00', code: 'RES-106', name: 'ការចងក្រងរបាយការណ៍ស្រាវជ្រាវសកម្មភាព', room: 'បន្ទប់ ១០១' },
-      { period: '15:15 - 16:45', code: 'COM-108', name: 'ពិភាក្សាគរុកោសល្យ & បច្ចេកវិទ្យាឌីជីថល', room: 'សាលប្រជុំ' }
+      { period: '07:00 - 09:00', code: 'PRAC-107', name: 'ការបូកសរុប និងវាយតម្លៃកម្មសិក្សាប្រចាំសប្តាហ៍', room: 'សាលប្រជុំ' },
+      { period: '09:00 - 11:00', code: 'PRAC-107', name: 'ការពិភាក្សាជាមួយគ្រូណែនាំគរុកោសល្យ', room: 'បន្ទប់ ១០១' },
+      { period: '13:00 - 15:00', code: 'RES-106', name: 'ការចងក្រងរបាយការណ៍ស្រាវជ្រាវសកម្មភាព', room: 'បន្ទប់ ១០១' },
+      { period: '15:00 - 17:00', code: 'COM-108', name: 'ពិភាក្សាគរុកោសល្យ & បច្ចេកវិទ្យាឌីជីថល', room: 'សាលប្រជុំ' }
     ],
     'សៅរ៍': [
-      { period: '07:30 - 09:00', code: 'RES-106', name: 'ការសរសេរសារណាស្រាវជ្រាវសកម្មភាព', room: 'បន្ទប់ ១០១' },
-      { period: '09:15 - 10:45', code: 'PRAC-107', name: 'ការចែករំលែកបទពិសោធន៍បង្រៀននៅសាលាបឋម', room: 'សាលប្រជុំ KTPTTC' }
+      { period: '07:00 - 09:00', code: 'RES-106', name: 'ការសរសេរសារណាស្រាវជ្រាវសកម្មភាព', room: 'បន្ទប់ ១០១' },
+      { period: '09:00 - 11:00', code: 'PRAC-107', name: 'ការចែករំលែកបទពិសោធន៍បង្រៀននៅសាលាបឋម', room: 'សាលប្រជុំ KTPTTC' }
     ],
     'អាទិត្យ': [
-      { period: '07:30 - 09:00', code: 'COM-108', name: 'ការអនុវត្ត ICT & បច្ចេកវិទ្យាឌីជីថល', room: 'បន្ទប់កុំព្យូទ័រ' }
+      { period: '07:00 - 09:00', code: 'COM-108', name: 'ការអនុវត្ត ICT & បច្ចេកវិទ្យាឌីជីថល', room: 'បន្ទប់កុំព្យូទ័រ' }
     ]
   };
 
@@ -4590,7 +4655,7 @@ function openAdminEditTimetableSlotModal(slotId) {
     if (modeSelect) modeSelect.value = slot.deliveryMode || getSlotDeliveryMode({ ...slot, day: dayName });
     const periodSelect = document.getElementById('ttSlotPeriod');
     if (periodSelect) {
-      if (['07:30 - 09:00', '09:15 - 10:45', '13:30 - 15:00', '15:15 - 16:45'].includes(slot.period)) {
+      if (STANDARD_PERIODS.some(p => p.time === slot.period)) {
         periodSelect.value = slot.period;
       } else {
         periodSelect.value = 'custom';
@@ -4627,7 +4692,7 @@ function submitSaveTimetableSlot() {
   const deliveryMode = document.getElementById('ttSlotMode')?.value || (['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(dClean) ? 'online' : 'in-person');
   let period = document.getElementById('ttSlotPeriod')?.value;
   if (period === 'custom') {
-    period = document.getElementById('ttSlotPeriodCustom')?.value || '07:30 - 09:00';
+    period = document.getElementById('ttSlotPeriodCustom')?.value || '07:00 - 09:00';
   }
   const subjCode = document.getElementById('ttSlotSubject')?.value;
   const subj = KTPTTC_ALL_SUBJECTS.find(s => s.code === subjCode);
@@ -4666,7 +4731,12 @@ function submitSaveTimetableSlot() {
   };
 
   targetDay.slots.push(newSlot);
-  targetDay.slots.sort((a, b) => (a.period || '').localeCompare(b.period || ''));
+  targetDay.slots.sort((a, b) => {
+    const rA = parsePeriodRange(a.period);
+    const rB = parsePeriodRange(b.period);
+    if (rA && rB) return rA.startMin - rB.startMin;
+    return (a.period || '').localeCompare(b.period || '');
+  });
 
   saveData();
   closeStmsModal();
@@ -4928,124 +4998,93 @@ function renderAdminTimetableSectionHtml(isStandaloneView = false) {
                 const isToday = dayIndexMap[day] === todayIndex;
                 const isOnlineDay = ['ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ'].includes(day);
                 const dayModeBadge = isOnlineDay 
-                  ? `<span style="font-size:0.62rem; background:#dbeafe; color:#1d4ed8; padding:1px 6px; border-radius:10px; font-weight:700; margin-left:4px; display:inline-flex; align-items:center; gap:2px;"><i class="fas fa-globe"></i> អនឡាញ</span>`
-                  : `<span style="font-size:0.62rem; background:#dcfce7; color:#15803d; padding:1px 6px; border-radius:10px; font-weight:700; margin-left:4px; display:inline-flex; align-items:center; gap:2px;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
+                  ? `<span style="font-size:0.62rem; background:#dbeafe; color:#1d4ed8; padding:1px 6px; border-radius:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px; white-space:nowrap; flex-shrink:0;"><i class="fas fa-globe"></i> អនឡាញ</span>`
+                  : `<span style="font-size:0.62rem; background:#dcfce7; color:#15803d; padding:1px 6px; border-radius:10px; font-weight:700; display:inline-flex; align-items:center; gap:3px; white-space:nowrap; flex-shrink:0;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
                 const daySlots = allSlots.filter(s => s.day === day || s.dayFull.includes(day));
-                
-                // Track rendered slots to also show non-standard slots if any
-                const renderedSlotIds = new Set();
+                const cardsToRender = [];
+
+                daySlots.forEach(slot => {
+                  const theme = getSubjectTheme(slot.subjectCode);
+                  const slotMode = slot.deliveryMode || getSlotDeliveryMode(slot);
+                  const slotModeBadge = slotMode === 'online'
+                    ? `<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px; white-space:nowrap;"><i class="fas fa-globe"></i> អនឡាញ</span>`
+                    : `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px; white-space:nowrap;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
+                  const r = parsePeriodRange(slot.period);
+                  const shiftLabel = getPeriodShift(slot.period);
+
+                  cardsToRender.push({
+                    sortKey: r ? r.startMin : 9999,
+                    html: `
+                      <div class="timetable-slot-card" style="border-left-color:${theme.color};">
+                        <div class="timetable-slot-period">
+                          <span><i class="far fa-clock"></i> ${escapeHtml(slot.period)}</span>
+                          <div style="display:flex; gap:3px; align-items:center;">
+                            ${slotModeBadge}
+                            <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(slot.room)}</span>
+                          </div>
+                        </div>
+                        <div class="timetable-slot-subject" title="${escapeHtml(slot.subject)}">
+                          <span style="background:${theme.bg}; color:${theme.color}; border:1px solid ${theme.border}; font-size:0.68rem; font-weight:700; padding:1px 5px; border-radius:4px; margin-right:3px;">
+                            ${slot.subjectCode || 'MOEYS'}
+                          </span>
+                          ${escapeHtml(slot.subject)}
+                        </div>
+                        <div class="timetable-slot-teacher">
+                          <i class="fas fa-chalkboard-teacher" style="color:${theme.color}; font-size:0.72rem;"></i>
+                          <span>${escapeHtml(slot.trainer)}</span>
+                        </div>
+                        ${currentAdminTimetableClassFilter === 'all' ? `
+                          <div style="font-size:0.68rem; color:#64748b; margin-bottom:2px;">
+                            <i class="fas fa-users" style="font-size:0.65rem;"></i> ${escapeHtml(slot.className)}
+                          </div>
+                        ` : ''}
+                        <div class="timetable-slot-footer">
+                          <span style="color:#64748b; font-size:0.68rem;">${shiftLabel}</span>
+                          <div style="display:flex; gap:3px;">
+                            <button type="button" onclick="openAdminEditTimetableSlotModal('${slot.id}')" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;" title="កែប្រែ">
+                              <i class="fas fa-edit"></i>
+                            </button>
+                            <button type="button" onclick="deleteTimetableSlot('${slot.id}')" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;" title="លុប">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    `
+                  });
+                });
+
+                STANDARD_PERIODS.forEach(p => {
+                  const pRange = parsePeriodRange(p.time);
+                  const isCovered = daySlots.some(s => periodsOverlap(s.period, p.time));
+                  if (!isCovered) {
+                    cardsToRender.push({
+                      sortKey: pRange ? pRange.startMin : 9999,
+                      html: `
+                        <div class="timetable-slot-empty" onclick="openAdminAddTimetableSlotModal('${escapeHtml(activeClass)}', '${day}', '${p.time}')" title="ចុចដើម្បីដាក់ម៉ោងបង្រៀន">
+                          <span style="font-weight:700; color:#64748b; font-size:0.68rem; margin-bottom:2px;">${p.time}</span>
+                          <span><i class="fas fa-plus-circle" style="color:#3b82f6;"></i> ដាក់ម៉ោង (${p.shift})</span>
+                        </div>
+                      `
+                    });
+                  }
+                });
+
+                cardsToRender.sort((a, b) => a.sortKey - b.sortKey);
 
                 return `
                   <div class="timetable-day-column">
                     <div class="timetable-day-header ${isToday ? 'today' : ''}">
-                      <div style="display:flex; align-items:center; gap:4px;">
+                      <div style="display:flex; align-items:center; gap:5px; white-space:nowrap;">
                         <span>${day}</span>
                         ${dayModeBadge}
                       </div>
-                      <span style="font-size:0.7rem; font-weight:600; opacity:0.9;">
-                        ${isToday ? 'ថ្ងៃនេះ' : ''} (${daySlots.length} ម៉ោង)
+                      <span style="font-size:0.7rem; font-weight:600; opacity:0.92; white-space:nowrap;">
+                        ${isToday ? 'ថ្ងៃនេះ • ' : ''}(${daySlots.length} ម៉ោង)
                       </span>
                     </div>
                     <div class="timetable-day-body">
-                      
-                      <!-- Standard Periods -->
-                      ${STANDARD_PERIODS.map(p => {
-                        const matchedSlot = daySlots.find(s => s.period.slice(0, 5) === p.time.slice(0, 5) || s.period === p.time);
-                        if (matchedSlot) {
-                          renderedSlotIds.add(matchedSlot.id);
-                          const theme = getSubjectTheme(matchedSlot.subjectCode);
-                          const slotMode = matchedSlot.deliveryMode || getSlotDeliveryMode(matchedSlot);
-                          const slotModeBadge = slotMode === 'online'
-                            ? `<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px;"><i class="fas fa-globe"></i> អនឡាញ</span>`
-                            : `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
-
-                          return `
-                            <div class="timetable-slot-card" style="border-left-color:${theme.color};">
-                              <div class="timetable-slot-period">
-                                <span><i class="far fa-clock"></i> ${matchedSlot.period}</span>
-                                <div style="display:flex; gap:3px; align-items:center;">
-                                  ${slotModeBadge}
-                                  <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(matchedSlot.room)}</span>
-                                </div>
-                              </div>
-                              <div class="timetable-slot-subject" title="${escapeHtml(matchedSlot.subject)}">
-                                <span style="background:${theme.bg}; color:${theme.color}; border:1px solid ${theme.border}; font-size:0.68rem; font-weight:700; padding:1px 5px; border-radius:4px; margin-right:3px;">
-                                  ${matchedSlot.subjectCode || 'MOEYS'}
-                                </span>
-                                ${escapeHtml(matchedSlot.subject)}
-                              </div>
-                              <div class="timetable-slot-teacher">
-                                <i class="fas fa-chalkboard-teacher" style="color:${theme.color}; font-size:0.72rem;"></i>
-                                <span>${escapeHtml(matchedSlot.trainer)}</span>
-                              </div>
-                              ${currentAdminTimetableClassFilter === 'all' ? `
-                                <div style="font-size:0.68rem; color:#64748b; margin-bottom:2px;">
-                                  <i class="fas fa-users" style="font-size:0.65rem;"></i> ${escapeHtml(matchedSlot.className)}
-                                </div>
-                              ` : ''}
-                              <div class="timetable-slot-footer">
-                                <span style="color:#64748b; font-size:0.68rem;">${p.shift}</span>
-                                <div style="display:flex; gap:3px;">
-                                  <button type="button" onclick="openAdminEditTimetableSlotModal('${matchedSlot.id}')" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;" title="កែប្រែ">
-                                    <i class="fas fa-edit"></i>
-                                  </button>
-                                  <button type="button" onclick="deleteTimetableSlot('${matchedSlot.id}')" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;" title="លុប">
-                                    <i class="fas fa-trash"></i>
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          `;
-                        } else {
-                          return `
-                            <div class="timetable-slot-empty" onclick="openAdminAddTimetableSlotModal('${escapeHtml(activeClass)}', '${day}', '${p.time}')" title="ចុចដើម្បីដាក់ម៉ោងបង្រៀន">
-                              <span style="font-weight:700; color:#64748b; font-size:0.68rem; margin-bottom:2px;">${p.time}</span>
-                              <span><i class="fas fa-plus-circle" style="color:#3b82f6;"></i> ដាក់ម៉ោង (${p.shift})</span>
-                            </div>
-                          `;
-                        }
-                      }).join('')}
-
-                      <!-- Any Non-standard custom slots for this day -->
-                      ${daySlots.filter(s => !renderedSlotIds.has(s.id)).map(cs => {
-                        const theme = getSubjectTheme(cs.subjectCode);
-                        const slotMode = cs.deliveryMode || getSlotDeliveryMode(cs);
-                        const slotModeBadge = slotMode === 'online'
-                          ? `<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px;"><i class="fas fa-globe"></i> អនឡាញ</span>`
-                          : `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:4px;"><i class="fas fa-school"></i> ផ្ទាល់</span>`;
-
-                        return `
-                          <div class="timetable-slot-card" style="border-left-color:${theme.color};">
-                            <div class="timetable-slot-period">
-                              <span><i class="far fa-clock"></i> ${cs.period}</span>
-                              <div style="display:flex; gap:3px; align-items:center;">
-                                ${slotModeBadge}
-                                <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(cs.room)}</span>
-                              </div>
-                            </div>
-                              <span class="badge badge-published" style="font-size:0.65rem; padding:1px 5px;">${escapeHtml(cs.room)}</span>
-                            </div>
-                            <div class="timetable-slot-subject">
-                              <span style="background:${theme.bg}; color:${theme.color}; border:1px solid ${theme.border}; font-size:0.68rem; font-weight:700; padding:1px 5px; border-radius:4px; margin-right:3px;">
-                                ${cs.subjectCode || 'MOEYS'}
-                              </span>
-                              ${escapeHtml(cs.subject)}
-                            </div>
-                            <div class="timetable-slot-teacher">
-                              <i class="fas fa-chalkboard-teacher" style="color:${theme.color}; font-size:0.72rem;"></i>
-                              <span>${escapeHtml(cs.trainer)}</span>
-                            </div>
-                            <div class="timetable-slot-footer">
-                              <span style="color:#64748b; font-size:0.68rem;">ម៉ោងបន្ថែម</span>
-                              <div style="display:flex; gap:3px;">
-                                <button type="button" onclick="openAdminEditTimetableSlotModal('${cs.id}')" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;"><i class="fas fa-edit"></i></button>
-                                <button type="button" onclick="deleteTimetableSlot('${cs.id}')" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; padding:1px 5px; cursor:pointer; font-size:0.68rem;"><i class="fas fa-trash"></i></button>
-                              </div>
-                            </div>
-                          </div>
-                        `;
-                      }).join('')}
-
+                      ${cardsToRender.map(c => c.html).join('')}
                     </div>
                   </div>
                 `;
@@ -5968,7 +6007,7 @@ function openTraineeTimetableModal(selectedSemester = null, selectedMode = null)
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; font-size:0.84rem; color:#475569;">
             <div>
-              <span style="font-weight:700; color:#1e3a8a;">ម៉ោងសិក្សា៖</span> ពេលព្រឹក (០៧:៣០ - ១១:០០) • ពេលរសៀល (១៣:៣០ - ១៧:០០)
+              <span style="font-weight:700; color:#1e3a8a;">ម៉ោងសិក្សា៖</span> ពេលព្រឹក (០៧:០០ - ១១:០០) • ពេលរសៀល (១៣:០០ - ១៧:០០)
             </div>
             <span style="font-weight:600; font-size:0.78rem; color:#0284c7;">សរុប ${mySlots.length} ម៉ោងសិក្សា</span>
           </div>
@@ -10937,7 +10976,7 @@ function renderSystemFlowView(container) {
                 </thead>
                 <tbody>
                   <tr>
-                    <td><strong>07:30</strong></td>
+                    <td><strong>07:00</strong></td>
                     <td class="tt-pedagogy">គរុកោសល្យ</td>
                     <td class="tt-pedagogy">គរុកោសល្យ</td>
                     <td class="tt-math">គណិតវិទ្យា</td>
@@ -10946,7 +10985,7 @@ function renderSystemFlowView(container) {
                     <td style="color:#94a3b8;">សម្រាក</td>
                   </tr>
                   <tr>
-                    <td><strong>09:15</strong></td>
+                    <td><strong>09:00</strong></td>
                     <td class="tt-math">គណិតវិទ្យា</td>
                     <td class="tt-math">គណិតវិទ្យា</td>
                     <td class="tt-khmer">ភាសាខ្មែរ</td>
@@ -10955,7 +10994,7 @@ function renderSystemFlowView(container) {
                     <td style="color:#94a3b8;">សម្រាក</td>
                   </tr>
                   <tr>
-                    <td><strong>13:30</strong></td>
+                    <td><strong>13:00</strong></td>
                     <td class="tt-khmer">ភាសាខ្មែរ</td>
                     <td class="tt-khmer">ភាសាខ្មែរ</td>
                     <td class="tt-math">គណិតវិទ្យា</td>
@@ -10964,7 +11003,7 @@ function renderSystemFlowView(container) {
                     <td class="tt-ict">ICT</td>
                   </tr>
                   <tr>
-                    <td><strong>15:15</strong></td>
+                    <td><strong>15:00</strong></td>
                     <td class="tt-psych">ចិត្តវិទ្យា</td>
                     <td class="tt-pedagogy">គរុកោសល្យ</td>
                     <td class="tt-khmer">ភាសាខ្មែរ</td>

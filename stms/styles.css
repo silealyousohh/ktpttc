@@ -3936,13 +3936,15 @@ body:has(.admin-portal-container) .stms-content-viewport {
 .timetable-day-header {
   background: #1e3a8a;
   color: #ffffff;
-  padding: 10px 12px;
-  font-size: 0.85rem;
+  padding: 9px 10px;
+  font-size: 0.84rem;
   font-weight: 700;
   text-align: center;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
 }
 
 .timetable-day-header.today {
