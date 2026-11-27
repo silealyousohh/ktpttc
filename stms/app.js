@@ -2750,32 +2750,111 @@ function getAllEnteredStudents() {
 }
 window.getAllEnteredStudents = getAllEnteredStudents;
 
+function isStudentIdCardOnlyMode() {
+  const authUser = window.authenticatedUser || currentUser;
+  if (authUser && (authUser.role === 'trainee' || authUser.role === 'student')) {
+    return true;
+  }
+  if (typeof isStudentSession === 'function' && isStudentSession()) {
+    return true;
+  }
+  return false;
+}
+window.isStudentIdCardOnlyMode = isStudentIdCardOnlyMode;
+
+function getAuthenticatedOwnTraineeRecord() {
+  const authUser = window.authenticatedUser;
+  if (authUser && (authUser.role === 'trainee' || authUser.role === 'student')) {
+    return resolveTraineeRecord(authUser);
+  }
+  if (currentTraineeUser && (currentTraineeUser.id || currentTraineeUser.nameKh)) {
+    return resolveTraineeRecord(currentTraineeUser);
+  }
+  if (currentUser && (currentUser.role === 'trainee' || currentUser.role === 'student')) {
+    return resolveTraineeRecord(currentUser);
+  }
+  return getActiveTraineeProfile();
+}
+
 // Digital Trainee Card Modal (Captured Dynamically from Entered Students List)
 function viewTraineeCard(id = null) {
   closeStmsModal();
+  const studentOnly = isStudentIdCardOnlyMode();
   const allStudents = getAllEnteredStudents();
-  if (allStudents.length === 0) {
+  if (!studentOnly && allStudents.length === 0) {
     showToast('មិនទាន់មានទិន្នន័យគរុនិស្សិតដើម្បីបង្ហាញប័ណ្ណសម្គាល់ខ្លួនទេ។ សូមចុះឈ្មោះ ឬនាំចូលគរុនិស្សិតជាមុន!', 'warning');
     return;
   }
 
   let t = null;
-  if (id) {
-    t = resolveTraineeRecord(id);
-  }
-  if (!t && currentTraineeUser) {
-    t = resolveTraineeRecord(currentTraineeUser);
-  }
-  if (!t && currentUser && (currentUser.role === 'trainee' || currentRole === 'trainee' || window.currentRole === 'trainee')) {
-    t = resolveTraineeRecord(currentUser);
-  }
-  if (!t) {
-    t = getActiveTraineeProfile();
+  if (studentOnly) {
+    const ownProfile = getAuthenticatedOwnTraineeRecord();
+    if (!ownProfile || (!ownProfile.id && !ownProfile.nameKh)) {
+      showToast('មិនអាចកំណត់អត្តសញ្ញាណគរុនិស្សិតរបស់អ្នកបានទេ!', 'warning');
+      return;
+    }
+    const requestedId = id !== null && id !== undefined ? String(id).trim() : '';
+    const ownIds = new Set(
+      [ownProfile.id, ownProfile.studentId, ownProfile.username].filter(Boolean).map(String)
+    );
+    if (requestedId && !ownIds.has(requestedId)) {
+      showToast('សុំអភ័យទោស! គរុនិស្សិតអាចមើល និងបោះពុម្ពបានតែប័ណ្ណសម្គាល់ខ្លួនឯងប៉ុណ្ណោះ។', 'warning');
+      return;
+    }
+    t = ownProfile;
+  } else {
+    if (id) {
+      t = resolveTraineeRecord(id);
+    }
+    if (!t && currentTraineeUser) {
+      t = resolveTraineeRecord(currentTraineeUser);
+    }
+    if (!t && currentUser && (currentUser.role === 'trainee' || currentRole === 'trainee' || window.currentRole === 'trainee')) {
+      t = resolveTraineeRecord(currentUser);
+    }
+    if (!t) {
+      t = getActiveTraineeProfile();
+    }
   }
 
   const currentIndex = allStudents.findIndex(x => x.id === t.id);
-  const prevStudent = currentIndex > 0 ? allStudents[currentIndex - 1] : null;
-  const nextStudent = currentIndex < allStudents.length - 1 ? allStudents[currentIndex + 1] : null;
+  const prevStudent = !studentOnly && currentIndex > 0 ? allStudents[currentIndex - 1] : null;
+  const nextStudent = !studentOnly && currentIndex < allStudents.length - 1 ? allStudents[currentIndex + 1] : null;
+
+  const selectorToolbarHtml = studentOnly ? `
+    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px 14px; margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.84rem; font-weight:700; color:#1e3a8a;">
+      <i class="fas fa-user-shield" style="color:#2563eb;"></i>
+      <span>ប័ណ្ណសម្គាល់ខ្លួនផ្ទាល់ខ្លួន (${escapeHtml(t.nameKh)} • ${escapeHtml(t.id)})</span>
+    </div>
+  ` : `
+    <!-- Student Selector Toolbar (Admin/Staff Only) -->
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:240px;">
+        <span style="font-size:0.8rem; font-weight:700; color:#1e3a8a; white-space:nowrap;">
+          <i class="fas fa-users"></i> គរុនិស្សិត៖
+        </span>
+        <select class="form-input" style="height:34px; font-size:0.82rem; padding:3px 8px; flex:1;" onchange="viewTraineeCard(this.value)">
+          ${allStudents.map((s, idx) => `
+            <option value="${escapeHtml(s.id)}" ${s.id === t.id ? 'selected' : ''}>
+              ${idx + 1}. ${escapeHtml(s.nameKh)} (${escapeHtml(s.id)}) - ${escapeHtml(s.className || 'ទូទៅ')}
+            </option>
+          `).join('')}
+        </select>
+      </div>
+      
+      <div style="display:flex; gap:4px; align-items:center;">
+        <button class="btn btn-outline" style="height:32px; padding:0 10px; font-size:0.78rem;" ${prevStudent ? `onclick="viewTraineeCard('${escapeHtml(prevStudent.id)}')"` : 'disabled style="opacity:0.4; cursor:not-allowed;"'}>
+          ‹ មុន
+        </button>
+        <span style="font-size:0.75rem; color:#64748b; font-weight:700; padding:0 4px;">
+          ${currentIndex + 1}/${allStudents.length}
+        </span>
+        <button class="btn btn-outline" style="height:32px; padding:0 10px; font-size:0.78rem;" ${nextStudent ? `onclick="viewTraineeCard('${escapeHtml(nextStudent.id)}')"` : 'disabled style="opacity:0.4; cursor:not-allowed;"'}>
+          បន្ទាប់ ›
+        </button>
+      </div>
+    </div>
+  `;
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="cardModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
@@ -2791,33 +2870,7 @@ function viewTraineeCard(id = null) {
 
         <div class="modal-body-scroll" style="padding:18px 22px;">
           
-          <!-- Student Selector Toolbar (Captured from Entered Students List) -->
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:240px;">
-              <span style="font-size:0.8rem; font-weight:700; color:#1e3a8a; white-space:nowrap;">
-                <i class="fas fa-users"></i> គរុនិស្សិត៖
-              </span>
-              <select class="form-input" style="height:34px; font-size:0.82rem; padding:3px 8px; flex:1;" onchange="viewTraineeCard(this.value)">
-                ${allStudents.map((s, idx) => `
-                  <option value="${escapeHtml(s.id)}" ${s.id === t.id ? 'selected' : ''}>
-                    ${idx + 1}. ${escapeHtml(s.nameKh)} (${escapeHtml(s.id)}) - ${escapeHtml(s.className || 'ទូទៅ')}
-                  </option>
-                `).join('')}
-              </select>
-            </div>
-            
-            <div style="display:flex; gap:4px; align-items:center;">
-              <button class="btn btn-outline" style="height:32px; padding:0 10px; font-size:0.78rem;" ${prevStudent ? `onclick="viewTraineeCard('${escapeHtml(prevStudent.id)}')"` : 'disabled style="opacity:0.4; cursor:not-allowed;"'}>
-                ‹ មុន
-              </button>
-              <span style="font-size:0.75rem; color:#64748b; font-weight:700; padding:0 4px;">
-                ${currentIndex + 1}/${allStudents.length}
-              </span>
-              <button class="btn btn-outline" style="height:32px; padding:0 10px; font-size:0.78rem;" ${nextStudent ? `onclick="viewTraineeCard('${escapeHtml(nextStudent.id)}')"` : 'disabled style="opacity:0.4; cursor:not-allowed;"'}>
-                បន្ទាប់ ›
-              </button>
-            </div>
-          </div>
+          ${selectorToolbarHtml}
 
           <!-- Printable Digital Trainee Card -->
           <div style="display:flex; justify-content:center; margin:10px 0 15px 0;">
@@ -2827,16 +2880,20 @@ function viewTraineeCard(id = null) {
         </div>
 
         <!-- Footer Actions -->
-        <div class="modal-footer-bar" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
-          <div>
-            <button class="btn btn-outline" style="color:#2563eb; border-color:#93c5fd; font-size:0.8rem; height:34px;" onclick="openEditStudent('${escapeHtml(t.id)}')">
-              <i class="fas fa-edit"></i> កែប្រែព័ត៌មាន
-            </button>
-          </div>
+        <div class="modal-footer-bar" style="justify-content:${studentOnly ? 'flex-end' : 'space-between'}; flex-wrap:wrap; gap:8px;">
+          ${studentOnly ? '' : `
+            <div>
+              <button class="btn btn-outline" style="color:#2563eb; border-color:#93c5fd; font-size:0.8rem; height:34px;" onclick="openEditStudent('${escapeHtml(t.id)}')">
+                <i class="fas fa-edit"></i> កែប្រែព័ត៌មាន
+              </button>
+            </div>
+          `}
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-success" style="font-size:0.82rem; height:34px;" onclick="openBatchIdCardsModal('${escapeHtml(t.className || '')}')">
-              <i class="fas fa-layer-group"></i> បោះពុម្ព 10 ប័ណ្ណ/A4 (${escapeHtml(t.className || 'ទាំងអស់')})
-            </button>
+            ${studentOnly ? '' : `
+              <button class="btn btn-success" style="font-size:0.82rem; height:34px;" onclick="openBatchIdCardsModal('${escapeHtml(t.className || '')}')">
+                <i class="fas fa-layer-group"></i> បោះពុម្ព 10 ប័ណ្ណ/A4 (${escapeHtml(t.className || 'ទាំងអស់')})
+              </button>
+            `}
             <button class="btn btn-primary" style="font-size:0.82rem; height:34px;" onclick="window.print()">
               <i class="fas fa-print"></i> បោះពុម្ពប័ណ្ណនេះ
             </button>
@@ -3000,6 +3057,10 @@ function cleanupBatchIdCardsPrint() {
 }
 
 function printBatchIdCardsA4(studentsOverride = null, cutLinesOverride = null) {
+  if (isStudentIdCardOnlyMode()) {
+    showToast('សុំអភ័យទោស! គរុនិស្សិតមិនអាចបោះពុម្ពប័ណ្ណអ្នកផ្សេង ឬបោះពុម្ពជាក្រុមបានទេ។', 'warning');
+    return null;
+  }
   const { selected } = getBatchFilteredAndSelectedStudents();
   const targetStudents = Array.isArray(studentsOverride) ? studentsOverride : selected;
   if (targetStudents.length === 0) {
@@ -3039,6 +3100,10 @@ window.printBatchIdCardsA4 = printBatchIdCardsA4;
 
 // Batch Print ID Cards Modal (10 Portrait Cards per A4 Landscape Page: 5 columns x 2 rows)
 function openBatchIdCardsModal(className = '', preserveSelection = false) {
+  if (isStudentIdCardOnlyMode()) {
+    showToast('សុំអភ័យទោស! គរុនិស្សិតអាចមើល និងបោះពុម្ពបានតែប័ណ្ណសម្គាល់ខ្លួនឯងប៉ុណ្ណោះ។', 'warning');
+    return null;
+  }
   cleanupBatchIdCardsPrint();
   closeStmsModal();
 
