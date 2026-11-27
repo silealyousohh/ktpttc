@@ -2872,12 +2872,12 @@ function renderTraineeIdCardHtml(t, options = {}) {
       <i class="fas fa-school card-watermark"></i>
 
       <div class="id-card-hdr">
+        <div class="id-card-badge">STUDENT ID</div>
         <img src="assets/ktpttc-logo.png" class="id-card-logo" onerror="this.src='assets/logo.png'">
-        <div style="text-align:left; flex:1; min-width:0;">
+        <div class="id-card-org-wrap">
           <div class="id-card-org-kh">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
           <div class="id-card-org-en">KRATIE PROVINCIAL TEACHER TRAINING CENTER</div>
         </div>
-        <div class="id-card-badge">STUDENT ID</div>
       </div>
 
       <div class="id-card-body">
@@ -3037,7 +3037,7 @@ function printBatchIdCardsA4(studentsOverride = null, cutLinesOverride = null) {
 }
 window.printBatchIdCardsA4 = printBatchIdCardsA4;
 
-// Batch Print ID Cards Modal (10 Cards per A4 Page: 2 columns x 5 rows)
+// Batch Print ID Cards Modal (10 Portrait Cards per A4 Landscape Page: 5 columns x 2 rows)
 function openBatchIdCardsModal(className = '', preserveSelection = false) {
   cleanupBatchIdCardsPrint();
   closeStmsModal();
@@ -3059,11 +3059,11 @@ function openBatchIdCardsModal(className = '', preserveSelection = false) {
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="batchCardsModalBackdrop" onclick="if(event.target===this) closeStmsModal()">
-      <div class="stms-modal-window" style="max-width:1040px; width:96%;">
+      <div class="stms-modal-window" style="max-width:1180px; width:96%;">
         
         <div class="modal-header-bar">
           <div class="modal-header-title">
-            <i class="fas fa-id-card-alt"></i> បោះពុម្ពប័ណ្ណសម្គាល់ខ្លួនគរុនិស្សិត (១០ ប័ណ្ណ / ១ ទំព័រ A4)
+            <i class="fas fa-id-card-alt"></i> បោះពុម្ពប័ណ្ណសម្គាល់ខ្លួនគរុនិស្សិត Portrait (១០ ប័ណ្ណ / ១ ទំព័រ A4)
           </div>
           <button class="modal-close-icon" onclick="closeStmsModal()">&times;</button>
         </div>
@@ -3094,7 +3094,7 @@ function openBatchIdCardsModal(className = '', preserveSelection = false) {
               <span style="font-size:0.78rem; font-weight:700; color:#0f172a; background:#e0f2fe; border:1px solid #bae6fd; padding:5px 10px; border-radius:6px;">
                 <i class="fas fa-file-alt" style="color:#0284c7;"></i>
                 <span id="batchCardSelectedCount">${selected.length} / ${filtered.length} ប័ណ្ណ</span> •
-                <span id="batchCardPageCount">${selectedPagesCount} ទំព័រ A4</span> (2 × 5)
+                <span id="batchCardPageCount">${selectedPagesCount} ទំព័រ A4</span> (Portrait 5 × 2)
               </span>
               <button class="btn btn-primary" id="batchCardPrintBtn" onclick="printBatchIdCardsA4()" ${selected.length === 0 ? 'disabled' : ''}>
                 <i class="fas fa-print"></i> <span class="batch-print-btn-text">បោះពុម្ព 10 ប័ណ្ណ/A4 (${selected.length} ប័ណ្ណ • ${selectedPagesCount} A4)</span>
@@ -3112,7 +3112,7 @@ function openBatchIdCardsModal(className = '', preserveSelection = false) {
             ` : previewPages.map((pageCards, pageIdx) => `
               <div class="id-cards-a4-sheet-preview">
                 <div class="id-cards-a4-page-header">
-                  <span><i class="fas fa-file"></i> ទំព័រ A4 ទី ${pageIdx + 1} / ${previewPages.length} (ខ្នាត A4 Portrait • 88mm × 51mm)</span>
+                  <span><i class="fas fa-file"></i> ទំព័រ A4 ទី ${pageIdx + 1} / ${previewPages.length} (A4 Landscape • ១០ កាតបញ្ឈរ 52mm × 85mm)</span>
                   <span style="background:#eff6ff; border:1px solid #bfdbfe; padding:2px 8px; border-radius:999px; font-size:0.72rem;">
                     ${pageCards.length} / ${ID_CARDS_PER_A4_PAGE} ប័ណ្ណ
                   </span>
@@ -3139,7 +3139,7 @@ function openBatchIdCardsModal(className = '', preserveSelection = false) {
 
         <div class="modal-footer-bar" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
           <span style="font-size:0.78rem; color:#64748b;">
-            <i class="fas fa-info-circle" style="color:#0284c7;"></i> គន្លឹះ៖ ពេលបោះពុម្ព សូមជ្រើសរើសក្រដាស <strong>A4</strong> និងបើក <strong>Background graphics</strong> ដើម្បីបង្ហាញពណ៌ផ្ទៃកាតច្បាស់ស្អាត។
+            <i class="fas fa-info-circle" style="color:#0284c7;"></i> គន្លឹះ៖ ពេលបោះពុម្ព សូមជ្រើសរើសក្រដាស <strong>A4 ផ្ដេក (Landscape)</strong> និងបើក <strong>Background graphics</strong> ដើម្បីបានកាតបញ្ឈរ ១០ ប័ណ្ណ/ទំព័រ ច្បាស់ស្អាត។
           </span>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-outline" onclick="closeStmsModal()">បិទ</button>
