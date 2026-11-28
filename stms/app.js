@@ -3247,13 +3247,17 @@ function deleteTraineeRecord(id) {
 // 3. ATTENDANCE MANAGEMENT VIEW (ម៉ូឌុលគ្រប់គ្រងវត្តមាន)
 // ==========================================================================
 let currentAttendanceSession = {
-  className: "ថ្នាក់ ក",
+  className: "ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)",
   subjectCode: "PED-101",
   date: new Date().toISOString().split('T')[0],
   records: {}
 };
 
 function renderAttendanceView(container) {
+  const availableClasses = getAllSystemClasses();
+  if (!availableClasses.includes(currentAttendanceSession.className) && availableClasses.length > 0) {
+    currentAttendanceSession.className = availableClasses[0];
+  }
   const classTrainees = stmsData.trainees.filter(t => t.className === currentAttendanceSession.className);
 
   // Initialize records if empty
@@ -3441,9 +3445,13 @@ function saveAttendanceSession() {
 // 4. SUBJECT-WISE GRADING MANAGEMENT VIEW (ម៉ូឌុលគ្រប់គ្រងពិន្ទុតាមមុខវិជ្ជា)
 // ==========================================================================
 let currentGradingSubject = "PED-101";
-let currentGradingClass = "ថ្នាក់ ក";
+let currentGradingClass = "ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)";
 
 function renderGradingView(container) {
+  const availableClasses = getAllSystemClasses();
+  if (!availableClasses.includes(currentGradingClass) && availableClasses.length > 0) {
+    currentGradingClass = availableClasses[0];
+  }
   const classTrainees = stmsData.trainees.filter(t => t.className === currentGradingClass);
   const subj = stmsData.subjects.find(s => s.code === currentGradingSubject) || stmsData.subjects[0];
   const weights = stmsData.gradeWeightConfig;
@@ -3716,7 +3724,14 @@ function saveGradeWeights() {
 
 var DEFAULT_SYSTEM_CLASSES = (typeof window !== 'undefined' && Array.isArray(window.DEFAULT_SYSTEM_CLASSES))
   ? window.DEFAULT_SYSTEM_CLASSES
-  : ['ថ្នាក់ ក', 'ថ្នាក់ ខ', 'ថ្នាក់ គ', 'ថ្នាក់ ឃ', 'ថ្នាក់ ង'];
+  : [
+      'ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)',
+      'ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ខ)',
+      'ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ក)',
+      'ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ខ)',
+      'ជាប់បម្រុង ក្រុមទី១',
+      'ជាប់បម្រុង ក្រុមទី២'
+    ];
 window.DEFAULT_SYSTEM_CLASSES = DEFAULT_SYSTEM_CLASSES;
 
 let currentAdminTimetableClassFilter = 'all';
@@ -3916,7 +3931,8 @@ function ensureClassTimetable(className) {
   if (!Array.isArray(stmsData.timetables)) {
     stmsData.timetables = [];
   }
-  const cleanClass = (className && typeof className === 'string' && className.trim() && className !== 'all') ? className.trim() : 'ថ្នាក់ ក';
+  const fallbackClass = (Array.isArray(DEFAULT_SYSTEM_CLASSES) && DEFAULT_SYSTEM_CLASSES[0]) || 'ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)';
+  const cleanClass = (className && typeof className === 'string' && className.trim() && className !== 'all') ? className.trim() : fallbackClass;
   let tt = stmsData.timetables.find(t => t && t.className === cleanClass);
   
   if (!tt) {
@@ -4553,7 +4569,7 @@ window.executeClearTimetableSlots = executeClearTimetableSlots;
 
 function executeResetTimetableToStandard(targetClass = 'all', targetSemester = 'all') {
   const classes = targetClass === 'all' ? getAllSystemClasses() : [targetClass];
-  if (classes.length === 0) classes.push('ថ្នាក់ ក');
+  if (classes.length === 0) classes.push((Array.isArray(DEFAULT_SYSTEM_CLASSES) && DEFAULT_SYSTEM_CLASSES[0]) || 'ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)');
 
   classes.forEach(cls => {
     ensureClassTimetable(cls);
@@ -5538,7 +5554,7 @@ function getAllSystemClasses() {
     }
   });
 
-  // 4. Default Official System Classes (ថ្នាក់ ក, ថ្នាក់ ខ, ថ្នាក់ គ, ថ្នាក់ ឃ, ថ្នាក់ ង)
+  // 4. Default Official System Classes (ជាប់ស្ថាពរ ក្រុមទី១/ទី២ ក-ខ និង ជាប់បម្រុង ក្រុមទី១/ទី២)
   DEFAULT_SYSTEM_CLASSES.forEach(clsName => {
     if (!deleted.includes(clsName)) {
       classSet.add(clsName);
@@ -18305,11 +18321,9 @@ function openAddClassModal(classToEdit = null) {
   if (isEdit) {
     existing = (stmsData.customClasses || []).find(c => (c.name || c) === classToEdit);
     if (!existing) {
-      const normalizedGrp = (classToEdit.includes('ថ្នាក់ ខ') || classToEdit.includes('ក្រុម ខ')) ? 'ថ្នាក់ ខ'
-        : (classToEdit.includes('ថ្នាក់ គ') || classToEdit.includes('ក្រុម គ')) ? 'ថ្នាក់ គ'
-        : (classToEdit.includes('ថ្នាក់ ឃ') || classToEdit.includes('ក្រុម ឃ')) ? 'ថ្នាក់ ឃ'
-        : (classToEdit.includes('ថ្នាក់ ង') || classToEdit.includes('ក្រុម ង')) ? 'ថ្នាក់ ង'
-        : 'ថ្នាក់ ក';
+      const normalizedGrp = DEFAULT_SYSTEM_CLASSES.includes(classToEdit)
+        ? classToEdit
+        : DEFAULT_SYSTEM_CLASSES[0];
       existing = {
         name: classToEdit,
         gradeLevel: classToEdit.includes('១២+៤') ? '១២+៤ (បឋមសិក្សា)' : classToEdit.includes('បរិញ្ញា') ? 'បរិញ្ញាបត្រ+១' : '១២+២ (បឋមសិក្សា)',
@@ -18320,7 +18334,7 @@ function openAddClassModal(classToEdit = null) {
     }
   }
 
-  const defaultName = existing ? (existing.name || classToEdit) : 'ថ្នាក់ ក';
+  const defaultName = existing ? (existing.name || classToEdit) : (DEFAULT_SYSTEM_CLASSES[0] || 'ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)');
 
   const modalHtml = `
     <div class="stms-modal-backdrop" id="addClassModalBackdrop" onclick="if(event.target===this) closeClassModal()">
@@ -18358,7 +18372,7 @@ function openAddClassModal(classToEdit = null) {
             </div>
             <div style="position:relative; display:flex; align-items:center;">
               <i class="fas fa-graduation-cap" style="position:absolute; left:14px; color:#64748b; font-size:1rem; pointer-events:none;"></i>
-              <input type="text" id="clsFullName" value="${defaultName}" placeholder="ឧ. ថ្នាក់ ក, ថ្នាក់ ខ ឬ ថ្នាក់ គ" required oninput="this.dataset.autoGenerated='false'" style="width:100%; height:44px; padding-left:42px; padding-right:14px; font-size:0.95rem; font-weight:600; color:#1e293b; background:#ffffff; border:1.5px solid #94a3b8; border-radius:9px; outline:none; transition:all 0.2s; box-sizing:border-box;">
+              <input type="text" id="clsFullName" value="${defaultName}" placeholder="ឧ. ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក) ឬ ជាប់បម្រុង ក្រុមទី១" required oninput="this.dataset.autoGenerated='false'" style="width:100%; height:44px; padding-left:42px; padding-right:14px; font-size:0.95rem; font-weight:600; color:#1e293b; background:#ffffff; border:1.5px solid #94a3b8; border-radius:9px; outline:none; transition:all 0.2s; box-sizing:border-box;">
             </div>
             <div style="font-size:0.75rem; color:#64748b; margin-top:6px; display:flex; align-items:center; gap:5px;">
               <i class="fas fa-info-circle" style="color:#3b82f6;"></i> ឈ្មោះដែលនឹងត្រូវបង្ហាញនៅក្នុងបញ្ជីសិស្ស តារាងពិន្ទុ និងទម្រង់ចុះឈ្មោះ

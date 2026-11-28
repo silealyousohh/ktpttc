@@ -557,11 +557,12 @@
 
       <!-- Student Class Selector (Shown in student mode) -->
       <select id="classSelector" class="nav-select">
-        <option value="ថ្នាក់ ក" selected>ថ្នាក់ ក</option>
-        <option value="ថ្នាក់ ខ">ថ្នាក់ ខ</option>
-        <option value="ថ្នាក់ គ">ថ្នាក់ គ</option>
-        <option value="ថ្នាក់ ឃ">ថ្នាក់ ឃ</option>
-        <option value="ថ្នាក់ ង">ថ្នាក់ ង</option>
+        <option value="ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)" selected>ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)</option>
+        <option value="ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ខ)">ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ខ)</option>
+        <option value="ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ក)">ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ក)</option>
+        <option value="ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ខ)">ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ខ)</option>
+        <option value="ជាប់បម្រុង ក្រុមទី១">ជាប់បម្រុង ក្រុមទី១</option>
+        <option value="ជាប់បម្រុង ក្រុមទី២">ជាប់បម្រុង ក្រុមទី២</option>
       </select>
 
       <!-- Teacher Subject Selector (Shown in teacher mode) -->
@@ -655,13 +656,14 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="regGroup">ថ្នាក់<span class="required">*</span></label>
+                  <label class="form-label" for="regGroup">ក្រុម / ថ្នាក់<span class="required">*</span></label>
                   <select id="regGroup" class="form-control">
-                    <option value="ថ្នាក់ ក" selected>ថ្នាក់ ក</option>
-                    <option value="ថ្នាក់ ខ">ថ្នាក់ ខ</option>
-                    <option value="ថ្នាក់ គ">ថ្នាក់ គ</option>
-                    <option value="ថ្នាក់ ឃ">ថ្នាក់ ឃ</option>
-                    <option value="ថ្នាក់ ង">ថ្នាក់ ង</option>
+                    <option value="ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)" selected>ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ក)</option>
+                    <option value="ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ខ)">ជាប់ស្ថាពរ ក្រុមទី១ (ថ្នាក់ ខ)</option>
+                    <option value="ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ក)">ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ក)</option>
+                    <option value="ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ខ)">ជាប់ស្ថាពរ ក្រុមទី២ (ថ្នាក់ ខ)</option>
+                    <option value="ជាប់បម្រុង ក្រុមទី១">ជាប់បម្រុង ក្រុមទី១</option>
+                    <option value="ជាប់បម្រុង ក្រុមទី២">ជាប់បម្រុង ក្រុមទី២</option>
                   </select>
                 </div>
 
@@ -1168,7 +1170,8 @@
         <div class="info-callout">
           <div><i class="fas fa-info-circle"></i> <strong>បញ្ជាក់៖</strong> ចំពោះព័ត៌មានដែលមានសញ្ញា <strong>*</strong>
             ត្រូវតែបំពេញឱ្យបានគ្រប់ជ្រុងជ្រោយ។ អាយុនឹងត្រូវបានគណនាដោយស្វ័យប្រវត្តិ។</div>
-          <div class="note-bold" id="noteMaxStudents">ចំណាំ៖ ចំនួនសិស្សអតិបរមាក្នុងមួយថ្នាក់កំណត់ត្រឹម ១០០នាក់ ប៉ុណ្ណោះ។</div>
+          <div class="note-bold" id="noteMaxStudents">ចំណាំ៖ ចំនួនសិស្សអតិបរមាក្នុងមួយថ្នាក់កំណត់ត្រឹម ១០០នាក់ ប៉ុណ្ណោះ។
+          </div>
         </div>
 
         <!-- Hidden input for Excel/CSV file upload -->
@@ -1203,8 +1206,8 @@
   <!-- Scripts -->
   <script src="xlsx.full.min.js"></script>
   <script src="cambodia-geo.js?v=5.9"></script>
-  <script src="data.js?v=6.3"></script>
-  <script src="add-student.js?v=6.1"></script>
+  <script src="data.js?v=6.4"></script>
+  <script src="add-student.js?v=6.2"></script>
 </body>
 
 </html>
