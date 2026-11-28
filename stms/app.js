@@ -2929,12 +2929,8 @@ function renderTraineeIdCardHtml(t, options = {}) {
       <i class="fas fa-school card-watermark"></i>
 
       <div class="id-card-hdr">
+        <img src="assets/id-card-header-logo.png?v=1" alt="សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ" class="id-card-banner-logo" onerror="this.src='assets/ktpttc-header-logo.png'">
         <div class="id-card-badge">STUDENT ID</div>
-        <img src="assets/ktpttc-logo.png" class="id-card-logo" onerror="this.src='assets/logo.png'">
-        <div class="id-card-org-wrap">
-          <div class="id-card-org-kh">សាលាគរុកោសល្យ និងវិក្រឹតការខេត្តក្រចេះ</div>
-          <div class="id-card-org-en">KRATIE PROVINCIAL TEACHER TRAINING CENTER</div>
-        </div>
       </div>
 
       <div class="id-card-body">

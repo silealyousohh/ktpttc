@@ -873,54 +873,28 @@ body:has(.admin-portal-container) .stms-content-viewport {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 4px;
+  gap: 5px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.22);
-  padding-bottom: 8px;
+  padding-bottom: 7px;
 }
 
-.trainee-id-card .id-card-logo {
-  width: 44px;
-  height: 44px;
-  background: #ffffff;
-  border-radius: 50%;
-  padding: 2px;
-  flex-shrink: 0;
-  object-fit: contain;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-}
-
-.trainee-id-card .id-card-org-wrap {
+.trainee-id-card .id-card-banner-logo {
   width: 100%;
-  text-align: center;
-}
-
-.trainee-id-card .id-card-org-kh {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #93c5fd;
-  letter-spacing: -0.2px;
-  line-height: 1.3;
-}
-
-.trainee-id-card .id-card-org-en {
-  font-size: 0.56rem;
-  color: #cbd5e1;
-  font-weight: 600;
-  letter-spacing: 0.35px;
-  line-height: 1.25;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .trainee-id-card .id-card-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 0.52rem;
+  font-size: 0.54rem;
   color: #38bdf8;
   font-weight: 700;
+  letter-spacing: 0.8px;
   border: 1px solid rgba(56, 189, 248, 0.45);
   background: rgba(15, 23, 42, 0.55);
-  padding: 1.5px 5px;
-  border-radius: 4px;
+  padding: 1.5px 8px;
+  border-radius: 999px;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -1046,32 +1020,19 @@ body:has(.admin-portal-container) .stms-content-viewport {
 }
 
 .trainee-id-card.id-card-a4-item .id-card-hdr {
-  gap: 2.5px;
+  gap: 3px;
   padding-bottom: 4px;
 }
 
-.trainee-id-card.id-card-a4-item .id-card-logo {
-  width: 30px;
-  height: 30px;
-  padding: 1.5px;
-}
-
-.trainee-id-card.id-card-a4-item .id-card-org-kh {
-  font-size: 0.56rem;
-  line-height: 1.24;
-}
-
-.trainee-id-card.id-card-a4-item .id-card-org-en {
-  font-size: 0.43rem;
-  letter-spacing: 0.15px;
-  line-height: 1.18;
+.trainee-id-card.id-card-a4-item .id-card-banner-logo {
+  width: 100%;
+  height: auto;
 }
 
 .trainee-id-card.id-card-a4-item .id-card-badge {
-  top: 2.2mm;
-  right: 2.4mm;
-  font-size: 0.42rem;
-  padding: 1px 3px;
+  font-size: 0.44rem;
+  letter-spacing: 0.6px;
+  padding: 1px 6px;
 }
 
 .trainee-id-card.id-card-a4-item .id-card-body {
@@ -1192,8 +1153,8 @@ body:has(.admin-portal-container) .stms-content-viewport {
 
 .id-card-select-toggle {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 43px;
+  right: 4px;
   z-index: 4;
   display: inline-flex;
   align-items: center;
